@@ -6,16 +6,16 @@ using namespace arma;
 
 
 // [[Rcpp::export]]
-mat rmatnorm(mat M, mat Q, mat P){
+arma::mat rmatnorm(arma::mat M, arma::mat Q, arma::mat P){
 /*-------------------------------------------------------
 # Generate draws from a matricvariate normal distribution
 #-------------------------------------------------------*/
   RNGScope scope;
   int p = P.n_rows;
   int q = Q.n_rows;
-  mat L = chol(Q, "upper");
-  mat C = chol(P, "lower");
-  mat X = reshape(vec(rnorm(p * q)), p, q);
+  arma::mat L = chol(Q, "upper");
+  arma::mat C = chol(P, "lower");
+  arma::mat X = reshape(arma::vec(rnorm(p * q)), p, q);
   X = M + C * X * L;
   return(X);
 }
@@ -33,11 +33,11 @@ mat rmatnorm(mat M, mat Q, mat P){
 #   v     degrees of freedom
 #-------------------------------------------------------*/
 // [[Rcpp::export]]
-mat rinvwish(int v, mat S){
+arma::mat rinvwish(int v, arma::mat S){
   RNGScope scope;
   int p = S.n_rows;
-  mat L = chol(inv_sympd(S), "lower");
-  mat A(p,p, fill::zeros);
+  arma::mat L = arma::chol(arma::inv_sympd(S), "lower");
+  arma::mat A(p,p, fill::zeros);
   for(int i = 0; i < p; i++){
     int df = v - (i + 1) + 1; //zero-indexing
     A(i,i) = sqrt(R::rchisq(df));
@@ -47,22 +47,22 @@ mat rinvwish(int v, mat S){
       A(row, col) = R::rnorm(0,1);
     }
   }
-  mat LA_inv = inv(trimatl(trimatl(L) * trimatl(A)));
-  mat X = LA_inv.t() * LA_inv;
+  arma::mat LA_inv = arma::inv(arma::trimatl(arma::trimatl(L) * arma::trimatl(A)));
+  arma::mat X = LA_inv.t() * LA_inv;
 
   return(X);
 }
 
 
 // [[Rcpp::export]]
-vec rmultn(vec m, mat Sigma){
+arma::vec rmultn(arma::vec m, arma::mat Sigma){
   /*-------------------------------------------------------
 # Generate draws from a matricvariate normal distribution
 #-------------------------------------------------------*/
    RNGScope scope;
   int p = Sigma.n_rows;
-  vec X = rnorm(p);
-  mat L = chol(Sigma, "lower");
+  arma::vec X = rnorm(p);
+  arma::mat L = arma::chol(Sigma, "lower");
   X = m + L * X;
   return(X);
 }

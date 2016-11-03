@@ -1,3 +1,4 @@
 exportPattern("^[[:alpha:]]+")
 importFrom(Rcpp, evalCpp)
 useDynLib(MFBVAR)
+import(RcppArmadillo)

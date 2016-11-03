@@ -1,39 +1,3 @@
-library(Rcpp)
-library(RcppArmadillo)
-load("y.RData")
-y <- cbind(y[, 2], y[, 1])
-y <- cbind(y, y + matrix(rnorm(nrow(y)*2), ncol =2))
-y <- cbind(y[, c(1, 3)], y[, c(2, 4)])
-
-# Load files
-files <- c("builders", "prior_pi_sigma", "posteriors", "ols", "misc", "smooth_samp", "random_numbers")
-sapply(files, function(x) source(paste0(getwd(), "/R/", x, ".R")))
-sourceCpp(paste0(getwd(), "/src/rnd_numbers.cpp"))
-sourceCpp(paste0(getwd(), "/src/builders.cpp"))
-
-# Set priors
-priors <- prior_pi_sigma(lambda1 = 0.2, lambda2 = 1, prior_mean = c(0.5, 0.5, 0.5, 0.5), Y = y,
-                               n_lags = 4, nu = 4)
-prior_pi <- priors$prior_pi
-prior_pi_omega <- priors$prior_pi_omega
-prior_nu <- 4
-prior_s <- priors$prior_s
-prior_psi <- c(0.2, 0.4, 0, 0, 0.2, 0.1, 0.05, 0.08)
-prior_psi_omega <- diag(0.5, 8)
-
-Y <- y[-c(1:12), ]
-d <- matrix(cbind(1, 1:200), dim(Y))
-
-Lambda <- rbind(c(1, rep(0, 7)), c(0, rep(c(1/3, 0), 3), rep(0, 1)))
-Lambda <- rbind(Lambda[c(1, 1),], Lambda[c(2, 2),])
-n_lags <- 4
-n_vars <- 4
-M_Lambda <- build_M_Lambda(Y[-(1:n_lags), ], Lambda, n_lags)
-n_burnin <- 100
-n_reps <- 100
-
-
-
 gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi, prior_psi_omega,
                           Y, d, M_Lambda, n_reps = 10000, n_burnin = 10000) {
   # prior_pi: (p * kp) matrix of prior mean for Pi
