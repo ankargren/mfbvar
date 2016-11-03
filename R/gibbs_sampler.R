@@ -73,7 +73,7 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
     Sigma[,,r] <- rinvwish(nu, post_s)
 
     # Pi
-    Pi[,,r] <- rmatnorm(post_pi, Sigma[,,r], post_pi_omega)
+    Pi[,,r] <- rmatn(post_pi, Sigma[,,r], post_pi_omega)
 
     # psi
     U <- build_U_cpp(Pi[,,r], n_determ, n_vars, n_lags)

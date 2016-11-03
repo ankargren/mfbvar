@@ -9,15 +9,15 @@ ols_s <- function(X, Y, Pi) {
 }
 
 
-ols_initialization <- function(Z, d, n_lags) {
-  n_T <- nrow(Z)
-  # Create regressor matrix (this is Z in Karlsson, 2013)
+ols_initialization <- function(z, d, n_lags) {
+  n_T <- nrow(z)
+  # Create regressor matrix (this is z in Karlsson, 2013)
   XX <- c()
   for (i in 1:n_lags) {
-    XX <- cbind(XX, Z[(n_lags+1-i):(n_T - i), ])
+    XX <- cbind(XX, z[(n_lags+1-i):(n_T - i), ])
   }
   XX <- cbind(XX, d[(n_lags+1):n_T, ])
-  YY <- Z[(n_lags+1):n_T, ]
+  YY <- z[(n_lags+1):n_T, ]
 
   # Gamma in Karlsson (2013, p. 797)
   Gam <- t(ols_pi(XX, YY))

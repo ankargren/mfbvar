@@ -35,16 +35,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// rmatnorm
-arma::mat rmatnorm(arma::mat M, arma::mat Q, arma::mat P);
-RcppExport SEXP MFBVAR_rmatnorm(SEXP MSEXP, SEXP QSEXP, SEXP PSEXP) {
+// rmatn
+arma::mat rmatn(arma::mat M, arma::mat Q, arma::mat P);
+RcppExport SEXP MFBVAR_rmatn(SEXP MSEXP, SEXP QSEXP, SEXP PSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat >::type M(MSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type Q(QSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type P(PSEXP);
-    rcpp_result_gen = Rcpp::wrap(rmatnorm(M, Q, P));
+    rcpp_result_gen = Rcpp::wrap(rmatn(M, Q, P));
     return rcpp_result_gen;
 END_RCPP
 }

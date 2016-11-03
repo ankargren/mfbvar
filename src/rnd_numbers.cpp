@@ -6,7 +6,7 @@ using namespace arma;
 
 
 // [[Rcpp::export]]
-arma::mat rmatnorm(arma::mat M, arma::mat Q, arma::mat P){
+arma::mat rmatn(arma::mat M, arma::mat Q, arma::mat P){
 /*-------------------------------------------------------
 # Generate draws from a matricvariate normal distribution
 #-------------------------------------------------------*/

@@ -9,8 +9,8 @@ build_demeaned_z_cpp <- function(z, psi, d, n_T, n_vars) {
     .Call('MFBVAR_build_demeaned_z_cpp', PACKAGE = 'MFBVAR', z, psi, d, n_T, n_vars)
 }
 
-rmatnorm <- function(M, Q, P) {
-    .Call('MFBVAR_rmatnorm', PACKAGE = 'MFBVAR', M, Q, P)
+rmatn <- function(M, Q, P) {
+    .Call('MFBVAR_rmatn', PACKAGE = 'MFBVAR', M, Q, P)
 }
 
 rinvwish <- function(v, S) {

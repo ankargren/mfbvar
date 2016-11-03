@@ -3,21 +3,6 @@
 # Z_tilde_f
 # U_f
 
-build_D <- function(d, n_lags, n_vars) {
-  # d=(d_{-n_lags}, ..., d_T)' ((T+k) * m)
-  D_T <- nrow(d)-n_lags+1
-  n_determ <- ncol(d)
-  D_bar <- c()
-  for (i in 1:D_T) {
-    D_bar_t <- c()
-    for (j in 0:(n_lags-1)) {
-      D_bar_t <- rbind(D_bar_t, d[i+n_lags-j-1, ])
-    }
-    D_bar <- rbind(D_bar, t(D_bar_t))
-  }
-  return(D_bar)
-}
-
 build_DD <- function(d, n_lags) {
   # Inputs:
 
