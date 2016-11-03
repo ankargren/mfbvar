@@ -5,7 +5,7 @@
 # posterior_pi
 # posterior_pi_omega
 
-posterior_psi <- function(psi_omega, U, sigma, Y_tilde, D, prior_psi_omega, prior_psi) {
+posterior_psi <- function(U, D, sigma, prior_psi_omega, psi_omega, Y_tilde, prior_psi) {
   sigmaYD <- solve(sigma) %*% t(Y_tilde) %*% D
   dim(sigmaYD) <- c(prod(dim(sigmaYD)), 1)
   psi <- psi_omega %*% (t(U) %*% sigmaYD + solve(prior_psi_omega) %*% prior_psi)

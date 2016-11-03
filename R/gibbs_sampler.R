@@ -44,43 +44,54 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
 
   Z[,, 1] <- fill_na(Y)
 
-  ols_results <- ols_initialization(Z[,, 1], d = d, n_lags = n_lags)
+  ols_results <- ols_initialization(z = Z[,, 1], d = d, n_lags = n_lags)
 
   Pi[,, 1]    <- ols_results$Gam[, 1:(n_vars * n_lags)]
   Sigma[,, 1] <- ols_results$S
   psi[1, ]    <- c(solve(diag(n_vars) - Pi[,, 1] %*%
                         kronecker(matrix(1, n_lags, 1), diag(n_vars))) %*%
                   ols_results$Gam[, (n_vars * n_lags + 1):(n_vars * n_lags + n_determ)])
-  D <- build_DD(d, n_lags)
+  D <- build_DD(d = d, n_lags = n_lags)
 
 
   for (r in 2:(n_tot_reps)) {
     #demeaned_Z <- build_demeaned_z(Z[,,r-1], psi[r-1, ], d) %>%
       #build_Z(n_lags)
 
-    demeaned_Z <- build_demeaned_z_cpp(Z[,,r-1], matrix(psi[r-1, ], nrow = 1), matrix(d, ncol = n_determ), n_T, n_vars) %>%
-      build_Z(n_lags)
+    demeaned_z <- build_demeaned_z_cpp(z = Z[,,r-1], psi = matrix(psi[r-1, ], nrow = 1),
+                                       d = matrix(d, ncol = n_determ), n_T = n_T,
+                                       n_vars = n_vars)
+    demeaned_Z <- build_Z(z = demeaned_z, n_lags = n_lags)
 
     # Dynamic coefficients
-    post_pi_omega <- demeaned_Z[-nrow(demeaned_Z), ] %>% posterior_pi_omega(prior_pi_omega, .)
-    post_pi   <- posterior_pi(post_pi_omega, prior_pi_omega, prior_pi, demeaned_Z)
-    pi_sample <- ols_pi(demeaned_Z[-nrow(demeaned_Z), ], demeaned_Z[-1, 1:n_vars])
+    post_pi_omega <- posterior_pi_omega(prior_pi_omega = prior_pi_omega,
+                                        Z_tilde_1T1 = demeaned_Z[-nrow(demeaned_Z), ])
+    post_pi   <- posterior_pi(pi_omega = post_pi_omega, prior_pi_omega = prior_pi_omega,
+                              prior_pi = prior_pi, demeaned_Z = demeaned_Z)
+    pi_sample <- ols_pi(X = demeaned_Z[-nrow(demeaned_Z), ],
+                        Y = demeaned_Z[-1, 1:n_vars])
 
     # Covariance
-    s_sample  <- ols_s(demeaned_Z[-nrow(demeaned_Z), ], demeaned_Z[-1, 1:n_vars], pi_sample)
-    post_s <- posterior_s(prior_s, s_sample, prior_pi, pi_sample, prior_pi_omega, demeaned_Z[-nrow(demeaned_Z), ])
+    s_sample  <- ols_s(X = demeaned_Z[-nrow(demeaned_Z), ],
+                       Y = demeaned_Z[-1, 1:n_vars], Pi = pi_sample)
+    post_s <- posterior_s(prior_s = prior_s, s_sample = s_sample, prior_pi = prior_pi,
+                          pi_sample = pi_sample, prior_pi_omega = prior_pi_omega,
+                          Z = demeaned_Z[-nrow(demeaned_Z), ])
     nu <- n_T + prior_nu # Is this the right T? Or should it be T - lags?
-    Sigma[,,r] <- rinvwish(nu, post_s)
+    Sigma[,,r] <- rinvwish(v = nu, S = post_s)
 
     # Pi
-    Pi[,,r] <- rmatn(post_pi, Sigma[,,r], post_pi_omega)
+    Pi[,,r] <- rmatn(M = post_pi, Q = Sigma[,,r], P =post_pi_omega)
 
     # psi
-    U <- build_U_cpp(Pi[,,r], n_determ, n_vars, n_lags)
-    post_psi_omega <- posterior_psi_omega(U, D, Sigma[,, r], prior_psi_omega)
-    Y_tilde <- build_Y_tilde(Pi[,, r], Z[,, r-1])
-    post_psi <- posterior_psi(post_psi_omega, U, Sigma[,, r], Y_tilde, D, prior_psi_omega, prior_psi)
-    psi[r, ] <- t(rmultn(post_psi, post_psi_omega))
+    U <- build_U_cpp(Pi = Pi[,,r], n_determ = n_determ,
+                     n_vars = n_vars, n_lags = n_lags)
+    post_psi_omega <- posterior_psi_omega(U = U, D = D, sigma = Sigma[,, r],
+                                          prior_psi_omega = prior_psi_omega)
+    Y_tilde <- build_Y_tilde(Pi = Pi[,, r], z = Z[,, r-1])
+    post_psi <- posterior_psi(U = U, D = D, sigma = Sigma[,, r], prior_psi_omega = prior_psi_omega,
+                              psi_omega = post_psi_omega, Y_tilde = Y_tilde, prior_psi = prior_psi)
+    psi[r, ] <- t(rmultn(m = post_psi, Sigma = post_psi_omega))
 
     # Z
 
