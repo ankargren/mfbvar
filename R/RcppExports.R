@@ -5,8 +5,8 @@ build_U_cpp <- function(Pi, n_determ, n_vars, n_lags) {
     .Call('MFBVAR_build_U_cpp', PACKAGE = 'MFBVAR', Pi, n_determ, n_vars, n_lags)
 }
 
-build_demeaned_z_cpp <- function(z, psi, d, n_T, n_vars) {
-    .Call('MFBVAR_build_demeaned_z_cpp', PACKAGE = 'MFBVAR', z, psi, d, n_T, n_vars)
+max_eig_cpp <- function(M) {
+    .Call('MFBVAR_max_eig_cpp', PACKAGE = 'MFBVAR', M)
 }
 
 rmatn <- function(M, Q, P) {

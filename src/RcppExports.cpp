@@ -20,18 +20,14 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// build_demeaned_z_cpp
-arma::mat build_demeaned_z_cpp(arma::mat z, arma::mat psi, arma::mat d, int n_T, int n_vars);
-RcppExport SEXP MFBVAR_build_demeaned_z_cpp(SEXP zSEXP, SEXP psiSEXP, SEXP dSEXP, SEXP n_TSEXP, SEXP n_varsSEXP) {
+// max_eig_cpp
+double max_eig_cpp(arma::mat M);
+RcppExport SEXP MFBVAR_max_eig_cpp(SEXP MSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type z(zSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type psi(psiSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type d(dSEXP);
-    Rcpp::traits::input_parameter< int >::type n_T(n_TSEXP);
-    Rcpp::traits::input_parameter< int >::type n_vars(n_varsSEXP);
-    rcpp_result_gen = Rcpp::wrap(build_demeaned_z_cpp(z, psi, d, n_T, n_vars));
+    Rcpp::traits::input_parameter< arma::mat >::type M(MSEXP);
+    rcpp_result_gen = Rcpp::wrap(max_eig_cpp(M));
     return rcpp_result_gen;
 END_RCPP
 }

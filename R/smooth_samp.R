@@ -34,17 +34,7 @@ smooth_samp <- function(mZ,mX,lH,lH0=NULL,mF,mB,mQ,iT,ip,iq,is,h0,P0=NULL,X0)
 ## r0 : q   by 1
 ## me : T   by p
 {
-  if (!(all_equal(c(nrow(mZ), nrow(mX), length(lH))))) {
-    stop("mZ, mX and lH don't have the same T.")
-  }
 
-  if (!(all_equal(c(ncol(mX), ncol(mB), nrow(X0))))) {
-    stop("mX, mB and X0 don't have the same s.")
-  }
-
-  if (!(all_equal(c(dim(lH[[1]])[2], dim(mF), dim(mB)[1], dim(mQ), dim(h0)[1])))) {
-    stop("lH, mF, mB, mQ and h0 don't have the same q.")
-  }
 
   # simulation
 
@@ -82,7 +72,7 @@ smooth_samp <- function(mZ,mX,lH,lH0=NULL,mF,mB,mQ,iT,ip,iq,is,h0,P0=NULL,X0)
   mZZ[1,] = mH %*% mhh[1,]
   for(iter in 2:iT){
     mH = lH[[iter]]
-    mhh[iter,] = mF %*% mhh[iter-1,] + mB %*% mX[iter-1,] + mQ%*%mE[iter,]
+    mhh[iter,] = mF %*% mhh[iter-1,] + mB %*% mX[iter-1,] + mQ%*%mU[iter,]
     mZZ[iter,] = mH %*% mhh[iter,]
   }
 

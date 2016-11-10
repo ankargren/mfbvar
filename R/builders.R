@@ -16,19 +16,8 @@ build_DD <- function(d, n_lags) {
   # The output is a (t_1-t_0+1)*pk matrix
 }
 
-
-build_demeaned_z <- function(z, psi, d) {
-  # Inputs:
-  # t_0 (scalar), start period
-  # t_1 (scalar), end period
-  # Z is a matrix, T * p
-  # psi is mp * 1, vectorized Psi
-
-  n_vars <- ncol(z)
-  n_T <- nrow(z)
-  demeaned_z <- z - kronecker(diag(n_T), matrix(psi, nrow = 1)) %*% kronecker(matrix(c(t(d)), ncol = 1), diag(n_vars))
-  return(demeaned_z)
-  # The output is a (t_1-t_0+1)*pk matrix
+build_companion <- function(Pi, n_vars, n_lags) {
+  rbind(Pi, cbind(diag(n_vars*(n_lags-1)), matrix(0, ncol = n_vars, nrow = n_vars*(n_lags-1))))
 }
 
 build_Z <- function(z, n_lags) {

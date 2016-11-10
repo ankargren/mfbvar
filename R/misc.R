@@ -31,3 +31,6 @@ all_equal <- function(x, tol = .Machine$double.eps ^ 0.5) {
 }
 
 
+max_eig <- function(Pi, n_vars, n_lags) {
+  return(max(abs(eigen(Pi, only.values = TRUE)$values)))
+}

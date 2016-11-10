@@ -6,8 +6,7 @@
 # posterior_pi_omega
 
 posterior_psi <- function(U, D, sigma, prior_psi_omega, psi_omega, Y_tilde, prior_psi) {
-  sigmaYD <- solve(sigma) %*% t(Y_tilde) %*% D
-  dim(sigmaYD) <- c(prod(dim(sigmaYD)), 1)
+  sigmaYD <- matrix(c(solve(sigma) %*% t(Y_tilde) %*% D), ncol = 1)
   psi <- psi_omega %*% (t(U) %*% sigmaYD + solve(prior_psi_omega) %*% prior_psi)
   return(psi)
 }
@@ -19,14 +18,15 @@ posterior_psi_omega <- function(U, D, sigma, prior_psi_omega) {
 
 posterior_s <- function(prior_s, s_sample, prior_pi, pi_sample, prior_pi_omega, Z) {
   s <- prior_s + s_sample + t(prior_pi - pi_sample) %*% solve(prior_pi_omega + solve(crossprod(Z))) %*% (prior_pi - pi_sample)
+  return(s)
 }
 
 posterior_pi <- function(pi_omega, prior_pi_omega, prior_pi, demeaned_Z) {
   n_vars <- dim(prior_pi)[2]
   Z_tilde_1T1 <- demeaned_Z[-nrow(demeaned_Z), ]
   z_tilde_2T  <- demeaned_Z[-1, 1:n_vars]
-  pi <- pi_omega %*% (solve(prior_pi_omega) %*% prior_pi + crossprod(Z_tilde_1T1, z_tilde_2T))
-  return(pi)
+  post_pi <- pi_omega %*% (solve(prior_pi_omega) %*% prior_pi + crossprod(Z_tilde_1T1, z_tilde_2T))
+  return(post_pi)
 }
 
 posterior_pi_omega <- function(prior_pi_omega, Z_tilde_1T1) {
