@@ -103,18 +103,17 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
   }
 
   for (r in 2:(n_reps)) {
+    ################################################################
+    ### Preliminary calculations
 
     # Demean z, create Z (companion form version)
     demeaned_z <- Z[,, r-1] - d %*% t(matrix(psi[r-1, ], nrow = n_vars))
     demeaned_Z <- build_Z(z = demeaned_z, n_lags = n_lags)
-
-    ################################################################
-    ### Pi and Sigma step
-
-    # Preliminary calculations
     XX <- demeaned_Z[-nrow(demeaned_Z), ]
     YY <- demeaned_Z[-1, 1:n_vars]
     pi_sample <- solve(crossprod(XX)) %*% crossprod(XX, YY)
+    ################################################################
+    ### Pi and Sigma step
 
     # Posterior moments of Pi
     post_pi_omega <- solve(solve(prior_pi_omega) + crossprod(XX))
@@ -123,7 +122,7 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
     # Then Sigma
     s_sample  <- crossprod(YY - XX %*% pi_sample)
     pi_diff <- prior_pi - pi_sample
-    post_s <- prior_s + s_sample + t(pi_diff) %*% solve(post_pi_omega + solve(crossprod(XX)), pi_diff)
+    post_s <- prior_s + s_sample + t(pi_diff) %*% solve(post_pi_omega + solve(crossprod(XX))) %*% pi_diff
     nu <- n_T + prior_nu # Is this the right T? Or should it be T - lags?
     Sigma[,,r] <- rinvwish(v = nu, S = post_s)
 
@@ -160,8 +159,8 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
     Y_tilde <- build_Y_tilde(Pi = Pi[,, r], z = Z[,, r-1])
 
     post_psi <- posterior_psi(U = U, D = D, sigma = Sigma[,, r], prior_psi_omega = prior_psi_omega,
-                              psi_omega = post_psi_omega, Y_tilde = Y_tilde, prior_psi = prior_psi) # Seems to be correct
-    psi[r, ] <- t(rmultn(m = post_psi, Sigma = post_psi_omega)) # Seems to be correct
+                              psi_omega = post_psi_omega, Y_tilde = Y_tilde, prior_psi = prior_psi)
+    psi[r, ] <- t(rmultn(m = post_psi, Sigma = post_psi_omega))
 
 
 
@@ -173,7 +172,7 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
     # Demean before putting into simulation smoother using the most recent draw of psi
     mZ <- Y - d %*% t(matrix(psi[r, ], nrow = n_vars))
     mZ <- mZ[-(1:n_lags), ]
-    demeaned_z0 <- Z[1:n_lags,, 1] - d[1:n_lags, ] %*% t(matrix(psi[r-1, ], nrow = n_vars))
+    demeaned_z0 <- Z[1:n_lags,, 1] - d[1:n_lags, ] %*% t(matrix(psi[r, ], nrow = n_vars))
     h0 <- matrix(t(demeaned_z0), ncol = 1)
     h0 <- h0[(n_vars*n_lags):1,,drop = FALSE] # have to reverse the order
 

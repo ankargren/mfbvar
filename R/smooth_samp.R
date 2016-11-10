@@ -8,17 +8,17 @@
 
 ##### to sample from the smoothed distribution
 smooth_samp <- function(mZ,mX,lH,lH0=NULL,mF,mB,mQ,iT,ip,iq,is,h0,P0=NULL,X0)
-## Inputs
-## mZ : T   by p   matrix representing observations
-## mX : T   by s   matrix representing regressors
-## lH : T list, p by q
-## mF : q by q
-## mB : q by s
-## mQ : q by q for w_t
-## h0 : q   by 1   matrix ... accurate initial state
-## P0 : q   by q   matrix ... accurate initial state's cov
-## X0 : s   by 1   matrix ... x at time step 0
-## outputs
+  ## Inputs
+  ## mZ : T   by p   matrix representing observations
+  ## mX : T   by s   matrix representing regressors
+  ## lH : T list, p by q
+  ## mF : q by q
+  ## mB : q by s
+  ## mQ : q by q for w_t
+  ## h0 : q   by 1   matrix ... accurate initial state
+  ## P0 : q   by q   matrix ... accurate initial state's cov
+  ## X0 : s   by 1   matrix ... x at time step 0
+  ## outputs
 ## KF part
 ## h1 : T   by q   expectation of h a priori
 ## h2 : T   by q   expectation of h a posteriori
@@ -46,7 +46,7 @@ smooth_samp <- function(mZ,mX,lH,lH0=NULL,mF,mB,mQ,iT,ip,iq,is,h0,P0=NULL,X0)
   if(is.null(P0)){
     hh0 = h0; P0=matrix(0,iq,iq)
   } else{
-      hh0 = h0 + t(chol(P0))%*%rnorm(iq)
+    hh0 = h0 + t(chol(P0))%*%rnorm(iq)
   }
 
   mH = lH[[1]]
@@ -145,17 +145,17 @@ smoothing <- function(mZ,mX,lH,mF,mB,mQ,iT,ip,iq,is,h0,P0,X0)
 
 
 SimKF<-function(mX,lH,mF,mB,mQ,iT,ip,iq,is,h0,P0=NULL,X0)
-## inputs
-## mX  : T   by s   matrix representing regressors
-## lH : T list, p by q
-## mF : q by q
-## mB : q by s
-## mQ : q by q for w_t
-## mG  : p+q by p+q matrix ... parameters of errors (R' Q')'
-## h0 : q   by 1   matrix ... initial state
-## P0 : q   by q   matrix ... accurate initial state's cov
-## X0 : s   by 1   matrix ... x at time step 0
-## output
+  ## inputs
+  ## mX  : T   by s   matrix representing regressors
+  ## lH : T list, p by q
+  ## mF : q by q
+  ## mB : q by s
+  ## mQ : q by q for w_t
+  ## mG  : p+q by p+q matrix ... parameters of errors (R' Q')'
+  ## h0 : q   by 1   matrix ... initial state
+  ## P0 : q   by q   matrix ... accurate initial state's cov
+  ## X0 : s   by 1   matrix ... x at time step 0
+  ## output
 ## mZ  : T   by p   observations
 ## mh  : T   by q   underlying process
 {
