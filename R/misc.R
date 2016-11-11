@@ -24,13 +24,3 @@ fill_na <- function(Y) {
     x})
 }
 
-all_equal <- function(x, tol = .Machine$double.eps ^ 0.5) {
-  if (length(x) == 1) return(TRUE)
-  x <- range(x) / mean(x)
-  isTRUE(all.equal(x[1], x[2], tolerance = tol))
-}
-
-
-max_eig <- function(Pi, n_vars, n_lags) {
-  return(max(abs(eigen(Pi, only.values = TRUE)$values)))
-}

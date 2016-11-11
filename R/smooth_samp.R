@@ -79,6 +79,77 @@ smooth_samp <- function(mZ,mX,lH,lH0=NULL,mF,mB,mQ,iT,ip,iq,is,h0,P0=NULL,X0)
   return(list(mh=mhh,mZ=mZZ))
 }
 
+smooth_samp_u3 <- function(mZ,mX,lH,lH0=NULL,mF,mB,mQ,iT,ip,iq,is,h0,P0=NULL,X0)
+  ## Inputs
+  ## mZ : T   by p   matrix representing observations
+  ## mX : T   by s   matrix representing regressors
+  ## lH : T list, p by q
+  ## mF : q by q
+  ## mB : q by s
+  ## mQ : q by q for w_t
+  ## h0 : q   by 1   matrix ... accurate initial state
+  ## P0 : q   by q   matrix ... accurate initial state's cov
+  ## X0 : s   by 1   matrix ... x at time step 0
+  ## outputs
+## KF part
+## h1 : T   by q   expectation of h a priori
+## h2 : T   by q   expectation of h a posteriori
+## P1 : Tqq array  variance of h a priori
+## P2 : Tqq array  variance of h a posteriori
+## mv  : T   by p   residuals in measurement eq.
+## aS  : Tpp array  covariance of z
+## aK  : Tqp array  Kalman gain
+## SM part
+## mu : T   by p+q E[eps |Z X]
+## u0 : p+q by 1
+## mr : T   by q
+## r0 : q   by 1
+## me : T   by p
+{
+
+
+  # simulation
+
+
+
+  mE = matrix(rnorm(iT*iq),iT,iq)
+  mZZ = matrix(0,iT,ip)
+  mhh = matrix(0,iT,iq)
+  if(is.null(P0)){
+    hh0 = h0; P0=matrix(0,iq,iq)
+  } else{
+    hh0 = h0 + t(chol(P0))%*%rnorm(iq)
+  }
+
+  mH = lH[[1]]
+  mhh[1,] = mF %*% hh0 + mB %*% X0 + mQ%*%mE[1,]
+  mZZ[1,] = mH %*% mhh[1,]
+  for(iter in 2:iT){
+    mH = lH[[iter]]
+    mhh[iter,] = mF %*% mhh[iter-1,] + mB %*% mX[iter-1,] + mQ%*%mE[iter,]
+    mZZ[iter,] = mH %*% mhh[iter,]
+  }
+
+  # mZZ, mhh and mE from 0 to iT-1
+  mE = rbind(mE,0)
+
+  if(is.null(lH0)) lH0=lH
+  u3 = smoothing(mZ=mZ-mZZ,mX=mX,lH=lH0,mF=mF,mB=mB,mQ=mQ,iT=iT,ip=ip,iq=iq,is=is,h0=h0-h0,P0=P0,X0=X0)
+  mU = mE + u3
+  # from 0 to iT
+
+  mH = lH[[1]]
+  mhh[1,] = mF %*% hh0 + mB %*% X0 + mQ%*%mU[1,]
+  mZZ[1,] = mH %*% mhh[1,]
+  for(iter in 2:iT){
+    mH = lH[[iter]]
+    mhh[iter,] = mF %*% mhh[iter-1,] + mB %*% mX[iter-1,] + mQ%*%mU[iter,]
+    mZZ[iter,] = mH %*% mhh[iter,]
+  }
+
+  return(list(mh=mhh,mZ=mZZ))
+}
+
 smoothing <- function(mZ,mX,lH,mF,mB,mQ,iT,ip,iq,is,h0,P0,X0)
 {
   QQ = tcrossprod(mQ)
@@ -141,39 +212,4 @@ smoothing <- function(mZ,mX,lH,mF,mB,mQ,iT,ip,iq,is,h0,P0,X0)
   ## from 0 to iT
 
   return(mu)
-}
-
-
-SimKF<-function(mX,lH,mF,mB,mQ,iT,ip,iq,is,h0,P0=NULL,X0)
-  ## inputs
-  ## mX  : T   by s   matrix representing regressors
-  ## lH : T list, p by q
-  ## mF : q by q
-  ## mB : q by s
-  ## mQ : q by q for w_t
-  ## mG  : p+q by p+q matrix ... parameters of errors (R' Q')'
-  ## h0 : q   by 1   matrix ... initial state
-  ## P0 : q   by q   matrix ... accurate initial state's cov
-  ## X0 : s   by 1   matrix ... x at time step 0
-  ## output
-## mZ  : T   by p   observations
-## mh  : T   by q   underlying process
-{
-  mh=matrix(0,iT,iq)# true states
-  me=matrix(rnorm(iT*iq),iT,iq)# innovations
-  mZ=matrix(0,iT,ip) # data
-  if(is.null(P0)){h0 = h0; P0=matrix(0,iq,iq)}
-  else{h0 = h0 + t(chol(P0))%*%rnorm(iq)}
-
-  mH = lH[[1]]; dim(mH) = c(ip,iq)
-  mh[1,] = mF %*% h0 + mB %*% X0 + mQ%*%me[1,]
-  mZ[1,] = mH %*% mh[1,]
-  for(iter in 2:iT){
-    mH = lH[[iter]]; dim(mH) = c(ip,iq)
-    mh[iter,] = mF %*% mh[iter-1,] + mB %*% mX[iter-1,] + mQ%*%me[iter,]
-    mZ[iter,] = mH %*% mh[iter,]
-  }
-  me = rbind(me,0) # from 0 to iT
-
-  return(list(mZ=mZ,mh=mh,me=me))
 }

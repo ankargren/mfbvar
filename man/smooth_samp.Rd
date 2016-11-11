@@ -1,12 +1,16 @@
 \name{smooth_samp}
 \alias{smooth_samp}
-\title{Sample from the smoothed distribution}
+\alias{smooth_samp_u3}
+\alias{smoothing}
+
+\title{Smooth and sample from the smoothed distribution}
 \description{
-Samples from the smoothed distribution \eqn{p(Z_{1:T}|Y_{1:T}, \Theta)}.
+Smooths and samples from the smoothed distribution \eqn{p(Z_{1:T}|Y_{1:T}, \Theta)}.
 }
 \usage{
-smooth_samp(mZ, mX, lH, lH0=NULL, mF, mB, mQ, iT,
-            ip, iq, is, h0, P0=NULL, X0)
+smooth_samp(mZ, mX, lH, lH0 = NULL, mF, mB, mQ, iT, ip, iq, is, h0, P0 = NULL, X0)
+smooth_samp_u3(mZ, mX, lH, lH0 = NULL, mF, mB, mQ, iT, ip, iq, is, h0, P0 = NULL, X0)
+smoothing(mZ, mX, lH, mF, mB, mQ, iT, ip, iq, is, h0, P0, X0)
 }
 \arguments{
 \item{mZ}{\code{T * n_vars} matrix with the observations (\code{NA} represents missingness)}
@@ -26,8 +30,11 @@ smooth_samp(mZ, mX, lH, lH0=NULL, mF, mB, mQ, iT,
 }
 \details{}
 \value{
-\item{mH}{}
-\item{mZ}{}
+For \code{smooth_samp} or \code{smooth_samp_u3}:
+\item{mh}{The draws from the posterior distribution.}
+\item{mZ}{The draws with the observational structure as in the original data.}
+For \code{smoothing}:
+\item{mu}{The smoothed errors.}
 }
 
 \examples{

@@ -176,7 +176,7 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
     h0 <- matrix(t(demeaned_z0), ncol = 1)
     h0 <- h0[(n_vars*n_lags):1,,drop = FALSE] # have to reverse the order
 
-    smoothed_Z <- smooth_samp(mZ = mZ, mX = matrix(0, n_T_), lH = lH, lH0 = lH0,
+    smoothed_Z <- smooth_samp_u3(mZ = mZ, mX = matrix(0, n_T_), lH = lH, lH0 = lH0,
                               mF = Pi_comp, mB = matrix(0, 16), mQ = Q_comp, iT = n_T_,
                               ip = n_lags, iq  = n_lags * n_vars, is = 1, h0 = h0, P0 = NULL,
                               X0 = 0)
@@ -184,6 +184,8 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
     # but smooth_samp puts out n_T - n_lags rows.
     Z[,, r] <- rbind(demeaned_z0, smoothed_Z$mh[, 1:n_vars]) +
       d %*% t(matrix(psi[r, ], nrow = n_vars))
+
+    # all(dplyr::near(true_Z[,1], Z[,1,2]))
 
 
     ################################################################
