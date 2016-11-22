@@ -55,9 +55,8 @@ build_Y_tilde <- function(Pi, z) {
   return(Y_tilde)
 }
 
-build_M_Lambda <- function(Y, Lambda, n_lags) {
+build_M_Lambda <- function(Y, Lambda, n_vars, n_lags, n_T) {
   M_Lambda <- list()
-  n_T <- nrow(Y)
   for (i in 1:n_T) {
     M_Lambda[[i]] <- matrix(diag(n_vars), ncol = n_vars) %*% Lambda
     if (any(is.na(Y[i, ]))) {

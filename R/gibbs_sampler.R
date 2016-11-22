@@ -1,7 +1,7 @@
 gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi, prior_psi_omega,
                           Y, d, n_reps, n_fcst = NULL, lH, check_roots = FALSE,
                           init_Pi = NULL, init_Sigma = NULL, init_psi = NULL, init_Z = NULL,
-                          d_fcst = NULL) {
+                          d_fcst = NULL, mdd = NULL, p_trunc = NULL) {
   # prior_pi: (p * kp) matrix of prior mean for Pi
   # prior_pi_omega: (kp^2 * kp^2) matrix of prior covariance matrix for vec(pi')
   # prior_nu: scalar with the prior for nu
@@ -185,13 +185,8 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
     Z[,, r] <- rbind(demeaned_z0, smoothed_Z$mh[, 1:n_vars]) +
       d %*% t(matrix(psi[r, ], nrow = n_vars))
 
-    # all(dplyr::near(true_Z[,1], Z[,1,2]))
-
-
     ################################################################
     # Forecasting step
-
-
     if (!is.null(n_fcst)) {
 
       # Forecast the process with mean subtracted
@@ -207,7 +202,10 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
 
   }
 
-  return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z)
+  ################################################################
+  # Prepare the return object
+  return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z, roots = NULL, num_tries = NULL, Z_fcst = NULL, mdd = NULL)
+
   if (check_roots == TRUE) {
     return_obj$roots <- roots
     return_obj$num_tries <- num_tries
@@ -215,6 +213,66 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
   if (!is.null(n_fcst)) {
     return_obj$Z_fcst <- Z_fcst
   }
+
+
+  ################################################################
+  # Marginal data density step
+  if (mdd == 2) {
+    # Compute posterior moments
+    post_pi_mean <- apply(Pi, c(1, 2), mean)
+    post_Sigma <- apply(Sigma, c(1, 2), mean)
+    post_psi <- colMeans(psi)
+    post_psi_omega <- cov(psi)
+
+    # For the truncated normal
+    chisq_val <- qchisq(p_trunc, n_determ)
+
+    #(mZ,lH,mF,mQ,iT,ip,iq,h0,P0)
+    Pi_comp <- build_companion(post_pi_mean, n_vars = n_vars, n_lags = n_lags)
+    Q_comp  <- matrix(0, ncol = n_vars*n_lags, nrow = n_vars*n_lags)
+    Q_comp[1:n_vars, 1:n_vars] <- t(chol(post_Sigma))
+    P0      <- matrix(0, n_lags*n_vars, n_lags*n_vars)
+
+    mdd_vec <- vector("numeric", n_reps)
+    for (r in 1:n_reps) {
+      # Demean z, create Z (companion form version)
+      demeaned_z <- Z[,, r] - d %*% t(matrix(psi[r, ], nrow = n_vars))
+      demeaned_Z <- build_Z(z = demeaned_z, n_lags = n_lags)
+      XX <- demeaned_Z[-nrow(demeaned_Z), ]
+      YY <- demeaned_Z[-1, 1:n_vars]
+      pi_sample <- solve(crossprod(XX)) %*% crossprod(XX, YY)
+      ################################################################
+      ### Pi and Sigma step
+
+      # Posterior moments of Pi
+      post_pi_omega_i <- solve(solve(prior_pi_omega) + crossprod(XX))
+      post_pi_i       <- post_pi_omega_i %*% (solve(prior_pi_omega) %*% prior_pi + crossprod(XX, YY))
+
+      # Then Sigma
+      s_sample  <- crossprod(YY - XX %*% pi_sample)
+      pi_diff <- prior_pi - pi_sample
+      post_s_i <- prior_s + s_sample + t(pi_diff) %*% solve(post_pi_omega_i + solve(crossprod(XX))) %*% pi_diff
+
+      # Set the variables which vary in the Kalman filtering
+      mZ <- Y - d %*% t(matrix(psi[r, ], nrow = n_vars))
+      mZ <- mZ[-(1:n_lags), ]
+      demeaned_z0 <- Z[1:n_lags,, 1] - d[1:n_lags, ] %*% t(matrix(psi[r, ], nrow = n_vars))
+      h0 <- matrix(t(demeaned_z0), ncol = 1)
+      h0 <- h0[(n_vars*n_lags):1,,drop = FALSE] # have to reverse the order
+
+
+      mdd_vec[r] <- dnorminvwish(X = t(post_pi_mean), Sigma = post_Sigma, M = post_pi_i,
+                                 P = post_pi_omega_i, S = post_s_i, v = nu)/
+        (likelihood(mZ = mZ, lH = lH0, mF = Pi_comp, mQ = Q_comp, iT = n_T_, ip = n_lags, iq = n_lags * n_vars, h0 = h0, P0 = P0) *
+           dnorminvwish(X = t(post_pi_mean), Sigma = post_Sigma, M = prior_pi, P = prior_pi_omega, S = prior_s, v = prior_nu) *
+           dmultn(x = psi[r, ], m = prior_psi, Sigma = prior_psi_omega)) *
+        dnorm_trunc(psi[r, ], post_psi, solve(post_psi_omega), n_determ*n_vars, p_trunc, chisq_val) #n_determ is wrong? should be n_determ*n_vars?
+    }
+    return_obj$mdd <- 1/mean(mdd_vec)
+  }
+
+
+
 
   return(return_obj)
 

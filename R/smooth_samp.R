@@ -213,3 +213,53 @@ smoothing <- function(mZ,mX,lH,mF,mB,mQ,iT,ip,iq,is,h0,P0,X0)
 
   return(mu)
 }
+
+
+likelihood <- function(mZ,lH,mF,mQ,iT,ip,iq,h0,P0)
+{
+  QQ = tcrossprod(mQ)
+
+  # filtering
+
+  #mv=array(0,dim=c(iT,ip))# residual in z eq.
+  mv=list(); length(mv)=iT
+  #IS=array(0,dim=c(iT,ip,ip))
+  IS=list(); length(IS)=iT
+  aK=list(); length(aK)=iT
+  aS=list(); length(aS)=iT
+  h1=matrix(0,iT,iq)
+  #aK=array(0,dim=c(iT,iq,ip))# Kalman gain
+
+  #Predict
+  h1[1,] = t(mF%*%h0)
+  P1 = mF%*%P0%*%t(mF) + QQ
+  #Update
+  mH = matrix(c(lH[[1]]),ncol=iq); vz=mZ[1,!is.na(mZ[1,])]
+  mv[[1]] = vz-mH%*%h1[1,] ## smoothing
+  aS[[1]] = mH%*%P1%*%t(mH); IS[[1]] = chol2inv(chol(aS[[1]])) ## smoothing
+  aK[[1]] = P1%*%t(mH)%*%IS[[1]] ## smoothing
+  h2 = h1[1,]+c(aK[[1]]%*%mv[[1]])
+  P2 = (diag(1,iq)-aK[[1]]%*%mH) %*% P1
+  loglike <- vector("numeric", iT)
+  for(iter in 2:iT){
+    #Predict
+    h1[iter,] = mF%*%h2
+    P1 = mF%*%P2%*%t(mF) + QQ
+    #Update
+    mH = matrix(c(lH[[iter]]),ncol=iq); vz=mZ[iter,!is.na(mZ[iter,])]
+    mv[[iter]] = vz-mH%*%h1[iter, ] ## smoothing
+    aS[[iter]] = mH%*%P1%*%t(mH); IS[[iter]] = chol2inv(chol(aS[[iter]])) ## smoothing
+    aK[[iter]] = P1%*%t(mH)%*%IS[[iter]] ## smoothing
+    h2 = h1[iter,]+c(aK[[iter]]%*%mv[[iter]])
+    P2 = (diag(1,iq)-aK[[iter]]%*%mH) %*% P1
+    n_vz <- length(vz)
+    loglike[iter]   <- -n_vz/2 * log(2*pi) - 1/2*(log(det(aS[[iter]])) + t(mv[[iter]]) %*% IS[[iter]] %*% mv[[iter]])
+  }
+
+  # Based on eq 7.2 in Durbin and Koopman's book. The vapply is because we have varying dimensions,
+  # meaning that we cannot just multiply by n*p. If the dimension of all matrices in lH are equal,
+  # then this would yield sum(p)=np.
+  # full_likelihood <- exp(-sum(vapply(lH, nrow, c(Sum = 0)))/2 * log(2*pi) - 1/2 * sum(loglike))
+  full_likelihood <- exp(sum(loglike))
+  return(full_likelihood)
+}

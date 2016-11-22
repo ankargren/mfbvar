@@ -15,7 +15,6 @@ prior_pi_sigma(lambda1, lambda2, prior_mean, Y, n_lags, nu)
 \item{n_lags}{The number of lags.}
 \item{nu}{The parameter \eqn{\nu}.}
 }
-\details{}
 \value{
 \item{prior_pi}{The prior mean matrix for Pi.}
 \item{prior_pi_omega}{The prior covariance matrix for Pi.}

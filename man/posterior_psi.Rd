@@ -18,7 +18,6 @@ posterior_psi(U, D, sigma, prior_psi_omega, psi_omega, Y_tilde, prior_psi)
 \item{Y_tilde}{The lag-corrected data matrix (with no missing values) of size \code{n_T * n_vars}.}
 \item{prior_psi}{The prior mean of \eqn{\psi}, a vector (or matrix) of length \code{n_determ * n_vars}.}
 }
-\details{}
 \value{The functions return one of:
 \item{psi}{The posterior mean (from \code{\link{posterior_psi}})}
 \item{psi_omega}{The posterior variance (from \code{\link{posterior_psi_omega}})}

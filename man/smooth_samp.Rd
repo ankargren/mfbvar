@@ -28,15 +28,10 @@ smoothing(mZ, mX, lH, mF, mB, mQ, iT, ip, iq, is, h0, P0, X0)
 \item{P0}{The covariance matrix of the initial state (\code{(n_vars*n_lags)*(n_vars*n_lags)})}
 \item{X0}{The initial value of the deterministic vector (\code{n_determ * 1})}
 }
-\details{}
 \value{
 For \code{smooth_samp} or \code{smooth_samp_u3}:
 \item{mh}{The draws from the posterior distribution.}
 \item{mZ}{The draws with the observational structure as in the original data.}
 For \code{smoothing}:
 \item{mu}{The smoothed errors.}
-}
-
-\examples{
-
 }

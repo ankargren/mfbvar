@@ -8,7 +8,7 @@ A Gibbs sampler for sampling from the posterior distribution of the MF-SS-BVAR.
 gibbs_sampler(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi, prior_psi_omega,
                           Y, d, n_reps, n_fcst = NULL, lH, check_roots = FALSE,
                           init_Pi = NULL, init_Sigma = NULL, init_psi = NULL, init_Z = NULL,
-                          d_fcst = NULL)
+                          d_fcst = NULL, mdd = NULL, p_trunc = NULL)
 }
 \arguments{
 \item{prior_pi}{Matrix of size \code{n_vars * (n_vars*n_lags)} containing the prior for the mean of the dynamic coefficients.}
@@ -28,6 +28,8 @@ gibbs_sampler(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi, prior_psi_
 \item{init_psi}{Matrix to initialize the steady-state parameters.}
 \item{init_Z}{Matrix to initialize the latent state.}
 \item{d_fcst}{The deterministic terms for the forecasting period.}
+\item{mdd}{Select the method for computing the marginal data density.}
+\item{p_trunc}{The proportion of truncation in the truncated normal (1 is no truncation).}
 }
 \details{The prior covariance of \eqn{\Pi} given \eqn{\Sigma} is \eqn{\Sigma \otimes \Omega_\Pi}.}
 
