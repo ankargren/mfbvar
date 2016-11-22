@@ -59,7 +59,12 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
   if (is.null(init_Z)) {
     Z[,, 1] <- fill_na(Y)
   } else {
-    Z[,, 1] <- init_Z
+    if (all(dim(Z[,,1]) == dim(init_Z))) {
+      Z[,, 1] <- init_Z
+    } else {
+      stop(paste0("The dimension of init_Z is ", paste(dim(init_Z), collapse = " x "), ", but should be ", paste(dim(Z[,,1]), collapse = " x ")))
+    }
+
   }
 
   ols_results <- ols_initialization(z = Z[,, 1], d = d, n_lags = n_lags, n_T = n_T, n_vars = n_vars, n_determ = n_determ)
@@ -67,19 +72,31 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
   if (is.null(init_Pi)) {
     Pi[,, 1]    <- ols_results$Pi
   } else {
-    Pi[,, 1]    <- init_Pi
+    if (all(dim(Pi[,,1]) == dim(init_Pi))) {
+      Pi[,, 1] <- init_Pi
+    } else {
+      stop(paste0("The dimension of init_Pi is ", paste(dim(init_Pi), collapse = " x "), ", but should be ", paste(dim(Pi[,,1]), collapse = " x ")))
+    }
   }
 
   if (is.null(init_Sigma)) {
     Sigma[,, 1] <- ols_results$S
   } else {
-    Sigma[,, 1] <- init_Sigma
+    if (all(dim(Sigma[,,1]) == dim(init_Sigma))) {
+      Sigma[,, 1] <- init_Sigma
+    } else {
+      stop(paste0("The dimension of init_Sigma is ", paste(dim(init_Sigma), collapse = " x "), ", but should be ", paste(dim(Sigma[,,1]), collapse = " x ")))
+    }
   }
 
   if (is.null(init_psi)) {
     psi[1, ] <- ols_results$psi
   } else {
-    psi[1, ] <- init_psi
+    if (length(psi[1, ]) == length(init_psi)) {
+      psi[1,] <- init_psi
+    } else {
+      stop(paste0("The length of init_psi is ", paste(length(init_psi), collapse = " x "), ", but should be ", paste(length(psi[1,]), collapse = " x ")))
+    }
   }
 
 
@@ -134,7 +151,7 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
     Pi_temp <- array(NA, dim = c(n_vars, n_vars * n_lags, 1000))
     while(stationarity_check == FALSE) {
       iter <- iter + 1
-      Pi_temp[,,iter] <- rmatn(M = post_pi, Q = Sigma[,,r], P = post_pi_omega)
+      Pi_temp[,,iter] <- rmatn(M = t(post_pi), Q = post_pi_omega, P = Sigma[,,r])
       Pi_comp    <- build_companion(Pi_temp[,, iter], n_vars = n_vars, n_lags = n_lags)
       if (check_roots == TRUE) {
         roots[r] <- max_eig_cpp(Pi_comp)
@@ -176,9 +193,9 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
     h0 <- matrix(t(demeaned_z0), ncol = 1)
     h0 <- h0[(n_vars*n_lags):1,,drop = FALSE] # have to reverse the order
 
-    smoothed_Z <- smooth_samp_u3(mZ = mZ, mX = matrix(0, n_T_), lH = lH, lH0 = lH0,
-                              mF = Pi_comp, mB = matrix(0, 16), mQ = Q_comp, iT = n_T_,
-                              ip = n_lags, iq  = n_lags * n_vars, is = 1, h0 = h0, P0 = NULL,
+    smoothed_Z <- smooth_samp_u3(mZ = as.matrix(mZ), mX = matrix(0, n_T_), lH = lH, lH0 = lH0,
+                              mF = Pi_comp, mB = matrix(0, n_vars*n_lags), mQ = Q_comp, iT = n_T_,
+                              ip = n_vars, iq  = n_lags * n_vars, is = 1, h0 = h0, P0 = NULL,
                               X0 = 0)
     # For now, I'm just inserting h0 in the beginning of Z. Right now, Z has n_T number of rows,
     # but smooth_samp puts out n_T - n_lags rows.
@@ -217,7 +234,7 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
 
   ################################################################
   # Marginal data density step
-  if (mdd == 2) {
+  if (!is.null(mdd) && mdd == 2) {
     # Compute posterior moments
     post_pi_mean <- apply(Pi, c(1, 2), mean)
     post_Sigma <- apply(Sigma, c(1, 2), mean)
@@ -225,7 +242,7 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
     post_psi_omega <- cov(psi)
 
     # For the truncated normal
-    chisq_val <- qchisq(p_trunc, n_determ)
+    chisq_val <- qchisq(p_trunc, n_determ*n_vars)
 
     #(mZ,lH,mF,mQ,iT,ip,iq,h0,P0)
     Pi_comp <- build_companion(post_pi_mean, n_vars = n_vars, n_lags = n_lags)
@@ -263,7 +280,7 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
 
       mdd_vec[r] <- dnorminvwish(X = t(post_pi_mean), Sigma = post_Sigma, M = post_pi_i,
                                  P = post_pi_omega_i, S = post_s_i, v = nu)/
-        (likelihood(mZ = mZ, lH = lH0, mF = Pi_comp, mQ = Q_comp, iT = n_T_, ip = n_lags, iq = n_lags * n_vars, h0 = h0, P0 = P0) *
+        (likelihood(mZ = as.matrix(mZ), lH = lH0, mF = Pi_comp, mQ = Q_comp, iT = n_T_, ip = n_lags, iq = n_lags * n_vars, h0 = h0, P0 = P0) *
            dnorminvwish(X = t(post_pi_mean), Sigma = post_Sigma, M = prior_pi, P = prior_pi_omega, S = prior_s, v = prior_nu) *
            dmultn(x = psi[r, ], m = prior_psi, Sigma = prior_psi_omega)) *
         dnorm_trunc(psi[r, ], post_psi, solve(post_psi_omega), n_determ*n_vars, p_trunc, chisq_val) #n_determ is wrong? should be n_determ*n_vars?
