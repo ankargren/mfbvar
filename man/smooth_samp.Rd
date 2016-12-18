@@ -2,6 +2,8 @@
 \alias{smooth_samp}
 \alias{smooth_samp_u3}
 \alias{smoothing}
+\alias{likelihood}
+\alias{smoothing_state}
 
 \title{Smooth and sample from the smoothed distribution}
 \description{
@@ -11,6 +13,8 @@ Smooths and samples from the smoothed distribution \eqn{p(Z_{1:T}|Y_{1:T}, \Thet
 smooth_samp(mZ, mX, lH, lH0 = NULL, mF, mB, mQ, iT, ip, iq, is, h0, P0 = NULL, X0)
 smooth_samp_u3(mZ, mX, lH, lH0 = NULL, mF, mB, mQ, iT, ip, iq, is, h0, P0 = NULL, X0)
 smoothing(mZ, mX, lH, mF, mB, mQ, iT, ip, iq, is, h0, P0, X0)
+smoothing_state(mZ, mX, lH, lH0=NULL, mF, mB, mQ, iT, ip, iq, is, h0, P0=NULL, X0)
+likelihood(mZ, lH, mF, mQ, iT, ip, iq, h0, P0)
 }
 \arguments{
 \item{mZ}{\code{T * n_vars} matrix with the observations (\code{NA} represents missingness)}
@@ -31,7 +35,15 @@ smoothing(mZ, mX, lH, mF, mB, mQ, iT, ip, iq, is, h0, P0, X0)
 \value{
 For \code{smooth_samp} or \code{smooth_samp_u3}:
 \item{mh}{The draws from the posterior distribution.}
-\item{mZ}{The draws with the observational structure as in the original data.}
+\item{mZ}{The draws with observational structure as in the original data.}
 For \code{smoothing}:
 \item{mu}{The smoothed errors.}
+For \code{likelihood}:
+\item{full_likelihood}{The likelihood.}
+For \code{smoothing_state}:
+\item{mh}{The smoothed state.}
+\item{mZ}{The smoothed state with observational structure as in the original data.}
+}
+\details{
+The \code{smooth_samp_u3} function is the same as \code{smooth_samp}, but the smoothing step is based on the difference between the pseudo and true variables, which requires only one call to the \code{smoothing} function (instead of two). The \code{smoothing_state} function returns the smoothed state, and \code{likelihood} the likelihood.
 }

@@ -45,3 +45,83 @@ dnorm_trunc <- function(x, m, V_inv, d, p_trunc, chisq_val) {
   qf <- t(x - m) %*% V_inv %*% (x - m)
   return((1/p_trunc) * (1/sqrt((2*pi)^d/det(V_inv))) * exp(-0.5 * qf) * (qf < chisq_val))
 }
+
+mdd <- function(mfbvar_obj, p_trunc) {
+  # Get things from the MFBVAR object
+  n_determ <- mfbvar_obj$n_determ
+  n_vars <- mfbvar_obj$n_vars
+  n_lags <- mfbvar_obj$n_lags
+  n_T <- mfbvar_obj$n_T
+  n_T_ <- mfbvar_obj$n_T_
+  n_reps <- mfbvar_obj$n_reps
+
+  psi <- mfbvar_obj$psi
+  prior_pi_omega <- mfbvar_obj$prior_pi_omega
+  prior_pi <- mfbvar_obj$prior_pi
+  prior_s <- mfbvar_obj$prior_s
+  nu <- mfbvar_obj$nu
+
+  Y <- mfbvar_obj$Y
+  Z <- mfbvar_obj$Z
+  d <- mfbvar_obj$d
+
+  lH0 <- mfbvar_obj$lH0
+
+  post_pi_mean <- apply(mfbvar_obj$Pi, c(1, 2), mean)
+  post_Sigma <- apply(mfbvar_obj$Sigma, c(1, 2), mean)
+  post_psi <- colMeans(psi)
+  post_psi_omega <- cov(psi)
+
+  prior_s <- mfbvar_obj$prior_s
+  prior_nu <- mfbvar_obj$prior_nu
+  prior_pi_omega <- mfbvar_obj$prior_pi_omega
+  prior_pi <- mfbvar_obj$prior_pi
+  prior_psi_omega <- mfbvar_obj$prior_psi_omega
+  prior_psi <- mfbvar_obj$prior_psi
+
+  # For the truncated normal
+  chisq_val <- qchisq(p_trunc, n_determ*n_vars)
+
+  #(mZ,lH,mF,mQ,iT,ip,iq,h0,P0)
+  Pi_comp <- build_companion(post_pi_mean, n_vars = n_vars, n_lags = n_lags)
+  Q_comp  <- matrix(0, ncol = n_vars*n_lags, nrow = n_vars*n_lags)
+  Q_comp[1:n_vars, 1:n_vars] <- t(chol(post_Sigma))
+  P0      <- matrix(0, n_lags*n_vars, n_lags*n_vars)
+
+  mdd_vec <- vector("numeric", n_reps)
+  for (r in 1:n_reps) {
+    # Demean z, create Z (companion form version)
+    demeaned_z <- Z[,, r] - d %*% t(matrix(psi[r, ], nrow = n_vars))
+    demeaned_Z <- build_Z(z = demeaned_z, n_lags = n_lags)
+    XX <- demeaned_Z[-nrow(demeaned_Z), ]
+    YY <- demeaned_Z[-1, 1:n_vars]
+    pi_sample <- solve(crossprod(XX)) %*% crossprod(XX, YY)
+    ################################################################
+    ### Pi and Sigma step
+
+    # Posterior moments of Pi
+    post_pi_omega_i <- solve(solve(prior_pi_omega) + crossprod(XX))
+    post_pi_i       <- post_pi_omega_i %*% (solve(prior_pi_omega) %*% prior_pi + crossprod(XX, YY))
+
+    # Then Sigma
+    s_sample  <- crossprod(YY - XX %*% pi_sample)
+    pi_diff <- prior_pi - pi_sample
+    post_s_i <- prior_s + s_sample + t(pi_diff) %*% solve(post_pi_omega_i + solve(crossprod(XX))) %*% pi_diff
+
+    # Set the variables which vary in the Kalman filtering
+    mZ <- Y - d %*% t(matrix(psi[r, ], nrow = n_vars))
+    mZ <- mZ[-(1:n_lags), ]
+    demeaned_z0 <- Z[1:n_lags,, 1] - d[1:n_lags, ] %*% t(matrix(psi[r, ], nrow = n_vars))
+    h0 <- matrix(t(demeaned_z0), ncol = 1)
+    h0 <- h0[(n_vars*n_lags):1,,drop = FALSE] # have to reverse the order
+
+
+    mdd_vec[r] <- dnorminvwish(X = t(post_pi_mean), Sigma = post_Sigma, M = post_pi_i,
+                               P = post_pi_omega_i, S = post_s_i, v = nu)/
+      (likelihood(mZ = as.matrix(mZ), lH = lH0, mF = Pi_comp, mQ = Q_comp, iT = n_T_, ip = n_lags, iq = n_lags * n_vars, h0 = h0, P0 = P0) *
+         dnorminvwish(X = t(post_pi_mean), Sigma = post_Sigma, M = prior_pi, P = prior_pi_omega, S = prior_s, v = prior_nu) *
+         dmultn(x = psi[r, ], m = prior_psi, Sigma = prior_psi_omega)) *
+      dnorm_trunc(psi[r, ], post_psi, solve(post_psi_omega), n_determ*n_vars, p_trunc, chisq_val) #n_determ is wrong? should be n_determ*n_vars?
+  }
+  return(1/mdd_vec)
+}
