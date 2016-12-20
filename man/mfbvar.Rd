@@ -1,11 +1,14 @@
 \name{mfbvar}
 \alias{mfbvar}
+\alias{mfbvar2}
 \title{MF-BVAR with a steady-state prior}
 \description{
 The main function for running the MF-SS-BVAR.
 }
 \usage{
 mfbvar(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_mean_pi,
+       lambda1, lambda2, prior_nu = NULL, prior_mean_psi, prior_var_psi, ...)
+mfbvar2(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_mean_pi,
        lambda1, lambda2, prior_nu = NULL, prior_mean_psi, prior_var_psi, ...)
 }
 \arguments{
@@ -23,6 +26,9 @@ mfbvar(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_mean_pi,
 \item{prior_mean_psi}{Vector of length \code{n_determ*n_vars} with the prior means of the steady-state parameters.}
 \item{prior_var_psi}{Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.}
 \item{...}{Other calls to the main run (post-burn-in) of \code{\link{gibbs_sampler}}.}
+}
+\details{
+\code{mfbvar} calls \code{\link{gibbs_sampler}} (implemented in C++), \code{mfbvar2} calls \code{\link{gibbs_sampler2}}.
 }
 \seealso{
 \code{\link{gibbs_sampler}}

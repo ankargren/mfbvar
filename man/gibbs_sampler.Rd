@@ -1,12 +1,21 @@
 \name{gibbs_sampler}
 \alias{gibbs_sampler}
 \alias{gibbs_sampler_qf}
+\alias{gibbs_sampler2}
 \title{Gibbs sampler for the MF-BVAR with a steady-state prior}
 \description{
 A Gibbs sampler for sampling from the posterior distribution of the MF-SS-BVAR.
 }
 \usage{
 gibbs_sampler(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi, prior_psi_omega,
+                          Y, d, n_reps, n_fcst = NULL, Lambda, check_roots = TRUE,
+                          init_Pi = NULL, init_Sigma = NULL, init_psi = NULL,
+                          init_Z = NULL, d_fcst = NULL, smooth_state = FALSE)
+gibbs_sampler_qf(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi, prior_psi_omega,
+                          Y, d, n_reps, n_fcst = NULL, lH, check_roots = TRUE,
+                          init_Pi = NULL, init_Sigma = NULL, init_psi = NULL,
+                          init_Z = NULL, d_fcst = NULL, smooth_state = FALSE)
+gibbs_sampler2(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi, prior_psi_omega,
                           Y, d, n_reps, n_fcst = NULL, lH, check_roots = TRUE,
                           init_Pi = NULL, init_Sigma = NULL, init_psi = NULL,
                           init_Z = NULL, d_fcst = NULL, smooth_state = FALSE)
@@ -22,6 +31,7 @@ gibbs_sampler(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi, prior_psi_
 \item{d}{The matrix of size \code{(n_T + n_lags) * n_determ} of deterministic terms.}
 \item{n_reps}{The number of post-burn-in replications.}
 \item{n_fcst}{The number of periods to forecast.}
+\item{Lambda}{The Lambda matrix (size \code{n_vars* (n_vars*n_lags)}).}
 \item{lH}{A list of length \code{n_T}, where \code{M_Lambda[[t]]} corresponds to \eqn{M_t\Lambda}. The column dimension of each element should be \code{n_lags*n_vars}, but the row dimension may vary.}
 \item{check_roots}{Logical, if roots of the companion matrix are to be checked to ensure stationarity.}
 \item{init_Pi}{Matrix to initialize the dynamic coefficients.}
@@ -33,5 +43,5 @@ gibbs_sampler(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi, prior_psi_
 }
 \details{The prior covariance of \eqn{\Pi} given \eqn{\Sigma} is \eqn{\Sigma \otimes \Omega_\Pi}.
 
-The function \code{gibbs_sampler_qf} is a temporary version of \code{gibbs_sampler} which is customized for quarterly data (for improved speed). Its purpose is to accomomdate conditional forecasting.}
+The function \code{gibbs_sampler_qf} is a temporary version of \code{gibbs_sampler} which is customized for quarterly data (for improved speed). Its purpose is to accomomdate conditional forecasting. The function \code{gibbs_sampler2} uses an R implementation of the simulation smoother, whereas \code{gibbs_sampler} uses a C++ implementation.}
 

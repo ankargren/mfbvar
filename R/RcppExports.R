@@ -21,3 +21,15 @@ rmultn <- function(m, Sigma) {
     .Call('MFBVAR_rmultn', PACKAGE = 'MFBVAR', m, Sigma)
 }
 
+smoother <- function(mZ, Lambda, mF, mQ, iT, ip, iq, h0, P0) {
+    .Call('MFBVAR_smoother', PACKAGE = 'MFBVAR', mZ, Lambda, mF, mQ, iT, ip, iq, h0, P0)
+}
+
+generate_mhh <- function(mZ, Lambda, mF, mQ, iT, ip, iq, h0, P0) {
+    .Call('MFBVAR_generate_mhh', PACKAGE = 'MFBVAR', mZ, Lambda, mF, mQ, iT, ip, iq, h0, P0)
+}
+
+simulation_smoother <- function(mZ, Lambda, mF, mQ, iT, ip, iq, h0, P0) {
+    .Call('MFBVAR_simulation_smoother', PACKAGE = 'MFBVAR', mZ, Lambda, mF, mQ, iT, ip, iq, h0, P0)
+}
+

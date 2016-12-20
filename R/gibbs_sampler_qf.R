@@ -1,7 +1,7 @@
 gibbs_sampler_qf <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi, prior_psi_omega,
-                          Y, d, n_reps, n_fcst = NULL, lH, check_roots = FALSE,
+                          Y, d, n_reps, n_fcst = NULL, lH, check_roots = TRUE,
                           init_Pi = NULL, init_Sigma = NULL, init_psi = NULL, init_Z = NULL,
-                          d_fcst = NULL, mdd = NULL, p_trunc = NULL, smooth_state = FALSE) {
+                          d_fcst = NULL, smooth_state = FALSE) {
 
   # n_vars: number of variables
   # n_lags: number of lags
