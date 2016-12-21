@@ -131,8 +131,8 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
   for (r in 2:(n_reps)) {
     ################################################################
     ### Pi and Sigma step
-    pi_sigma <- pi_sigma_posterior(Z_r1 = Z[,, r-1], psi_r1 = psi[r-1, ], prior_pi, inv_prior_pi_omega, omega_pi, prior_s,
-                                   prior_nu, check_roots, n_vars, n_lags, n_T)
+                                 #(Z_r1,             d,     psi_r1,                            prior_pi, inv_prior_pi_omega, omega_pi, prior_s, prior_nu, check_roots, n_vars, n_lags, n_T)
+    pi_sigma <- pi_sigma_posterior(Z_r1 = Z[,, r-1], d = d, psi_r1 = psi[r-1, , drop = FALSE], prior_pi, inv_prior_pi_omega, omega_pi, prior_s, prior_nu, check_roots, n_vars, n_lags, n_T)
     Pi[,,r]      <- pi_sigma$Pi_r
     Sigma[,,r]   <- pi_sigma$Sigma_r
     num_tries[r] <- pi_sigma$num_try
@@ -140,11 +140,13 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
 
     ################################################################
     ### Steady-state step
+                            #(Pi_r,            Sigma_r,               Z_r1,             prior_psi, prior_psi_omega, D, n_vars, n_lags, n_determ)
     psi[r, ] <- psi_posterior(Pi_r = Pi[,, r], Sigma_r = Sigma[,, r], Z_r1 = Z[,, r-1], prior_psi, prior_psi_omega, D, n_vars, n_lags, n_determ)
 
     ################################################################
     ### Smoothing step
-    Z_res <- Z_posterior(Y, Z_1, d, Pi_r = Pi[,, r], Sigma_r = Sigma[,, r], psi_r = psi[r, ], n_vars, n_lags, n_T_, smooth_state)
+                       #(Y, d, Pi_r,            Sigma_r,               psi_r,                          Z_1, Lambda, n_vars, n_lags, n_T_, smooth_state)
+    Z_res <- Z_posterior(Y, d, Pi_r = Pi[,, r], Sigma_r = Sigma[,, r], psi_r = psi[r, , drop = FALSE], Z_1, Lambda, n_vars, n_lags, n_T_, smooth_state)
     Z[,, r] <- Z_res$Z_r
     if (smooth_state == TRUE) {
       smoothed_Z[,, r] <- Z_res$smoothed_Z_r
@@ -173,7 +175,7 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
                      Z_fcst = NULL, mdd = NULL, smoothed_Z = NULL, n_determ = n_determ,
                      n_lags = n_lags, n_vars = n_vars, prior_pi_omega = prior_pi_omega, prior_pi = prior_pi,
                      prior_s = prior_s, prior_nu = prior_nu, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
-                     prior_psi_omega = prior_psi_omega, prior_psi = prior_psi, n_reps = n_reps)
+                     prior_psi_omega = prior_psi_omega, prior_psi = prior_psi, n_reps = n_reps, Lambda = Lambda)
 
   if (check_roots == TRUE) {
     return_obj$roots <- roots

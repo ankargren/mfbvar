@@ -33,3 +33,7 @@ simulation_smoother <- function(mZ, Lambda, mF, mQ, iT, ip, iq, h0, P0) {
     .Call('MFBVAR_simulation_smoother', PACKAGE = 'MFBVAR', mZ, Lambda, mF, mQ, iT, ip, iq, h0, P0)
 }
 
+loglike <- function(mZ, Lambda, mF, mQ, iT, ip, iq, h0, P0) {
+    .Call('MFBVAR_loglike', PACKAGE = 'MFBVAR', mZ, Lambda, mF, mQ, iT, ip, iq, h0, P0)
+}
+

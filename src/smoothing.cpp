@@ -4,6 +4,9 @@
 using namespace Rcpp;
 using namespace arma;
 
+#define _USE_MATH_DEFINES // for C++
+#include <cmath>
+
 
 // [[Rcpp::export]]
 arma::mat smoother(           arma::mat mZ, arma::mat Lambda, arma::mat mF, arma::mat mQ, int iT, int ip, int iq, arma::mat h0, arma::mat P0) {
@@ -196,4 +199,91 @@ arma::mat simulation_smoother(arma::mat mZ, arma::mat Lambda, arma::mat mF, arma
   arma::mat Z1 = smoother(mZ,  Lambda, mF, mQ, iT, ip, iq, h0, P0);
   arma::mat Z2 = smoother(mZZ, Lambda, mF, mQ, iT, ip, iq, h0, P0);
   return(Z1-Z2+mhh);
+}
+
+
+// [[Rcpp::export]]
+arma::mat loglike(           arma::mat mZ, arma::mat Lambda, arma::mat mF, arma::mat mQ, int iT, int ip, int iq, arma::mat h0, arma::mat P0) {
+  /* This function computes the smoothed state vector */
+  /****************************************************/
+  /* Initialize matrices and cubes */
+  arma::mat QQ = mQ * mQ.t();
+  arma::mat mv(iT, ip);
+  mv.fill(NA_REAL);
+  arma::mat me(iT, ip);
+  me.fill(NA_REAL);
+  arma::mat mr(iT, iq);
+  mr.fill(0);
+  arma::mat mu(iT, iq);
+  mu.fill(0);
+  cube IS(ip, ip, iT);
+  IS.fill(NA_REAL);
+  cube aK(iq, ip, iT);
+  aK.fill(NA_REAL);
+  arma::mat identity_mat(iq, iq, fill::eye);
+  arma::mat mZZ(iT, ip);
+  mZZ.fill(NA_REAL);
+  arma::mat mhh(iT, iq);
+  mhh.fill(NA_REAL);
+  arma::mat mz = mZ.row(0);
+  arma::uvec obs_vars = find_finite(mz);
+  arma::mat logl(iT, 1);
+  logl.fill(NA_REAL);
+
+  /* Fill some temporary variables */
+  arma::mat h1 = mF * h0;
+  arma::mat P1 = mF * P0 * mF.t() + QQ;
+  arma::mat mH = Lambda.rows(obs_vars);
+  arma::mat vz = mz.cols(obs_vars);
+
+  arma::mat vv = mv.row(0);
+  vv.cols(obs_vars) = vz - trans(mH * h1);
+  mv.row(0) = vv;
+
+  arma::mat aS = mH * P1 * mH.t();
+  arma::mat mIS = IS.slice(0);
+  mIS(obs_vars, obs_vars) = inv_sympd(aS);
+  IS.slice(0) = mIS;
+
+  arma::mat mK = aK.slice(0);
+  mK.cols(obs_vars) = P1 * mH.t() * mIS(obs_vars, obs_vars);
+  aK.slice(0) = mK;
+
+  arma::mat h2 = h1 + mK.cols(obs_vars) * trans(vv.cols(obs_vars));
+  arma::mat P2 = (identity_mat - mK.cols(obs_vars) * mH) * P1;
+
+  double log_det_val;
+  double log_det_sign;
+  /* Filtering */
+  for (int i = 1; i < iT; i++) {
+    mz = mZ.row(i);
+    obs_vars = find_finite(mz);
+
+    h1 = mF * h2;
+    P1 = mF * P2 * mF.t() + QQ;
+
+    mH = Lambda.rows(obs_vars);
+    vz = mz.cols(obs_vars);
+
+    vv = mv.row(i);
+    vv.cols(obs_vars) = vz - trans(mH * h1);
+    mv.row(i) = vv;
+
+    aS = mH * P1 * mH.t();
+    mIS = IS.slice(i);
+    mIS(obs_vars, obs_vars) = inv_sympd(aS);
+    IS.slice(i) = mIS;
+
+    mK = aK.slice(i);
+    mK.cols(obs_vars) = P1 * mH.t() * mIS(obs_vars, obs_vars);
+    aK.slice(i) = mK;
+
+    h2 = h1 + mK.cols(obs_vars) * trans(vv.cols(obs_vars));
+    P2 = (identity_mat - mK.cols(obs_vars) * mH) * P1;
+    log_det(log_det_val, log_det_sign, aS);
+    logl.row(i) = -0.5* obs_vars.n_elem * log(2*M_PI) - (log_det_val + vv.cols(obs_vars) * mIS(obs_vars, obs_vars) * trans(vv.cols(obs_vars)))*0.5;
+  }
+
+  /* The return is the smoothed state vector */
+  return(logl);
 }

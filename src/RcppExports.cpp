@@ -125,3 +125,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// loglike
+arma::mat loglike(arma::mat mZ, arma::mat Lambda, arma::mat mF, arma::mat mQ, int iT, int ip, int iq, arma::mat h0, arma::mat P0);
+RcppExport SEXP MFBVAR_loglike(SEXP mZSEXP, SEXP LambdaSEXP, SEXP mFSEXP, SEXP mQSEXP, SEXP iTSEXP, SEXP ipSEXP, SEXP iqSEXP, SEXP h0SEXP, SEXP P0SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type mZ(mZSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Lambda(LambdaSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type mF(mFSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type mQ(mQSEXP);
+    Rcpp::traits::input_parameter< int >::type iT(iTSEXP);
+    Rcpp::traits::input_parameter< int >::type ip(ipSEXP);
+    Rcpp::traits::input_parameter< int >::type iq(iqSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type h0(h0SEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type P0(P0SEXP);
+    rcpp_result_gen = Rcpp::wrap(loglike(mZ, Lambda, mF, mQ, iT, ip, iq, h0, P0));
+    return rcpp_result_gen;
+END_RCPP
+}

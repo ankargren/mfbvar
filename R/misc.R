@@ -65,7 +65,7 @@ mdd <- function(mfbvar_obj, p_trunc) {
   Z <- mfbvar_obj$Z
   d <- mfbvar_obj$d
 
-  lH0 <- mfbvar_obj$lH0
+  Lambda <- mfbvar_obj$Lambda
 
   post_pi_mean <- apply(mfbvar_obj$Pi, c(1, 2), mean)
   post_Sigma <- apply(mfbvar_obj$Sigma, c(1, 2), mean)
@@ -88,7 +88,11 @@ mdd <- function(mfbvar_obj, p_trunc) {
   Q_comp[1:n_vars, 1:n_vars] <- t(chol(post_Sigma))
   P0      <- matrix(0, n_lags*n_vars, n_lags*n_vars)
 
-  mdd_vec <- vector("numeric", n_reps)
+  pi_sigma_posterior <- vector("numeric", n_reps)
+  data_likelihood <- vector("numeric", n_reps)
+  pi_sigma_prior <- vector("numeric", n_reps)
+  psi_prior <- vector("numeric", n_reps)
+  psi_truncated <- vector("numeric", n_reps)
   for (r in 1:n_reps) {
     # Demean z, create Z (companion form version)
     demeaned_z <- Z[,, r] - d %*% t(matrix(psi[r, ], nrow = n_vars))
@@ -116,12 +120,13 @@ mdd <- function(mfbvar_obj, p_trunc) {
     h0 <- h0[(n_vars*n_lags):1,,drop = FALSE] # have to reverse the order
 
 
-    mdd_vec[r] <- dnorminvwish(X = t(post_pi_mean), Sigma = post_Sigma, M = post_pi_i,
-                               P = post_pi_omega_i, S = post_s_i, v = nu)/
-      (likelihood(mZ = as.matrix(mZ), lH = lH0, mF = Pi_comp, mQ = Q_comp, iT = n_T_, ip = n_lags, iq = n_lags * n_vars, h0 = h0, P0 = P0) *
-         dnorminvwish(X = t(post_pi_mean), Sigma = post_Sigma, M = prior_pi, P = prior_pi_omega, S = prior_s, v = prior_nu) *
-         dmultn(x = psi[r, ], m = prior_psi, Sigma = prior_psi_omega)) *
-      dnorm_trunc(psi[r, ], post_psi, solve(post_psi_omega), n_determ*n_vars, p_trunc, chisq_val) #n_determ is wrong? should be n_determ*n_vars?
+    pi_sigma_posterior[r] <- dnorminvwish(X = t(post_pi_mean), Sigma = post_Sigma, M = post_pi_i, P = post_pi_omega_i, S = post_s_i, v = nu)
+    data_likelihood[r] <- exp(sum(c(loglike(mZ = as.matrix(mZ), Lambda = Lambda, mF = Pi_comp, mQ = Q_comp, iT = n_T_, ip = n_lags, iq = n_lags * n_vars, h0 = h0, P0 = P0)[-1])))
+    pi_sigma_prior[r] <- dnorminvwish(X = t(post_pi_mean), Sigma = post_Sigma, M = prior_pi, P = prior_pi_omega, S = prior_s, v = prior_nu)
+    psi_prior[r] <- dmultn(x = psi[r, ], m = prior_psi, Sigma = prior_psi_omega)
+    psi_truncated[r] <- dnorm_trunc(psi[r, ], post_psi, solve(post_psi_omega), n_determ*n_vars, p_trunc, chisq_val)
+
   }
-  return(1/mdd_vec)
+  return(list(pi_sigma_posterior = pi_sigma_posterior, data_likelihood = data_likelihood, pi_sigma_prior = pi_sigma_prior,
+              psi_prior = psi_prior, psi_truncated = psi_truncated))
 }
