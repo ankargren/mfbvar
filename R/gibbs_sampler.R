@@ -174,7 +174,7 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
   return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z, roots = NULL, num_tries = NULL,
                      Z_fcst = NULL, mdd = NULL, smoothed_Z = NULL, n_determ = n_determ,
                      n_lags = n_lags, n_vars = n_vars, prior_pi_omega = prior_pi_omega, prior_pi = prior_pi,
-                     prior_s = prior_s, prior_nu = prior_nu, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
+                     prior_s = prior_s, prior_nu = prior_nu, nu = n_T + prior_nu, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
                      prior_psi_omega = prior_psi_omega, prior_psi = prior_psi, n_reps = n_reps, Lambda = Lambda)
 
   if (check_roots == TRUE) {

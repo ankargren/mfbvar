@@ -2,6 +2,7 @@
 \alias{smoother}
 \alias{simulation_smoother}
 \alias{generate_mhh}
+\alias{loglike}
 
 \title{Smooth and sample from the smoothed distribution}
 \description{
@@ -11,6 +12,7 @@ Smooths and samples from the smoothed distribution \eqn{p(Z_{1:T}|Y_{1:T}, \Thet
 smoother(mZ, Lambda, mF, mQ, iT, ip, iq, h0, P0)
 simulation_smoother(mZ, Lambda, mF, mQ, iT, ip, iq, h0, P0)
 generate_mhh(mZ, Lambda, mF, mQ, iT, ip, iq, h0, P0)
+loglike(mZ, Lambda, mF, mQ, iT, ip, iq, h0, P0)
 }
 \arguments{
 \item{mZ}{\code{T * n_vars} matrix with the observations (\code{NA} represents missingness)}
@@ -30,6 +32,8 @@ For \code{smoother}:
 \item{}{The smoothed states.}
 For \code{generate_mhh}:
 \item{}{Generated (pseudo-)state vector.}
+For \code{loglike}:
+\item{}{An \code{n_T}-long vector of the log-likelihoods. \code{exp(sum(loglike(...)))} is the likelihood.}
 }
 \details{
 Implemented in C++.
