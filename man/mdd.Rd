@@ -1,11 +1,13 @@
 \name{mdd}
 \alias{mdd}
+\alias{mdd1}
 \title{Marginal data density}
 \description{
   Estimate the marginal data density.
 }
 \usage{
   mdd(mfbvar_obj, p_trunc)
+  mdd1(mfbvar_obj)
 }
 \arguments{
   \item{mfbvar_obj}{The return from \code{\link{mfbvar}}.}

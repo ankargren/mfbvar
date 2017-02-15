@@ -108,3 +108,60 @@ posterior_psi_omega <- function(U, D, sigma, prior_psi_omega) {
   psi_omega <- solve(t(U) %*% (kronecker(crossprod(D), solve(sigma))) %*% U + solve(prior_psi_omega))
   return(psi_omega)
 }
+
+
+eval_Pi_Sigma_RaoBlack <- function(Z, d, post_psi, post_pi_mean, post_Sigma, nu, prior_pi, prior_pi_omega, prior_s, n_vars, n_lags, n_reps) {
+  ################################################################
+  ### Compute the Rao-Blackwellized estimate of posterior
+
+  evals <- vector("numeric", n_reps - 1)
+
+  for (i in 1:length(evals)) {
+    # Demean z, create Z (companion form version)
+    demeaned_z <- Z[,,i+1] - d %*% post_psi
+    demeaned_Z <- build_Z(z = demeaned_z, n_lags = n_lags)
+    XX <- demeaned_Z[-nrow(demeaned_Z), ]
+    YY <- demeaned_Z[-1, 1:n_vars]
+    pi_sample <- solve(crossprod(XX)) %*% crossprod(XX, YY)
+    ################################################################
+    ### Pi and Sigma step
+
+    # Posterior moments of Pi
+    post_pi_omega_i <- solve(solve(prior_pi_omega) + crossprod(XX))
+    post_pi_i       <- post_pi_omega_i %*% (solve(prior_pi_omega) %*% prior_pi + crossprod(XX, YY))
+
+    # Then Sigma
+    s_sample  <- crossprod(YY - XX %*% pi_sample)
+    pi_diff <- prior_pi - pi_sample
+    post_s_i <- prior_s + s_sample + t(pi_diff) %*% solve(post_pi_omega_i + solve(crossprod(XX))) %*% pi_diff
+
+    # Evaluate
+    evals[i] <- dnorminvwish(X = t(post_pi_mean), Sigma = post_Sigma, M = post_pi_i, P = post_pi_omega_i, S = post_s_i, v = nu)
+  }
+
+  return(evals)
+
+}
+
+eval_psi_MargPost <- function(Pi, Sigma, Z, post_psi, prior_psi, prior_psi_omega, D, n_determ, n_vars, n_lags, n_reps) {
+  post_psi <- matrix(post_psi, ncol = 1)
+
+  evals <- vector("numeric", n_reps - 1)
+
+  ################################################################
+  ### Steady-state step
+  for (r in 1:(n_reps - 1)) {
+    U <- build_U_cpp(Pi = Pi[,,r], n_determ = n_determ,
+                     n_vars = n_vars, n_lags = n_lags)
+    post_psi_omega <- posterior_psi_omega(U = U, D = D, sigma = Sigma[,, r],
+                                          prior_psi_omega = prior_psi_omega)
+    Y_tilde <- build_Y_tilde(Pi = Pi[,, r], z = Z[,, r])
+
+    post_psi <- posterior_psi(U = U, D = D, sigma = Sigma[,, r], prior_psi_omega = prior_psi_omega,
+                              psi_omega = post_psi_omega, Y_tilde = Y_tilde, prior_psi = prior_psi)
+
+    evals[r] <- dmultn(x = post_psi, m = post_psi, Sigma = post_psi_omega)
+  }
+
+  return(evals)
+}

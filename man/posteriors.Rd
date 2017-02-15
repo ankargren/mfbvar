@@ -1,3 +1,4 @@
+
 \name{posteriors}
 \alias{Z_posterior}
 \alias{pi_sigma_posterior}
@@ -39,6 +40,7 @@ Z_posterior(Y, d, Pi_r, Sigma_r, psi_r, Z_1, Lambda, n_vars, n_lags, n_T_, smoot
 \item{n_T}{The number of time points in the original data (i.e. \code{nrow(Y)}).}
 \item{n_T_}{The number of time points in the original data (i.e. \code{nrow(Y)}), minus the lag length.}
 }
+
 \value{
 \code{pi_sigma_posterior} returns a list with:
 \item{Pi_r}{The draw of \code{Pi}.}
@@ -51,4 +53,3 @@ Z_posterior(Y, d, Pi_r, Sigma_r, psi_r, Z_1, Lambda, n_vars, n_lags, n_T_, smoot
 \item{Z_r}{The draw of \code{Z}.}
 \item{smoothed_Z_r}{(Only if \code{smooth_state == TRUE}) The smoothed state.}
 }
-
