@@ -230,8 +230,8 @@ mdd1 <- function(mfbvar_obj) {
   lklhd          <- exp(sum(c(loglike(mZ = as.matrix(mZ), Lambda = Lambda, mF = Pi_comp, mQ = Q_comp, iT = n_T_, ip = n_lags, iq = n_lags * n_vars, h0 = h0, P0 = P0)[-1])))
   Pi_Sigma_prior <- dnorminvwish(X = t(post_pi_mean), Sigma = post_Sigma, M = prior_pi, P = prior_pi_omega, S = prior_s, v = prior_nu)
   psi_prior      <- dmultn(x = post_psi, m = prior_psi, Sigma = prior_psi_omega)
-  Pi_Sigma_RB    <- mean(eval_Pi_Sigma_RaoBlack(Z_red, d, post_pi_mean, post_Sigma, nu, post_psi, prior_pi, prior_pi_omega, prior_s, n_vars, n_lags, n_reps))
-  psi_MargPost   <- mean(eval_psi_MargPost(Pi, Sigma, Z, post_psi, prior_psi_omega, D, n_determ, n_vars, n_lags, n_reps))
+  Pi_Sigma_RB    <- mean(eval_Pi_Sigma_RaoBlack(Z_red, d, post_psi, post_pi_mean, post_Sigma, nu, prior_pi, prior_pi_omega, prior_s, n_vars, n_lags, n_reps))
+  psi_MargPost   <- mean(eval_psi_MargPost(Pi, Sigma, Z, post_psi, prior_psi, prior_psi_omega, D, n_determ, n_vars, n_lags, n_reps))
 
   mdd_estimate <- lklhd * Pi_Sigma_prior * psi_prior / (Pi_Sigma_RB * psi_MargPost)
 
