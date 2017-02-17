@@ -1,3 +1,24 @@
+#' Draw from posterior of Pi and Sigma
+#'
+#' Function for drawing from the posterior of Pi and Sigma, which can be used as a block in a Gibbs sampler.
+#' @templateVar Z_r1 TRUE
+#' @templateVar d TRUE
+#' @templateVar psi_r1 TRUE
+#' @templateVar prior_pi TRUE
+#' @templateVar inv_prior_pi_omega TRUE
+#' @templateVar omega_pi TRUE
+#' @templateVar prior_s TRUE
+#' @templateVar prior_nu TRUE
+#' @templateVar check_roots TRUE
+#' @templateVar n_vars TRUE
+#' @templateVar n_lags TRUE
+#' @templateVar n_T TRUE
+#' @template man_template
+#' @return \code{pi_sigma_posterior} returns a list with:
+#' \item{Pi_r}{The draw of \code{Pi}.}
+#' \item{Sigma_r}{The draw of \code{Sigma}.}
+#' \item{num_try}{The try at which a stable draw was obtained.}
+#' \item{root}{The maximum eigenvalue (in modulus) of the system.}
 pi_sigma_posterior <- function(Z_r1, d, psi_r1, prior_pi, inv_prior_pi_omega, omega_pi, prior_s, prior_nu, check_roots, n_vars, n_lags, n_T) {
   ################################################################
   ### Preliminary calculations
@@ -51,7 +72,18 @@ pi_sigma_posterior <- function(Z_r1, d, psi_r1, prior_pi, inv_prior_pi_omega, om
   return(list(Pi_r = Pi_r, Sigma_r = Sigma_r, num_try = num_try, root = root))
 }
 
-
+#' Draw from posterior of psi
+#'
+#' Function for drawing from the posterior of psi, which can be used as a block in a Gibbs sampler.
+#' @inherit pi_sigma_posterior
+#' @templateVar Pi_r TRUE
+#' @templateVar Sigma_r TRUE
+#' @templateVar prior_psi TRUE
+#' @templateVar prior_psi_omega TRUE
+#' @templateVar D TRUE
+#' @templateVar n_determ TRUE
+#' @return \code{psi_posterior} returns:
+#' \item{psi_r}{The draw of \code{psi}.}
 psi_posterior <- function(Pi_r, Sigma_r, Z_r1, prior_psi, prior_psi_omega, D, n_vars, n_lags, n_determ) {
   U <- build_U_cpp(Pi = Pi_r, n_determ = n_determ,
                    n_vars = n_vars, n_lags = n_lags)
@@ -65,7 +97,20 @@ psi_posterior <- function(Pi_r, Sigma_r, Z_r1, prior_psi, prior_psi_omega, D, n_
   return(psi_r)
 }
 
-
+#' Draw from posterior of Z
+#'
+#' Function for drawing from the posterior of Z using a simulation smoother, which can be used as a block in a Gibbs sampler.
+#' @inherit psi_posterior
+#' @inherit pi_sigma_posterior
+#' @templateVar Y TRUE
+#' @templateVar psi_r TRUE
+#' @templateVar Z_1 TRUE
+#' @templateVar Lambda TRUE
+#' @templateVar n_T_ TRUE
+#' @templateVar smooth_state TRUE
+#' @return \code{Z_posterior} returns a list with:
+#' \item{Z_r}{The draw of \code{Z}.}
+#' \item{smoothed_Z_r}{(Only if \code{smooth_state == TRUE}) The smoothed state.}
 Z_posterior <- function(Y, d, Pi_r, Sigma_r, psi_r, Z_1, Lambda, n_vars, n_lags, n_T_, smooth_state) {
   Q_comp     <- matrix(0, ncol = n_vars*n_lags, nrow = n_vars*n_lags)
   Q_comp[1:n_vars, 1:n_vars] <- t(chol(Sigma_r))
@@ -97,13 +142,26 @@ Z_posterior <- function(Y, d, Pi_r, Sigma_r, psi_r, Z_1, Lambda, n_vars, n_lags,
   return(ret)
 }
 
-
+#' Compute posterior moments of the steady-state parameters
+#'
+#' Computes the mean and variance of the conditional posterior distribution of the steady-state parameters.
+#' @templateVar U TRUE
+#' @templateVar D TRUE
+#' @templateVar sigma TRUE
+#' @templateVar prior_psi_omega TRUE
+#' @templateVar Y_tilde TRUE
+#' @templateVar prior_psi TRUE
+#' @template man_template
+#' @return The return is:
+#' \item{psi}{The posterior mean (from \code{\link{posterior_psi}})}
 posterior_psi <- function(U, D, sigma, prior_psi_omega, psi_omega, Y_tilde, prior_psi) {
   sigmaYD <- matrix(c(solve(sigma) %*% t(Y_tilde) %*% D), ncol = 1)
   psi <- psi_omega %*% (t(U) %*% sigmaYD + solve(prior_psi_omega) %*% prior_psi)
   return(psi)
 }
 
+#' @rdname posterior_psi
+#' @return \item{psi_omega}{The posterior variance (from \code{\link{posterior_psi_omega}})}
 posterior_psi_omega <- function(U, D, sigma, prior_psi_omega) {
   psi_omega <- solve(t(U) %*% (kronecker(crossprod(D), solve(sigma))) %*% U + solve(prior_psi_omega))
   return(psi_omega)

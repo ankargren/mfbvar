@@ -1,3 +1,5 @@
+#' @description The Gibbs sampler for quarterly data.
+#' @inherit gibbs_sampler2
 gibbs_sampler_qf <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi, prior_psi_omega,
                           Y, d, n_reps, n_fcst = NULL, lH, check_roots = TRUE,
                           init_Pi = NULL, init_Sigma = NULL, init_psi = NULL, init_Z = NULL,

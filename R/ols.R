@@ -1,13 +1,40 @@
+#' OLS functions
+#'
+#' Helper functions for multivariate regression and sum of squared error computations
+#'
+#' @param X The regressor matrix.
+#' @param Y The dependnet variable matrix.
+#' @return
+#' \item{pi_sample}{Estimated coefficients.}
+
 ols_pi <- function(X, Y) {
   pi_sample <- solve(crossprod(X)) %*% crossprod(X, Y)
   return(pi_sample)
 }
 
+#' @rdname ols_pi
+#' @param Pi The estimated coefficients.
+#' @return
+#' \item{s_sample}{The sum of squared residuals matrix.}
 ols_s <- function(X, Y, Pi) {
   s_sample <- crossprod(Y - X %*% Pi)
   return(s_sample)
 }
 
+#' Initialize Gibbs sampler using OLS
+#'
+#' Initializes the Gibbs sampler using OLS.
+#' @templateVar z TRUE
+#' @templateVar d TRUE
+#' @templateVar n_lags TRUE
+#' @templateVar n_T TRUE
+#' @templateVar n_vars TRUE
+#' @templateVar n_determ TRUE
+#' @template man_template
+#' @return A list with components:
+#' \item{Gam}{A matrix of size \code{n_vars * (n_vars*n_lags +n_determ)} of estimated parameters.}
+#' \item{S}{Estimated error covariance matrix.}
+#' \item{psi}{The estimated steady-state parameters.}
 
 ols_initialization <- function(z, d, n_lags, n_T, n_vars, n_determ) {
   n_T <- nrow(z)

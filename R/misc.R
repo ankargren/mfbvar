@@ -1,3 +1,9 @@
+#' Fills NAs with the next non-NA value
+#'
+#' The function fills elements with \code{NA} with the next non-\code{NA} value (so that quarterly averages observed at the end of the quarter are assumed as observations for the remaining months of the quarter).
+#' @templateVar Y TRUE
+#' @template man_template
+#' @return A matrix with no \code{NA}s.
 fill_na <- function(Y) {
   apply(Y, 2, function(x) {
     n_x <- length(x) # save lentgh
@@ -24,6 +30,17 @@ fill_na <- function(Y) {
     x})
 }
 
+#' Normal inverse Wishart density function
+#'
+#' Density function for the (matrix) normal inverse Wishart distribution
+#' @templateVar X TRUE
+#' @templateVar Sigma TRUE
+#' @templateVar M TRUE
+#' @templateVar P TRUE
+#' @templateVar S TRUE
+#' @templateVar v TRUE
+#' @template man_template
+#' @return The evaluated density.
 dnorminvwish <- function(X, Sigma, M, P, S, v) {
   q <- dim(Sigma)[1]
   p <- dim(P)[1]
@@ -35,17 +52,46 @@ dnorminvwish <- function(X, Sigma, M, P, S, v) {
   return(exp(dmultnorm + dinvwish))
 }
 
+#' Multivariate normal density function
+#'
+#' Density function for the multivariate normal distribution
+#' @templateVar x TRUE
+#' @templateVar m TRUE
+#' @template man_template
+#' @inherit dnorminvwish
 dmultn <- function(x, m, Sigma) {
   p <- dim(Sigma)[1]
   log_d <- (-1/2)* log(det(2*pi*Sigma)) -1/2 * t(x-m) %*% solve(Sigma) %*% (x-m)
   return(exp(log_d))
 }
 
+#' Truncated multivariate normal density function
+#'
+#' Density function for the truncated multivariate normal distribution
+#' @templateVar V_inv TRUE
+#' @param d The number of components.
+#' @templateVar p_trunc TRUE
+#' @templateVar chisq_val TRUE
+#' @template man_template
+#' @inherit dmultn
 dnorm_trunc <- function(x, m, V_inv, d, p_trunc, chisq_val) {
   qf <- t(x - m) %*% V_inv %*% (x - m)
   return((1/p_trunc) * (1/sqrt((2*pi)^d/det(V_inv))) * exp(-0.5 * qf) * (qf < chisq_val))
 }
 
+#' Marginal data density (method 2)
+#'
+#' Estimate the marginal data density using method 2.
+#' @templateVar mfbvar_obj TRUE
+#' @templateVar p_trunc TRUE
+#' @template man_template
+#' @return
+#' A list with components being \code{n_reps}-long vectors. These can be used to estimate the MDD.
+#' \item{pi_sigma_posterior}{Posterior of Pi and Sigma.}
+#' \item{data_likelihood}{The likelihood.}
+#' \item{pi_sigma_prior}{Prior of Pi and Sigma.}
+#' \item{psi_prior}{Prior of psi.}
+#' \item{psi_truncated}{The truncated psi pdf.}
 mdd <- function(mfbvar_obj, p_trunc) {
   # Get things from the MFBVAR object
   n_determ <- mfbvar_obj$n_determ
@@ -131,6 +177,19 @@ mdd <- function(mfbvar_obj, p_trunc) {
               psi_prior = psi_prior, psi_truncated = psi_truncated))
 }
 
+#' Marginal data density (method 1)
+#'
+#' Estimate the marginal data density using method 1.
+#' @templateVar mfbvar_obj TRUE
+#' @template man_template
+#' @return
+#' A list with components:
+#' \item{lklhd}{The likelihood.}
+#' \item{Pi_Sigma_prior}{The evaluated prior.}
+#' \item{psi_prior}{The evaluated prior of psi.}
+#' \item{Pi_Sigma_RB}{The Rao-Blackwellized estimate of the conditional posterior of Pi and Sigma.}
+#' \item{psi_MargPost}{The evaluated marginal posterior of psi.}
+#' \item{mdd_estimate}{The final estimate.}
 mdd1 <- function(mfbvar_obj) {
   ################################################################
   ### Get things from the MFBVAR object

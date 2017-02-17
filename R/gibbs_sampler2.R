@@ -1,39 +1,12 @@
-#' Gibbs sampler for Mixed-Frequency BVAR
-#'
-#' \code{gibbs_sampler} runs a Gibbs sampler to approximate the posterior of the VAR model parameters.
-#'
-#' @templateVar prior_pi TRUE
-#' @templateVar prior_pi_omega TRUE
-#' @templateVar prior_nu TRUE
-#' @templateVar prior_s TRUE
-#' @templateVar prior_psi TRUE
-#' @templateVar prior_psi_omega TRUE
-#' @templateVar Y TRUE
-#' @templateVar d TRUE
-#' @templateVar n_reps TRUE
-#' @templateVar n_fcst TRUE
-#' @templateVar Lambda TRUE
-#' @templateVar check_roots TRUE
-#' @templateVar init_Pi TRUE
-#' @templateVar init_Sigma TRUE
-#' @templateVar init_psi TRUE
-#' @templateVar init_Z TRUE
-#' @templateVar d_fcst TRUE
-#' @templateVar smooth_state TRUE
+#' @description Older, slower version of the Gibbs sampler.
+#' @inherit gibbs_sampler
+#' @templateVar lH TRUE
 #' @template man_template
 #'
-#' @details
-#' The prior covariance of \eqn{\Pi} given \eqn{\Sigma} is \eqn{\Sigma \otimes \Omega_\Pi}.
-#'
-#' The function \code{gibbs_sampler_qf} is a temporary version of \code{gibbs_sampler} which is customized for quarterly data (for improved speed). Its purpose is to accomomdate conditional forecasting. The function \code{gibbs_sampler2} uses an R implementation of the simulation smoother, whereas \code{gibbs_sampler} uses a C++ implementation.
-#'
-#' @return
-#' An object of class mfbvar.
-
-gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi, prior_psi_omega,
-                          Y, d, n_reps, n_fcst = NULL, Lambda, check_roots = TRUE,
-                          init_Pi = NULL, init_Sigma = NULL, init_psi = NULL, init_Z = NULL,
-                          d_fcst = NULL, smooth_state = FALSE) {
+gibbs_sampler2 <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi, prior_psi_omega,
+                           Y, d, n_reps, n_fcst = NULL, lH, check_roots = TRUE,
+                           init_Pi = NULL, init_Sigma = NULL, init_psi = NULL, init_Z = NULL,
+                           d_fcst = NULL, smooth_state = FALSE) {
 
   # n_vars: number of variables
   # n_lags: number of lags
@@ -43,10 +16,9 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
 
   n_vars <- dim(Y)[2]
   n_lags <- prod(dim(as.matrix(prior_pi)))/n_vars^2
-  n_pseudolags <- dim(Lambda)[2]/n_vars
   n_determ <- dim(d)[2]
   n_T <- dim(Y)[1]# - n_lags
-  n_T_ <- n_T - n_pseudolags
+  n_T_ <- n_T - n_lags
 
   ################################################################
   ### Preallocation
@@ -80,6 +52,7 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
   }
   if (smooth_state == TRUE) {
     smoothed_Z     <- array(NA, dim = c(n_T, n_vars, n_reps))
+    smoothed_Y     <- array(NA, dim = c(n_T, n_vars, n_reps))
   }
 
 
@@ -156,33 +129,109 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
   D <- build_DD(d = d, n_lags = n_lags)
 
   # For the posterior of Pi
-  inv_prior_pi_omega <- solve(prior_pi_omega)
-  omega_pi <- inv_prior_pi_omega %*% prior_pi
+  omega_pi <- solve(prior_pi_omega) %*% prior_pi
 
-  Z_1 <- Z[1:n_pseudolags,, 1]
+  # Calculations for the simulation smoother
+  lH0 <- vector("list", n_T_)
+  for(iter in 1:n_T_) {
+    lH0[[iter]] = matrix(lH[[iter]][!is.na(Y[n_lags + iter,]),], ncol = n_vars * n_lags)
+  }
+  mX <- matrix(0, n_T_)
+  mB <- matrix(0, n_vars*n_lags)
+
 
   for (r in 2:(n_reps)) {
     ################################################################
+    ### Preliminary calculations
+
+    # Demean z, create Z (companion form version)
+    demeaned_z <- Z[,, r-1] - d %*% t(matrix(psi[r-1, ], nrow = n_vars))
+    demeaned_Z <- build_Z(z = demeaned_z, n_lags = n_lags)
+    XX <- demeaned_Z[-nrow(demeaned_Z), ]
+    YY <- demeaned_Z[-1, 1:n_vars]
+    pi_sample <- solve(crossprod(XX)) %*% crossprod(XX, YY)
+    ################################################################
     ### Pi and Sigma step
-    #(Z_r1,             d,     psi_r1,                            prior_pi, inv_prior_pi_omega, omega_pi, prior_s, prior_nu, check_roots, n_vars, n_lags, n_T)
-    pi_sigma <- pi_sigma_posterior(Z_r1 = Z[,, r-1], d = d, psi_r1 = psi[r-1, , drop = FALSE], prior_pi, inv_prior_pi_omega, omega_pi, prior_s, prior_nu, check_roots, n_vars, n_lags, n_T)
-    Pi[,,r]      <- pi_sigma$Pi_r
-    Sigma[,,r]   <- pi_sigma$Sigma_r
-    num_tries[r] <- pi_sigma$num_try
-    roots[r]     <- pi_sigma$root
+
+    # Posterior moments of Pi
+    post_pi_omega <- solve(solve(prior_pi_omega) + crossprod(XX))
+    post_pi       <- post_pi_omega %*% (omega_pi + crossprod(XX, YY))
+
+    # Then Sigma
+    s_sample  <- crossprod(YY - XX %*% pi_sample)
+    pi_diff <- prior_pi - pi_sample
+    post_s <- prior_s + s_sample + t(pi_diff) %*% solve(post_pi_omega + solve(crossprod(XX))) %*% pi_diff
+    nu <- n_T + prior_nu # Is this the right T? Or should it be T - lags?
+    Sigma[,,r] <- rinvwish(v = nu, S = post_s)
+
+
+    # Draw Pi conditional on Sigma
+    # This ensures that the draw is stationary
+    stationarity_check <- FALSE
+    iter <- 0
+    Pi_temp <- array(NA, dim = c(n_vars, n_vars * n_lags, ifelse(check_roots, 1000, 1)))
+    while(stationarity_check == FALSE) {
+      iter <- iter + 1
+      Pi_temp[,,iter] <- rmatn(M = t(post_pi), Q = post_pi_omega, P = Sigma[,,r])
+      Pi_comp    <- build_companion(Pi_temp[,, iter], n_vars = n_vars, n_lags = n_lags)
+      if (check_roots == TRUE) {
+        roots[r] <- max_eig_cpp(Pi_comp)
+      }
+      if (roots[r] < 1) {
+        stationarity_check <- TRUE
+        num_tries[r] <- iter
+        Pi[,,r] <- Pi_temp[,,iter]
+      }
+      if (iter == 1000) {
+        stop("Attempted to draw stationary Pi 1,000 times.")
+      }
+    }
+
 
     ################################################################
     ### Steady-state step
-    #(Pi_r,            Sigma_r,               Z_r1,             prior_psi, prior_psi_omega, D, n_vars, n_lags, n_determ)
-    psi[r, ] <- psi_posterior(Pi_r = Pi[,, r], Sigma_r = Sigma[,, r], Z_r1 = Z[,, r-1], prior_psi, prior_psi_omega, D, n_vars, n_lags, n_determ)
+    U <- build_U_cpp(Pi = Pi[,,r], n_determ = n_determ,
+                     n_vars = n_vars, n_lags = n_lags)
+    post_psi_omega <- posterior_psi_omega(U = U, D = D, sigma = Sigma[,, r],
+                                          prior_psi_omega = prior_psi_omega)
+    Y_tilde <- build_Y_tilde(Pi = Pi[,, r], z = Z[,, r-1])
+
+    post_psi <- posterior_psi(U = U, D = D, sigma = Sigma[,, r], prior_psi_omega = prior_psi_omega,
+                              psi_omega = post_psi_omega, Y_tilde = Y_tilde, prior_psi = prior_psi)
+    psi[r, ] <- t(rmultn(m = post_psi, Sigma = post_psi_omega))
+
+
 
     ################################################################
     ### Smoothing step
-    #(Y, d, Pi_r,                                                             Sigma_r,               psi_r,                          Z_1, Lambda, n_vars, n_lags,                n_T_, smooth_state)
-    Z_res <- Z_posterior(Y, d, Pi_r = cbind(Pi[,, r], matrix(0, n_vars, n_vars*(n_pseudolags - n_lags))), Sigma_r = Sigma[,, r], psi_r = psi[r, , drop = FALSE], Z_1, Lambda, n_vars, n_lags = n_pseudolags, n_T_, smooth_state)
-    Z[,, r] <- Z_res$Z_r
+    Q_comp     <- matrix(0, ncol = n_vars*n_lags, nrow = n_vars*n_lags)
+    Q_comp[1:n_vars, 1:n_vars] <- t(chol(Sigma[,,r]))
+
+    # Demean before putting into simulation smoother using the most recent draw of psi
+    mZ <- Y - d %*% t(matrix(psi[r, ], nrow = n_vars))
+    mZ <- as.matrix(mZ[-(1:n_lags), ])
+    demeaned_z0 <- Z[1:n_lags,, 1] - d[1:n_lags, ] %*% t(matrix(psi[r, ], nrow = n_vars))
+    h0 <- matrix(t(demeaned_z0[n_lags:1,]), ncol = 1)
+
+    simulated_Z <- smooth_samp_u3(mZ = mZ, mX = mX, lH = lH, lH0 = lH0,
+                                  mF = Pi_comp, mB = mB, mQ = Q_comp, iT = n_T_,
+                                  ip = n_vars, iq  = n_lags * n_vars, is = 1, h0 = h0, P0 = NULL,
+                                  X0 = 0)
+    # For now, I'm just inserting h0 in the beginning of Z. Right now, Z has n_T number of rows,
+    # but smooth_samp puts out n_T - n_lags rows.
+    Z[,, r] <- rbind(demeaned_z0, simulated_Z$mh[, 1:n_vars]) +
+      d %*% t(matrix(psi[r, ], nrow = n_vars))
+
+    # Also save the smoothed value of the state
     if (smooth_state == TRUE) {
-      smoothed_Z[,, r] <- Z_res$smoothed_Z_r
+      smoothed_state <- smoothing_state(mZ = mZ, mX = mX, lH = lH, lH0 = lH0,
+                                        mF = Pi_comp, mB = mB, mQ = Q_comp, iT = n_T_,
+                                        ip = n_vars, iq  = n_lags * n_vars, is = 1, h0 = h0, P0 = NULL,
+                                        X0 = 0)
+      smoothed_Z[,, r] <- rbind(demeaned_z0, smoothed_state$mh[, 1:n_vars]) +
+        d %*% t(matrix(psi[r, ], nrow = n_vars))
+      smoothed_Y[,, r] <- rbind(demeaned_z0, smoothed_state$mZ[, 1:n_vars]) +
+        d %*% t(matrix(psi[r, ], nrow = n_vars))
     }
 
     ################################################################
@@ -205,10 +254,10 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
   ################################################################
   ### Prepare the return object
   return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z, roots = NULL, num_tries = NULL,
-                     Z_fcst = NULL, mdd = NULL, smoothed_Z = NULL, n_determ = n_determ,
+                     Z_fcst = NULL, mdd = NULL, smoothed_Z = NULL, smoothed_Y = NULL, n_determ = n_determ,
                      n_lags = n_lags, n_vars = n_vars, prior_pi_omega = prior_pi_omega, prior_pi = prior_pi,
-                     prior_s = prior_s, prior_nu = prior_nu, nu = n_T + prior_nu, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
-                     prior_psi_omega = prior_psi_omega, prior_psi = prior_psi, n_reps = n_reps, Lambda = Lambda)
+                     prior_s = prior_s, prior_nu = prior_nu, nu = nu, d = d, Y = Y, n_T = n_T, n_T_ = n_T_, lH0 = lH0,
+                     prior_psi_omega = prior_psi_omega, prior_psi = prior_psi, n_reps = n_reps)
 
   if (check_roots == TRUE) {
     return_obj$roots <- roots
@@ -219,9 +268,9 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
   }
   if (smooth_state == TRUE) {
     return_obj$smoothed_Z <- smoothed_Z
+    return_obj$smoothed_Y <- smoothed_Y
   }
 
   return(return_obj)
 
 }
-

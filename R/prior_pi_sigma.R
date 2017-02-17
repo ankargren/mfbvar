@@ -1,3 +1,16 @@
+#' Create the priors for Pi and Sigma
+#'
+#' Creates the prior mean and covariance for Pi given the hyperparameters, and the prior parameters for Sigma.
+#' @templateVar lambda1 TRUE
+#' @templateVar lambda2 TRUE
+#' @templateVar prior_mean TRUE
+#' @templateVar Y TRUE
+#' @templateVar n_lags TRUE
+#' @templateVar nu TRUE
+#' @template man_template
+#' @return \item{prior_pi}{The prior mean matrix for Pi.}
+#' \item{prior_pi_omega}{The prior covariance matrix for Pi.}
+#' \item{prior_s}{The prior for Sigma.}
 prior_pi_sigma <- function(lambda1, lambda2, prior_mean, Y, n_lags, nu) {
   # lambda1: 1-long vector (overall tightness)
   # lambda2: 1-long vector (lag decay)

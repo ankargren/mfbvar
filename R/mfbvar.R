@@ -1,3 +1,23 @@
+#' MF-BVAR with a steady-state prior
+#'
+#' The main function for running the MF-SS-BVAR.
+#'
+#' @templateVar Y TRUE
+#' @templateVar d TRUE
+#' @templateVar d_fcst TRUE
+#' @templateVar Lambda TRUE
+#' @templateVar n_lags TRUE
+#' @templateVar n_burnin TRUE
+#' @templateVar n_reps TRUE
+#' @templateVar prior_mean_pi TRUE
+#' @templateVar lambda1 TRUE
+#' @templateVar lambda2 TRUE
+#' @templateVar prior_nu TRUE
+#' @templateVar prior_mean_psi TRUE
+#' @templateVar prior_var_psi TRUE
+#' @template man_template
+#' @details \code{mfbvar} calls \code{\link{gibbs_sampler}} (implemented in C++)
+
 mfbvar <- function(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_mean_pi,
                    lambda1, lambda2, prior_nu = NULL, prior_mean_psi, prior_var_psi, ...) {
 
@@ -34,6 +54,11 @@ mfbvar <- function(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_mean_pi
 
 }
 
+
+#' @template man_template
+#' @inherit mfbvar
+#' @details \code{mfbvar2} calls \code{\link{gibbs_sampler2}}
+#'
 mfbvar2 <- function(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_mean_pi,
                    lambda1, lambda2, prior_nu = NULL, prior_mean_psi, prior_var_psi, ...) {
 
