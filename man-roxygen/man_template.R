@@ -1,10 +1,12 @@
 #' @title Template titel
+#' <%=ifelse(exists("A"), "@param A Symmetrix matrix whose maximum eigenvalue is to be computed.", "") %>
 #' <%=ifelse(exists("aggregation"), "@param aggregation A character vector of length \\code{n_vars} with elements being \\code{'identity'}, \\code{'average'} or \\code{'triangular'} to indicate the type of aggregation scheme to assume.", "") %>
 #' <%=ifelse(exists("chisq_val"), "@param chisq_val The value in the corresponding chi-square distribution; if the normal quadratic form exceeds this, the pdf is 0.", "") %>
 #' <%=ifelse(exists("check_roots"), "@param check_roots Logical, if roots of the companion matrix are to be checked to ensure stationarity.", "") %>
 #' <%=ifelse(exists("d"), "@param d The matrix of size \\code{(n_T + n_lags) * n_determ} of deterministic terms.", "") %>
-#' <%=ifelse(exists("D"), "@param D The \\code{D} matrix (from \\code{\\link{build_DD}}).", "") %>
+#' <%=ifelse(exists("D_mat"), "@param D_mat The \\code{D} matrix (from \\code{\\link{build_DD}}).", "") %>
 #' <%=ifelse(exists("d_fcst"), "@param d_fcst The deterministic terms for the forecasting period.", "") %>
+#' <%=ifelse(exists("h0"), "@param h0 The initial state (\\code{(n_vars*n_lags)*1}).", "") %>
 #' <%=ifelse(exists("Lambda"), "@param Lambda The Lambda matrix (size \\code{n_vars* (n_vars*n_lags)}).", "") %>
 #' <%=ifelse(exists("lambda1"), "@param lambda1 The overall tightness.", "") %>
 #' <%=ifelse(exists("lambda2"), "@param lambda2 The lag decay.", "") %>
@@ -14,21 +16,32 @@
 #' <%=ifelse(exists("init_Sigma"), "@param init_Sigma Matrix to initialize the error covariance.", "") %>
 #' <%=ifelse(exists("init_Z"), "@param init_Z Matrix to initialize the latent state.", "") %>
 #' <%=ifelse(exists("inv_prior_pi_omega"), "@param inv_prior_pi_omega The inverse of the prior covariance matrix for Pi.", "") %>
+#' <%=ifelse(exists("ip"), "@param ip The number of variables (\\code{n_vars}).", "") %>
+#' <%=ifelse(exists("iq"), "@param iq The companion-form dimension (\\code{n_vars*n_lags}).", "") %>
+#' <%=ifelse(exists("iT"), "@param iT The sample size (sometimes called \\code{n_T}).", "") %>
 #' <%=ifelse(exists("m"), "@param m The mean vector of size \\code{p}.", "") %>
+#' <%=ifelse(exists("mfbvar_obj"), "@param mfbvar_obj An object of class \\code{mfbvar} containing the results.", "") %>
 #' <%=ifelse(exists("M"), "@param M The mean matrix of size \\code{p * q}.", "") %>
+#' <%=ifelse(exists("mF"), "@param mF \\code{(n_vars*n_lags) * (n_vars*n_lags)} matrix containing parameters (companion form)", "") %>
+#' <%=ifelse(exists("mQ"), "@param mQ \\code{(n_vars*n_lags) * (n_vars*n_lags)} matrix whose \\code{n_vars*n_vars} top-left block is the Cholesky decomposition of the error covariance matrix", "") %>
+#' <%=ifelse(exists("mQ"), "@param mZ \\code{T * n_vars} matrix with the observations (\\code{NA} represents missingness)", "") %>
 #' <%=ifelse(exists("n_burnin"), "@param n_burnin The number of burn-in replications.", "") %>
 #' <%=ifelse(exists("n_determ"), "@param n_determ The number of deterministic terms.", "") %>
 #' <%=ifelse(exists("n_fcst"), "@param n_fcst The number of periods to forecast.", "") %>
 #' <%=ifelse(exists("n_lags"), "@param n_lags The number of lags.", "") %>
 #' <%=ifelse(exists("n_reps"), "@param n_reps The number of replications.", "") %>
 #' <%=ifelse(exists("n_T"), "@param n_T The number of time points.", "") %>
+#' <%=ifelse(exists("n_T_"), "@param n_T_ The number of time points (excluding pre-sample).", "") %>
 #' <%=ifelse(exists("n_vars"), "@param n_vars The number of variables.", "") %>
 #' <%=ifelse(exists("nu"), "@param nu The parameter \\eqn{\\nu}.", "") %>
 #' <%=ifelse(exists("omega_pi"), "@param omega_pi The \\code{inv_prior_pi_omega} multiplied by \\code{prior_pi} matrix.", "") %>
 #' <%=ifelse(exists("P"), "@param P \\code{p * p} covariance matrix.", "") %>
+#' <%=ifelse(exists("Q"), "@param Q \\code{q * q} covariance matrix.", "") %>
 #' <%=ifelse(exists("p_trunc"), "@param p_trunc \\code{1-p_trunc} is the degree of truncation (i.e. \\code{p_trunc=1} is no truncation).", "") %>
+#' <%=ifelse(exists("P0"), "@param P0 The covariance matrix of the initial state (\\code{(n_vars*n_lags)*(n_vars*n_lags)}).", "") %>
 #' <%=ifelse(exists("Pi"), "@param Pi Matrix of size \\code{n_vars * (n_vars*n_lags)} containing the dynamic coefficients.", "") %>
 #' <%=ifelse(exists("Pi_r"), "@param Pi_r The current draw of \\code{Pi} (i.e. \\code{Pi[,, r]}).", "") %>
+#' <%=ifelse(exists("post_psi_omega"), "@param post_psi_omega The covariance matrix in the posterior, \\eqn{\\bar{\\Omega}_{\\Psi}}.", "") %>
 #' <%=ifelse(exists("prior_pi"), "@param prior_pi Matrix of size \\code{n_vars * (n_vars*n_lags)} containing the prior for the mean of the dynamic coefficients.", "") %>
 #' <%=ifelse(exists("prior_mean"), "@param prior_mean The prior means for the AR(1) coefficients.", "") %>
 #' <%=ifelse(exists("prior_mean_pi"), "@param prior_mean_pi Matrix of size \\code{n_vars * (n_vars*n_lags)} containing the prior for the mean of the dynamic coefficients.", "") %>
@@ -42,7 +55,6 @@
 #' <%=ifelse(exists("psi_r"), "@param psi_r The current draw of \\code{psi} (i.e. \\code{psi[r-1,]}).", "") %>
 #' <%=ifelse(exists("psi_r1"), "@param psi_r1 The previous draw of \\code{psi} (i.e. \\code{psi[r-1,]}).", "") %>
 #' <%=ifelse(exists("S"), "@param S \\code{q * q} scale matrix.", "") %>
-#' <%=ifelse(exists("sigma"), "@param sigma The covariance matrix.", "") %>
 #' <%=ifelse(exists("Sigma"), "@param Sigma The covariance matrix.", "") %>
 #' <%=ifelse(exists("Sigma_r"), "@param Sigma_r The current draw of \\code{Sigma} (i.e. \\code{Sigma[,, r]}).", "") %>
 #' <%=ifelse(exists("smooth_state"), "@param smooth_state Logical, if \\code{TRUE} then the smoothed estimates of the latent states are also returned.", "") %>

@@ -21,13 +21,13 @@ BEGIN_RCPP
 END_RCPP
 }
 // max_eig_cpp
-double max_eig_cpp(arma::mat M);
-RcppExport SEXP MFBVAR_max_eig_cpp(SEXP MSEXP) {
+double max_eig_cpp(arma::mat A);
+RcppExport SEXP MFBVAR_max_eig_cpp(SEXP ASEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type M(MSEXP);
-    rcpp_result_gen = Rcpp::wrap(max_eig_cpp(M));
+    Rcpp::traits::input_parameter< arma::mat >::type A(ASEXP);
+    rcpp_result_gen = Rcpp::wrap(max_eig_cpp(A));
     return rcpp_result_gen;
 END_RCPP
 }

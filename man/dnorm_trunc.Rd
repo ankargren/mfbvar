@@ -18,13 +18,10 @@ dnorm_trunc(x, m, V_inv, d, p_trunc, chisq_val)
 \item{p_trunc}{\code{1-p_trunc} is the degree of truncation (i.e. \code{p_trunc=1} is no truncation).}
 
 \item{chisq_val}{The value in the corresponding chi-square distribution; if the normal quadratic form exceeds this, the pdf is 0.}
-
-\item{D}{The \code{D} matrix (from \code{\link{build_DD}}).}
-
-\item{sigma}{The covariance matrix.}
 }
 \value{
-The evaluated density.
+For \code{dmultn}: the evaluated density.\\n
+For \code{rmultn}: \eqn{p} random numbers.
 }
 \description{
 Density function for the truncated multivariate normal distribution

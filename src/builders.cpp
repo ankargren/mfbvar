@@ -4,7 +4,10 @@
 using namespace Rcpp;
 using namespace arma;
 
-
+//' @describeIn build_U Build the U matrix (C++ implementation)
+//' @templateVar n_vars TRUE
+//' @templateVar n_lags TRUE
+//' @template man_template
 // [[Rcpp::export]]
 arma::mat build_U_cpp(arma::mat Pi, int n_determ, int n_vars, int n_lags){
   arma::mat U(n_vars*n_determ*(n_lags+1), n_vars*n_determ, fill::zeros);

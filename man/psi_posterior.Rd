@@ -4,17 +4,27 @@
 \alias{psi_posterior}
 \title{Draw from posterior of psi}
 \usage{
-psi_posterior(Pi_r, Sigma_r, Z_r1, prior_psi, prior_psi_omega, D, n_vars,
+psi_posterior(Pi_r, Sigma_r, Z_r1, prior_psi, prior_psi_omega, D_mat, n_vars,
   n_lags, n_determ)
 }
 \arguments{
+\item{Pi_r}{The current draw of \code{Pi} (i.e. \code{Pi[,, r]}).}
+
+\item{Sigma_r}{The current draw of \code{Sigma} (i.e. \code{Sigma[,, r]}).}
+
 \item{Z_r1}{The previous draw of \code{Z} (i.e. \code{Z[,, r-1]}).}
 
-\item{D}{The \code{D} matrix (from \code{\link{build_DD}}).}
+\item{prior_psi}{Vector of length \code{n_determ*n_vars} with the prior means of the steady-state parameters.}
+
+\item{prior_psi_omega}{Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.}
+
+\item{D_mat}{The \code{D} matrix (from \code{\link{build_DD}}).}
 
 \item{n_vars}{The number of variables.}
 
 \item{n_lags}{The number of lags.}
+
+\item{n_determ}{The number of deterministic terms.}
 }
 \value{
 \code{psi_posterior} returns:

@@ -153,7 +153,7 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
 
   # Create D (does not vary in the sampler), and find roots of Pi
   # if requested
-  D <- build_DD(d = d, n_lags = n_lags)
+  D_mat <- build_DD(d = d, n_lags = n_lags)
 
   # For the posterior of Pi
   inv_prior_pi_omega <- solve(prior_pi_omega)
@@ -174,7 +174,7 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
     ################################################################
     ### Steady-state step
     #(Pi_r,            Sigma_r,               Z_r1,             prior_psi, prior_psi_omega, D, n_vars, n_lags, n_determ)
-    psi[r, ] <- psi_posterior(Pi_r = Pi[,, r], Sigma_r = Sigma[,, r], Z_r1 = Z[,, r-1], prior_psi, prior_psi_omega, D, n_vars, n_lags, n_determ)
+    psi[r, ] <- psi_posterior(Pi_r = Pi[,, r], Sigma_r = Sigma[,, r], Z_r1 = Z[,, r-1], prior_psi, prior_psi_omega, D_mat, n_vars, n_lags, n_determ)
 
     ################################################################
     ### Smoothing step

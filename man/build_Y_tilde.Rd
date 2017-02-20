@@ -10,10 +10,6 @@ build_Y_tilde(Pi, z)
 \item{Pi}{Matrix of size \code{n_vars * (n_vars*n_lags)} containing the dynamic coefficients.}
 
 \item{z}{A matrix of size \code{(n_T + n_lags) * n_vars} of data.}
-
-\item{D}{The \code{D} matrix (from \code{\link{build_DD}}).}
-
-\item{sigma}{The covariance matrix.}
 }
 \value{
 \item{Y_tilde}{A matrix of size \code{n_T * n_vars}.}

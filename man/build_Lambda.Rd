@@ -10,10 +10,6 @@ build_Lambda(aggregation, n_lags)
 \item{aggregation}{A character vector of length \code{n_vars} with elements being \code{'identity'}, \code{'average'} or \code{'triangular'} to indicate the type of aggregation scheme to assume.}
 
 \item{n_lags}{The number of lags.}
-
-\item{D}{The \code{D} matrix (from \code{\link{build_DD}}).}
-
-\item{sigma}{The covariance matrix.}
 }
 \value{
 \item{Lambda}{An \code{n_vars * (n_vars*n_pseudolags)} matrix, where \code{n_pseudolags} is \code{max(5, n_lags)} if any variable uses the triangular aggregation scheme, \code{max(3, n_lags)} if any uses the quarterly average.}

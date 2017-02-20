@@ -18,10 +18,6 @@ ols_initialization(z, d, n_lags, n_T, n_vars, n_determ)
 \item{n_vars}{The number of variables.}
 
 \item{n_determ}{The number of deterministic terms.}
-
-\item{D}{The \code{D} matrix (from \code{\link{build_DD}}).}
-
-\item{sigma}{The covariance matrix.}
 }
 \value{
 A list with components:

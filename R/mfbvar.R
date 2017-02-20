@@ -15,6 +15,7 @@
 #' @templateVar prior_nu TRUE
 #' @templateVar prior_mean_psi TRUE
 #' @templateVar prior_var_psi TRUE
+#' @param ... Other arguments to pass to \code{\link{gibbs_sampler}}.
 #' @template man_template
 #' @details \code{mfbvar} calls \code{\link{gibbs_sampler}} (implemented in C++)
 

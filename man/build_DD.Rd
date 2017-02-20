@@ -10,10 +10,6 @@ build_DD(d, n_lags)
 \item{d}{The matrix of size \code{(n_T + n_lags) * n_determ} of deterministic terms.}
 
 \item{n_lags}{The number of lags.}
-
-\item{D}{The \code{D} matrix (from \code{\link{build_DD}}).}
-
-\item{sigma}{The covariance matrix.}
 }
 \value{
 \item{DD}{A matrix of size \code{n_T * ((n_lags + 1)*n_determ)} where row \code{t} is \eqn{(d_t', -d_{t-1}', \dots, -d_{t-k}')}.}

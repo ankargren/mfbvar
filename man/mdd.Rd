@@ -2,25 +2,37 @@
 % Please edit documentation in R/misc.R
 \name{mdd}
 \alias{mdd}
-\title{Marginal data density (method 2)}
+\alias{mdd1}
+\title{Marginal data density}
 \usage{
 mdd(mfbvar_obj, p_trunc)
+
+mdd1(mfbvar_obj)
 }
 \arguments{
+\item{mfbvar_obj}{An object of class \code{mfbvar} containing the results.}
+
 \item{p_trunc}{\code{1-p_trunc} is the degree of truncation (i.e. \code{p_trunc=1} is no truncation).}
-
-\item{D}{The \code{D} matrix (from \code{\link{build_DD}}).}
-
-\item{sigma}{The covariance matrix.}
 }
 \value{
-A list with components being \code{n_reps}-long vectors. These can be used to estimate the MDD.
+\code{mdd} returns a list with components being \code{n_reps}-long vectors. These can be used to estimate the MDD.
 \item{pi_sigma_posterior}{Posterior of Pi and Sigma.}
 \item{data_likelihood}{The likelihood.}
 \item{pi_sigma_prior}{Prior of Pi and Sigma.}
 \item{psi_prior}{Prior of psi.}
 \item{psi_truncated}{The truncated psi pdf.}
+
+\code{mdd1} returns a list with components:
+\item{lklhd}{The likelihood.}
+\item{Pi_Sigma_prior}{The evaluated prior.}
+\item{psi_prior}{The evaluated prior of psi.}
+\item{Pi_Sigma_RB}{The Rao-Blackwellized estimate of the conditional posterior of Pi and Sigma.}
+\item{psi_MargPost}{The evaluated marginal posterior of psi.}
+\item{mdd_estimate}{The final estimate.}
 }
 \description{
-Estimate the marginal data density using method 2.
+Estimate the marginal data density.
+}
+\details{
+\code{mdd} uses method 2, \code{mdd1} uses method 1.
 }

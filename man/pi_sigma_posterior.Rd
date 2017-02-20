@@ -31,10 +31,6 @@ pi_sigma_posterior(Z_r1, d, psi_r1, prior_pi, inv_prior_pi_omega, omega_pi,
 \item{n_lags}{The number of lags.}
 
 \item{n_T}{The number of time points.}
-
-\item{D}{The \code{D} matrix (from \code{\link{build_DD}}).}
-
-\item{sigma}{The covariance matrix.}
 }
 \value{
 \code{pi_sigma_posterior} returns a list with:

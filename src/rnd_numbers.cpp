@@ -4,7 +4,7 @@
 using namespace Rcpp;
 using namespace arma;
 
-
+//' @rdname dnorminvwish
 // [[Rcpp::export]]
 arma::mat rmatn(arma::mat M, arma::mat Q, arma::mat P){
 /*-------------------------------------------------------
@@ -21,17 +21,7 @@ arma::mat rmatn(arma::mat M, arma::mat Q, arma::mat P){
 }
 
 
-/*-------------------------------------------------------
-# Generate Draws from an Inverse Wishart Distribution
-# via the Bartlett Decomposition
-#--------------------------------------------------------
-# NOTE: output is identical to riwish from MCMCpack
-#       provided the same random seed is used
-#--------------------------------------------------------
-#   n     number of samples
-#   S     scale matrix
-#   v     degrees of freedom
-#-------------------------------------------------------*/
+//' @rdname dnorminvwish
 // [[Rcpp::export]]
 arma::mat rinvwish(int v, arma::mat S){
   RNGScope scope;
@@ -54,6 +44,7 @@ arma::mat rinvwish(int v, arma::mat S){
 }
 
 
+//' @rdname dmultn
 // [[Rcpp::export]]
 arma::vec rmultn(arma::vec m, arma::mat Sigma){
   /*-------------------------------------------------------
@@ -66,3 +57,4 @@ arma::vec rmultn(arma::vec m, arma::mat Sigma){
   X = m + L * X;
   return(X);
 }
+

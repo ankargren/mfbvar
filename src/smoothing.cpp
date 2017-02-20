@@ -7,7 +7,24 @@ using namespace arma;
 #define _USE_MATH_DEFINES // for C++
 #include <cmath>
 
-
+//' @title Smooth and sample from the smoothed distribution
+//'
+//' @description Functions for smoothing and sampling from the (smoothed) distribution \eqn{p(Z_{1:T}|Y_{1:T}, \Theta)}.
+//' @details Implemented in C++.
+//' @aliases smoother simulation_smoother generate_mhh loglike
+//' @describeIn smoother Compute smoothed states
+//' @templateVar mZ TRUE
+//' @templateVar Lambda TRUE
+//' @templateVar mF TRUE
+//' @templateVar mQ TRUE
+//' @templateVar iT TRUE
+//' @templateVar ip TRUE
+//' @templateVar iq TRUE
+//' @templateVar h0 TRUE
+//' @templateVar P0 TRUE
+//' @template man_template
+//' @return For \code{smoother}:
+//' \item{}{The smoothed states.}
 // [[Rcpp::export]]
 arma::mat smoother(           arma::mat mZ, arma::mat Lambda, arma::mat mF, arma::mat mQ, int iT, int ip, int iq, arma::mat h0, arma::mat P0) {
   /* This function computes the smoothed state vector */
@@ -149,6 +166,9 @@ arma::mat smoother(           arma::mat mZ, arma::mat Lambda, arma::mat mF, arma
   return(mhh);
 }
 
+//' @describeIn smoother Generate pseudo-state vector
+//' @return For \code{generate_mhh}:
+//' \item{}{Generated (pseudo-)state vector.}
 // [[Rcpp::export]]
 arma::mat generate_mhh(       arma::mat mZ, arma::mat Lambda, arma::mat mF, arma::mat mQ, int iT, int ip, int iq, arma::mat h0, arma::mat P0) {
   /* This function generates the pseudo-state */
@@ -177,6 +197,9 @@ arma::mat generate_mhh(       arma::mat mZ, arma::mat Lambda, arma::mat mF, arma
   return(mhh);
 }
 
+//' @describeIn smoother Simulation smoother
+//' @return For \code{simulation_smoother}:
+//' \item{}{The draw from the posterior distribution.}
 // [[Rcpp::export]]
 arma::mat simulation_smoother(arma::mat mZ, arma::mat Lambda, arma::mat mF, arma::mat mQ, int iT, int ip, int iq, arma::mat h0, arma::mat P0) {
   /* This function produces a draw from the posterior distribution */
@@ -202,8 +225,11 @@ arma::mat simulation_smoother(arma::mat mZ, arma::mat Lambda, arma::mat mF, arma
 }
 
 
+//' @describeIn smoother Compute log-likelihood
+//' @return For \code{loglike}:
+//' \item{}{An \code{n_T}-long vector of the log-likelihoods. \code{exp(sum(loglike(...)))} is the likelihood.}
 // [[Rcpp::export]]
-arma::mat loglike(           arma::mat mZ, arma::mat Lambda, arma::mat mF, arma::mat mQ, int iT, int ip, int iq, arma::mat h0, arma::mat P0) {
+arma::mat loglike(            arma::mat mZ, arma::mat Lambda, arma::mat mF, arma::mat mQ, int iT, int ip, int iq, arma::mat h0, arma::mat P0) {
   /* This function computes the smoothed state vector */
   /****************************************************/
   /* Initialize matrices and cubes */

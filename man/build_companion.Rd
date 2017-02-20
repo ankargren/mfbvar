@@ -12,10 +12,6 @@ build_companion(Pi, n_vars, n_lags)
 \item{n_vars}{The number of variables.}
 
 \item{n_lags}{The number of lags.}
-
-\item{D}{The \code{D} matrix (from \code{\link{build_DD}}).}
-
-\item{sigma}{The covariance matrix.}
 }
 \value{
 \item{Pi_comp}{The companion form matrix of size \code{(n_vars*n_lags) * (n_vars*n_lags)}}.

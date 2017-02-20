@@ -69,6 +69,7 @@ build_Z <- function(z, n_lags) {
 #' @templateVar Pi TRUE
 #' @templateVar n_determ TRUE
 #' @template man_template
+#' @describeIn build_U Build the U matrix (R implementation)
 #'
 #' @return
 #' \item{U}{The \code{U} matrix, of size \code{((n_lags+1)n_vars*n_determ) * n_vars*n_determ}.}

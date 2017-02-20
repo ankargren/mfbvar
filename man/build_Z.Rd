@@ -10,10 +10,6 @@ build_Z(z, n_lags)
 \item{z}{A matrix of size \code{(n_T + n_lags) * n_vars} of data.}
 
 \item{n_lags}{The number of lags.}
-
-\item{D}{The \code{D} matrix (from \code{\link{build_DD}}).}
-
-\item{sigma}{The covariance matrix.}
 }
 \value{
 \item{Z}{A matrix of size \code{n_T * (n_vars*n_lags)}.}

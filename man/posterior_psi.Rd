@@ -5,18 +5,21 @@
 \alias{posterior_psi_omega}
 \title{Compute posterior moments of the steady-state parameters}
 \usage{
-posterior_psi(U, D, sigma, prior_psi_omega, psi_omega, Y_tilde, prior_psi)
+posterior_psi(U, D_mat, Sigma, prior_psi_omega, post_psi_omega, Y_tilde,
+  prior_psi)
 
-posterior_psi_omega(U, D, sigma, prior_psi_omega)
+posterior_psi_omega(U, D_mat, Sigma, prior_psi_omega)
 }
 \arguments{
 \item{U}{\eqn{U} matrix, of size \code{(n_vars*n_determ*(n_lags+1)) * (n_vars*n_determ)}. This can be obtained using \code{\link{build_U}}.}
 
-\item{D}{The \code{D} matrix (from \code{\link{build_DD}}).}
+\item{D_mat}{The \code{D} matrix (from \code{\link{build_DD}}).}
 
-\item{sigma}{The covariance matrix.}
+\item{Sigma}{The covariance matrix.}
 
 \item{prior_psi_omega}{Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.}
+
+\item{post_psi_omega}{The covariance matrix in the posterior, \eqn{\bar{\Omega}_{\Psi}}.}
 
 \item{Y_tilde}{The lag-corrected data matrix (with no missing values) of size \code{n_T * n_vars}.}
 

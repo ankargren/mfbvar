@@ -34,9 +34,7 @@ mfbvar2(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_mean_pi, lambda1,
 
 \item{prior_var_psi}{Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.}
 
-\item{D}{The \code{D} matrix (from \code{\link{build_DD}}).}
-
-\item{sigma}{The covariance matrix.}
+\item{...}{Other arguments to pass to \code{\link{gibbs_sampler}}.}
 }
 \description{
 The main function for running the MF-SS-BVAR.

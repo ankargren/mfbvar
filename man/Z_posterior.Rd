@@ -8,11 +8,27 @@ Z_posterior(Y, d, Pi_r, Sigma_r, psi_r, Z_1, Lambda, n_vars, n_lags, n_T_,
   smooth_state)
 }
 \arguments{
+\item{Y}{The data matrix of size \code{(n_T + n_lags) * n_vars} with \code{NA} representing missingness. Must correspond well to the specification of \code{M_Lambda}.}
+
 \item{d}{The matrix of size \code{(n_T + n_lags) * n_determ} of deterministic terms.}
+
+\item{Pi_r}{The current draw of \code{Pi} (i.e. \code{Pi[,, r]}).}
+
+\item{Sigma_r}{The current draw of \code{Sigma} (i.e. \code{Sigma[,, r]}).}
+
+\item{psi_r}{The current draw of \code{psi} (i.e. \code{psi[r-1,]}).}
+
+\item{Z_1}{The matrix \code{Z[1:n_lags,, 1]} (used as initial value).}
+
+\item{Lambda}{The Lambda matrix (size \code{n_vars* (n_vars*n_lags)}).}
 
 \item{n_vars}{The number of variables.}
 
 \item{n_lags}{The number of lags.}
+
+\item{n_T_}{The number of time points (excluding pre-sample).}
+
+\item{smooth_state}{Logical, if \code{TRUE} then the smoothed estimates of the latent states are also returned.}
 }
 \value{
 \code{Z_posterior} returns a list with:

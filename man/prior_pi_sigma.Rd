@@ -18,10 +18,6 @@ prior_pi_sigma(lambda1, lambda2, prior_mean, Y, n_lags, nu)
 \item{n_lags}{The number of lags.}
 
 \item{nu}{The parameter \eqn{\nu}.}
-
-\item{D}{The \code{D} matrix (from \code{\link{build_DD}}).}
-
-\item{sigma}{The covariance matrix.}
 }
 \value{
 \item{prior_pi}{The prior mean matrix for Pi.}

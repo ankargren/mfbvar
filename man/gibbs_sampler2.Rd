@@ -45,10 +45,6 @@ gibbs_sampler2(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi,
 \item{d_fcst}{The deterministic terms for the forecasting period.}
 
 \item{smooth_state}{Logical, if \code{TRUE} then the smoothed estimates of the latent states are also returned.}
-
-\item{D}{The \code{D} matrix (from \code{\link{build_DD}}).}
-
-\item{sigma}{The covariance matrix.}
 }
 \value{
 An object of class mfbvar.

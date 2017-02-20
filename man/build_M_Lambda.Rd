@@ -16,10 +16,6 @@ build_M_Lambda(Y, Lambda, n_vars, n_lags, n_T)
 \item{n_lags}{The number of lags.}
 
 \item{n_T}{The number of time points.}
-
-\item{D}{The \code{D} matrix (from \code{\link{build_DD}}).}
-
-\item{sigma}{The covariance matrix.}
 }
 \value{
 \item{M_Lambda}{A list of length \code{n_T}.}

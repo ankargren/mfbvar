@@ -36,11 +36,14 @@ fill_na <- function(Y) {
 #' @templateVar X TRUE
 #' @templateVar Sigma TRUE
 #' @templateVar M TRUE
+#' @templateVar Q TRUE
 #' @templateVar P TRUE
 #' @templateVar S TRUE
 #' @templateVar v TRUE
 #' @template man_template
-#' @return The evaluated density.
+#' @return
+#' For \code{dnorminvwish}: the evaluated density.\\n
+#' For \code{rmatn} or \code{rinvwish}: the random numbers.
 dnorminvwish <- function(X, Sigma, M, P, S, v) {
   q <- dim(Sigma)[1]
   p <- dim(P)[1]
@@ -59,6 +62,9 @@ dnorminvwish <- function(X, Sigma, M, P, S, v) {
 #' @templateVar m TRUE
 #' @template man_template
 #' @inherit dnorminvwish
+#' @return
+#' For \code{dmultn}: the evaluated density.\\n
+#' For \code{rmultn}: \eqn{p} random numbers.
 dmultn <- function(x, m, Sigma) {
   p <- dim(Sigma)[1]
   log_d <- (-1/2)* log(det(2*pi*Sigma)) -1/2 * t(x-m) %*% solve(Sigma) %*% (x-m)
@@ -79,14 +85,15 @@ dnorm_trunc <- function(x, m, V_inv, d, p_trunc, chisq_val) {
   return((1/p_trunc) * (1/sqrt((2*pi)^d/det(V_inv))) * exp(-0.5 * qf) * (qf < chisq_val))
 }
 
-#' Marginal data density (method 2)
+#' Marginal data density
 #'
-#' Estimate the marginal data density using method 2.
+#' Estimate the marginal data density.
+#' @details \code{mdd} uses method 2, \code{mdd1} uses method 1.
 #' @templateVar mfbvar_obj TRUE
 #' @templateVar p_trunc TRUE
 #' @template man_template
 #' @return
-#' A list with components being \code{n_reps}-long vectors. These can be used to estimate the MDD.
+#' \code{mdd} returns a list with components being \code{n_reps}-long vectors. These can be used to estimate the MDD.
 #' \item{pi_sigma_posterior}{Posterior of Pi and Sigma.}
 #' \item{data_likelihood}{The likelihood.}
 #' \item{pi_sigma_prior}{Prior of Pi and Sigma.}
@@ -177,13 +184,9 @@ mdd <- function(mfbvar_obj, p_trunc) {
               psi_prior = psi_prior, psi_truncated = psi_truncated))
 }
 
-#' Marginal data density (method 1)
-#'
-#' Estimate the marginal data density using method 1.
-#' @templateVar mfbvar_obj TRUE
-#' @template man_template
+#' @rdname mdd
 #' @return
-#' A list with components:
+#' \code{mdd1} returns a list with components:
 #' \item{lklhd}{The likelihood.}
 #' \item{Pi_Sigma_prior}{The evaluated prior.}
 #' \item{psi_prior}{The evaluated prior of psi.}

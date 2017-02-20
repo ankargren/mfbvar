@@ -192,12 +192,12 @@ gibbs_sampler2 <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_ps
     ### Steady-state step
     U <- build_U_cpp(Pi = Pi[,,r], n_determ = n_determ,
                      n_vars = n_vars, n_lags = n_lags)
-    post_psi_omega <- posterior_psi_omega(U = U, D = D, sigma = Sigma[,, r],
+    post_psi_omega <- posterior_psi_omega(U = U, D_mat = D, Sigma = Sigma[,, r],
                                           prior_psi_omega = prior_psi_omega)
     Y_tilde <- build_Y_tilde(Pi = Pi[,, r], z = Z[,, r-1])
 
-    post_psi <- posterior_psi(U = U, D = D, sigma = Sigma[,, r], prior_psi_omega = prior_psi_omega,
-                              psi_omega = post_psi_omega, Y_tilde = Y_tilde, prior_psi = prior_psi)
+    post_psi <- posterior_psi(U = U, D_mat = D, Sigma = Sigma[,, r], prior_psi_omega = prior_psi_omega,
+                              post_psi_omega = post_psi_omega, Y_tilde = Y_tilde, prior_psi = prior_psi)
     psi[r, ] <- t(rmultn(m = post_psi, Sigma = post_psi_omega))
 
 
