@@ -25,7 +25,6 @@ mfbvar <- function(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_mean_pi
   fun_call <- match.call()
   n_vars <- ncol(Y)
   n_T <- nrow(Y)
-  n_T_ <- n_T - n_lags
 
   # Set priors
   if (is.null(prior_nu)) {

@@ -12,7 +12,7 @@
 build_DD <- function(d, n_lags) {
   # Inputs:
 
-  n_determ <- ncol(d)
+
   n_T <- nrow(d)
   DD <- d[-(1:(n_lags)), ]
   for (i in 1:n_lags) {
@@ -52,7 +52,7 @@ build_companion <- function(Pi, n_vars, n_lags) {
 build_Z <- function(z, n_lags) {
   # Inputs:
 
-  n_vars <- ncol(z)
+
   n_T <- nrow(z)
   Z <- z[-(1:(n_lags-1)), ]
   for (i in 2:n_lags) {
@@ -126,7 +126,7 @@ build_M_Lambda <- function(Y, Lambda, n_vars, n_lags, n_T) {
   for (i in 1:n_T) {
     M_Lambda[[i]] <- matrix(diag(n_vars), ncol = n_vars) %*% Lambda
     if (any(is.na(Y[i, ]))) {
-      M_Lambda[[i]][is.na(Y[i,]), ] <- NA
+      M_Lambda[[i]][is.na(Y[i, ]), ] <- NA
     }
   }
   return(M_Lambda)
@@ -167,5 +167,3 @@ build_Lambda <- function(aggregation, n_lags) {
   }
   return(Lambda)
 }
-
-

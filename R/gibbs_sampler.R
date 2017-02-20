@@ -98,10 +98,10 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
   if (is.null(init_Z)) {
     Z[,, 1] <- fill_na(Y)
   } else {
-    if (all(dim(Z[,,1]) == dim(init_Z))) {
+    if (all(dim(Z[,, 1]) == dim(init_Z))) {
       Z[,, 1] <- init_Z
     } else {
-      stop(paste0("The dimension of init_Z is ", paste(dim(init_Z), collapse = " x "), ", but should be ", paste(dim(Z[,,1]), collapse = " x ")))
+      stop(paste0("The dimension of init_Z is ", paste(dim(init_Z), collapse = " x "), ", but should be ", paste(dim(Z[,, 1]), collapse = " x ")))
     }
 
   }
@@ -111,16 +111,16 @@ gibbs_sampler <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi
   if (is.null(init_Pi)) {
     Pi[,, 1]    <- ols_results$Pi
   } else {
-    if (all(dim(Pi[,,1]) == dim(init_Pi))) {
+    if (all(dim(Pi[,, 1]) == dim(init_Pi))) {
       Pi[,, 1] <- init_Pi
     } else {
-      stop(paste0("The dimension of init_Pi is ", paste(dim(init_Pi), collapse = " x "), ", but should be ", paste(dim(Pi[,,1]), collapse = " x ")))
+      stop(paste0("The dimension of init_Pi is ", paste(dim(init_Pi), collapse = " x "), ", but should be ", paste(dim(Pi[,, 1]), collapse = " x ")))
     }
   }
 
   # Compute the maximum eigenvalue of the initial Pi
   if (check_roots == TRUE) {
-    Pi_comp    <- build_companion(Pi = Pi[,,1], n_vars = n_vars, n_lags = n_lags)
+    Pi_comp    <- build_companion(Pi = Pi[,, 1], n_vars = n_vars, n_lags = n_lags)
     roots[1]   <- max_eig_cpp(Pi_comp)
   }
 
