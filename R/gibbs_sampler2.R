@@ -17,7 +17,7 @@ gibbs_sampler2 <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_ps
   n_vars <- dim(Y)[2]
   n_lags <- prod(dim(as.matrix(prior_pi)))/n_vars^2
   n_determ <- dim(d)[2]
-  n_T <- dim(Y)[1]#obs - n_lags
+  n_T <- dim(Y)[1]# - n_lags
   n_T_ <- n_T - n_lags
 
   ################################################################
