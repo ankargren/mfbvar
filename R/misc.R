@@ -66,7 +66,6 @@ dnorminvwish <- function(X, Sigma, M, P, S, v) {
 #' For \code{dmultn}: the evaluated density.\\n
 #' For \code{rmultn}: \eqn{p} random numbers.
 dmultn <- function(x, m, Sigma) {
-  p <- dim(Sigma)[1]
   log_d <- (-1/2)* log(det(2*pi*Sigma)) -1/2 * t(x-m) %*% solve(Sigma) %*% (x-m)
   return(exp(log_d))
 }
@@ -220,7 +219,6 @@ mdd1 <- function(mfbvar_obj) {
   post_pi_mean <- apply(Pi, c(1, 2), mean)
   post_Sigma <- apply(Sigma, c(1, 2), mean)
   post_psi <- colMeans(psi)
-  post_psi_omega <- cov(psi)
 
   prior_s <- mfbvar_obj$prior_s
   prior_nu <- mfbvar_obj$prior_nu
