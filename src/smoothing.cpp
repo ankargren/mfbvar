@@ -206,11 +206,12 @@ arma::mat simulation_smoother(arma::mat mZ, arma::mat Lambda, arma::mat mF, arma
   /****************************************************/
   arma::mat mhh = generate_mhh(mZ, Lambda, mF, mQ, iT, ip, iq, h0, P0);
   arma::mat mZZ(iT, ip);
+  mZZ.fill(NA_REAL);
   arma::mat mz;
   arma::uvec obs_vars;
   arma::mat mH;
   arma::mat mzz;
-  for (int i = 0; i < iT; i++) {
+    for (int i = 0; i < iT; i++) {
     mz = mZ.row(i);
     obs_vars = find_finite(mz);
     mH = Lambda.rows(obs_vars);
@@ -222,6 +223,12 @@ arma::mat simulation_smoother(arma::mat mZ, arma::mat Lambda, arma::mat mF, arma
   arma::mat Z1 = smoother(mZ,  Lambda, mF, mQ, iT, ip, iq, h0, P0);
   arma::mat Z2 = smoother(mZZ, Lambda, mF, mQ, iT, ip, iq, h0, P0);
   return(Z1-Z2+mhh);
+  /*return Rcpp::List::create(Rcpp::Named("Z1")  = Z1,
+                            Rcpp::Named("Z2")  = Z2,
+                            Rcpp::Named("mhh") = mhh,
+                            Rcpp::Named("mZZ") = mZZ,
+                            Rcpp::Named("res") = Z1-Z2+mhh);*/
+
 }
 
 
