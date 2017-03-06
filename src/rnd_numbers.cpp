@@ -50,7 +50,7 @@ arma::vec rmultn(arma::vec m, arma::mat Sigma){
   /*-------------------------------------------------------
 # Generate draws from a matricvariate normal distribution
 #-------------------------------------------------------*/
-   RNGScope scope;
+  RNGScope scope;
   int p = Sigma.n_rows;
   arma::vec X = rnorm(p);
   arma::mat L = arma::chol(Sigma, "lower");

@@ -211,7 +211,8 @@ arma::mat simulation_smoother(arma::mat mZ, arma::mat Lambda, arma::mat mF, arma
   arma::uvec obs_vars;
   arma::mat mH;
   arma::mat mzz;
-    for (int i = 0; i < iT; i++) {
+  mzz.fill(NA_REAL);
+  for (int i = 0; i < iT; i++) {
     mz = mZ.row(i);
     obs_vars = find_finite(mz);
     mH = Lambda.rows(obs_vars);
