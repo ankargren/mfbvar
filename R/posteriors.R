@@ -5,6 +5,7 @@
 #' @templateVar d TRUE
 #' @templateVar psi_r1 TRUE
 #' @templateVar prior_pi TRUE
+#' @templateVar prior_pi_omega TRUE
 #' @templateVar inv_prior_pi_omega TRUE
 #' @templateVar omega_pi TRUE
 #' @templateVar prior_s TRUE
@@ -19,7 +20,7 @@
 #' \item{Sigma_r}{The draw of \code{Sigma}.}
 #' \item{num_try}{The try at which a stable draw was obtained.}
 #' \item{root}{The maximum eigenvalue (in modulus) of the system.}
-pi_sigma_posterior <- function(Z_r1, d, psi_r1, prior_pi, inv_prior_pi_omega, omega_pi, prior_s, prior_nu, check_roots, n_vars, n_lags, n_T) {
+pi_sigma_posterior <- function(Z_r1, d, psi_r1, prior_pi, prior_pi_omega, inv_prior_pi_omega, omega_pi, prior_s, prior_nu, check_roots, n_vars, n_lags, n_T) {
   ################################################################
   ### Preliminary calculations
 
@@ -42,7 +43,7 @@ pi_sigma_posterior <- function(Z_r1, d, psi_r1, prior_pi, inv_prior_pi_omega, om
   # Then Sigma
   s_sample  <- crossprod(YY - XX %*% pi_sample)
   pi_diff <- prior_pi - pi_sample
-  post_s <- prior_s + s_sample + t(pi_diff) %*% solve(post_pi_omega + XXt.XX.inv) %*% pi_diff
+  post_s <- prior_s + s_sample + t(pi_diff) %*% solve(prior_pi_omega + XXt.XX.inv) %*% pi_diff
   nu <- n_T + prior_nu # Is this the right T? Or should it be T - lags?
   Sigma_r <- rinvwish(v = nu, S = post_s)
 

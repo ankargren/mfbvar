@@ -160,7 +160,7 @@ gibbs_sampler2 <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_ps
     # Then Sigma
     s_sample  <- crossprod(YY - XX %*% pi_sample)
     pi_diff <- prior_pi - pi_sample
-    post_s <- prior_s + s_sample + t(pi_diff) %*% solve(post_pi_omega + solve(crossprod(XX))) %*% pi_diff
+    post_s <- prior_s + s_sample + t(pi_diff) %*% solve(prior_pi_omega + solve(crossprod(XX))) %*% pi_diff
     nu <- n_T + prior_nu # Is this the right T? Or should it be T - lags?
     Sigma[,,r] <- rinvwish(v = nu, S = post_s)
 

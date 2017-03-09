@@ -4,8 +4,9 @@
 \alias{pi_sigma_posterior}
 \title{Draw from posterior of Pi and Sigma}
 \usage{
-pi_sigma_posterior(Z_r1, d, psi_r1, prior_pi, inv_prior_pi_omega, omega_pi,
-  prior_s, prior_nu, check_roots, n_vars, n_lags, n_T)
+pi_sigma_posterior(Z_r1, d, psi_r1, prior_pi, prior_pi_omega,
+  inv_prior_pi_omega, omega_pi, prior_s, prior_nu, check_roots, n_vars, n_lags,
+  n_T)
 }
 \arguments{
 \item{Z_r1}{The previous draw of \code{Z} (i.e. \code{Z[,, r-1]}).}
@@ -15,6 +16,8 @@ pi_sigma_posterior(Z_r1, d, psi_r1, prior_pi, inv_prior_pi_omega, omega_pi,
 \item{psi_r1}{The previous draw of \code{psi} (i.e. \code{psi[r-1,]}).}
 
 \item{prior_pi}{Matrix of size \code{n_vars * (n_vars*n_lags)} containing the prior for the mean of the dynamic coefficients.}
+
+\item{prior_pi_omega}{Matrix of size \code{(n_vars*n_lags)* (n_vars*n_lags)} containing the prior for (part of) the prior covariance of the dynamic coefficients.}
 
 \item{inv_prior_pi_omega}{The inverse of the prior covariance matrix for Pi.}
 

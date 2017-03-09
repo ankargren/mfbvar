@@ -12,5 +12,5 @@
 // [[Rcpp::export]]
 double max_eig_cpp(arma::mat A) {
   arma::cx_vec eigval = arma::eig_gen(A);
-  return abs(max(eigval));
+  return max(abs(eigval));
 }
