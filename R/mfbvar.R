@@ -60,7 +60,7 @@ mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_n
   prior_S <- priors$prior_S
 
   # For the smoothing
-  cat(paste0("############################################\nRunning the burn-in sampler with ", n_burnin, " draws\n"))
+  cat(paste0("############################################\n  Running the burn-in sampler with ", n_burnin, " draws\n\n"))
   start_burnin <- Sys.time()
   burn_in <-  gibbs_sampler(Y = Y, d = d, d_fcst = NULL, Lambda = Lambda, prior_Pi_mean = prior_Pi_mean, prior_Pi_Omega = prior_Pi_Omega,
                             prior_S = prior_S, prior_nu = prior_nu, prior_psi_mean = prior_psi_mean, prior_psi_Omega = prior_psi_Omega,
@@ -68,10 +68,10 @@ mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_n
                             init_Z = NULL, smooth_state = FALSE, check_roots = TRUE)
   end_burnin <- Sys.time()
   time_diff <- end_burnin - start_burnin
-  cat(paste0("\nTime elapsed for drawing ", n_burnin, " times for burn-in: ", signif(time_diff, digits = 1), " ",
+  cat(paste0("\n  Time elapsed for drawing ", n_burnin, " times for burn-in: ", signif(time_diff, digits = 1), " ",
              attr(time_diff, "units"), "\n"))
-  cat(paste0("\nMoving on to ",
-             n_reps, " replications in the main chain\n", ifelse(!is.null(n_fcst), paste0("Making forecasts ", n_fcst, " steps ahead"), NULL), "\n"))
+  cat(paste0("\n  Moving on to ",
+             n_reps, " replications in the main chain\n", ifelse(!is.null(n_fcst), paste0("  Making forecasts ", n_fcst, " steps ahead"), NULL), "\n\n"))
 
   main_run <- gibbs_sampler(Y = Y, d = d, d_fcst = d_fcst, Lambda = Lambda, prior_Pi_mean = prior_Pi_mean, prior_Pi_Omega = prior_Pi_Omega,
                 prior_S = prior_S, prior_nu = prior_nu, prior_psi_mean = prior_psi_mean, prior_psi_Omega = prior_psi_Omega,
@@ -79,11 +79,11 @@ mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_n
                 init_psi = burn_in$psi[dim(burn_in$psi)[1],], init_Z   = burn_in$Z[,,dim(burn_in$Z)[3]], smooth_state = FALSE, check_roots = TRUE)
   main_run$call <- fun_call
   time_diff <- Sys.time() - start_burnin
-  cat(paste0("\nTotal time elapsed: ", signif(time_diff, digits = 1), " ",
+  cat(paste0("\n  Total time elapsed: ", signif(time_diff, digits = 1), " ",
              attr(time_diff, "units")))
 
   if (!is.null(row_names) && !is.null(n_fcst)) {
-    rownames(main_run$Z_fcst)[1:main_run$n_lags] <- row_names[(main_run$n_lags-3):main_run$n_lags]
+    rownames(main_run$Z_fcst)[1:main_run$n_lags] <- row_names[(main_run$n_T-main_run$n_lags+1):main_run$n_T]
     main_run$row_names <- row_names
   }
   if (!is.null(col_names)) {
@@ -101,5 +101,68 @@ print.mfbvar <- function(x, ...){
   cat(paste0("Mixed-frequency steady-state BVAR with:\n", ncol(x$Y), " variables", ifelse(!is.null(x$col_names), paste0(" (", paste(x$col_names, collapse = ", "), ")"), " "), "\n", nrow(x$prior_Pi_mean)/ncol(x$prior_Pi_mean), " lags\n",
              nrow(x$Y), " time periods", ifelse(!is.null(x$row_names), paste0(" (", x$row_names[1], " - ", x$row_names[length(x$row_names)], ")"), " "), "\n", ifelse(is.null(x$n_fcst), "0", x$n_fcst), " periods forecasted\n",
              x$n_reps, " draws used in main chain"))
+}
+
+plot.mfbvar <- function(x, ...){
+  if (!hasArg(plot_start)) {
+    if (!is.null(n_fcst)) {
+      plot_range <- max(x$n_T-x$n_fcst*5, 0):x$n_T
+    }  else {
+      plot_range <- 1:x$n_T
+    }
+  } else {
+    plot_range <- plot_start:x$n_T
+  }
+
+  if (!hasArg(ss_level)) {
+    ss_level <- c(0.025, 0.975)
+  }
+  if (!hasArg(pred_level)) {
+    pred_level <- c(0.10, 0.90)
+  }
+
+  ss_lower  <- x$d[plot_range, ] %*% t(matrix(apply(x$psi, 2, quantile, prob = ss_level[1]), ncol = x$n_determ))
+  ss_median <- x$d[plot_range, ] %*% t(matrix(apply(x$psi, 2, quantile, prob = 0.5), ncol = x$n_determ))
+  ss_upper  <- x$d[plot_range, ] %*% t(matrix(apply(x$psi, 2, quantile, prob = ss_level[2]), ncol = x$n_determ))
+  col_names <- if (is.null(x$col_names)) paste0("X", 1:x$n_vars) else x$col_names
+  row_names <- if (is.null(x$row_names)) 1:x$n_T else x$row_names
+  ss <- data.frame(expand.grid(time = plot_range, col_names = col_names), lower = c(ss_lower), median = c(ss_median),
+                   upper = c(ss_upper))
+  ss$value <- c(as.matrix(Y[plot_range,]))
+  ss <- na.omit(ss)
+
+  p <- ggplot(ss, aes(x = time)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper, fill = "grey70"), alpha = 0.5) +
+    geom_line(aes(y = value))
+
+  if (!is.null(x$n_fcst)) {
+    fcst_lower <- apply(x$Z_fcst[-(1:(x$n_lags-1)),,-1], c(1,2), quantile, prob = pred_level[1])
+    fcst_median <- apply(x$Z_fcst[-(1:(x$n_lags-1)),,-1], c(1,2), quantile, prob = 0.5)
+    fcst_upper <- apply(x$Z_fcst[-(1:(x$n_lags-1)),,-1], c(1,2), quantile, prob = pred_level[2])
+    fcst <- data.frame(expand.grid(time = x$n_T:(x$n_T+x$n_fcst), col_names = col_names),
+                       lower = c(fcst_lower), median = c(fcst_median),
+                     upper = c(fcst_upper))
+    p <- p + geom_ribbon(data = fcst, aes(ymin = lower, ymax = upper,
+                                          fill = "grey30"), alpha = 0.5) +
+      geom_line(data = fcst, aes(y = median), linetype = "dashed")
+    row_names <- c(row_names, rownames(x$Z_fcst)[-(1:x$n_lags)])
+  }
+
+
+
+  p <- p + facet_wrap(~col_names, scales = "free_y") +
+    scale_fill_manual(values = c("grey70", "grey30"),
+                      label = c(paste0("Prediction (", 100*(pred_level[2]-pred_level[1]), "%)"),
+                                paste0("Steady state (", 100*(ss_level[2]-ss_level[1]), "%)"))) +
+    labs(fill = "Intervals",
+         title = "Forecasts and steady state intervals",
+         y = "Value",
+         x = "Time") +
+    theme_minimal() +
+    theme(legend.position="bottom")
+  breaks <- ggplot_build(p)$layout$panel_ranges[[1]]$x.major_source
+  breaks <- breaks[-which(!(breaks %in% 1:x$n_T))]
+  p + scale_x_continuous(breaks = breaks,
+                         labels = row_names[breaks])
 }
 

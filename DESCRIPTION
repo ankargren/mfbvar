@@ -9,7 +9,7 @@ Description: A package for estimating mixed-frequency Bayesian VAR models with s
 License: MIT + file LICENSE
 LazyData: TRUE
 Imports:
-    Rcpp (>= 0.12.7), RcppArmadillo
+    Rcpp (>= 0.12.7), RcppArmadillo, ggplot2
 LinkingTo:
     Rcpp, RcppArmadillo
 Depends: R (>= 2.10)
