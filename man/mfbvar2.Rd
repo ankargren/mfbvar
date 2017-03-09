@@ -4,7 +4,7 @@
 \alias{mfbvar2}
 \title{Template titel}
 \usage{
-mfbvar2(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_mean_pi, lambda1,
+mfbvar2(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_mean_Pi, lambda1,
   lambda2, prior_nu = NULL, prior_mean_psi, prior_var_psi, ...)
 }
 \arguments{
@@ -22,7 +22,7 @@ mfbvar2(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_mean_pi, lambda1,
 
 \item{n_reps}{The number of replications.}
 
-\item{prior_mean_pi}{Matrix of size \code{n_vars * (n_vars*n_lags)} containing the prior for the mean of the dynamic coefficients.}
+\item{prior_mean_Pi}{Matrix of size \code{n_vars * (n_vars*n_lags)} containing the prior for the mean of the dynamic coefficients.}
 
 \item{lambda1}{The overall tightness.}
 

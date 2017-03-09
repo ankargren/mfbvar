@@ -8,7 +8,7 @@ using namespace Rcpp;
 
 // build_U_cpp
 arma::mat build_U_cpp(arma::mat Pi, int n_determ, int n_vars, int n_lags);
-RcppExport SEXP MFBVAR_build_U_cpp(SEXP PiSEXP, SEXP n_determSEXP, SEXP n_varsSEXP, SEXP n_lagsSEXP) {
+RcppExport SEXP mfbvar_build_U_cpp(SEXP PiSEXP, SEXP n_determSEXP, SEXP n_varsSEXP, SEXP n_lagsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -22,7 +22,7 @@ END_RCPP
 }
 // max_eig_cpp
 double max_eig_cpp(arma::mat A);
-RcppExport SEXP MFBVAR_max_eig_cpp(SEXP ASEXP) {
+RcppExport SEXP mfbvar_max_eig_cpp(SEXP ASEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -33,7 +33,7 @@ END_RCPP
 }
 // rmatn
 arma::mat rmatn(arma::mat M, arma::mat Q, arma::mat P);
-RcppExport SEXP MFBVAR_rmatn(SEXP MSEXP, SEXP QSEXP, SEXP PSEXP) {
+RcppExport SEXP mfbvar_rmatn(SEXP MSEXP, SEXP QSEXP, SEXP PSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -46,7 +46,7 @@ END_RCPP
 }
 // rinvwish
 arma::mat rinvwish(int v, arma::mat S);
-RcppExport SEXP MFBVAR_rinvwish(SEXP vSEXP, SEXP SSEXP) {
+RcppExport SEXP mfbvar_rinvwish(SEXP vSEXP, SEXP SSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -58,7 +58,7 @@ END_RCPP
 }
 // rmultn
 arma::vec rmultn(arma::vec m, arma::mat Sigma);
-RcppExport SEXP MFBVAR_rmultn(SEXP mSEXP, SEXP SigmaSEXP) {
+RcppExport SEXP mfbvar_rmultn(SEXP mSEXP, SEXP SigmaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -69,78 +69,78 @@ BEGIN_RCPP
 END_RCPP
 }
 // smoother
-arma::mat smoother(arma::mat mZ, arma::mat Lambda, arma::mat mF, arma::mat mQ, int iT, int ip, int iq, arma::mat h0, arma::mat P0);
-RcppExport SEXP MFBVAR_smoother(SEXP mZSEXP, SEXP LambdaSEXP, SEXP mFSEXP, SEXP mQSEXP, SEXP iTSEXP, SEXP ipSEXP, SEXP iqSEXP, SEXP h0SEXP, SEXP P0SEXP) {
+arma::mat smoother(arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, arma::mat Q_comp, int n_T, int n_vars, int n_comp, arma::mat z0, arma::mat P0);
+RcppExport SEXP mfbvar_smoother(SEXP YSEXP, SEXP LambdaSEXP, SEXP Pi_compSEXP, SEXP Q_compSEXP, SEXP n_TSEXP, SEXP n_varsSEXP, SEXP n_compSEXP, SEXP z0SEXP, SEXP P0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type mZ(mZSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Y(YSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type Lambda(LambdaSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type mF(mFSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type mQ(mQSEXP);
-    Rcpp::traits::input_parameter< int >::type iT(iTSEXP);
-    Rcpp::traits::input_parameter< int >::type ip(ipSEXP);
-    Rcpp::traits::input_parameter< int >::type iq(iqSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type h0(h0SEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Pi_comp(Pi_compSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Q_comp(Q_compSEXP);
+    Rcpp::traits::input_parameter< int >::type n_T(n_TSEXP);
+    Rcpp::traits::input_parameter< int >::type n_vars(n_varsSEXP);
+    Rcpp::traits::input_parameter< int >::type n_comp(n_compSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type z0(z0SEXP);
     Rcpp::traits::input_parameter< arma::mat >::type P0(P0SEXP);
-    rcpp_result_gen = Rcpp::wrap(smoother(mZ, Lambda, mF, mQ, iT, ip, iq, h0, P0));
+    rcpp_result_gen = Rcpp::wrap(smoother(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0));
     return rcpp_result_gen;
 END_RCPP
 }
 // generate_mhh
-arma::mat generate_mhh(arma::mat mZ, arma::mat Lambda, arma::mat mF, arma::mat mQ, int iT, int ip, int iq, arma::mat h0, arma::mat P0);
-RcppExport SEXP MFBVAR_generate_mhh(SEXP mZSEXP, SEXP LambdaSEXP, SEXP mFSEXP, SEXP mQSEXP, SEXP iTSEXP, SEXP ipSEXP, SEXP iqSEXP, SEXP h0SEXP, SEXP P0SEXP) {
+arma::mat generate_mhh(arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, arma::mat Q_comp, int n_T, int n_vars, int n_comp, arma::mat z0, arma::mat P0);
+RcppExport SEXP mfbvar_generate_mhh(SEXP YSEXP, SEXP LambdaSEXP, SEXP Pi_compSEXP, SEXP Q_compSEXP, SEXP n_TSEXP, SEXP n_varsSEXP, SEXP n_compSEXP, SEXP z0SEXP, SEXP P0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type mZ(mZSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Y(YSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type Lambda(LambdaSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type mF(mFSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type mQ(mQSEXP);
-    Rcpp::traits::input_parameter< int >::type iT(iTSEXP);
-    Rcpp::traits::input_parameter< int >::type ip(ipSEXP);
-    Rcpp::traits::input_parameter< int >::type iq(iqSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type h0(h0SEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Pi_comp(Pi_compSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Q_comp(Q_compSEXP);
+    Rcpp::traits::input_parameter< int >::type n_T(n_TSEXP);
+    Rcpp::traits::input_parameter< int >::type n_vars(n_varsSEXP);
+    Rcpp::traits::input_parameter< int >::type n_comp(n_compSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type z0(z0SEXP);
     Rcpp::traits::input_parameter< arma::mat >::type P0(P0SEXP);
-    rcpp_result_gen = Rcpp::wrap(generate_mhh(mZ, Lambda, mF, mQ, iT, ip, iq, h0, P0));
+    rcpp_result_gen = Rcpp::wrap(generate_mhh(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0));
     return rcpp_result_gen;
 END_RCPP
 }
 // simulation_smoother
-arma::mat simulation_smoother(arma::mat mZ, arma::mat Lambda, arma::mat mF, arma::mat mQ, int iT, int ip, int iq, arma::mat h0, arma::mat P0);
-RcppExport SEXP MFBVAR_simulation_smoother(SEXP mZSEXP, SEXP LambdaSEXP, SEXP mFSEXP, SEXP mQSEXP, SEXP iTSEXP, SEXP ipSEXP, SEXP iqSEXP, SEXP h0SEXP, SEXP P0SEXP) {
+arma::mat simulation_smoother(arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, arma::mat Q_comp, int n_T, int n_vars, int n_comp, arma::mat z0, arma::mat P0);
+RcppExport SEXP mfbvar_simulation_smoother(SEXP YSEXP, SEXP LambdaSEXP, SEXP Pi_compSEXP, SEXP Q_compSEXP, SEXP n_TSEXP, SEXP n_varsSEXP, SEXP n_compSEXP, SEXP z0SEXP, SEXP P0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type mZ(mZSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Y(YSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type Lambda(LambdaSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type mF(mFSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type mQ(mQSEXP);
-    Rcpp::traits::input_parameter< int >::type iT(iTSEXP);
-    Rcpp::traits::input_parameter< int >::type ip(ipSEXP);
-    Rcpp::traits::input_parameter< int >::type iq(iqSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type h0(h0SEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Pi_comp(Pi_compSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Q_comp(Q_compSEXP);
+    Rcpp::traits::input_parameter< int >::type n_T(n_TSEXP);
+    Rcpp::traits::input_parameter< int >::type n_vars(n_varsSEXP);
+    Rcpp::traits::input_parameter< int >::type n_comp(n_compSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type z0(z0SEXP);
     Rcpp::traits::input_parameter< arma::mat >::type P0(P0SEXP);
-    rcpp_result_gen = Rcpp::wrap(simulation_smoother(mZ, Lambda, mF, mQ, iT, ip, iq, h0, P0));
+    rcpp_result_gen = Rcpp::wrap(simulation_smoother(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0));
     return rcpp_result_gen;
 END_RCPP
 }
 // loglike
-arma::mat loglike(arma::mat mZ, arma::mat Lambda, arma::mat mF, arma::mat mQ, int iT, int ip, int iq, arma::mat h0, arma::mat P0);
-RcppExport SEXP MFBVAR_loglike(SEXP mZSEXP, SEXP LambdaSEXP, SEXP mFSEXP, SEXP mQSEXP, SEXP iTSEXP, SEXP ipSEXP, SEXP iqSEXP, SEXP h0SEXP, SEXP P0SEXP) {
+arma::mat loglike(arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, arma::mat Q_comp, int n_T, int n_vars, int n_comp, arma::mat z0, arma::mat P0);
+RcppExport SEXP mfbvar_loglike(SEXP YSEXP, SEXP LambdaSEXP, SEXP Pi_compSEXP, SEXP Q_compSEXP, SEXP n_TSEXP, SEXP n_varsSEXP, SEXP n_compSEXP, SEXP z0SEXP, SEXP P0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type mZ(mZSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Y(YSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type Lambda(LambdaSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type mF(mFSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type mQ(mQSEXP);
-    Rcpp::traits::input_parameter< int >::type iT(iTSEXP);
-    Rcpp::traits::input_parameter< int >::type ip(ipSEXP);
-    Rcpp::traits::input_parameter< int >::type iq(iqSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type h0(h0SEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Pi_comp(Pi_compSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Q_comp(Q_compSEXP);
+    Rcpp::traits::input_parameter< int >::type n_T(n_TSEXP);
+    Rcpp::traits::input_parameter< int >::type n_vars(n_varsSEXP);
+    Rcpp::traits::input_parameter< int >::type n_comp(n_compSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type z0(z0SEXP);
     Rcpp::traits::input_parameter< arma::mat >::type P0(P0SEXP);
-    rcpp_result_gen = Rcpp::wrap(loglike(mZ, Lambda, mF, mQ, iT, ip, iq, h0, P0));
+    rcpp_result_gen = Rcpp::wrap(loglike(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0));
     return rcpp_result_gen;
 END_RCPP
 }

@@ -2,13 +2,13 @@
 % Please edit documentation in R/posteriors.R
 \name{posterior_psi}
 \alias{posterior_psi}
-\alias{posterior_psi_omega}
+\alias{posterior_psi_Omega}
 \title{Compute posterior moments of the steady-state parameters}
 \usage{
-posterior_psi(U, D_mat, Sigma, prior_psi_omega, post_psi_omega, Y_tilde,
+posterior_psi(U, D_mat, Sigma, prior_psi_Omega, post_psi_Omega, Y_tilde,
   prior_psi)
 
-posterior_psi_omega(U, D_mat, Sigma, prior_psi_omega)
+posterior_psi_Omega(U, D_mat, Sigma, prior_psi_Omega)
 }
 \arguments{
 \item{U}{\eqn{U} matrix, of size \code{(n_vars*n_determ*(n_lags+1)) * (n_vars*n_determ)}. This can be obtained using \code{\link{build_U}}.}
@@ -17,9 +17,9 @@ posterior_psi_omega(U, D_mat, Sigma, prior_psi_omega)
 
 \item{Sigma}{The covariance matrix.}
 
-\item{prior_psi_omega}{Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.}
+\item{prior_psi_Omega}{Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.}
 
-\item{post_psi_omega}{The covariance matrix in the posterior, \eqn{\bar{\Omega}_{\Psi}}.}
+\item{post_psi_Omega}{The covariance matrix in the posterior, \eqn{\bar{\Omega}_{\Psi}}.}
 
 \item{Y_tilde}{The lag-corrected data matrix (with no missing values) of size \code{n_T * n_vars}.}
 
@@ -29,7 +29,7 @@ posterior_psi_omega(U, D_mat, Sigma, prior_psi_omega)
 The return is:
 \item{psi}{The posterior mean (from \code{\link{posterior_psi}})}
 
-\item{psi_omega}{The posterior variance (from \code{\link{posterior_psi_omega}})}
+\item{psi_Omega}{The posterior variance (from \code{\link{posterior_psi_Omega}})}
 }
 \description{
 Computes the mean and variance of the conditional posterior distribution of the steady-state parameters.

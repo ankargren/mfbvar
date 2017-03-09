@@ -4,7 +4,7 @@
 \alias{psi_posterior}
 \title{Draw from posterior of psi}
 \usage{
-psi_posterior(Pi_r, Sigma_r, Z_r1, prior_psi, prior_psi_omega, D_mat, n_vars,
+psi_posterior(Pi_r, Sigma_r, Z_r1, prior_psi, prior_psi_Omega, D_mat, n_vars,
   n_lags, n_determ)
 }
 \arguments{
@@ -16,7 +16,7 @@ psi_posterior(Pi_r, Sigma_r, Z_r1, prior_psi, prior_psi_omega, D_mat, n_vars,
 
 \item{prior_psi}{Vector of length \code{n_determ*n_vars} with the prior means of the steady-state parameters.}
 
-\item{prior_psi_omega}{Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.}
+\item{prior_psi_Omega}{Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.}
 
 \item{D_mat}{The \code{D} matrix (from \code{\link{build_DD}}).}
 

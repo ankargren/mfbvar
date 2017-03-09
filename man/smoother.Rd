@@ -10,30 +10,30 @@
 \alias{loglike}
 \title{Smooth and sample from the smoothed distribution}
 \usage{
-smoother(mZ, Lambda, mF, mQ, iT, ip, iq, h0, P0)
+smoother(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
 
-generate_mhh(mZ, Lambda, mF, mQ, iT, ip, iq, h0, P0)
+generate_mhh(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
 
-simulation_smoother(mZ, Lambda, mF, mQ, iT, ip, iq, h0, P0)
+simulation_smoother(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
 
-loglike(mZ, Lambda, mF, mQ, iT, ip, iq, h0, P0)
+loglike(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
 }
 \arguments{
-\item{mZ}{\code{T * n_vars} matrix with the observations (\code{NA} represents missingness)}
+\item{Y}{The data matrix of size \code{(n_T + n_lags) * n_vars} with \code{NA} representing missingness. Must correspond well to the specification of \code{M_Lambda}.}
 
 \item{Lambda}{The Lambda matrix (size \code{n_vars* (n_vars*n_lags)}).}
 
-\item{mF}{\code{(n_vars*n_lags) * (n_vars*n_lags)} matrix containing parameters (companion form)}
+\item{Pi_comp}{Matrix with the dynamic coefficients in companion form.}
 
-\item{mQ}{\code{(n_vars*n_lags) * (n_vars*n_lags)} matrix whose \code{n_vars*n_vars} top-left block is the Cholesky decomposition of the error covariance matrix}
+\item{Q_comp}{The lower-triangular Cholesky decomposition of the covariance matrix (in companion form).}
 
-\item{iT}{The sample size (sometimes called \code{n_T}).}
+\item{n_T}{The number of time points.}
 
-\item{ip}{The number of variables (\code{n_vars}).}
+\item{n_vars}{The number of variables.}
 
-\item{iq}{The companion-form dimension (\code{n_vars*n_lags}).}
+\item{n_comp}{The length of the companion form vector of data (\code{n_vars*n_lags}).}
 
-\item{h0}{The initial state (\code{(n_vars*n_lags)*1}).}
+\item{z0}{A matrix of size \code{(n_lags*n_vars) * n_vars} of initial values of the latent variable.}
 
 \item{P0}{The covariance matrix of the initial state (\code{(n_vars*n_lags)*(n_vars*n_lags)}).}
 }

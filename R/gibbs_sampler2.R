@@ -3,7 +3,7 @@
 #' @templateVar lH TRUE
 #' @template man_template
 #'
-gibbs_sampler2 <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi, prior_psi_omega,
+gibbs_sampler2 <- function(prior_Pi, prior_Pi_Omega, prior_nu, prior_s, prior_psi, prior_psi_Omega,
                            Y, d, n_reps, n_fcst = NULL, lH, check_roots = TRUE,
                            init_Pi = NULL, init_Sigma = NULL, init_psi = NULL, init_Z = NULL,
                            d_fcst = NULL, smooth_state = FALSE) {
@@ -15,7 +15,7 @@ gibbs_sampler2 <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_ps
   # n_T_: sample size (reduced sample)
 
   n_vars <- dim(Y)[2]
-  n_lags <- prod(dim(as.matrix(prior_pi)))/n_vars^2
+  n_lags <- prod(dim(as.matrix(prior_Pi)))/n_vars^2
   n_determ <- dim(d)[2]
   n_T <- dim(Y)[1]# - n_lags
   n_T_ <- n_T - n_lags
@@ -129,7 +129,7 @@ gibbs_sampler2 <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_ps
   D <- build_DD(d = d, n_lags = n_lags)
 
   # For the posterior of Pi
-  omega_pi <- solve(prior_pi_omega) %*% prior_pi
+  Omega_Pi <- solve(prior_Pi_Omega) %*% prior_Pi
 
   # Calculations for the simulation smoother
   lH0 <- vector("list", n_T_)
@@ -149,18 +149,18 @@ gibbs_sampler2 <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_ps
     demeaned_Z <- build_Z(z = demeaned_z, n_lags = n_lags)
     XX <- demeaned_Z[-nrow(demeaned_Z), ]
     YY <- demeaned_Z[-1, 1:n_vars]
-    pi_sample <- solve(crossprod(XX)) %*% crossprod(XX, YY)
+    Pi_sample <- solve(crossprod(XX)) %*% crossprod(XX, YY)
     ################################################################
     ### Pi and Sigma step
 
     # Posterior moments of Pi
-    post_pi_omega <- solve(solve(prior_pi_omega) + crossprod(XX))
-    post_pi       <- post_pi_omega %*% (omega_pi + crossprod(XX, YY))
+    post_Pi_Omega <- solve(solve(prior_Pi_Omega) + crossprod(XX))
+    post_Pi       <- post_Pi_Omega %*% (Omega_Pi + crossprod(XX, YY))
 
     # Then Sigma
-    s_sample  <- crossprod(YY - XX %*% pi_sample)
-    pi_diff <- prior_pi - pi_sample
-    post_s <- prior_s + s_sample + t(pi_diff) %*% solve(prior_pi_omega + solve(crossprod(XX))) %*% pi_diff
+    s_sample  <- crossprod(YY - XX %*% Pi_sample)
+    Pi_diff <- prior_Pi - Pi_sample
+    post_s <- prior_s + s_sample + t(Pi_diff) %*% solve(prior_Pi_Omega + solve(crossprod(XX))) %*% Pi_diff
     nu <- n_T + prior_nu # Is this the right T? Or should it be T - lags?
     Sigma[,,r] <- rinvwish(v = nu, S = post_s)
 
@@ -172,7 +172,7 @@ gibbs_sampler2 <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_ps
     Pi_temp <- array(NA, dim = c(n_vars, n_vars * n_lags, ifelse(check_roots, 1000, 1)))
     while(stationarity_check == FALSE) {
       iter <- iter + 1
-      Pi_temp[,,iter] <- rmatn(M = t(post_pi), Q = post_pi_omega, P = Sigma[,,r])
+      Pi_temp[,,iter] <- rmatn(M = t(post_Pi), Q = post_Pi_Omega, P = Sigma[,,r])
       Pi_comp    <- build_companion(Pi_temp[,, iter], n_vars = n_vars, n_lags = n_lags)
       if (check_roots == TRUE) {
         roots[r] <- max_eig_cpp(Pi_comp)
@@ -192,13 +192,13 @@ gibbs_sampler2 <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_ps
     ### Steady-state step
     U <- build_U_cpp(Pi = Pi[,,r], n_determ = n_determ,
                      n_vars = n_vars, n_lags = n_lags)
-    post_psi_omega <- posterior_psi_omega(U = U, D_mat = D, Sigma = Sigma[,, r],
-                                          prior_psi_omega = prior_psi_omega)
+    post_psi_Omega <- posterior_psi_Omega(U = U, D_mat = D, Sigma = Sigma[,, r],
+                                          prior_psi_Omega = prior_psi_Omega)
     Y_tilde <- build_Y_tilde(Pi = Pi[,, r], z = Z[,, r-1])
 
-    post_psi <- posterior_psi(U = U, D_mat = D, Sigma = Sigma[,, r], prior_psi_omega = prior_psi_omega,
-                              post_psi_omega = post_psi_omega, Y_tilde = Y_tilde, prior_psi = prior_psi)
-    psi[r, ] <- t(rmultn(m = post_psi, Sigma = post_psi_omega))
+    post_psi <- posterior_psi(U = U, D_mat = D, Sigma = Sigma[,, r], prior_psi_Omega = prior_psi_Omega,
+                              post_psi_Omega = post_psi_Omega, Y_tilde = Y_tilde, prior_psi = prior_psi)
+    psi[r, ] <- t(rmultn(m = post_psi, Sigma = post_psi_Omega))
 
 
 
@@ -255,9 +255,9 @@ gibbs_sampler2 <- function(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_ps
   ### Prepare the return object
   return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z, roots = NULL, num_tries = NULL,
                      Z_fcst = NULL, mdd = NULL, smoothed_Z = NULL, smoothed_Y = NULL, n_determ = n_determ,
-                     n_lags = n_lags, n_vars = n_vars, prior_pi_omega = prior_pi_omega, prior_pi = prior_pi,
+                     n_lags = n_lags, n_vars = n_vars, prior_Pi_Omega = prior_Pi_Omega, prior_Pi = prior_Pi,
                      prior_s = prior_s, prior_nu = prior_nu, nu = nu, d = d, Y = Y, n_T = n_T, n_T_ = n_T_, lH0 = lH0,
-                     prior_psi_omega = prior_psi_omega, prior_psi = prior_psi, n_reps = n_reps)
+                     prior_psi_Omega = prior_psi_Omega, prior_psi = prior_psi, n_reps = n_reps)
 
   if (check_roots == TRUE) {
     return_obj$roots <- roots

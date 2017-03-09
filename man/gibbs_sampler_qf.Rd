@@ -4,15 +4,15 @@
 \alias{gibbs_sampler_qf}
 \title{Template titel}
 \usage{
-gibbs_sampler_qf(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi,
-  prior_psi_omega, Y, d, n_reps, n_fcst = NULL, lH, check_roots = TRUE,
+gibbs_sampler_qf(prior_Pi, prior_Pi_Omega, prior_nu, prior_s, prior_psi,
+  prior_psi_Omega, Y, d, n_reps, n_fcst = NULL, lH, check_roots = TRUE,
   init_Pi = NULL, init_Sigma = NULL, init_psi = NULL, init_Z = NULL,
   d_fcst = NULL, smooth_state = FALSE)
 }
 \arguments{
-\item{prior_pi}{Matrix of size \code{n_vars * (n_vars*n_lags)} containing the prior for the mean of the dynamic coefficients.}
+\item{prior_Pi}{Matrix of size \code{n_vars * (n_vars*n_lags)} containing the prior for the mean of the dynamic coefficients.}
 
-\item{prior_pi_omega}{Matrix of size \code{(n_vars*n_lags)* (n_vars*n_lags)} containing the prior for (part of) the prior covariance of the dynamic coefficients.}
+\item{prior_Pi_Omega}{Matrix of size \code{(n_vars*n_lags)* (n_vars*n_lags)} containing the prior for (part of) the prior covariance of the dynamic coefficients.}
 
 \item{prior_nu}{The prior degrees of freedom.}
 
@@ -20,7 +20,7 @@ gibbs_sampler_qf(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_psi,
 
 \item{prior_psi}{Vector of length \code{n_determ*n_vars} with the prior means of the steady-state parameters.}
 
-\item{prior_psi_omega}{Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.}
+\item{prior_psi_Omega}{Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.}
 
 \item{Y}{The data matrix of size \code{(n_T + n_lags) * n_vars} with \code{NA} representing missingness. Must correspond well to the specification of \code{M_Lambda}.}
 

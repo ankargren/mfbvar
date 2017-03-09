@@ -16,9 +16,9 @@ mdd1(mfbvar_obj)
 }
 \value{
 \code{mdd} returns a list with components being \code{n_reps}-long vectors. These can be used to estimate the MDD.
-\item{pi_sigma_posterior}{Posterior of Pi and Sigma.}
+\item{Pi_Sigma_posterior}{Posterior of Pi and Sigma.}
 \item{data_likelihood}{The likelihood.}
-\item{pi_sigma_prior}{Prior of Pi and Sigma.}
+\item{Pi_Sigma_prior}{Prior of Pi and Sigma.}
 \item{psi_prior}{Prior of psi.}
 \item{psi_truncated}{The truncated psi pdf.}
 

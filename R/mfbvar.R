@@ -9,7 +9,7 @@
 #' @templateVar n_lags TRUE
 #' @templateVar n_burnin TRUE
 #' @templateVar n_reps TRUE
-#' @templateVar prior_mean_pi TRUE
+#' @templateVar prior_mean_Pi TRUE
 #' @templateVar lambda1 TRUE
 #' @templateVar lambda2 TRUE
 #' @templateVar prior_nu TRUE
@@ -19,7 +19,7 @@
 #' @template man_template
 #' @details \code{mfbvar} calls \code{\link{gibbs_sampler}} (implemented in C++)
 
-mfbvar <- function(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_mean_pi,
+mfbvar <- function(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_mean_Pi,
                    lambda1, lambda2, prior_nu = NULL, prior_mean_psi, prior_var_psi, ...) {
 
   fun_call <- match.call()
@@ -30,19 +30,19 @@ mfbvar <- function(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_mean_pi
   if (is.null(prior_nu)) {
     prior_nu <- n_vars + 2
   }
-  priors <- prior_pi_sigma(lambda1 = lambda1, lambda2 = lambda2, prior_mean = prior_mean_pi, Y = Y,
+  priors <- prior_Pi_Sigma(lambda1 = lambda1, lambda2 = lambda2, prior_mean = prior_mean_Pi, Y = Y,
                            n_lags = n_lags, nu = prior_nu)
-  prior_pi <- priors$prior_pi
-  prior_pi_omega <- priors$prior_pi_omega
+  prior_Pi <- priors$prior_Pi
+  prior_Pi_Omega <- priors$prior_Pi_Omega
   prior_s <- priors$prior_s
 
   # For the smoothing
 
-  burn_in <-  gibbs_sampler(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_mean_psi, prior_var_psi,
+  burn_in <-  gibbs_sampler(prior_Pi, prior_Pi_Omega, prior_nu, prior_s, prior_mean_psi, prior_var_psi,
                            Y, d, n_reps = n_burnin, n_fcst = NULL, Lambda, check_roots = TRUE,
-                           d_fcst = NULL, init_Pi = t(prior_pi), init_psi = prior_mean_psi, smooth_state = FALSE)
+                           d_fcst = NULL, init_Pi = t(prior_Pi), init_psi = prior_mean_psi, smooth_state = FALSE)
 
-  main_run <- gibbs_sampler(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_mean_psi, prior_var_psi,
+  main_run <- gibbs_sampler(prior_Pi, prior_Pi_Omega, prior_nu, prior_s, prior_mean_psi, prior_var_psi,
                             Y, d, n_reps = n_reps, n_fcst = 24, Lambda,
                             d_fcst = d_fcst,
                             init_Pi  = burn_in$Pi[,,dim(burn_in$Pi)[3]],
@@ -59,7 +59,7 @@ mfbvar <- function(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_mean_pi
 #' @inherit mfbvar
 #' @details \code{mfbvar2} calls \code{\link{gibbs_sampler2}}
 #'
-mfbvar2 <- function(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_mean_pi,
+mfbvar2 <- function(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_mean_Pi,
                    lambda1, lambda2, prior_nu = NULL, prior_mean_psi, prior_var_psi, ...) {
 
   fun_call <- match.call()
@@ -71,21 +71,21 @@ mfbvar2 <- function(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_mean_p
   if (is.null(prior_nu)) {
     prior_nu <- n_vars + 2
   }
-  priors <- prior_pi_sigma(lambda1 = lambda1, lambda2 = lambda2, prior_mean = prior_mean_pi, Y = Y,
+  priors <- prior_Pi_Sigma(lambda1 = lambda1, lambda2 = lambda2, prior_mean = prior_mean_Pi, Y = Y,
                            n_lags = n_lags, nu = prior_nu)
-  prior_pi <- priors$prior_pi
-  prior_pi_omega <- priors$prior_pi_omega
+  prior_Pi <- priors$prior_Pi
+  prior_Pi_Omega <- priors$prior_Pi_Omega
   prior_s <- priors$prior_s
 
   # For the smoothing
   M_Lambda <- build_M_Lambda(Y[-(1:n_lags), ], Lambda, n_vars, n_lags, n_T_)
   lH  <- M_Lambda
 
-  burn_in <-  gibbs_sampler2(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_mean_psi, prior_var_psi,
+  burn_in <-  gibbs_sampler2(prior_Pi, prior_Pi_Omega, prior_nu, prior_s, prior_mean_psi, prior_var_psi,
                             Y, d, n_reps = n_burnin, n_fcst = NULL, lH, check_roots = TRUE,
-                            d_fcst = NULL, init_Pi = t(prior_pi), init_psi = prior_mean_psi, smooth_state = FALSE)
+                            d_fcst = NULL, init_Pi = t(prior_Pi), init_psi = prior_mean_psi, smooth_state = FALSE)
 
-  main_run <- gibbs_sampler2(prior_pi, prior_pi_omega, prior_nu, prior_s, prior_mean_psi, prior_var_psi,
+  main_run <- gibbs_sampler2(prior_Pi, prior_Pi_Omega, prior_nu, prior_s, prior_mean_psi, prior_var_psi,
                             Y, d, n_reps = n_reps, n_fcst = 24, lH,
                             d_fcst = d_fcst,
                             init_Pi  = burn_in$Pi[,,dim(burn_in$Pi)[3]],
