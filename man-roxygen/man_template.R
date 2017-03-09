@@ -34,7 +34,6 @@
 #' <%=ifelse(exists("n_T"), "@param n_T The number of time points.", "") %>
 #' <%=ifelse(exists("n_T_"), "@param n_T_ The number of time points (excluding pre-sample).", "") %>
 #' <%=ifelse(exists("n_vars"), "@param n_vars The number of variables.", "") %>
-#' <%=ifelse(exists("nu"), "@param nu The parameter \\eqn{\\nu}.", "") %>
 #' <%=ifelse(exists("Omega_Pi"), "@param Omega_Pi The \\code{inv_prior_Pi_Omega} multiplied by \\code{prior_Pi} matrix.", "") %>
 #' <%=ifelse(exists("P"), "@param P \\code{p * p} covariance matrix.", "") %>
 #' <%=ifelse(exists("Q"), "@param Q \\code{q * q} covariance matrix.", "") %>
@@ -45,6 +44,7 @@
 #' <%=ifelse(exists("Pi_array"), "@param Pi_array Array of draws of Pi from the Gibbs sampler.", "") %>
 #' <%=ifelse(exists("Pi_r"), "@param Pi_r The current draw of \\code{Pi} (i.e. \\code{Pi[,, r]}).", "") %>
 #' <%=ifelse(exists("Pi_comp"), "@param Pi_comp Matrix with the dynamic coefficients in companion form.", "") %>
+#' <%=ifelse(exists("post_nu"), "@param post_nu The posterior of the parameter \\eqn{\\nu}.", "") %>
 #' <%=ifelse(exists("post_Pi_center"), "@param post_Pi_center The value at which to do the evaluation (e.g. the posterior mean/median).", "") %>
 #' <%=ifelse(exists("post_psi_Omega"), "@param post_psi_Omega The covariance matrix in the posterior, \\eqn{\\bar{\\Omega}_{\\Psi}}.", "") %>
 #' <%=ifelse(exists("post_psi_center"), "@param post_psi_center The value at which to do the evaluation (e.g. the posterior mean/median).", "") %>
@@ -57,7 +57,7 @@
 #' <%=ifelse(exists("prior_Pi_Omega"), "@param prior_Pi_Omega Matrix of size \\code{(n_vars*n_lags)* (n_vars*n_lags)} containing the prior for (part of) the prior covariance of the dynamic coefficients.", "") %>
 #' <%=ifelse(exists("prior_psi"), "@param prior_psi Vector of length \\code{n_determ*n_vars} with the prior means of the steady-state parameters.", "") %>
 #' <%=ifelse(exists("prior_psi_Omega"), "@param prior_psi_Omega Matrix of size \\code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.", "") %>
-#' <%=ifelse(exists("prior_s"), "@param prior_s The prior for \\eqn{\\Sigma}.", "") %>
+#' <%=ifelse(exists("prior_S"), "@param prior_S The prior for \\eqn{\\Sigma}.", "") %>
 #' <%=ifelse(exists("prior_var_psi"), "@param prior_var_psi Matrix of size \\code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.", "") %>
 #' <%=ifelse(exists("psi_r"), "@param psi_r The current draw of \\code{psi} (i.e. \\code{psi[r-1,]}).", "") %>
 #' <%=ifelse(exists("psi_r1"), "@param psi_r1 The previous draw of \\code{psi} (i.e. \\code{psi[r-1,]}).", "") %>

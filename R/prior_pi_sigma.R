@@ -6,12 +6,12 @@
 #' @templateVar prior_Pi_AR1 TRUE
 #' @templateVar Y TRUE
 #' @templateVar n_lags TRUE
-#' @templateVar nu TRUE
+#' @templateVar prior_nu TRUE
 #' @template man_template
 #' @return \item{prior_Pi}{The prior mean matrix for Pi.}
 #' \item{prior_Pi_Omega}{The prior covariance matrix for Pi.}
 #' \item{prior_s}{The prior for Sigma.}
-prior_Pi_Sigma <- function(lambda1, lambda2, prior_Pi_AR1, Y, n_lags, nu) {
+prior_Pi_Sigma <- function(lambda1, lambda2, prior_Pi_AR1, Y, n_lags, prior_nu) {
   # lambda1: 1-long vector (overall tightness)
   # lambda2: 1-long vector (lag decay)
   # prior_Pi_AR1: p-long vector with prior means for the AR(1) coefficients
@@ -29,10 +29,10 @@ prior_Pi_Sigma <- function(lambda1, lambda2, prior_Pi_AR1, Y, n_lags, nu) {
     }
   }
 
-  prior_s <- 1/(nu - n_vars - 1) * diag(error_variance)
+  prior_S <- 1/(prior_nu - n_vars - 1) * diag(error_variance)
 
 
-  return(list(prior_Pi_mean = prior_Pi_mean, prior_Pi_Omega = diag(prior_Pi_Omega), prior_s = prior_s))
+  return(list(prior_Pi_mean = prior_Pi_mean, prior_Pi_Omega = diag(prior_Pi_Omega), prior_S = prior_S))
 }
 
 

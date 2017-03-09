@@ -5,7 +5,7 @@
 \title{Draw from posterior of Pi and Sigma}
 \usage{
 Pi_Sigma_posterior(Z_r1, d, psi_r1, prior_Pi, prior_Pi_Omega,
-  inv_prior_Pi_Omega, Omega_Pi, prior_s, prior_nu, check_roots, n_vars, n_lags,
+  inv_prior_Pi_Omega, Omega_Pi, prior_S, prior_nu, check_roots, n_vars, n_lags,
   n_T)
 }
 \arguments{
@@ -23,7 +23,7 @@ Pi_Sigma_posterior(Z_r1, d, psi_r1, prior_Pi, prior_Pi_Omega,
 
 \item{Omega_Pi}{The \code{inv_prior_Pi_Omega} multiplied by \code{prior_Pi} matrix.}
 
-\item{prior_s}{The prior for \eqn{\Sigma}.}
+\item{prior_S}{The prior for \eqn{\Sigma}.}
 
 \item{prior_nu}{The prior degrees of freedom.}
 

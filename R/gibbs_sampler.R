@@ -2,24 +2,24 @@
 #'
 #' \code{gibbs_sampler} runs a Gibbs sampler to approximate the posterior of the VAR model parameters.
 #'
-#' @templateVar prior_Pi TRUE
-#' @templateVar prior_Pi_Omega TRUE
-#' @templateVar prior_nu TRUE
-#' @templateVar prior_s TRUE
-#' @templateVar prior_psi TRUE
-#' @templateVar prior_psi_Omega TRUE
 #' @templateVar Y TRUE
 #' @templateVar d TRUE
-#' @templateVar n_reps TRUE
-#' @templateVar n_fcst TRUE
+#' @templateVar d_fcst TRUE
 #' @templateVar Lambda TRUE
-#' @templateVar check_roots TRUE
+#' @templateVar prior_Pi_mean TRUE
+#' @templateVar prior_Pi_Omega TRUE
+#' @templateVar prior_S TRUE
+#' @templateVar prior_nu TRUE
+#' @templateVar prior_psi_mean TRUE
+#' @templateVar prior_psi_Omega TRUE
+#' @templateVar n_fcst TRUE
+#' @templateVar n_reps TRUE
 #' @templateVar init_Pi TRUE
 #' @templateVar init_Sigma TRUE
 #' @templateVar init_psi TRUE
 #' @templateVar init_Z TRUE
-#' @templateVar d_fcst TRUE
 #' @templateVar smooth_state TRUE
+#' @templateVar check_roots TRUE
 #' @template man_template
 #'
 #' @details
@@ -30,10 +30,8 @@
 #' @return
 #' An object of class mfbvar.
 
-gibbs_sampler <- function(prior_Pi, prior_Pi_Omega, prior_nu, prior_s, prior_psi, prior_psi_Omega,
-                          Y, d, n_reps, n_fcst = NULL, Lambda, check_roots = TRUE,
-                          init_Pi = NULL, init_Sigma = NULL, init_psi = NULL, init_Z = NULL,
-                          d_fcst = NULL, smooth_state = FALSE) {
+gibbs_sampler <- function(Y, d, d_fcst = NULL, Lambda, prior_Pi_mean, prior_Pi_Omega, prior_S, prior_nu, prior_psi_mean, prior_psi_Omega,
+                          n_fcst = NULL, n_reps, init_Pi = NULL, init_Sigma = NULL, init_psi = NULL, init_Z = NULL, smooth_state = FALSE, check_roots = TRUE) {
 
   # n_vars: number of variables
   # n_lags: number of lags
@@ -42,7 +40,7 @@ gibbs_sampler <- function(prior_Pi, prior_Pi_Omega, prior_nu, prior_s, prior_psi
   # n_T_: sample size (reduced sample)
 
   n_vars <- dim(Y)[2]
-  n_lags <- prod(dim(as.matrix(prior_Pi)))/n_vars^2
+  n_lags <- prod(dim(as.matrix(prior_Pi_mean)))/n_vars^2
   n_pseudolags <- dim(Lambda)[2]/n_vars
   n_determ <- dim(d)[2]
   n_T <- dim(Y)[1]# - n_lags
@@ -138,7 +136,7 @@ gibbs_sampler <- function(prior_Pi, prior_Pi_Omega, prior_nu, prior_s, prior_psi
     if (roots[1] < 1) {
       psi[1, ] <- ols_results$psi
     } else {
-      psi[1, ] <- prior_psi
+      psi[1, ] <- prior_psi_mean
     }
   } else {
     if (length(psi[1, ]) == length(init_psi)) {
@@ -157,7 +155,7 @@ gibbs_sampler <- function(prior_Pi, prior_Pi_Omega, prior_nu, prior_s, prior_psi
 
   # For the posterior of Pi
   inv_prior_Pi_Omega <- solve(prior_Pi_Omega)
-  Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi
+  Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi_mean
 
   Z_1 <- Z[1:n_pseudolags,, 1]
 
@@ -165,8 +163,8 @@ gibbs_sampler <- function(prior_Pi, prior_Pi_Omega, prior_nu, prior_s, prior_psi
   for (r in 2:(n_reps)) {
     ################################################################
     ### Pi and Sigma step
-    #(Z_r1,             d,     psi_r1,                            prior_Pi, inv_prior_Pi_Omega, Omega_Pi, prior_s, prior_nu, check_roots, n_vars, n_lags, n_T)
-    Pi_Sigma <- Pi_Sigma_posterior(Z_r1 = Z[,, r-1], d = d, psi_r1 = psi[r-1, , drop = FALSE], prior_Pi, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_s, prior_nu, check_roots, n_vars, n_lags, n_T)
+    #(Z_r1,             d,     psi_r1,                            prior_Pi_mean, inv_prior_Pi_Omega, Omega_Pi, prior_S, prior_nu, check_roots, n_vars, n_lags, n_T)
+    Pi_Sigma <- Pi_Sigma_posterior(Z_r1 = Z[,, r-1], d = d, psi_r1 = psi[r-1, , drop = FALSE], prior_Pi_mean, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_S, prior_nu, check_roots, n_vars, n_lags, n_T)
     Pi[,,r]      <- Pi_Sigma$Pi_r
     Sigma[,,r]   <- Pi_Sigma$Sigma_r
     num_tries[r] <- Pi_Sigma$num_try
@@ -174,8 +172,8 @@ gibbs_sampler <- function(prior_Pi, prior_Pi_Omega, prior_nu, prior_s, prior_psi
 
     ################################################################
     ### Steady-state step
-    #(Pi_r,            Sigma_r,               Z_r1,             prior_psi, prior_psi_Omega, D, n_vars, n_lags, n_determ)
-    psi[r, ] <- psi_posterior(Pi_r = Pi[,, r], Sigma_r = Sigma[,, r], Z_r1 = Z[,, r-1], prior_psi, prior_psi_Omega, D_mat, n_vars, n_lags, n_determ)
+    #(Pi_r,            Sigma_r,               Z_r1,             prior_psi_mean, prior_psi_Omega, D, n_vars, n_lags, n_determ)
+    psi[r, ] <- psi_posterior(Pi_r = Pi[,, r], Sigma_r = Sigma[,, r], Z_r1 = Z[,, r-1], prior_psi_mean, prior_psi_Omega, D_mat, n_vars, n_lags, n_determ)
 
     ################################################################
     ### Smoothing step
@@ -209,9 +207,9 @@ gibbs_sampler <- function(prior_Pi, prior_Pi_Omega, prior_nu, prior_s, prior_psi
   ### Prepare the return object
   return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z, roots = NULL, num_tries = NULL,
                      Z_fcst = NULL, mdd = NULL, smoothed_Z = NULL, n_determ = n_determ,
-                     n_lags = n_lags, n_vars = n_vars, prior_Pi_Omega = prior_Pi_Omega, prior_Pi = prior_Pi,
-                     prior_s = prior_s, prior_nu = prior_nu, nu = n_T + prior_nu, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
-                     prior_psi_Omega = prior_psi_Omega, prior_psi = prior_psi, n_reps = n_reps, Lambda = Lambda)
+                     n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
+                     prior_S = prior_S, prior_nu = prior_nu, post_nu = n_T + prior_nu, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
+                     prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, Lambda = Lambda)
 
   if (check_roots == TRUE) {
     return_obj$roots <- roots

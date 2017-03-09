@@ -8,7 +8,7 @@
 #' @templateVar prior_Pi_Omega TRUE
 #' @templateVar inv_prior_Pi_Omega TRUE
 #' @templateVar Omega_Pi TRUE
-#' @templateVar prior_s TRUE
+#' @templateVar prior_S TRUE
 #' @templateVar prior_nu TRUE
 #' @templateVar check_roots TRUE
 #' @templateVar n_vars TRUE
@@ -20,7 +20,7 @@
 #' \item{Sigma_r}{The draw of \code{Sigma}.}
 #' \item{num_try}{The try at which a stable draw was obtained.}
 #' \item{root}{The maximum eigenvalue (in modulus) of the system.}
-Pi_Sigma_posterior <- function(Z_r1, d, psi_r1, prior_Pi, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_s, prior_nu, check_roots, n_vars, n_lags, n_T) {
+Pi_Sigma_posterior <- function(Z_r1, d, psi_r1, prior_Pi, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_S, prior_nu, check_roots, n_vars, n_lags, n_T) {
   ################################################################
   ### Preliminary calculations
 
@@ -43,9 +43,9 @@ Pi_Sigma_posterior <- function(Z_r1, d, psi_r1, prior_Pi, prior_Pi_Omega, inv_pr
   # Then Sigma
   s_sample  <- crossprod(YY - XX %*% Pi_sample)
   Pi_diff <- prior_Pi - Pi_sample
-  post_s <- prior_s + s_sample + t(Pi_diff) %*% solve(prior_Pi_Omega + XXt.XX.inv) %*% Pi_diff
-  nu <- n_T + prior_nu # Is this the right T? Or should it be T - lags?
-  Sigma_r <- rinvwish(v = nu, S = post_s)
+  post_s <- prior_S + s_sample + t(Pi_diff) %*% solve(prior_Pi_Omega + XXt.XX.inv) %*% Pi_diff
+  post_nu <- n_T + prior_nu # Is this the right T? Or should it be T - lags?
+  Sigma_r <- rinvwish(v = post_nu, S = post_s)
 
 
   # Draw Pi conditional on Sigma
@@ -179,10 +179,10 @@ posterior_psi_Omega <- function(U, D_mat, Sigma, prior_psi_Omega) {
 #' @templateVar post_psi_center TRUE
 #' @templateVar post_Pi_center TRUE
 #' @templateVar post_Sigma_center TRUE
-#' @templateVar nu TRUE
+#' @templateVar post_nu TRUE
 #' @templateVar prior_Pi TRUE
 #' @templateVar prior_Pi_Omega TRUE
-#' @templateVar prior_s TRUE
+#' @templateVar prior_S TRUE
 #' @templateVar n_vars TRUE
 #' @templateVar n_lags TRUEF
 #' @templateVar n_reps TRUE
@@ -190,7 +190,7 @@ posterior_psi_Omega <- function(U, D_mat, Sigma, prior_psi_Omega) {
 #' @return The return is:
 #' \item{evals}{A vector with the evaulations.}
 #'
-eval_Pi_Sigma_RaoBlack <- function(Z_array, d, post_psi_center, post_Pi_center, post_Sigma_center, nu, prior_Pi, prior_Pi_Omega, prior_s, n_vars, n_lags, n_reps) {
+eval_Pi_Sigma_RaoBlack <- function(Z_array, d, post_psi_center, post_Pi_center, post_Sigma_center, post_nu, prior_Pi, prior_Pi_Omega, prior_S, n_vars, n_lags, n_reps) {
   ################################################################
   ### Compute the Rao-Blackwellized estimate of posterior
 
@@ -213,10 +213,10 @@ eval_Pi_Sigma_RaoBlack <- function(Z_array, d, post_psi_center, post_Pi_center, 
     # Then Sigma
     s_sample  <- crossprod(YY - XX %*% Pi_sample)
     Pi_diff <- prior_Pi - Pi_sample
-    post_s_i <- prior_s + s_sample + t(Pi_diff) %*% solve(post_Pi_Omega_i + solve(crossprod(XX))) %*% Pi_diff
+    post_s_i <- prior_S + s_sample + t(Pi_diff) %*% solve(post_Pi_Omega_i + solve(crossprod(XX))) %*% Pi_diff
 
     # Evaluate
-    evals[i] <- dnorminvwish(X = t(post_Pi_center), Sigma = post_Sigma_center, M = post_Pi_i, P = post_Pi_Omega_i, S = post_s_i, v = nu)
+    evals[i] <- dnorminvwish(X = t(post_Pi_center), Sigma = post_Sigma_center, M = post_Pi_i, P = post_Pi_Omega_i, S = post_s_i, v = post_nu)
   }
 
   return(evals)

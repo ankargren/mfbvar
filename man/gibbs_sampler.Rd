@@ -4,35 +4,35 @@
 \alias{gibbs_sampler}
 \title{Gibbs sampler for Mixed-Frequency BVAR}
 \usage{
-gibbs_sampler(prior_Pi, prior_Pi_Omega, prior_nu, prior_s, prior_psi,
-  prior_psi_Omega, Y, d, n_reps, n_fcst = NULL, Lambda, check_roots = TRUE,
+gibbs_sampler(Y, d, d_fcst = NULL, Lambda, prior_Pi_mean, prior_Pi_Omega,
+  prior_S, prior_nu, prior_psi_mean, prior_psi_Omega, n_fcst = NULL, n_reps,
   init_Pi = NULL, init_Sigma = NULL, init_psi = NULL, init_Z = NULL,
-  d_fcst = NULL, smooth_state = FALSE)
+  smooth_state = FALSE, check_roots = TRUE)
 }
 \arguments{
-\item{prior_Pi}{Matrix of size \code{n_vars * (n_vars*n_lags)} containing the prior for the mean of the dynamic coefficients.}
-
-\item{prior_Pi_Omega}{Matrix of size \code{(n_vars*n_lags)* (n_vars*n_lags)} containing the prior for (part of) the prior covariance of the dynamic coefficients.}
-
-\item{prior_nu}{The prior degrees of freedom.}
-
-\item{prior_s}{The prior for \eqn{\Sigma}.}
-
-\item{prior_psi}{Vector of length \code{n_determ*n_vars} with the prior means of the steady-state parameters.}
-
-\item{prior_psi_Omega}{Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.}
-
 \item{Y}{The data matrix of size \code{(n_T + n_lags) * n_vars} with \code{NA} representing missingness. Must correspond well to the specification of \code{M_Lambda}.}
 
 \item{d}{The matrix of size \code{(n_T + n_lags) * n_determ} of deterministic terms.}
 
-\item{n_reps}{The number of replications.}
-
-\item{n_fcst}{The number of periods to forecast.}
+\item{d_fcst}{The deterministic terms for the forecasting period.}
 
 \item{Lambda}{The Lambda matrix (size \code{n_vars* (n_vars*n_lags)}).}
 
-\item{check_roots}{Logical, if roots of the companion matrix are to be checked to ensure stationarity.}
+\item{prior_Pi_mean}{Matrix of size \code{n_vars * (n_vars*n_lags)} containing the prior for the mean of the dynamic coefficients.}
+
+\item{prior_Pi_Omega}{Matrix of size \code{(n_vars*n_lags)* (n_vars*n_lags)} containing the prior for (part of) the prior covariance of the dynamic coefficients.}
+
+\item{prior_S}{The prior for \eqn{\Sigma}.}
+
+\item{prior_nu}{The prior degrees of freedom.}
+
+\item{prior_psi_mean}{Vector of length \code{n_determ*n_vars} with the prior means of the steady-state parameters.}
+
+\item{prior_psi_Omega}{Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.}
+
+\item{n_fcst}{The number of periods to forecast.}
+
+\item{n_reps}{The number of replications.}
 
 \item{init_Pi}{Matrix to initialize the dynamic coefficients.}
 
@@ -42,9 +42,9 @@ gibbs_sampler(prior_Pi, prior_Pi_Omega, prior_nu, prior_s, prior_psi,
 
 \item{init_Z}{Matrix to initialize the latent state.}
 
-\item{d_fcst}{The deterministic terms for the forecasting period.}
-
 \item{smooth_state}{Logical, if \code{TRUE} then the smoothed estimates of the latent states are also returned.}
+
+\item{check_roots}{Logical, if roots of the companion matrix are to be checked to ensure stationarity.}
 }
 \value{
 An object of class mfbvar.

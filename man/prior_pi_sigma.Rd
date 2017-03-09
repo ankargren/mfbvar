@@ -4,7 +4,7 @@
 \alias{prior_Pi_Sigma}
 \title{Create the priors for Pi and Sigma}
 \usage{
-prior_Pi_Sigma(lambda1, lambda2, prior_Pi_AR1, Y, n_lags, nu)
+prior_Pi_Sigma(lambda1, lambda2, prior_Pi_AR1, Y, n_lags, prior_nu)
 }
 \arguments{
 \item{lambda1}{The overall tightness.}
@@ -17,7 +17,7 @@ prior_Pi_Sigma(lambda1, lambda2, prior_Pi_AR1, Y, n_lags, nu)
 
 \item{n_lags}{The number of lags.}
 
-\item{nu}{The parameter \eqn{\nu}.}
+\item{prior_nu}{The prior degrees of freedom.}
 }
 \value{
 \item{prior_Pi}{The prior mean matrix for Pi.}

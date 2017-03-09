@@ -4,8 +4,8 @@
 \alias{mfbvar}
 \title{MF-BVAR with a steady-state prior}
 \usage{
-mfbvar(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_Pi_AR1, lambda1,
-  lambda2, prior_nu = NULL, prior_psi_mean, prior_psi_Omega, n_fcst)
+mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_nu = NULL,
+  prior_psi_mean, prior_psi_Omega, n_lags, n_fcst, n_burnin, n_reps)
 }
 \arguments{
 \item{Y}{The data matrix of size \code{(n_T + n_lags) * n_vars} with \code{NA} representing missingness. Must correspond well to the specification of \code{M_Lambda}.}
@@ -15,12 +15,6 @@ mfbvar(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_Pi_AR1, lambda1,
 \item{d_fcst}{The deterministic terms for the forecasting period.}
 
 \item{Lambda}{The Lambda matrix (size \code{n_vars* (n_vars*n_lags)}).}
-
-\item{n_lags}{The number of lags.}
-
-\item{n_burnin}{The number of burn-in replications.}
-
-\item{n_reps}{The number of replications.}
 
 \item{prior_Pi_AR1}{The prior means for the AR(1) coefficients.}
 
@@ -34,9 +28,13 @@ mfbvar(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_Pi_AR1, lambda1,
 
 \item{prior_psi_Omega}{Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.}
 
+\item{n_lags}{The number of lags.}
+
 \item{n_fcst}{The number of periods to forecast.}
 
-\item{...}{Other arguments to pass to \code{\link{gibbs_sampler}}.}
+\item{n_burnin}{The number of burn-in replications.}
+
+\item{n_reps}{The number of replications.}
 }
 \description{
 The main function for running the MF-SS-BVAR.

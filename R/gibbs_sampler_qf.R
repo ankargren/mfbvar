@@ -1,6 +1,6 @@
 #' @description The Gibbs sampler for quarterly data.
 #' @inherit gibbs_sampler2
-gibbs_sampler_qf <- function(prior_Pi, prior_Pi_Omega, prior_nu, prior_s, prior_psi, prior_psi_Omega,
+gibbs_sampler_qf <- function(prior_Pi_mean, prior_Pi_Omega, prior_nu, prior_S, prior_psi_mean, prior_psi_Omega,
                           Y, d, n_reps, n_fcst = NULL, lH, check_roots = TRUE,
                           init_Pi = NULL, init_Sigma = NULL, init_psi = NULL, init_Z = NULL,
                           d_fcst = NULL, smooth_state = FALSE) {
@@ -12,7 +12,7 @@ gibbs_sampler_qf <- function(prior_Pi, prior_Pi_Omega, prior_nu, prior_s, prior_
   # n_T_: sample size (reduced sample)
 
   n_vars <- dim(Y)[2]
-  n_lags <- prod(dim(as.matrix(prior_Pi)))/n_vars^2
+  n_lags <- prod(dim(as.matrix(prior_Pi_mean)))/n_vars^2
   n_determ <- dim(d)[2]
   n_T <- dim(Y)[1]# - n_lags
   n_T_ <- n_T - n_lags
@@ -109,7 +109,7 @@ gibbs_sampler_qf <- function(prior_Pi, prior_Pi_Omega, prior_nu, prior_s, prior_
   }
 
   # For the posterior of Pi
-  Omega_Pi <- solve(prior_Pi_Omega) %*% prior_Pi
+  Omega_Pi <- solve(prior_Pi_Omega) %*% prior_Pi_mean
 
   for (r in 2:(n_reps)) {
     ################################################################
@@ -130,8 +130,8 @@ gibbs_sampler_qf <- function(prior_Pi, prior_Pi_Omega, prior_nu, prior_s, prior_
 
     # Then Sigma
     s_sample  <- crossprod(YY - XX %*% Pi_sample)
-    Pi_diff <- prior_Pi - Pi_sample
-    post_s <- prior_s + s_sample + t(Pi_diff) %*% solve(prior_Pi_Omega + solve(crossprod(XX))) %*% Pi_diff
+    Pi_diff <- prior_Pi_mean - Pi_sample
+    post_s <- prior_S + s_sample + t(Pi_diff) %*% solve(prior_Pi_Omega + solve(crossprod(XX))) %*% Pi_diff
     nu <- n_T + prior_nu # Is this the right T? Or should it be T - lags?
     Sigma[,,r] <- rinvwish(v = nu, S = post_s)
 
@@ -168,7 +168,7 @@ gibbs_sampler_qf <- function(prior_Pi, prior_Pi_Omega, prior_nu, prior_s, prior_
     Y_tilde <- build_Y_tilde(Pi = Pi[,, r], z = Z)
 
     post_psi <- posterior_psi(U = U, D_mat = D, Sigma = Sigma[,, r], prior_psi_Omega = prior_psi_Omega,
-                              post_psi_Omega = post_psi_Omega, Y_tilde = Y_tilde, prior_psi = prior_psi)
+                              post_psi_Omega = post_psi_Omega, Y_tilde = Y_tilde, prior_psi_mean = prior_psi_mean)
     psi[r, ] <- t(rmultn(m = post_psi, Sigma = post_psi_Omega))
 
 

@@ -5,7 +5,7 @@
 \title{Evaluate the conditional posterior of Pi and Sigma using Rao-Blackwellization}
 \usage{
 eval_Pi_Sigma_RaoBlack(Z_array, d, post_psi_center, post_Pi_center,
-  post_Sigma_center, nu, prior_Pi, prior_Pi_Omega, prior_s, n_vars, n_lags,
+  post_Sigma_center, post_nu, prior_Pi, prior_Pi_Omega, prior_S, n_vars, n_lags,
   n_reps)
 }
 \arguments{
@@ -19,13 +19,13 @@ eval_Pi_Sigma_RaoBlack(Z_array, d, post_psi_center, post_Pi_center,
 
 \item{post_Sigma_center}{The value at which to do the evaluation (e.g. the posterior mean/median).}
 
-\item{nu}{The parameter \eqn{\nu}.}
+\item{post_nu}{The posterior of the parameter \eqn{\nu}.}
 
 \item{prior_Pi}{Matrix of size \code{n_vars * (n_vars*n_lags)} containing the prior for the mean of the dynamic coefficients.}
 
 \item{prior_Pi_Omega}{Matrix of size \code{(n_vars*n_lags)* (n_vars*n_lags)} containing the prior for (part of) the prior covariance of the dynamic coefficients.}
 
-\item{prior_s}{The prior for \eqn{\Sigma}.}
+\item{prior_S}{The prior for \eqn{\Sigma}.}
 
 \item{n_vars}{The number of variables.}
 
