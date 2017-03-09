@@ -50,9 +50,9 @@
 #' <%=ifelse(exists("post_psi_center"), "@param post_psi_center The value at which to do the evaluation (e.g. the posterior mean/median).", "") %>
 #' <%=ifelse(exists("post_Sigma_center"), "@param post_Sigma_center The value at which to do the evaluation (e.g. the posterior mean/median).", "") %>
 #' <%=ifelse(exists("prior_Pi"), "@param prior_Pi Matrix of size \\code{n_vars * (n_vars*n_lags)} containing the prior for the mean of the dynamic coefficients.", "") %>
-#' <%=ifelse(exists("prior_mean"), "@param prior_mean The prior means for the AR(1) coefficients.", "") %>
-#' <%=ifelse(exists("prior_mean_Pi"), "@param prior_mean_Pi Matrix of size \\code{n_vars * (n_vars*n_lags)} containing the prior for the mean of the dynamic coefficients.", "") %>
-#' <%=ifelse(exists("prior_mean_psi"), "@param prior_mean_psi Vector of length \\code{n_determ*n_vars} with the prior means of the steady-state parameters.", "") %>
+#' <%=ifelse(exists("prior_Pi_AR1"), "@param prior_Pi_AR1 The prior means for the AR(1) coefficients.", "") %>
+#' <%=ifelse(exists("prior_Pi_mean"), "@param prior_Pi_mean Matrix of size \\code{n_vars * (n_vars*n_lags)} containing the prior for the mean of the dynamic coefficients.", "") %>
+#' <%=ifelse(exists("prior_psi_mean"), "@param prior_psi_mean Vector of length \\code{n_determ*n_vars} with the prior means of the steady-state parameters.", "") %>
 #' <%=ifelse(exists("prior_nu"), "@param prior_nu The prior degrees of freedom.", "") %>
 #' <%=ifelse(exists("prior_Pi_Omega"), "@param prior_Pi_Omega Matrix of size \\code{(n_vars*n_lags)* (n_vars*n_lags)} containing the prior for (part of) the prior covariance of the dynamic coefficients.", "") %>
 #' <%=ifelse(exists("prior_psi"), "@param prior_psi Vector of length \\code{n_determ*n_vars} with the prior means of the steady-state parameters.", "") %>

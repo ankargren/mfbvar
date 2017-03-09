@@ -4,14 +4,14 @@
 \alias{prior_Pi_Sigma}
 \title{Create the priors for Pi and Sigma}
 \usage{
-prior_Pi_Sigma(lambda1, lambda2, prior_mean, Y, n_lags, nu)
+prior_Pi_Sigma(lambda1, lambda2, prior_Pi_AR1, Y, n_lags, nu)
 }
 \arguments{
 \item{lambda1}{The overall tightness.}
 
 \item{lambda2}{The lag decay.}
 
-\item{prior_mean}{The prior means for the AR(1) coefficients.}
+\item{prior_Pi_AR1}{The prior means for the AR(1) coefficients.}
 
 \item{Y}{The data matrix of size \code{(n_T + n_lags) * n_vars} with \code{NA} representing missingness. Must correspond well to the specification of \code{M_Lambda}.}
 

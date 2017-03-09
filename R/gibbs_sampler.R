@@ -161,6 +161,7 @@ gibbs_sampler <- function(prior_Pi, prior_Pi_Omega, prior_nu, prior_s, prior_psi
 
   Z_1 <- Z[1:n_pseudolags,, 1]
 
+  pb <- txtProgressBar(min = 2, max = n_reps, style = 3)
   for (r in 2:(n_reps)) {
     ################################################################
     ### Pi and Sigma step
@@ -200,7 +201,9 @@ gibbs_sampler <- function(prior_Pi, prior_Pi_Omega, prior_nu, prior_s, prior_psi
       Z_fcst[, , r] <- Z_fcst[, , r] + d_fcst_lags %*% t(matrix(psi[r, ], nrow = n_vars))
     }
 
+    setTxtProgressBar(pb, r)
   }
+  close(pb)
 
   ################################################################
   ### Prepare the return object

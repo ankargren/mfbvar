@@ -4,8 +4,8 @@
 \alias{mfbvar}
 \title{MF-BVAR with a steady-state prior}
 \usage{
-mfbvar(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_mean_Pi, lambda1,
-  lambda2, prior_nu = NULL, prior_mean_psi, prior_var_psi, ...)
+mfbvar(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_Pi_AR1, lambda1,
+  lambda2, prior_nu = NULL, prior_psi_mean, prior_psi_Omega, n_fcst)
 }
 \arguments{
 \item{Y}{The data matrix of size \code{(n_T + n_lags) * n_vars} with \code{NA} representing missingness. Must correspond well to the specification of \code{M_Lambda}.}
@@ -22,7 +22,7 @@ mfbvar(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_mean_Pi, lambda1,
 
 \item{n_reps}{The number of replications.}
 
-\item{prior_mean_Pi}{Matrix of size \code{n_vars * (n_vars*n_lags)} containing the prior for the mean of the dynamic coefficients.}
+\item{prior_Pi_AR1}{The prior means for the AR(1) coefficients.}
 
 \item{lambda1}{The overall tightness.}
 
@@ -30,9 +30,11 @@ mfbvar(Y, d, d_fcst, Lambda, n_lags, n_burnin, n_reps, prior_mean_Pi, lambda1,
 
 \item{prior_nu}{The prior degrees of freedom.}
 
-\item{prior_mean_psi}{Vector of length \code{n_determ*n_vars} with the prior means of the steady-state parameters.}
+\item{prior_psi_mean}{Vector of length \code{n_determ*n_vars} with the prior means of the steady-state parameters.}
 
-\item{prior_var_psi}{Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.}
+\item{prior_psi_Omega}{Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.}
+
+\item{n_fcst}{The number of periods to forecast.}
 
 \item{...}{Other arguments to pass to \code{\link{gibbs_sampler}}.}
 }
