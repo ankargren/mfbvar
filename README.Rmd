@@ -86,7 +86,7 @@ mfbvar_obj <- mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2,
 
 Four S3 methods are implemented:
 
-```{r, fig.width = 10, fig.asp = 0.5}
+```{r methods, fig.width = 10, fig.asp = 0.5}
 mfbvar_obj
 summary(mfbvar_obj)
 predict(mfbvar_obj)
