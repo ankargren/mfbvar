@@ -1,5 +1,13 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
+News (2017-03-10)
+=================
+
+What is new in version 0.2:
+
+-   Methods (`print`, `summary`, `plot`, `predict`)
+-   Better organization of names, argument order. This may make it incompatible with older code
+
 Example file
 ============
 
