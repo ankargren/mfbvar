@@ -87,7 +87,7 @@ After having set these preliminary variables, we can now call the main function 
 set.seed(10238)
 mfbvar_obj <- mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, 
                      prior_nu, prior_psi_mean, prior_psi_Omega, 
-                     n_lags, n_fcst, n_burnin, n_reps)
+                     n_lags, n_fcst, n_burnin, n_reps) 
 ```
 
 Four S3 methods are implemented:
@@ -155,4 +155,4 @@ predict(mfbvar_obj)
 plot(mfbvar_obj)
 ```
 
-![](README-unnamed-chunk-10-1.png)
+![](README-methods-1.png)
