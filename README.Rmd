@@ -11,7 +11,11 @@ knitr::opts_chunk$set(
   fig.path = "README-"
 )
 ```
+# Example file
 
+This short example illustrates estimation of the model.
+
+## Data generation
 First, we generate some dummy data as a VAR(1) with three variables whose uncondtional means are all zero.
 ```{r}
 library(mfbvar)
@@ -40,6 +44,7 @@ head(Y)
 ```
 The names are, of course, made up, but this is to illustrate how the names are used later on.
 
+## Settings and priors
 We next need to make some settings for the estimation:
 ```{r}
 n_burnin <- 2000
@@ -76,6 +81,7 @@ Finally, we also need to create the matrix that relates unobservables to observa
 Lambda <- build_Lambda(c("identity", "identity", "average"), n_lags)
 ```
 
+## Main call
 After having set these preliminary variables, we can now call the main function `mfbvar()`:
 ```{r, cache = TRUE, results = "hide"}
 set.seed(10238)
@@ -84,6 +90,8 @@ mfbvar_obj <- mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2,
                      n_lags, n_fcst, n_burnin, n_reps) 
 ```
 
+
+## Obtaining the results
 Four S3 methods are implemented:
 
 ```{r methods, fig.width = 10, fig.asp = 0.5}

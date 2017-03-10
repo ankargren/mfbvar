@@ -1,5 +1,13 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
+Example file
+============
+
+This short example illustrates estimation of the model.
+
+Data generation
+---------------
+
 First, we generate some dummy data as a VAR(1) with three variables whose uncondtional means are all zero.
 
 ``` r
@@ -37,6 +45,9 @@ head(Y)
 ```
 
 The names are, of course, made up, but this is to illustrate how the names are used later on.
+
+Settings and priors
+-------------------
 
 We next need to make some settings for the estimation:
 
@@ -81,6 +92,9 @@ Finally, we also need to create the matrix that relates unobservables to observa
 Lambda <- build_Lambda(c("identity", "identity", "average"), n_lags)
 ```
 
+Main call
+---------
+
 After having set these preliminary variables, we can now call the main function `mfbvar()`:
 
 ``` r
@@ -89,6 +103,9 @@ mfbvar_obj <- mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2,
                      prior_nu, prior_psi_mean, prior_psi_Omega, 
                      n_lags, n_fcst, n_burnin, n_reps) 
 ```
+
+Obtaining the results
+---------------------
 
 Four S3 methods are implemented:
 
