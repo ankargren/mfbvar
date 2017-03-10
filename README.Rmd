@@ -1,0 +1,95 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "README-"
+)
+```
+
+First, we generate some dummy data as a VAR(1) with three variables whose uncondtional means are all zero.
+```{r}
+library(mfbvar)
+TT <- 200
+n_vars <- 3
+set.seed(100)
+
+Y <- matrix(0, 2*TT, n_vars)
+Phi <- matrix(c(0.3, 0.1, 0.2, 0.3, 0.3, 0.6, 0.2, 0.2, 0.3), 3, 3)
+for (i in 2:(2*TT)) {
+  Y[i, ] <- Phi %*% Y[i-1,] + rnorm(n_vars)
+}
+Y[, n_vars] <- zoo::rollapply(Y[, n_vars], 3, mean, fill = NA, align = "right")
+Y <- Y[-(1:TT),]
+Y[setdiff(1:TT, seq(1, TT, 3)), n_vars] <- NA
+
+dates <- paste(rep(2000:2016, each = 12), "-", 1:12, sep = "")
+Y <- as.data.frame(Y)
+rownames(Y) <- dates[1:nrow(Y)]
+colnames(Y) <- c("GDP", "Infl", "Interest")
+```
+
+The data now looks like this:
+```{r}
+head(Y)
+```
+The names are, of course, made up, but this is to illustrate how the names are used later on.
+
+We next need to make some settings for the estimation:
+```{r}
+n_burnin <- 2000
+n_reps <- 2000
+n_fcst <- 8
+n_lags <- 4
+n_vars <- ncol(Y)
+n_T <- nrow(Y)
+```
+
+The `n_*` variables are self-explanatory. Next, create the matrix of deterministic terms (also for the forecasting period):
+```{r}
+d <- matrix(1, nrow = n_T, ncol = 1)
+d_fcst <- matrix(1, nrow = n_fcst, ncol = 1)
+```
+
+For the prior on the dynamic coefficients and the error covariance matrix, we need to set the prior degrees of freedom as well as the prior mean of AR(1) coefficients and the tuning parameters:
+```{r}
+prior_nu <- n_vars + 2 
+prior_Pi_AR1 <- c(0, 0, 0) 
+lambda1 <- 0.1
+lambda2 <- 1
+```
+The prior on the steady states also needs to be set:
+```{r}
+prior_psi_mean <- c(0, 0, 0) 
+prior_psi_Omega <- c(0.5, 0.5, 0.5) 
+prior_psi_Omega <- diag((prior_psi_Omega / (qnorm(0.975, mean = 0, sd = 1)*2))^2) 
+```
+The third line simply converts the length of the prior interval to the variance in a normal distribution.
+
+Finally, we also need to create the matrix that relates unobservables to observables. In this example, the first two variables are assumed to be observed every period, whereas the third is assumed to be observed every third time period. Moreover, when it is observed, we observe the average over three periods. This can be specified using the `build_Lambda()` function:
+```{r}
+Lambda <- build_Lambda(c("identity", "identity", "average"), n_lags)
+```
+
+After having set these preliminary variables, we can now call the main function `mfbvar()`:
+```{r, cache = TRUE, results = "hide"}
+set.seed(10238)
+mfbvar_obj <- mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, 
+                     prior_nu, prior_psi_mean, prior_psi_Omega, 
+                     n_lags, n_fcst, n_burnin, n_reps)
+```
+
+Four S3 methods are implemented:
+
+```{r, fig.width = 10, fig.asp = 0.5}
+mfbvar_obj
+summary(mfbvar_obj)
+predict(mfbvar_obj)
+plot(mfbvar_obj)
+```
+
