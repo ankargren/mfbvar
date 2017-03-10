@@ -4,8 +4,8 @@
 \alias{eval_psi_MargPost}
 \title{Evaluate the marginal posterior of psi}
 \usage{
-eval_psi_MargPost(Pi_array, Sigma_array, Z_array, post_psi_center, prior_psi,
-  prior_psi_Omega, D_mat, n_determ, n_vars, n_lags, n_reps)
+eval_psi_MargPost(Pi_array, Sigma_array, Z_array, post_psi_center,
+  prior_psi_mean, prior_psi_Omega, D_mat, n_determ, n_vars, n_lags, n_reps)
 }
 \arguments{
 \item{Pi_array}{Array of draws of Pi from the Gibbs sampler.}
@@ -16,7 +16,7 @@ eval_psi_MargPost(Pi_array, Sigma_array, Z_array, post_psi_center, prior_psi,
 
 \item{post_psi_center}{The value at which to do the evaluation (e.g. the posterior mean/median).}
 
-\item{prior_psi}{Vector of length \code{n_determ*n_vars} with the prior means of the steady-state parameters.}
+\item{prior_psi_mean}{Vector of length \code{n_determ*n_vars} with the prior means of the steady-state parameters.}
 
 \item{prior_psi_Omega}{Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.}
 

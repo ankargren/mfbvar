@@ -79,14 +79,14 @@ Pi_Sigma_posterior <- function(Z_r1, d, psi_r1, prior_Pi, prior_Pi_Omega, inv_pr
 #' @inherit Pi_Sigma_posterior
 #' @templateVar Pi_r TRUE
 #' @templateVar Sigma_r TRUE
-#' @templateVar prior_psi TRUE
+#' @templateVar prior_psi_mean TRUE
 #' @templateVar prior_psi_Omega TRUE
 #' @templateVar D_mat TRUE
 #' @templateVar n_determ TRUE
 #' @template man_template
 #' @return \code{psi_posterior} returns:
 #' \item{psi_r}{The draw of \code{psi}.}
-psi_posterior <- function(Pi_r, Sigma_r, Z_r1, prior_psi, prior_psi_Omega, D_mat, n_vars, n_lags, n_determ) {
+psi_posterior <- function(Pi_r, Sigma_r, Z_r1, prior_psi_mean, prior_psi_Omega, D_mat, n_vars, n_lags, n_determ) {
   U <- build_U_cpp(Pi = Pi_r, n_determ = n_determ,
                    n_vars = n_vars, n_lags = n_lags)
   post_psi_Omega <- posterior_psi_Omega(U = U, D_mat = D_mat, Sigma = Sigma_r,
@@ -94,7 +94,7 @@ psi_posterior <- function(Pi_r, Sigma_r, Z_r1, prior_psi, prior_psi_Omega, D_mat
   Y_tilde <- build_Y_tilde(Pi = Pi_r, z = Z_r1)
 
   post_psi <- posterior_psi(U = U, D_mat = D_mat, Sigma = Sigma_r, prior_psi_Omega = prior_psi_Omega,
-                            post_psi_Omega = post_psi_Omega, Y_tilde = Y_tilde, prior_psi = prior_psi)
+                            post_psi_Omega = post_psi_Omega, Y_tilde = Y_tilde, prior_psi_mean = prior_psi_mean)
   psi_r <- t(rmultn(m = post_psi, Sigma = post_psi_Omega))
   return(psi_r)
 }
@@ -154,13 +154,13 @@ Z_posterior <- function(Y, d, Pi_r, Sigma_r, psi_r, Z_1, Lambda, n_vars, n_lags,
 #' @templateVar prior_psi_Omega TRUE
 #' @templateVar post_psi_Omega TRUE
 #' @templateVar Y_tilde TRUE
-#' @templateVar prior_psi TRUE
+#' @templateVar prior_psi_mean TRUE
 #' @template man_template
 #' @return The return is:
 #' \item{psi}{The posterior mean (from \code{\link{posterior_psi}})}
-posterior_psi <- function(U, D_mat, Sigma, prior_psi_Omega, post_psi_Omega, Y_tilde, prior_psi) {
+posterior_psi <- function(U, D_mat, Sigma, prior_psi_Omega, post_psi_Omega, Y_tilde, prior_psi_mean) {
   SigmaYD <- matrix(c(solve(Sigma) %*% t(Y_tilde) %*% D_mat), ncol = 1)
-  psi <- post_psi_Omega %*% (t(U) %*% SigmaYD + solve(prior_psi_Omega) %*% prior_psi)
+  psi <- post_psi_Omega %*% (t(U) %*% SigmaYD + solve(prior_psi_Omega) %*% prior_psi_mean)
   return(psi)
 }
 
@@ -230,7 +230,7 @@ eval_Pi_Sigma_RaoBlack <- function(Z_array, d, post_psi_center, post_Pi_center, 
 #' @templateVar Sigma_array TRUE
 #' @templateVar Z_array TRUE
 #' @templateVar post_psi_center TRUE
-#' @templateVar prior_psi TRUE
+#' @templateVar prior_psi_mean TRUE
 #' @templateVar prior_psi_Omega TRUE
 #' @templateVar D_mat TRUE
 #' @templateVar n_determ TRUE
@@ -242,7 +242,7 @@ eval_Pi_Sigma_RaoBlack <- function(Z_array, d, post_psi_center, post_Pi_center, 
 #' \item{evals}{A vector with the evaulations.}
 #'
 #'
-eval_psi_MargPost <- function(Pi_array, Sigma_array, Z_array, post_psi_center, prior_psi, prior_psi_Omega, D_mat, n_determ, n_vars, n_lags, n_reps) {
+eval_psi_MargPost <- function(Pi_array, Sigma_array, Z_array, post_psi_center, prior_psi_mean, prior_psi_Omega, D_mat, n_determ, n_vars, n_lags, n_reps) {
   post_psi_center <- matrix(post_psi_center, ncol = 1)
 
   evals <- vector("numeric", n_reps - 1)
@@ -257,7 +257,7 @@ eval_psi_MargPost <- function(Pi_array, Sigma_array, Z_array, post_psi_center, p
     Y_tilde <- build_Y_tilde(Pi = Pi_array[,, r], z = Z_array[,, r])
 
     post_psi_center <- posterior_psi(U = U, D_mat = D_mat, Sigma = Sigma_array[,, r], prior_psi_Omega = prior_psi_Omega,
-                              post_psi_Omega = post_psi_Omega, Y_tilde = Y_tilde, prior_psi = prior_psi)
+                              post_psi_Omega = post_psi_Omega, Y_tilde = Y_tilde, prior_psi_mean = prior_psi_mean)
 
     evals[r] <- dmultn(x = post_psi_center, m = post_psi_center, Sigma = post_psi_Omega)
   }

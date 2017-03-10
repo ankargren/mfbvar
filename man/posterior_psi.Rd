@@ -6,7 +6,7 @@
 \title{Compute posterior moments of the steady-state parameters}
 \usage{
 posterior_psi(U, D_mat, Sigma, prior_psi_Omega, post_psi_Omega, Y_tilde,
-  prior_psi)
+  prior_psi_mean)
 
 posterior_psi_Omega(U, D_mat, Sigma, prior_psi_Omega)
 }
@@ -23,7 +23,7 @@ posterior_psi_Omega(U, D_mat, Sigma, prior_psi_Omega)
 
 \item{Y_tilde}{The lag-corrected data matrix (with no missing values) of size \code{n_T * n_vars}.}
 
-\item{prior_psi}{Vector of length \code{n_determ*n_vars} with the prior means of the steady-state parameters.}
+\item{prior_psi_mean}{Vector of length \code{n_determ*n_vars} with the prior means of the steady-state parameters.}
 }
 \value{
 The return is:
