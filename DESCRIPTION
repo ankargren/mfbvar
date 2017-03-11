@@ -1,7 +1,7 @@
 Package: mfbvar
 Type: Package
 Title: Mixed-Frequency Bayesian VAR Models
-Version: 0.2.1
+Version: 0.2.2
 Date: 2017-03-09
 Author: Sebastian Ankargren, Yukai Yang, Mans Unosson
 Maintainer: Sebastian Ankargren <sebastian.ankargren@statistics.uu.se>

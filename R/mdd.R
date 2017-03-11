@@ -1,103 +1,19 @@
-#' Fills NAs with the next non-NA value
-#'
-#' The function fills elements with \code{NA} with the next non-\code{NA} value (so that quarterly averages observed at the end of the quarter are assumed as observations for the remaining months of the quarter).
-#' @templateVar Y TRUE
-#' @template man_template
-#' @return A matrix with no \code{NA}s.
-fill_na <- function(Y) {
-  apply(Y, 2, function(x) {
-    n_x <- length(x) # save lentgh
-    if (any(is.na(x))) {
-      x <- x[1:max(which(is.na(x) == FALSE))] # get rid of NAs in the end
-      for (i in which(is.na(x))) {
-        x1 <- NA
-        counter <- 1
-        while (is.na(x1) == TRUE) {
-          x1 <- x[i + counter]
-          counter <- counter + 1
-        }
-        x[i] <- x1
-      }
-
-      trimmed_length <- length(x)
-      if (trimmed_length < n_x) {
-        x <- c(x, rep(NA, n_x - trimmed_length))
-        for (i in trimmed_length:n_x) {
-          x[i] <- x[trimmed_length]
-        }
-      }
-    }
-    x})
-}
-
-#' Normal inverse Wishart density function
-#'
-#' Density function for the (matrix) normal inverse Wishart distribution
-#' @templateVar X TRUE
-#' @templateVar Sigma TRUE
-#' @templateVar M TRUE
-#' @templateVar Q TRUE
-#' @templateVar P TRUE
-#' @templateVar S TRUE
-#' @templateVar v TRUE
-#' @template man_template
-#' @return
-#' For \code{dnorminvwish}: the evaluated density.\\n
-#' For \code{rmatn} or \code{rinvwish}: the random numbers.
-dnorminvwish <- function(X, Sigma, M, P, S, v) {
-  q <- dim(Sigma)[1]
-  p <- dim(P)[1]
-  det_Sigma <- det(Sigma)
-  inv_Sigma <- solve(Sigma)
-  dmultnorm <- (-p*q/2) * log(2 * pi) + (-p/2) * log(det_Sigma) + (-q/2)*log(det(P)) + (-1/2 * sum(diag(inv_Sigma %*% t(X - M) %*% solve(P) %*% (X - M))))
-  cc <- (v * q/2)*log(2) + (q*(q-1)/4)*log(pi) + sum(lgamma((v+1-1:q)/2))
-  dinvwish <- -cc + (v/2) * log(det(S)) -(v+q+1)/2*log(det_Sigma) -1/2 * sum(diag(inv_Sigma %*% S))
-  return(exp(dmultnorm + dinvwish))
-}
-
-#' Multivariate normal density function
-#'
-#' Density function for the multivariate normal distribution
-#' @templateVar x TRUE
-#' @templateVar m TRUE
-#' @template man_template
-#' @inherit dnorminvwish
-#' @return
-#' For \code{dmultn}: the evaluated density.\\n
-#' For \code{rmultn}: \eqn{p} random numbers.
-dmultn <- function(x, m, Sigma) {
-  log_d <- (-1/2)* log(det(2*pi*Sigma)) -1/2 * t(x-m) %*% solve(Sigma) %*% (x-m)
-  return(exp(log_d))
-}
-
-#' Truncated multivariate normal density function
-#'
-#' Density function for the truncated multivariate normal distribution
-#' @templateVar V_inv TRUE
-#' @param d The number of components.
-#' @templateVar p_trunc TRUE
-#' @templateVar chisq_val TRUE
-#' @template man_template
-#' @inherit dmultn
-dnorm_trunc <- function(x, m, V_inv, d, p_trunc, chisq_val) {
-  qf <- t(x - m) %*% V_inv %*% (x - m)
-  return((1/p_trunc) * (1/sqrt((2*pi)^d/det(V_inv))) * exp(-0.5 * qf) * (qf < chisq_val))
-}
 
 #' Marginal data density
 #'
 #' Estimate the marginal data density.
-#' @details \code{mdd} uses method 2, \code{mdd1} uses method 1.
+#' @details \code{mdd1} uses method 1, \code{mdd2} uses method 2.
 #' @templateVar mfbvar_obj TRUE
 #' @templateVar p_trunc TRUE
 #' @template man_template
 #' @return
 #' \code{mdd} returns a list with components being \code{n_reps}-long vectors. These can be used to estimate the MDD.
-#' \item{Pi_Sigma_posterior}{Posterior of Pi and Sigma.}
+#' \item{eval_posterior_Pi_Sigma}{Posterior of Pi and Sigma.}
 #' \item{data_likelihood}{The likelihood.}
-#' \item{Pi_Sigma_prior}{Prior of Pi and Sigma.}
-#' \item{psi_prior}{Prior of psi.}
+#' \item{eval_prior_Pi_Sigma}{Prior of Pi and Sigma.}
+#' \item{eval_prior_psi}{Prior of psi.}
 #' \item{psi_truncated}{The truncated psi pdf.}
+
 mdd2 <- function(mfbvar_obj, p_trunc) {
   # Get things from the MFBVAR object
   n_determ <- mfbvar_obj$n_determ
@@ -109,9 +25,9 @@ mdd2 <- function(mfbvar_obj, p_trunc) {
 
   psi <- mfbvar_obj$psi
   prior_Pi_Omega <- mfbvar_obj$prior_Pi_Omega
-  prior_Pi <- mfbvar_obj$prior_Pi
-  prior_s <- mfbvar_obj$prior_s
-  nu <- mfbvar_obj$nu
+  prior_Pi_mean <- mfbvar_obj$prior_Pi_mean
+  prior_S <- mfbvar_obj$prior_S
+  post_nu <- mfbvar_obj$post_nu
 
   Y <- mfbvar_obj$Y
   Z <- mfbvar_obj$Z
@@ -124,12 +40,12 @@ mdd2 <- function(mfbvar_obj, p_trunc) {
   post_psi <- colMeans(psi)
   post_psi_Omega <- cov(psi)
 
-  prior_s <- mfbvar_obj$prior_s
+  prior_S <- mfbvar_obj$prior_S
   prior_nu <- mfbvar_obj$prior_nu
   prior_Pi_Omega <- mfbvar_obj$prior_Pi_Omega
-  prior_Pi <- mfbvar_obj$prior_Pi
+  prior_Pi_mean <- mfbvar_obj$prior_Pi_mean
   prior_psi_Omega <- mfbvar_obj$prior_psi_Omega
-  prior_psi <- mfbvar_obj$prior_psi
+  prior_psi_mean <- mfbvar_obj$prior_psi_mean
 
   # For the truncated normal
   chisq_val <- qchisq(p_trunc, n_determ*n_vars)
@@ -140,10 +56,10 @@ mdd2 <- function(mfbvar_obj, p_trunc) {
   Q_comp[1:n_vars, 1:n_vars] <- t(chol(post_Sigma))
   P0      <- matrix(0, n_lags*n_vars, n_lags*n_vars)
 
-  Pi_Sigma_posterior <- vector("numeric", n_reps)
+  eval_posterior_Pi_Sigma <- vector("numeric", n_reps)
   data_likelihood <- vector("numeric", n_reps)
-  Pi_Sigma_prior <- vector("numeric", n_reps)
-  psi_prior <- vector("numeric", n_reps)
+  eval_prior_Pi_Sigma <- vector("numeric", n_reps)
+  eval_prior_psi <- vector("numeric", n_reps)
   psi_truncated <- vector("numeric", n_reps)
   for (r in 1:n_reps) {
     # Demean z, create Z (companion form version)
@@ -157,12 +73,12 @@ mdd2 <- function(mfbvar_obj, p_trunc) {
 
     # Posterior moments of Pi
     post_Pi_Omega_i <- solve(solve(prior_Pi_Omega) + crossprod(XX))
-    post_Pi_i       <- post_Pi_Omega_i %*% (solve(prior_Pi_Omega) %*% prior_Pi + crossprod(XX, YY))
+    post_Pi_i       <- post_Pi_Omega_i %*% (solve(prior_Pi_Omega) %*% prior_Pi_mean + crossprod(XX, YY))
 
     # Then Sigma
     s_sample  <- crossprod(YY - XX %*% Pi_sample)
-    Pi_diff <- prior_Pi - Pi_sample
-    post_s_i <- prior_s + s_sample + t(Pi_diff) %*% solve(post_Pi_Omega_i + solve(crossprod(XX))) %*% Pi_diff
+    Pi_diff <- prior_Pi_mean - Pi_sample
+    post_s_i <- prior_S + s_sample + t(Pi_diff) %*% solve(post_Pi_Omega_i + solve(crossprod(XX))) %*% Pi_diff
 
     # Set the variables which vary in the Kalman filtering
     mZ <- Y - d %*% t(matrix(psi[r, ], nrow = n_vars))
@@ -172,26 +88,26 @@ mdd2 <- function(mfbvar_obj, p_trunc) {
     h0 <- h0[(n_vars*n_lags):1,,drop = FALSE] # have to reverse the order
 
 
-    Pi_Sigma_posterior[r] <- dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = post_Pi_i, P = post_Pi_Omega_i, S = post_s_i, v = nu)
+    eval_posterior_Pi_Sigma[r] <- dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = post_Pi_i, P = post_Pi_Omega_i, S = post_s_i, v = post_nu)
     data_likelihood[r] <- exp(sum(c(loglike(Y = as.matrix(mZ), Lambda = Lambda, Pi_comp = Pi_comp, Q_comp = Q_comp, n_T = n_T_, n_vars = n_vars, n_comp = n_lags * n_vars, z0 = h0, P0 = P0)[-1])))
-    Pi_Sigma_prior[r] <- dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = prior_Pi, P = prior_Pi_Omega, S = prior_s, v = prior_nu)
-    psi_prior[r] <- dmultn(x = psi[r, ], m = prior_psi, Sigma = prior_psi_Omega)
+    eval_prior_Pi_Sigma[r] <- dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = prior_Pi_mean, P = prior_Pi_Omega, S = prior_S, v = prior_nu)
+    eval_prior_psi[r] <- dmultn(x = psi[r, ], m = prior_psi_mean, Sigma = prior_psi_Omega)
     psi_truncated[r] <- dnorm_trunc(psi[r, ], post_psi, solve(post_psi_Omega), n_determ*n_vars, p_trunc, chisq_val)
 
   }
-  return(list(Pi_Sigma_posterior = Pi_Sigma_posterior, data_likelihood = data_likelihood, Pi_Sigma_prior = Pi_Sigma_prior,
-              psi_prior = psi_prior, psi_truncated = psi_truncated))
+  return(list(eval_posterior_Pi_Sigma = eval_posterior_Pi_Sigma, data_likelihood = data_likelihood, eval_prior_Pi_Sigma = eval_prior_Pi_Sigma,
+              eval_prior_psi = eval_prior_psi, psi_truncated = psi_truncated))
 }
 
 #' @rdname mdd2
 #' @return
 #' \code{mdd1} returns a list with components (all are currently in logarithms):
 #' \item{lklhd}{The likelihood.}
-#' \item{Pi_Sigma_prior}{The evaluated prior.}
-#' \item{psi_prior}{The evaluated prior of psi.}
-#' \item{Pi_Sigma_RB}{The Rao-Blackwellized estimate of the conditional posterior of Pi and Sigma.}
-#' \item{psi_MargPost}{The evaluated marginal posterior of psi.}
-#' \item{mdd_estimate}{The final estimate.}
+#' \item{eval_prior_Pi_Sigma}{The evaluated prior.}
+#' \item{eval_prior_psi}{The evaluated prior of psi.}
+#' \item{eval_RB_Pi_Sigma}{The Rao-Blackwellized estimate of the conditional posterior of Pi and Sigma.}
+#' \item{eval_marg_psi}{The evaluated marginal posterior of psi.}
+#' \item{log_mdd}{The mdd estimate (in log).}
 mdd1 <- function(mfbvar_obj) {
   ################################################################
   ### Get things from the MFBVAR object
@@ -204,9 +120,9 @@ mdd1 <- function(mfbvar_obj) {
 
   psi <- mfbvar_obj$psi
   prior_Pi_Omega <- mfbvar_obj$prior_Pi_Omega
-  prior_Pi <- mfbvar_obj$prior_Pi
-  prior_s <- mfbvar_obj$prior_s
-  nu <- mfbvar_obj$nu
+  prior_Pi_mean <- mfbvar_obj$prior_Pi_mean
+  prior_S <- mfbvar_obj$prior_S
+  post_nu <- mfbvar_obj$post_nu
 
   Y     <- mfbvar_obj$Y
   Z     <- mfbvar_obj$Z
@@ -220,12 +136,12 @@ mdd1 <- function(mfbvar_obj) {
   post_Sigma <- apply(Sigma, c(1, 2), mean)
   post_psi <- colMeans(psi)
 
-  prior_s <- mfbvar_obj$prior_s
+  prior_S <- mfbvar_obj$prior_S
   prior_nu <- mfbvar_obj$prior_nu
   prior_Pi_Omega <- mfbvar_obj$prior_Pi_Omega
-  prior_Pi <- mfbvar_obj$prior_Pi
+  prior_Pi_mean <- mfbvar_obj$prior_Pi_mean
   prior_psi_Omega <- mfbvar_obj$prior_psi_Omega
-  prior_psi <- mfbvar_obj$prior_psi
+  prior_psi_mean <- mfbvar_obj$prior_psi_mean
 
   #(mZ,lH,mF,mQ,iT,ip,iq,h0,P0)
   Pi_comp <- build_companion(post_Pi_mean, n_vars = n_vars, n_lags = n_lags)
@@ -254,7 +170,7 @@ mdd1 <- function(mfbvar_obj) {
 
   # For the posterior of Pi
   inv_prior_Pi_Omega <- solve(prior_Pi_Omega)
-  Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi
+  Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi_mean
 
   Z_1 <- Z_red[1:n_lags,, 1]
 
@@ -263,8 +179,8 @@ mdd1 <- function(mfbvar_obj) {
   for (r in 2:n_reps) {
     ################################################################
     ### Pi and Sigma step
-    #                             (Z_r1,                 d,     psi_r1,            prior_Pi, inv_prior_Pi_Omega, Omega_Pi, prior_s, prior_nu, check_roots,        n_vars, n_lags, n_T)
-    Pi_Sigma <- Pi_Sigma_posterior(Z_r1 = Z_red[,, r-1], d = d, psi_r1 = post_psi, prior_Pi, inv_prior_Pi_Omega, Omega_Pi, prior_s, prior_nu, check_roots = TRUE, n_vars, n_lags, n_T)
+    #                             (Z_r1,                 d,     psi_r1,            prior_Pi_mean, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_S, prior_nu, check_roots, n_vars, n_lags, n_T)
+    Pi_Sigma <- posterior_Pi_Sigma(Z_r1 = Z_red[,, r-1], d = d, psi_r1 = post_psi, prior_Pi_mean, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_S, prior_nu, check_roots = TRUE, n_vars, n_lags, n_T)
     Pi_red[,,r]      <- Pi_Sigma$Pi_r
     Sigma_red[,,r]   <- Pi_Sigma$Sigma_r
     num_tries[r] <- Pi_Sigma$num_try
@@ -273,7 +189,7 @@ mdd1 <- function(mfbvar_obj) {
     ################################################################
     ### Smoothing step
     #(Y, d, Pi_r,            Sigma_r,               psi_r,                          Z_1, Lambda, n_vars, n_lags, n_T_, smooth_state)
-    Z_res <- Z_posterior(Y, d, Pi_r = Pi_red[,, r], Sigma_r = Sigma_red[,, r], psi_r = post_psi, Z_1, Lambda, n_vars, n_lags, n_T_, smooth_state = FALSE)
+    Z_res <- posterior_Z(Y, d, Pi_r = Pi_red[,, r], Sigma_r = Sigma_red[,, r], psi_r = post_psi, Z_1, Lambda, n_vars, n_lags, n_T_, smooth_state = FALSE)
     Z_red[,, r] <- Z_res$Z_r
   }
 
@@ -288,12 +204,12 @@ mdd1 <- function(mfbvar_obj) {
   ################################################################
   ### Final calculations
   lklhd          <- sum(c(loglike(Y = as.matrix(mZ), Lambda = Lambda, Pi_comp = Pi_comp, Q_comp = Q_comp, n_T = n_T_, n_vars = n_vars, n_comp = n_lags * n_vars, z0 = h0, P0 = P0)[-1]))
-  Pi_Sigma_prior <- log(dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = prior_Pi, P = prior_Pi_Omega, S = prior_s, v = prior_nu))
-  psi_prior      <- log(dmultn(x = post_psi, m = prior_psi, Sigma = prior_psi_Omega))
-  Pi_Sigma_RB    <- log(mean(eval_Pi_Sigma_RaoBlack(Z_red, d, post_psi, post_Pi_mean, post_Sigma, nu, prior_Pi, prior_Pi_Omega, prior_s, n_vars, n_lags, n_reps)))
-  psi_MargPost   <- log(mean(eval_psi_MargPost(Pi, Sigma, Z, post_psi, prior_psi, prior_psi_Omega, D, n_determ, n_vars, n_lags, n_reps)))
+  eval_prior_Pi_Sigma <- log(dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = prior_Pi_mean, P = prior_Pi_Omega, S = prior_S, v = prior_nu))
+  eval_prior_psi      <- log(dmultn(x = post_psi, m = prior_psi_mean, Sigma = prior_psi_Omega))
+  eval_RB_Pi_Sigma    <- log(mean(eval_Pi_Sigma_RaoBlack(Z_red, d, post_psi, post_Pi_mean, post_Sigma, post_nu, prior_Pi_mean, prior_Pi_Omega, prior_S, n_vars, n_lags, n_reps)))
+  eval_marg_psi   <- log(mean(eval_psi_MargPost(Pi, Sigma, Z, post_psi, prior_psi_mean, prior_psi_Omega, D, n_determ, n_vars, n_lags, n_reps)))
 
-  mdd_estimate <- lklhd + Pi_Sigma_prior + psi_prior - (Pi_Sigma_RB + psi_MargPost)
+  mdd_estimate <- lklhd + eval_prior_Pi_Sigma + eval_prior_psi - (eval_RB_Pi_Sigma + eval_marg_psi)
 
-  return(list(lklhd = lklhd, Pi_Sigma_prior = Pi_Sigma_prior, psi_prior = psi_prior, Pi_Sigma_RB = Pi_Sigma_RB, psi_MargPost = psi_MargPost, mdd_estimate = mdd_estimate))
+  return(list(lklhd = lklhd, eval_prior_Pi_Sigma = eval_prior_Pi_Sigma, eval_prior_psi = eval_prior_psi, eval_RB_Pi_Sigma = eval_RB_Pi_Sigma, eval_marg_psi = eval_marg_psi, log_mdd = mdd_estimate))
 }

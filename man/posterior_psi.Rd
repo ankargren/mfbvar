@@ -2,35 +2,34 @@
 % Please edit documentation in R/posteriors.R
 \name{posterior_psi}
 \alias{posterior_psi}
-\alias{posterior_psi_Omega}
-\title{Compute posterior moments of the steady-state parameters}
+\title{Draw from posterior of psi}
 \usage{
-posterior_psi(U, D_mat, Sigma, prior_psi_Omega, post_psi_Omega, Y_tilde,
-  prior_psi_mean)
-
-posterior_psi_Omega(U, D_mat, Sigma, prior_psi_Omega)
+posterior_psi(Pi_r, Sigma_r, Z_r1, prior_psi_mean, prior_psi_Omega, D_mat,
+  n_vars, n_lags, n_determ)
 }
 \arguments{
-\item{U}{\eqn{U} matrix, of size \code{(n_vars*n_determ*(n_lags+1)) * (n_vars*n_determ)}. This can be obtained using \code{\link{build_U}}.}
+\item{Pi_r}{The current draw of \code{Pi} (i.e. \code{Pi[,, r]}).}
 
-\item{D_mat}{The \code{D} matrix (from \code{\link{build_DD}}).}
+\item{Sigma_r}{The current draw of \code{Sigma} (i.e. \code{Sigma[,, r]}).}
 
-\item{Sigma}{The covariance matrix.}
+\item{Z_r1}{The previous draw of \code{Z} (i.e. \code{Z[,, r-1]}).}
+
+\item{prior_psi_mean}{Vector of length \code{n_determ*n_vars} with the prior means of the steady-state parameters.}
 
 \item{prior_psi_Omega}{Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.}
 
-\item{post_psi_Omega}{The covariance matrix in the posterior, \eqn{\bar{\Omega}_{\Psi}}.}
+\item{D_mat}{The \code{D} matrix (from \code{\link{build_DD}}).}
 
-\item{Y_tilde}{The lag-corrected data matrix (with no missing values) of size \code{n_T * n_vars}.}
+\item{n_vars}{The number of variables.}
 
-\item{prior_psi_mean}{Vector of length \code{n_determ*n_vars} with the prior means of the steady-state parameters.}
+\item{n_lags}{The number of lags.}
+
+\item{n_determ}{The number of deterministic terms.}
 }
 \value{
-The return is:
-\item{psi}{The posterior mean (from \code{\link{posterior_psi}})}
-
-\item{psi_Omega}{The posterior variance (from \code{\link{posterior_psi_Omega}})}
+\code{posterior_psi} returns:
+\item{psi_r}{The draw of \code{psi}.}
 }
 \description{
-Computes the mean and variance of the conditional posterior distribution of the steady-state parameters.
+Function for drawing from the posterior of psi, which can be used as a block in a Gibbs sampler.
 }
