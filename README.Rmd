@@ -11,8 +11,8 @@ knitr::opts_chunk$set(
   fig.path = "README-"
 )
 ```
-# News (2017-03-10)
-What is new in version 0.2:
+# News (2017-03-11)
+What is new in version 0.2.1:
 
 - Methods (`print`, `summary`, `plot`, `predict`)
 - Better organization of names, argument order. This may make it incompatible with older code
@@ -38,7 +38,7 @@ Y[, n_vars] <- zoo::rollapply(Y[, n_vars], 3, mean, fill = NA, align = "right")
 Y <- Y[-(1:TT),]
 Y[setdiff(1:TT, seq(1, TT, 3)), n_vars] <- NA
 
-dates <- paste(rep(2000:2016, each = 12), "-", 1:12, sep = "")
+dates <- paste(rep(2000:2017, each = 12), "-", 1:12, sep = "")
 Y <- as.data.frame(Y)
 rownames(Y) <- dates[1:nrow(Y)]
 colnames(Y) <- c("GDP", "Infl", "Interest")
@@ -63,8 +63,10 @@ n_T <- nrow(Y)
 
 The `n_*` variables are self-explanatory. Next, create the matrix of deterministic terms (also for the forecasting period):
 ```{r}
-d <- matrix(1, nrow = n_T, ncol = 1)
-d_fcst <- matrix(1, nrow = n_fcst, ncol = 1)
+d <- matrix(1, nrow = n_T, ncol = 1, dimnames = list(1:nrow(Y), "const"))
+d_fcst <- matrix(1, nrow = n_fcst, ncol = 1, 
+                 dimnames = list(dates[(nrow(Y)+1):(nrow(Y)+n_fcst)], "const"))
+d_fcst
 ```
 
 For the prior on the dynamic coefficients and the error covariance matrix, we need to set the prior degrees of freedom as well as the prior mean of AR(1) coefficients and the tuning parameters:
@@ -90,7 +92,7 @@ Lambda <- build_Lambda(c("identity", "identity", "average"), n_lags)
 ## Main call
 After having set these preliminary variables, we can now call the main function `mfbvar()`:
 ```{r, cache = TRUE, results = "hide"}
-set.seed(10238)
+set.seed(10237)
 mfbvar_obj <- mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, 
                      prior_nu, prior_psi_mean, prior_psi_Omega, 
                      n_lags, n_fcst, n_burnin, n_reps) 
@@ -103,7 +105,7 @@ Four S3 methods are implemented:
 ```{r methods, fig.width = 10, fig.asp = 0.5}
 mfbvar_obj
 summary(mfbvar_obj)
-predict(mfbvar_obj)
-plot(mfbvar_obj)
+predict(mfbvar_obj, tidy = TRUE)
+plot(mfbvar_obj) 
 ```
 

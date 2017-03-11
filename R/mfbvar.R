@@ -38,12 +38,35 @@ mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_n
   if (!is.null(n_fcst)) {
     if (nrow(d_fcst) != n_fcst) {
       stop(paste0("d_fcst has ", nrow(d_fcst), " rows, but n_fcst is ", n_fcst, "."))
+    } else {
+      if (is.null(rownames(d_fcst))) {
+        names_fcst <- paste0("fcst_", 1:n_fcst)
+      } else {
+        names_fcst <- rownames(d_fcst)
+      }
+
     }
   }
 
   fun_call <- match.call()
-  row_names <- rownames(Y)
-  col_names <- colnames(Y)
+  if (is.null(rownames(Y))) {
+    names_row <- 1:nrow(Y)
+  } else {
+    names_row <- rownames(Y)
+  }
+
+  if (is.null(colnames(Y))) {
+    names_col <- 1:col(Y)
+  } else {
+    names_col <- colnames(Y)
+  }
+
+  if (is.null(colnames(d))) {
+    names_determ <- paste0("d", 1:ncol(d))
+  } else {
+    names_determ <- colnames(d)
+  }
+
   original_Y <- Y
   Y <- as.matrix(Y)
   n_vars <- ncol(Y)
@@ -82,14 +105,17 @@ mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_n
   cat(paste0("\n  Total time elapsed: ", signif(time_diff, digits = 1), " ",
              attr(time_diff, "units")))
 
-  if (!is.null(row_names) && !is.null(n_fcst)) {
-    rownames(main_run$Z_fcst)[1:main_run$n_lags] <- row_names[(main_run$n_T-main_run$n_lags+1):main_run$n_T]
-    main_run$row_names <- row_names
+  if (!is.null(n_fcst)) {
+    rownames(main_run$Z_fcst)[1:main_run$n_lags] <- names_row[(main_run$n_T-main_run$n_lags+1):main_run$n_T]
+    rownames(main_run$Z_fcst)[(main_run$n_lags+1):(main_run$n_fcst+main_run$n_lags)] <- names_fcst
+    colnames(main_run$Z_fcst) <- names_col
+
   }
-  if (!is.null(col_names)) {
-    colnames(main_run$Z_fcst) <- col_names
-    main_run$col_names <- col_names
-  }
+
+  main_run$names_row <- names_row
+  main_run$names_col <- names_col
+  main_run$names_fcst <- names_fcst
+  main_run$names_determ <- names_determ
 
 
   class(main_run) <- "mfbvar"
@@ -106,8 +132,8 @@ mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_n
 #' @template man_template
 
 print.mfbvar <- function(x, ...){
-  cat(paste0("Mixed-frequency steady-state BVAR with:\n", ncol(x$Y), " variables", ifelse(!is.null(x$col_names), paste0(" (", paste(x$col_names, collapse = ", "), ")"), " "), "\n", nrow(x$prior_Pi_mean)/ncol(x$prior_Pi_mean), " lags\n",
-             nrow(x$Y), " time periods", ifelse(!is.null(x$row_names), paste0(" (", x$row_names[1], " - ", x$row_names[length(x$row_names)], ")"), " "), "\n", ifelse(is.null(x$n_fcst), "0", x$n_fcst), " periods forecasted\n",
+  cat(paste0("Mixed-frequency steady-state BVAR with:\n", ncol(x$Y), " variables", ifelse(!is.null(x$names_col), paste0(" (", paste(x$names_col, collapse = ", "), ")"), " "), "\n", nrow(x$prior_Pi_mean)/ncol(x$prior_Pi_mean), " lags\n",
+             nrow(x$Y), " time periods", ifelse(!is.null(x$names_row), paste0(" (", x$names_row[1], " - ", x$names_row[length(x$names_row)], ")"), " "), "\n", ifelse(is.null(x$n_fcst), "0", x$n_fcst), " periods forecasted\n",
              x$n_reps, " draws used in main chain"))
 }
 
@@ -144,33 +170,41 @@ plot.mfbvar <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
   ss_lower  <- x$d[plot_range, ] %*% t(matrix(apply(x$psi, 2, quantile, prob = ss_level[1]), ncol = x$n_determ))
   ss_median <- x$d[plot_range, ] %*% t(matrix(apply(x$psi, 2, quantile, prob = 0.5), ncol = x$n_determ))
   ss_upper  <- x$d[plot_range, ] %*% t(matrix(apply(x$psi, 2, quantile, prob = ss_level[2]), ncol = x$n_determ))
-  col_names <- if (is.null(x$col_names)) paste0("x", 1:x$n_vars) else x$col_names
-  row_names <- if (is.null(x$row_names)) 1:x$n_T else x$row_names
-  ss <- data.frame(expand.grid(time = plot_range, col_names = col_names), lower = c(ss_lower), median = c(ss_median),
+  names_col <- if (is.null(x$names_col)) paste0("x", 1:x$n_vars) else x$names_col
+  names_row <- if (is.null(x$names_row)) 1:x$n_T else x$names_row
+  ss <- data.frame(expand.grid(time = plot_range, names_col = names_col), lower = c(ss_lower), median = c(ss_median),
                    upper = c(ss_upper))
   ss$value <- c(as.matrix(x$Y[plot_range,]))
   ss <- na.omit(ss)
 
   p <- ggplot(ss, aes(x = time)) +
-    geom_ribbon(aes(ymin = lower, ymax = upper, fill = "grey70"), alpha = 0.5) +
+    geom_ribbon(aes(ymin = lower, ymax = upper, fill = "grey90"), alpha =1) +
     geom_line(aes(y = value))
 
   if (!is.null(x$n_fcst)) {
     preds <- predict(x, pred_quantiles = c(pred_level[1], 0.5, pred_level[2]))
-    fcst <- data.frame(expand.grid(time = x$n_T:(x$n_T+x$n_fcst), col_names = col_names),
-                       lower = c(preds[[1]][-(1:(x$n_lags-1)),]), median = c(preds[[2]][-(1:(x$n_lags-1)),]),
-                     upper = c(preds[[3]][-(1:(x$n_lags-1)),]))
+    fcst <- data.frame(expand.grid(time = (x$n_T+1):(x$n_T+x$n_fcst), names_col = names_col),
+                       lower = c(preds[[1]]), median = c(preds[[2]]),
+                     upper = c(preds[[3]]))
+    last_pos <- apply(x$Y, 2, function(yy) max(which(!is.na(yy))))
+    for (i in seq_along(last_pos)) {
+      fcst <- rbind(fcst, data.frame(time = (1:nrow(x$Y))[last_pos[i]],
+                                              names_col = names_col[i],
+                                              lower = x$Y[last_pos[i], i],
+                                              median = x$Y[last_pos[i], i],
+                                              upper  = x$Y[last_pos[i], i]))
+    }
     p <- p + geom_ribbon(data = fcst, aes(ymin = lower, ymax = upper,
-                                          fill = "grey30"), alpha = 0.5) +
+                                          fill = "#bdbdbd"), alpha = 1) +
       geom_line(data = fcst, aes(y = median), linetype = "dashed") +
       labs(caption = "Note: The forecasts are for the underlying variable.")
-    row_names <- c(row_names, rownames(x$Z_fcst)[-(1:x$n_lags)])
+    names_row <- c(names_row, rownames(x$Z_fcst)[-(1:x$n_lags)])
   }
 
 
 
-  p <- p + facet_wrap(~col_names, scales = "free_y") +
-    scale_fill_manual(values = c("grey70", "grey30"),
+  p <- p + facet_wrap(~names_col, scales = "free_y") +
+    scale_fill_manual(values = c("#bdbdbd", "grey90"),
                       label = c(paste0("Prediction (", 100*(pred_level[2]-pred_level[1]), "%)"),
                                 paste0("Steady state (", 100*(ss_level[2]-ss_level[1]), "%)"))) +
     labs(fill = "Intervals",
@@ -182,7 +216,7 @@ plot.mfbvar <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
   breaks <- ggplot_build(p)$layout$panel_ranges[[1]]$x.major_source
   breaks <- breaks[-which(!(breaks %in% 1:x$n_T))]
   p + scale_x_continuous(breaks = breaks,
-                         labels = row_names[breaks])
+                         labels = names_row[breaks])
 }
 
 #' Summary method for class mfbvar
@@ -194,7 +228,23 @@ plot.mfbvar <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
 #' @template man_template
 #'
 summary.mfbvar <- function(object, ...) {
+  post_Pi <- apply(object$Pi, c(1, 2), mean)
+  rownames(post_Pi) <- object$names_col
+  colnames(post_Pi) <- paste0(rep(object$names_col, object$n_lags), ".", rep(1:object$n_lags, each = object$n_vars))
+  post_Sigma <- apply(object$Sigma, c(1, 2), mean)
+  rownames(post_Sigma) <- object$names_col
+  colnames(post_Sigma) <- object$names_col
+  post_psi <- matrix(colMeans(object$psi), ncol = object$n_determ)
+  rownames(post_psi) <- object$names_col
+  colnames(post_psi) <- object$names_determ
   print(object, ...)
+  cat("\n\n#########################\nPosterior means computed\n\nPi:\n")
+  print(post_Pi)
+  cat("\n\n Sigma:\n")
+  print(post_Sigma)
+  cat("\n\n Psi:\n")
+  print(post_psi)
+  ret_list <- list(post_Pi = post_Pi, post_Sigma = post_Sigma, post_Psi = post_psi)
 }
 
 #' Predict method for class mfbvar
@@ -203,16 +253,26 @@ summary.mfbvar <- function(object, ...) {
 #'
 #' @param object object of class mfbvar
 #' @param pred_quantiles The quantiles of the posterior predictive distribution to use.
+#' @param tidy If results should be tidy or not.
 #' @param ... Currently not in use.
 #' @template man_template
 #' @details Note that this requires that forecasts were made in the original \code{mfbvar} call.
 #'
-predict.mfbvar <- function(object, pred_quantiles = c(0.10, 0.50, 0.90), ...) {
+predict.mfbvar <- function(object, pred_quantiles = c(0.10, 0.50, 0.90), tidy = FALSE, ...) {
   if (is.null(object$n_fcst)) {
     stop("No forecasts exist in the provided object.")
   }
 
-  ret_list <- lapply(pred_quantiles, function(xx) apply(object$Z_fcst[,,-1], c(1, 2), quantile, prob = xx))
-  names(ret_list) <- paste0("quantile_", pred_quantiles*100)
-  return(ret_list)
+  if (tidy == FALSE) {
+    ret_list <- lapply(pred_quantiles, function(xx) apply(object$Z_fcst[-(1:object$n_lags),,-1], c(1, 2), quantile, prob = xx))
+    names(ret_list) <- paste0("quantile_", pred_quantiles*100)
+    return(ret_list)
+  } else if (tidy == TRUE) {
+    ret_list <- lapply(pred_quantiles, function(xx) apply(object$Z_fcst[-(1:object$n_lags),,-1], c(1, 2), quantile, prob = xx))
+    ret_tidy <- cbind(value = unlist(ret_list), expand.grid(fcst_date = rownames(object$Z_fcst[-(1:object$n_lags),,2]),
+                                        variable = object$names_col,
+                                        quantile = pred_quantiles))
+    return(ret_tidy)
+  }
+
 }

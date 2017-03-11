@@ -55,7 +55,6 @@
 #' <%=ifelse(exists("prior_psi_mean"), "@param prior_psi_mean Vector of length \\code{n_determ*n_vars} with the prior means of the steady-state parameters.", "") %>
 #' <%=ifelse(exists("prior_nu"), "@param prior_nu The prior degrees of freedom.", "") %>
 #' <%=ifelse(exists("prior_Pi_Omega"), "@param prior_Pi_Omega Matrix of size \\code{(n_vars*n_lags)* (n_vars*n_lags)} containing the prior for (part of) the prior covariance of the dynamic coefficients.", "") %>
-#' <%=ifelse(exists("prior_psi"), "@param prior_psi Vector of length \\code{n_determ*n_vars} with the prior means of the steady-state parameters.", "") %>
 #' <%=ifelse(exists("prior_psi_Omega"), "@param prior_psi_Omega Matrix of size \\code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.", "") %>
 #' <%=ifelse(exists("prior_S"), "@param prior_S The prior for \\eqn{\\Sigma}.", "") %>
 #' <%=ifelse(exists("prior_var_psi"), "@param prior_var_psi Matrix of size \\code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.", "") %>

@@ -4,12 +4,15 @@
 \alias{predict.mfbvar}
 \title{Predict method for class mfbvar}
 \usage{
-\method{predict}{mfbvar}(object, pred_quantiles = c(0.1, 0.5, 0.9), ...)
+\method{predict}{mfbvar}(object, pred_quantiles = c(0.1, 0.5, 0.9),
+  tidy = FALSE, ...)
 }
 \arguments{
 \item{object}{object of class mfbvar}
 
 \item{pred_quantiles}{The quantiles of the posterior predictive distribution to use.}
+
+\item{tidy}{If results should be tidy or not.}
 
 \item{...}{Currently not in use.}
 }
