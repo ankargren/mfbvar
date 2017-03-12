@@ -165,7 +165,7 @@ ggplot(mdd, aes(x = lambda1, y = lambda2, fill = log_mdd)) +
 ```
 
 ## Profiling
-Profiling of the code shows that `simulation_smoother` is by far the most time-consuming part of the code. 
+Profiling of the code shows that `simulation_smoother` is by far the most time-consuming part of the code (this is the main call inside `posterior_Z`). 
 ```{r profvis, cache = TRUE, include = FALSE}
 library(profvis)
 profiling <- profvis({mfbvar_obj <- mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, 

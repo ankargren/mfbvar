@@ -304,7 +304,7 @@ ggplot(mdd, aes(x = lambda1, y = lambda2, fill = log_mdd)) +
 Profiling
 ---------
 
-Profiling of the code shows that `simulation_smoother` is by far the most time-consuming part of the code.
+Profiling of the code shows that `simulation_smoother` is by far the most time-consuming part of the code (this is the main call inside `posterior_Z`).
 
 ``` r
 library(tidyverse)
