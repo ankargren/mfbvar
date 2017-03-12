@@ -304,7 +304,7 @@ ggplot(mdd, aes(x = lambda1, y = lambda2, fill = log_mdd)) +
 Profiling
 ---------
 
-Profiling of the code (not run here, needs to be run in interactive HTML mode) shows that `simulation_smoother` is by far the most time-consuming part of the code.
+Profiling of the code shows that `simulation_smoother` is by far the most time-consuming part of the code.
 
 ``` r
 library(tidyverse)
@@ -330,3 +330,11 @@ profiling %>%
 ```
 
 ![](README-profiling-1.png)
+
+To do
+-----
+
+Some things that remain to do:
+
+-   Wrapper for computing the mdd for grids of values, possibly also in parallel. Something like `mdd_search(lambda1, lambda2, n_cores = 1, method, ...)`.
+-   Helper function `interval_to_moments()` which takes a matrix of lower and upper bounds for prior intervals for steady states and return `prior_psi_mean` and `prior_psi_Omega`.
