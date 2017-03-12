@@ -1,2 +1,7 @@
 base
 mfbvar
+foreach
+iterators
+doParallel
+ggplot2
+profvis

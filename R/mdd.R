@@ -13,6 +13,7 @@
 #' \item{eval_prior_Pi_Sigma}{Prior of Pi and Sigma.}
 #' \item{eval_prior_psi}{Prior of psi.}
 #' \item{psi_truncated}{The truncated psi pdf.}
+#' \item{log_mdd}{The mdd estimate (in log).}
 
 mdd2 <- function(mfbvar_obj, p_trunc) {
   # Get things from the MFBVAR object
@@ -95,8 +96,13 @@ mdd2 <- function(mfbvar_obj, p_trunc) {
     psi_truncated[r] <- dnorm_trunc(psi[r, ], post_psi, solve(post_psi_Omega), n_determ*n_vars, p_trunc, chisq_val)
 
   }
+
+  mdd_num <- eval_posterior_Pi_Sigma * psi_truncated
+  log_mdd_den <- log(data_likelihood) + log(eval_prior_Pi_Sigma) + log(eval_prior_psi) # pi_sigma_prior constant? likelihood 0?
+  log_mdd <- -log(mean(mdd_num/exp(log_mdd_den)))
+
   return(list(eval_posterior_Pi_Sigma = eval_posterior_Pi_Sigma, data_likelihood = data_likelihood, eval_prior_Pi_Sigma = eval_prior_Pi_Sigma,
-              eval_prior_psi = eval_prior_psi, psi_truncated = psi_truncated))
+              eval_prior_psi = eval_prior_psi, psi_truncated = psi_truncated, log_mdd = log_mdd))
 }
 
 #' @rdname mdd2

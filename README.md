@@ -1,9 +1,9 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
-News (2017-03-10)
+News (2017-03-11)
 =================
 
-What is new in version 0.2:
+What is new in version 0.2.1:
 
 -   Methods (`print`, `summary`, `plot`, `predict`)
 -   Better organization of names, argument order. This may make it incompatible with older code
@@ -252,3 +252,81 @@ plot(mfbvar_obj)
 ```
 
 ![](README-methods-1.png)
+
+Marginal data density
+---------------------
+
+The package contains functions for estimating the marginal data density. This is most useful when done in parallel, so first we can set up a cluster and then compute the marginal data density for various values of the hyperparameters `lambda1` and `lambda2`.
+
+First, we'll use grids between 0.1 and 0.5 for `lambda1` and between 1 and 4 for `lambda2`.
+
+``` r
+lambda1_vec <- seq(0.1, 0.5, by = 0.05)
+lambda2_vec <- seq(1, 4, by = 0.5)
+lambda_mat <- expand.grid(lambda1_vec, lambda2_vec)
+```
+
+We can also create two wrapper functions to use for the parallel call:
+
+``` r
+mdd_search <- function(lambda1, lambda2) {
+  mfbvar_obj <- mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, 
+                     prior_nu, prior_psi_mean, prior_psi_Omega, 
+                     n_lags, n_fcst, n_burnin, n_reps) 
+  log_mdd <- mdd2(mfbvar_obj, p_trunc = 0.5)$log_mdd
+  return(list(log_mdd = log_mdd, lambda1 = lambda1, lambda2 = lambda2))
+}
+
+par_func <- function(j, lambda_mat) {
+  lambda1 <- lambda_mat[j, 1]
+  lambda2 <- lambda_mat[j, 2]
+  mdd_search(lambda1, lambda2)
+}
+```
+
+Finally, the parallel processing is conducted using `parLapply()`:
+
+Transforming the results and plotting gives us an idea of what hyperparameter values are sensible.
+
+``` r
+library(ggplot2)
+mdd <- data.frame(matrix(unlist(mdd_res), ncol = 3, byrow = TRUE))
+names(mdd) <- c("log_mdd", "lambda1", "lambda2")
+ggplot(mdd, aes(x = lambda1, y = lambda2, fill = log_mdd)) +
+  geom_tile() +
+  theme_minimal() +
+  scale_fill_gradient(low = "grey20", high = "grey90", name = "log(mdd)") +
+  coord_fixed(ratio = 1/10)
+```
+
+![](README-mddplot-1.png)
+
+Profiling
+---------
+
+Profiling of the code (not run here, needs to be run in interactive HTML mode) shows that `simulation_smoother` is by far the most time-consuming part of the code.
+
+``` r
+library(tidyverse)
+#> Loading tidyverse: tibble
+#> Loading tidyverse: tidyr
+#> Loading tidyverse: readr
+#> Loading tidyverse: purrr
+#> Loading tidyverse: dplyr
+#> Conflicts with tidy packages ----------------------------------------------
+#> filter(): dplyr, stats
+#> lag():    dplyr, stats
+profiling <- summaryRprof("../profiling.Rprof")$by.total
+profiling <- profiling[order(profiling$total.pct, decreasing = TRUE) & profiling$total.pct < 99,]
+profiling <- head(profiling) 
+profiling$call <- rownames(profiling)
+profiling <- as_tibble(profiling)
+profiling %>%
+  ggplot(aes(x = reorder(call, total.pct), y = total.pct)) +
+  geom_bar(stat = "identity", width = 0.25) +
+  theme_minimal() +
+  coord_flip() +
+  labs(y = "Percent", x = "Function call", title = "Most expensive functions calls in mfbvar")
+```
+
+![](README-profiling-1.png)

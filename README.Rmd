@@ -109,3 +109,81 @@ predict(mfbvar_obj, tidy = TRUE)
 plot(mfbvar_obj) 
 ```
 
+## Marginal data density
+The package contains functions for estimating the marginal data density. This is most useful when done in parallel, so first we can set up a cluster and then compute the marginal data density for various values of the hyperparameters `lambda1` and `lambda2`.
+
+First, we'll use grids between 0.1 and 0.5 for `lambda1` and between 1 and 4 for `lambda2`.
+```{r, cache = TRUE}
+lambda1_vec <- seq(0.1, 0.5, by = 0.05)
+lambda2_vec <- seq(1, 4, by = 0.5)
+lambda_mat <- expand.grid(lambda1_vec, lambda2_vec)
+```
+We can also create two wrapper functions to use for the parallel call:
+```{r, cache = TRUE}
+mdd_search <- function(lambda1, lambda2) {
+  mfbvar_obj <- mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, 
+                     prior_nu, prior_psi_mean, prior_psi_Omega, 
+                     n_lags, n_fcst, n_burnin, n_reps) 
+  log_mdd <- mdd2(mfbvar_obj, p_trunc = 0.5)$log_mdd
+  return(list(log_mdd = log_mdd, lambda1 = lambda1, lambda2 = lambda2))
+}
+
+par_func <- function(j, lambda_mat) {
+  lambda1 <- lambda_mat[j, 1]
+  lambda2 <- lambda_mat[j, 2]
+  mdd_search(lambda1, lambda2)
+}
+```
+Finally, the parallel processing is conducted using `parLapply()`:
+
+```{r mdd, cache = TRUE, include = FALSE}
+library(parallel)
+library(doParallel)
+cl <- makePSOCKcluster(7)
+clusterSetRNGStream(cl, iseed = 2983468)
+registerDoParallel(cl)
+clusterExport(cl = cl, varlist = setdiff(ls(), c("cl", "lambda1", "lambda2")), envir = environment())
+# Load the package
+clusterEvalQ(cl, {
+  library(mfbvar)
+})
+
+mdd_res <- parLapply(cl = cl, X = 1:nrow(lambda_mat), fun = par_func, lambda_mat = lambda_mat)
+stopCluster(cl)
+```
+
+Transforming the results and plotting gives us an idea of what hyperparameter values are sensible.
+```{r mddplot, fig.width = 5, fig.asp = 0.8}
+library(ggplot2)
+mdd <- data.frame(matrix(unlist(mdd_res), ncol = 3, byrow = TRUE))
+names(mdd) <- c("log_mdd", "lambda1", "lambda2")
+ggplot(mdd, aes(x = lambda1, y = lambda2, fill = log_mdd)) +
+  geom_tile() +
+  theme_minimal() +
+  scale_fill_gradient(low = "grey20", high = "grey90", name = "log(mdd)") +
+  coord_fixed(ratio = 1/10)
+```
+
+## Profiling
+Profiling of the code (not run here, needs to be run in interactive HTML mode) shows that `simulation_smoother` is by far the most time-consuming part of the code. 
+```{r profvis, cache = TRUE, include = FALSE}
+library(profvis)
+profiling <- profvis({mfbvar_obj <- mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, 
+                     prior_nu, prior_psi_mean, prior_psi_Omega, 
+                     n_lags, n_fcst, n_burnin, n_reps) }, prof_output = "../profiling.Rprof")
+```
+
+```{r profiling}
+library(tidyverse)
+profiling <- summaryRprof("../profiling.Rprof")$by.total
+profiling <- profiling[order(profiling$total.pct, decreasing = TRUE) & profiling$total.pct < 99,]
+profiling <- head(profiling) 
+profiling$call <- rownames(profiling)
+profiling <- as_tibble(profiling)
+profiling %>%
+  ggplot(aes(x = reorder(call, total.pct), y = total.pct)) +
+  geom_bar(stat = "identity", width = 0.25) +
+  theme_minimal() +
+  coord_flip() +
+  labs(y = "Percent", x = "Function call", title = "Most expensive functions calls in mfbvar")
+```

@@ -21,6 +21,7 @@ mdd1(mfbvar_obj)
 \item{eval_prior_Pi_Sigma}{Prior of Pi and Sigma.}
 \item{eval_prior_psi}{Prior of psi.}
 \item{psi_truncated}{The truncated psi pdf.}
+\item{log_mdd}{The mdd estimate (in log).}
 
 \code{mdd1} returns a list with components (all are currently in logarithms):
 \item{lklhd}{The likelihood.}
