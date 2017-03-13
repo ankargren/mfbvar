@@ -20,6 +20,7 @@
 #' @templateVar init_Z TRUE
 #' @templateVar smooth_state TRUE
 #' @templateVar check_roots TRUE
+#' @templateVar verbose TRUE
 #' @template man_template
 #'
 #' @details
@@ -31,7 +32,8 @@
 #' An object of class mfbvar.
 
 gibbs_sampler <- function(Y, d, d_fcst = NULL, Lambda, prior_Pi_mean, prior_Pi_Omega, prior_S, prior_nu, prior_psi_mean, prior_psi_Omega,
-                          n_fcst = NULL, n_reps, init_Pi = NULL, init_Sigma = NULL, init_psi = NULL, init_Z = NULL, smooth_state = FALSE, check_roots = TRUE) {
+                          n_fcst = NULL, n_reps, init_Pi = NULL, init_Sigma = NULL, init_psi = NULL, init_Z = NULL, smooth_state = FALSE, check_roots = TRUE,
+                          verbose = TRUE) {
 
   # n_vars: number of variables
   # n_lags: number of lags
@@ -199,7 +201,9 @@ gibbs_sampler <- function(Y, d, d_fcst = NULL, Lambda, prior_Pi_mean, prior_Pi_O
       Z_fcst[, , r] <- Z_fcst[, , r] + d_fcst_lags %*% t(matrix(psi[r, ], nrow = n_vars))
     }
 
-    setTxtProgressBar(pb, r)
+    if (verbose) {
+      setTxtProgressBar(pb, r)
+    }
   }
   close(pb)
 

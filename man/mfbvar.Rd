@@ -5,7 +5,7 @@
 \title{MF-BVAR with a steady-state prior}
 \usage{
 mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_nu = NULL,
-  prior_psi_mean, prior_psi_Omega, n_lags, n_fcst, n_burnin, n_reps)
+  prior_psi_mean, prior_psi_Omega, n_lags, n_fcst, n_burnin, n_reps, verbose)
 }
 \arguments{
 \item{Y}{The data matrix of size \code{(n_T + n_lags) * n_vars} with \code{NA} representing missingness. Must correspond well to the specification of \code{M_Lambda}.}
@@ -35,6 +35,8 @@ mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_nu = NULL,
 \item{n_burnin}{The number of burn-in replications.}
 
 \item{n_reps}{The number of replications.}
+
+\item{verbose}{Logical, if progress should be printed to the console.}
 }
 \description{
 The main function for running the MF-SS-BVAR.

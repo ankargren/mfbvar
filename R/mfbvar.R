@@ -16,14 +16,16 @@
 #' @templateVar n_fcst TRUE
 #' @templateVar n_burnin TRUE
 #' @templateVar n_reps TRUE
+#' @templateVar verbose TRUE
 #' @template man_template
 #' @details \code{mfbvar} calls \code{\link{gibbs_sampler}} (implemented in C++)
 
-mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_nu = NULL, prior_psi_mean, prior_psi_Omega, n_lags, n_fcst, n_burnin, n_reps) {
+mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_nu = NULL, prior_psi_mean, prior_psi_Omega, n_lags, n_fcst, n_burnin, n_reps, verbose) {
 
+  stopifnot(is.null(n_fcst) || is.vector(n_fcst))
   stopifnot(is.matrix(d), is.matrix(prior_psi_Omega))
   stopifnot(is.data.frame(Y) || is.matrix(Y), all(apply(Y, 2, is.numeric)))
-  stopifnot(is.vector(n_lags), is.vector(n_burnin), is.vector(n_reps), is.vector(lambda1), is.vector(lambda2), is.vector(n_fcst))
+  stopifnot(is.vector(n_lags), is.vector(n_burnin), is.vector(n_reps), is.vector(lambda1), is.vector(lambda2))
   stopifnot(nrow(Y) == nrow(d), ncol(Y) == length(prior_Pi_AR1), ncol(Y) == length(prior_psi_mean),
             ncol(Y) == sqrt(prod(dim(prior_psi_Omega))))
 
@@ -46,6 +48,8 @@ mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_n
       }
 
     }
+  } else {
+    names_fcst <- NULL
   }
 
   fun_call <- match.call()
@@ -83,27 +87,33 @@ mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_n
   prior_S <- priors$prior_S
 
   # For the smoothing
-  cat(paste0("############################################\n   Running the burn-in sampler with ", n_burnin, " draws\n\n"))
-  start_burnin <- Sys.time()
+  if (verbose) {
+    cat(paste0("############################################\n   Running the burn-in sampler with ", n_burnin, " draws\n\n"))
+    start_burnin <- Sys.time()
+  }
   burn_in <-  gibbs_sampler(Y = Y, d = d, d_fcst = NULL, Lambda = Lambda, prior_Pi_mean = prior_Pi_mean, prior_Pi_Omega = prior_Pi_Omega,
                             prior_S = prior_S, prior_nu = prior_nu, prior_psi_mean = prior_psi_mean, prior_psi_Omega = prior_psi_Omega,
                             n_fcst = NULL, n_reps = n_burnin, init_Pi = t(prior_Pi_mean), init_Sigma = NULL, init_psi = prior_psi_mean,
-                            init_Z = NULL, smooth_state = FALSE, check_roots = TRUE)
-  end_burnin <- Sys.time()
-  time_diff <- end_burnin - start_burnin
-  cat(paste0("\n   Time elapsed for drawing ", n_burnin, " times for burn-in: ", signif(time_diff, digits = 1), " ",
+                            init_Z = NULL, smooth_state = FALSE, check_roots = TRUE, verbose)
+  if (verbose) {
+    end_burnin <- Sys.time()
+    time_diff <- end_burnin - start_burnin
+    cat(paste0("\n   Time elapsed for drawing ", n_burnin, " times for burn-in: ", signif(time_diff, digits = 1), " ",
              attr(time_diff, "units"), "\n"))
-  cat(paste0("\n   Moving on to ",
-             n_reps, " replications in the main chain\n", ifelse(!is.null(n_fcst), paste0("   Making forecasts ", n_fcst, " steps ahead"), NULL), "\n\n"))
+    cat(paste0("\n   Moving on to ",
+             n_reps, " replications in the main chain\n", ifelse(!is.null(n_fcst), paste0("   Making forecasts ", n_fcst, " steps ahead"), " "), "\n\n"))
+  }
 
   main_run <- gibbs_sampler(Y = Y, d = d, d_fcst = d_fcst, Lambda = Lambda, prior_Pi_mean = prior_Pi_mean, prior_Pi_Omega = prior_Pi_Omega,
                 prior_S = prior_S, prior_nu = prior_nu, prior_psi_mean = prior_psi_mean, prior_psi_Omega = prior_psi_Omega,
                 n_fcst = n_fcst, n_reps = n_burnin, init_Pi  = burn_in$Pi[,,dim(burn_in$Pi)[3]], init_Sigma = burn_in$Sigma[,,dim(burn_in$Sigma)[3]],
-                init_psi = burn_in$psi[dim(burn_in$psi)[1],], init_Z   = burn_in$Z[,,dim(burn_in$Z)[3]], smooth_state = FALSE, check_roots = TRUE)
+                init_psi = burn_in$psi[dim(burn_in$psi)[1],], init_Z   = burn_in$Z[,,dim(burn_in$Z)[3]], smooth_state = FALSE, check_roots = TRUE, verbose)
   main_run$call <- fun_call
-  time_diff <- Sys.time() - start_burnin
-  cat(paste0("\n  Total time elapsed: ", signif(time_diff, digits = 1), " ",
+  if (verbose) {
+    time_diff <- Sys.time() - start_burnin
+    cat(paste0("\n   Total time elapsed: ", signif(time_diff, digits = 1), " ",
              attr(time_diff, "units")))
+  }
 
   if (!is.null(n_fcst)) {
     rownames(main_run$Z_fcst)[1:main_run$n_lags] <- names_row[(main_run$n_T-main_run$n_lags+1):main_run$n_T]
@@ -116,7 +126,8 @@ mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_n
   main_run$names_col <- names_col
   main_run$names_fcst <- names_fcst
   main_run$names_determ <- names_determ
-
+  main_run$n_burnin <- n_burnin
+  main_run$prior_Pi_AR1 <- prior_Pi_AR1
 
   class(main_run) <- "mfbvar"
   return(main_run)

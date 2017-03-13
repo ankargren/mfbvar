@@ -9,6 +9,8 @@
 #' <%=ifelse(exists("h0"), "@param h0 The initial state (\\code{(n_vars*n_lags)*1}).", "") %>
 #' <%=ifelse(exists("Lambda"), "@param Lambda The Lambda matrix (size \\code{n_vars* (n_vars*n_lags)}).", "") %>
 #' <%=ifelse(exists("lambda1"), "@param lambda1 The overall tightness.", "") %>
+#' <%=ifelse(exists("lambda1_grid"), "@param lambda1_grid The grid of values to use for lambda1.", "") %>
+#' <%=ifelse(exists("lambda2_grid"), "@param lambda2_grid The grid of values to use for lambda2.", "") %>
 #' <%=ifelse(exists("lambda2"), "@param lambda2 The lag decay.", "") %>
 #' <%=ifelse(exists("lH"), "@param lH A list of length \\code{n_T}, where \\code{M_Lambda[[t]]} corresponds to \\eqn{M_t\\Lambda}. The column dimension of each element should be \\code{n_lags*n_vars}, but the row dimension may vary.", "") %>
 #' <%=ifelse(exists("init_Pi"), "@param init_Pi Matrix to initialize the dynamic coefficients.", "") %>
@@ -20,6 +22,7 @@
 #' <%=ifelse(exists("iq"), "@param iq The companion-form dimension (\\code{n_vars*n_lags}).", "") %>
 #' <%=ifelse(exists("iT"), "@param iT The sample size (sometimes called \\code{n_T}).", "") %>
 #' <%=ifelse(exists("m"), "@param m The mean vector of size \\code{p}.", "") %>
+#' <%=ifelse(exists("method"), "@param method The method to use for estimation of the log marginal data density. One of \\code{1} and \\code{2}.", "") %>
 #' <%=ifelse(exists("mfbvar_obj"), "@param mfbvar_obj An object of class \\code{mfbvar} containing the results.", "") %>
 #' <%=ifelse(exists("M"), "@param M The mean matrix of size \\code{p * q}.", "") %>
 #' <%=ifelse(exists("mF"), "@param mF \\code{(n_vars*n_lags) * (n_vars*n_lags)} matrix containing parameters (companion form)", "") %>
@@ -27,6 +30,7 @@
 #' <%=ifelse(exists("mZ"), "@param mZ \\code{T * n_vars} matrix with the observations (\\code{NA} represents missingness)", "") %>
 #' <%=ifelse(exists("n_burnin"), "@param n_burnin The number of burn-in replications.", "") %>
 #' <%=ifelse(exists("n_comp"), "@param n_comp The length of the companion form vector of data (\\code{n_vars*n_lags}).", "") %>
+#' <%=ifelse(exists("n_cores"), "@param n_cores The number of cores to use (if set to 1, computation is done serially).", "") %>
 #' <%=ifelse(exists("n_determ"), "@param n_determ The number of deterministic terms.", "") %>
 #' <%=ifelse(exists("n_fcst"), "@param n_fcst The number of periods to forecast.", "") %>
 #' <%=ifelse(exists("n_lags"), "@param n_lags The number of lags.", "") %>
@@ -67,6 +71,7 @@
 #' <%=ifelse(exists("smooth_state"), "@param smooth_state Logical, if \\code{TRUE} then the smoothed estimates of the latent states are also returned.", "") %>
 #' <%=ifelse(exists("U"), "@param U \\eqn{U} matrix, of size \\code{(n_vars*n_determ*(n_lags+1)) * (n_vars*n_determ)}. This can be obtained using \\code{\\link{build_U}}.", "") %>
 #' <%=ifelse(exists("v"), "@param v The degrees of freedom.", "") %>
+#' <%=ifelse(exists("verbose"), "@param verbose Logical, if progress should be printed to the console.", "") %>
 #' <%=ifelse(exists("V_inv"), "@param V_inv The inverse of the covariance matrix of size \\code{d * d}.", "") %>
 #' <%=ifelse(exists("x"), "@param x A vector of size \\code{p}.", "") %>
 #' <%=ifelse(exists("X"), "@param X Matrix of size \\code{p * q}.", "") %>

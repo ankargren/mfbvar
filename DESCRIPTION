@@ -1,7 +1,7 @@
 Package: mfbvar
 Type: Package
 Title: Mixed-Frequency Bayesian VAR Models
-Version: 0.2.2
+Version: 0.2.3.9000
 Date: 2017-03-09
 Author: Sebastian Ankargren, Yukai Yang, Mans Unosson
 Maintainer: Sebastian Ankargren <sebastian.ankargren@statistics.uu.se>
@@ -9,8 +9,9 @@ Description: A package for estimating mixed-frequency Bayesian VAR models with s
 License: MIT + file LICENSE
 LazyData: TRUE
 Imports:
-    Rcpp (>= 0.12.7), RcppArmadillo (>= 0.7.600.1.0), ggplot2 (>= 2.2.1)
+    Rcpp (>= 0.12.7), RcppArmadillo (>= 0.7.600.1.0), ggplot2 (>= 2.2.1), methods
 LinkingTo:
     Rcpp, RcppArmadillo
 Depends: R (>= 2.10)
+Suggests: parallel (>= 3.3.2)
 RoxygenNote: 6.0.1

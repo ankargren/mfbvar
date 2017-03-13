@@ -7,7 +7,7 @@
 gibbs_sampler(Y, d, d_fcst = NULL, Lambda, prior_Pi_mean, prior_Pi_Omega,
   prior_S, prior_nu, prior_psi_mean, prior_psi_Omega, n_fcst = NULL, n_reps,
   init_Pi = NULL, init_Sigma = NULL, init_psi = NULL, init_Z = NULL,
-  smooth_state = FALSE, check_roots = TRUE)
+  smooth_state = FALSE, check_roots = TRUE, verbose = TRUE)
 }
 \arguments{
 \item{Y}{The data matrix of size \code{(n_T + n_lags) * n_vars} with \code{NA} representing missingness. Must correspond well to the specification of \code{M_Lambda}.}
@@ -45,6 +45,8 @@ gibbs_sampler(Y, d, d_fcst = NULL, Lambda, prior_Pi_mean, prior_Pi_Omega,
 \item{smooth_state}{Logical, if \code{TRUE} then the smoothed estimates of the latent states are also returned.}
 
 \item{check_roots}{Logical, if roots of the companion matrix are to be checked to ensure stationarity.}
+
+\item{verbose}{Logical, if progress should be printed to the console.}
 }
 \value{
 An object of class mfbvar.

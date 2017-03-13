@@ -125,7 +125,7 @@ mdd_search <- function(lambda1, lambda2) {
                      prior_nu, prior_psi_mean, prior_psi_Omega, 
                      n_lags, n_fcst, n_burnin, n_reps) 
   log_mdd <- mdd2(mfbvar_obj, p_trunc = 0.5)$log_mdd
-  return(list(log_mdd = log_mdd, lambda1 = lambda1, lambda2 = lambda2))
+  return(c(log_mdd, lambda1, lambda2))
 }
 
 par_func <- function(j, lambda_mat) {
@@ -148,7 +148,8 @@ clusterEvalQ(cl, {
   library(mfbvar)
 })
 
-mdd_res <- parLapply(cl = cl, X = 1:nrow(lambda_mat), fun = par_func, lambda_mat = lambda_mat)
+mdd_res <- parSapply(cl = cl, X = 1:nrow(lambda_mat), FUN = par_func, lambda_mat = lambda_mat)
+rownames(mdd_res) <- c("log_mdd", "lambda1", "lambda2")
 stopCluster(cl)
 ```
 

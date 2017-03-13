@@ -219,3 +219,107 @@ mdd1 <- function(mfbvar_obj) {
 
   return(list(lklhd = lklhd, eval_prior_Pi_Sigma = eval_prior_Pi_Sigma, eval_prior_psi = eval_prior_psi, eval_RB_Pi_Sigma = eval_RB_Pi_Sigma, eval_marg_psi = eval_marg_psi, log_mdd = mdd_estimate))
 }
+
+#' Marginal data density grid search
+#'
+#' Use a grid search to estimate the marginal data density for multiple values, possibly using parallel computation.
+#' @details Only one of \code{mfbvar_obj} and the entire suite of \code{Y}, \code{d}, \code{Lambda}, \code{prior_Pi_AR1}, \code{prior_nu}, \code{prior_psi_mean}, \code{prior_psi_Omega}, \code{n_lags}, \code{n_burnin} and \code{n_reps} must be provided. If \code{mfbvar_obj} is not \code{NULL}, its components are extracted.\cr \cr In order to use \code{n_cores > 1}, the \code{parallel} package must be installed.
+#' @templateVar mfbvar_obj TRUE
+#' @templateVar lambda1_grid TRUE
+#' @templateVar lambda2_grid TRUE
+#' @templateVar method TRUE
+#' @templateVar n_cores TRUE
+#' @templateVar p_trunc TRUE
+#' @param ... Additional parameters. This includes \code{p_trunc} if \code{method == 2} and if \code{mfbvar_obj} is omitted, it must include all the necessary variables to the \code{mfbvar()} call.
+#' @template man_template
+#' @return mdd_res A matrix with the results.
+#'
+mdd_grid <- function(mfbvar_obj = NULL, lambda1_grid, lambda2_grid, method, n_cores = 1, p_trunc = NULL, ...) {
+  if (!requireNamespace(c("parallel"), quietly = TRUE) && n_cores > 1) {
+    n_cores <- 1
+    warnings("The parallel and doParallel are not available. Setting n_cores to 1. To use parallel processing, please install parallel and doParallel.")
+  }
+  stopifnot((method == 1) || (method == 2))
+  if (method == 2) {
+    if (is.null(p_trunc)) {
+      stop("When using method 2, p_trunc must be supplied.")
+    }
+  }
+  if (is.null(mfbvar_obj)) {
+    stopifnot(hasArg(Y), hasArg(d), hasArg(Lambda), hasArg(prior_Pi_AR1),
+              hasArg(prior_nu), hasArg(prior_psi_mean), hasArg(prior_psi_Omega),
+              hasArg(n_lags), hasArg(n_burnin), hasArg(n_reps))
+  } else {
+    stopifnot(class(mfbvar_obj) == "mfbvar")
+    Y <- mfbvar_obj$Y
+    d <- mfbvar_obj$d
+    Lambda <- mfbvar_obj$Lambda
+    prior_Pi_AR1 <- mfbvar_obj$prior_Pi_AR1
+    prior_nu <- mfbvar_obj$prior_nu
+    prior_psi_mean <- mfbvar_obj$prior_psi_mean
+    prior_psi_Omega <- mfbvar_obj$prior_psi_Omega
+    n_lags <- mfbvar_obj$n_lags
+    n_burnin <- mfbvar_obj$n_burnin
+    n_reps <- mfbvar_obj$n_reps
+  }
+
+  mdd_search <- function(lambda1, lambda2, method, p_trunc = NULL) {
+    mfbvar_obj <- mfbvar(Y, d, d_fcst = NULL, Lambda, prior_Pi_AR1, lambda1, lambda2,
+                         prior_nu, prior_psi_mean, prior_psi_Omega,
+                         n_lags, n_fcst = NULL, n_burnin, n_reps, verbose = FALSE)
+    if (method == 1) {
+      log_mdd <- mdd1(mfbvar_obj)$log_mdd
+    } else {
+      log_mdd <- mdd2(mfbvar_obj, p_trunc)$log_mdd
+    }
+    return(log_mdd)
+  }
+
+  par_func <- function(j, lambda_mat, method, p_trunc = NULL) {
+    lambda1 <- lambda_mat[j, 1]
+    lambda2 <- lambda_mat[j, 2]
+    cat("Combination", j, "using lambda1 =", lambda1, "lambda2 =", lambda2)
+    mdd_res <- tryCatch({mdd_search(lambda1, lambda2, method, p_trunc)},
+                        error = function(cond) return(NA),
+                        warning = function(cond) return(NA))
+    return(c(mdd_res, lambda1, lambda2))
+  }
+
+  lambda_mat <- expand.grid(lambda1_grid, lambda2_grid)
+
+  #library(parallel)
+  #library(doParallel)
+  if (n_cores > 1) {
+    cat("Computing log marginal data density\n\nInitiating parallel processing using", n_cores, "cores\n\n")
+    cl <- parallel::makePSOCKcluster(n_cores)
+    #lusterSetRNGStream(cl, iseed = 2983468)
+    parallel::clusterExport(cl = cl, varlist = setdiff(ls(), c("cl", "lambda1", "lambda2")), envir = environment())
+    # Load the package
+    parallel::clusterEvalQ(cl, {
+      library(mfbvar)
+    })
+
+    if (method == 1) {
+      mdd_res <- parallel::parSapply(cl = cl, X = 1:nrow(lambda_mat), FUN = par_func, lambda_mat = lambda_mat, method = method)
+    }
+    if (method == 2) {
+      mdd_res <- parallel::parSapply(cl = cl, X = 1:nrow(lambda_mat), FUN = par_func, lambda_mat = lambda_mat, method = method, p_trunc = p_trunc)
+    }
+
+    parallel::stopCluster(cl)
+  } else {
+    cat("Computing log marginal data density\n\n")
+    if (method == 1) {
+      mdd_res <- sapply(X = 1:nrow(lambda_mat), FUN = par_func, lambda_mat = lambda_mat, method = method)
+    }
+    if (method == 2) {
+      mdd_res <- sapply(X = 1:nrow(lambda_mat), FUN = par_func, lambda_mat = lambda_mat, method = method, p_trunc = p_trunc)
+    }
+  }
+
+  rownames(mdd_res) <- c("log_mdd", "lambda1", "lambda2")
+
+  return(mdd_res)
+}
+
+
