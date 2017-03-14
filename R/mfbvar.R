@@ -113,7 +113,7 @@ mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_n
   if (verbose) {
     time_diff <- Sys.time() - start_burnin
     cat(paste0("\n   Total time elapsed: ", signif(time_diff, digits = 1), " ",
-             attr(time_diff, "units")))
+             attr(time_diff, "units"), "\n"))
   }
 
   if (!is.null(n_fcst)) {
@@ -123,6 +123,7 @@ mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_n
 
   }
 
+
   main_run$names_row <- names_row
   main_run$names_col <- names_col
   main_run$names_fcst <- names_fcst
@@ -130,6 +131,17 @@ mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_n
   main_run$n_burnin <- n_burnin
   main_run$prior_Pi_AR1 <- prior_Pi_AR1
 
+  dimnames(main_run$Z) <- list(time = names_row,
+                               variable = names_col,
+                               iteration = 1:n_reps)
+  dimnames(main_run$Pi) <- list(dep = names_col,
+                                indep = paste0(rep(names_col, n_lags), ".l", rep(1:n_lags, each = n_vars)),
+                                iteration = 1:n_reps)
+  dimnames(main_run$Sigma) <- list(names_col,
+                                   names_col,
+                                   iteration = 1:n_reps)
+  dimnames(main_run$psi) <- list(iteration = 1:n_reps,
+                                 param = paste0(rep(names_col, n_determ), ".", rep(names_determ, each = n_vars)))
   class(main_run) <- "mfbvar"
   return(main_run)
 
