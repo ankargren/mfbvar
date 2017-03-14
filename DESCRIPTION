@@ -11,8 +11,8 @@ Maintainer: Sebastian Ankargren <sebastian.ankargren@statistics.uu.se>
 Description: A package for estimating mixed-frequency Bayesian VAR models with steady-state priors.
 License: MIT + file LICENSE
 LazyData: TRUE
-URL: https://github.com/sebastianankargren/mfbvar
-BugReports: https://github.com/sebastianankargren/mfbvar/issues
+URL: https://github.com/ankargren/mfbvar
+BugReports: https://github.com/ankargren/mfbvar/issues
 Imports:
     Rcpp (>= 0.12.7), RcppArmadillo (>= 0.7.600.1.0), ggplot2 (>= 2.2.1), methods
 LinkingTo:
