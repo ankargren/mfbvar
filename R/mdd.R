@@ -7,7 +7,7 @@
 #' @templateVar p_trunc TRUE
 #' @template man_template
 #' @return
-#' \code{mdd} returns a list with components being \code{n_reps}-long vectors. These can be used to estimate the MDD.
+#' \code{mdd} returns a list with components being \code{n_reps}-long vectors and a scalar (the final estimate).
 #' \item{eval_posterior_Pi_Sigma}{Posterior of Pi and Sigma.}
 #' \item{data_likelihood}{The likelihood.}
 #' \item{eval_prior_Pi_Sigma}{Prior of Pi and Sigma.}
