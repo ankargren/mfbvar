@@ -51,26 +51,29 @@ arma::mat smoother(           arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, 
   arma::mat mz = Y.row(0);
   arma::uvec obs_vars = find_finite(mz);
 
+  arma::mat mvIS(n_T, n_comp);
+  mvIS.fill(NA_REAL);
+
   /* Fill some temporary variables */
   arma::mat h1 = Pi_comp * z0;
   arma::mat P1 = Pi_comp * P0 * Pi_comp.t() + QQ;
   arma::mat mH = Lambda.rows(obs_vars);
   arma::mat vz = mz.cols(obs_vars);
 
-  arma::mat vv = mv.row(0);
-  vv.cols(obs_vars) = vz - trans(mH * h1);
-  mv.row(0) = vv;
+  arma::mat vv = vz - trans(mH * h1);
 
   arma::mat aS = mH * P1 * mH.t();
-  arma::mat mIS = IS.slice(0);
-  mIS(obs_vars, obs_vars) = inv_sympd(aS);
-  IS.slice(0) = mIS;
+  arma::mat mIS = inv_sympd(aS);
+
+  arma::uvec row_index(1);
+  row_index(0) = 0;
+  mvIS(row_index, obs_vars) = trans(mIS * trans(vv));
 
   arma::mat mK = aK.slice(0);
-  mK.cols(obs_vars) = P1 * mH.t() * mIS(obs_vars, obs_vars);
+  mK.cols(obs_vars) = P1 * mH.t() * mIS;
   aK.slice(0) = mK;
 
-  arma::mat h2 = h1 + mK.cols(obs_vars) * trans(vv.cols(obs_vars));
+  arma::mat h2 = h1 + mK.cols(obs_vars) * trans(vv);
   arma::mat P2 = (identity_mat - mK.cols(obs_vars) * mH) * P1;
 
   /* Filtering */
@@ -84,20 +87,18 @@ arma::mat smoother(           arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, 
     mH = Lambda.rows(obs_vars);
     vz = mz.cols(obs_vars);
 
-    vv = mv.row(i);
-    vv.cols(obs_vars) = vz - trans(mH * h1);
-    mv.row(i) = vv;
+    vv = vz - trans(mH * h1);
 
     aS = mH * P1 * mH.t();
-    mIS = IS.slice(i);
-    mIS(obs_vars, obs_vars) = inv_sympd(aS);
-    IS.slice(i) = mIS;
+    mIS = inv_sympd(aS);
+    row_index(0) = i;
+    mvIS(row_index, obs_vars) = trans(mIS * trans(vv));
 
     mK = aK.slice(i);
-    mK.cols(obs_vars) = P1 * mH.t() * mIS(obs_vars, obs_vars);
+    mK.cols(obs_vars) = P1 * mH.t() * mIS;
     aK.slice(i) = mK;
 
-    h2 = h1 + mK.cols(obs_vars) * trans(vv.cols(obs_vars));
+    h2 = h1 + mK.cols(obs_vars) * trans(vv);
     P2 = (identity_mat - mK.cols(obs_vars) * mH) * P1;
 
   }
@@ -112,13 +113,12 @@ arma::mat smoother(           arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, 
     obs_vars = find_finite(mz);
     mH = Lambda.rows(obs_vars);
 
-    mIS = IS.slice(i);
     mK = aK.slice(i);
-    vv = mv.row(i);
     fk = Pi_comp * mK.cols(obs_vars);
 
     ve = me.row(i);
-    ve.cols(obs_vars) = trans(mIS(obs_vars, obs_vars) * trans(vv.cols(obs_vars)) - fk.t() * trans(mr.row(i)));
+    row_index(0) = i;
+    ve.cols(obs_vars) = trans(trans(mvIS(row_index, obs_vars)) - fk.t() * trans(mr.row(i)));
     me.row(i) = ve;
 
     mr.row(i-1) = trans(mH.t() * trans(ve.cols(obs_vars)) + Pi_comp.t() * trans(mr.row(i)));
@@ -131,13 +131,12 @@ arma::mat smoother(           arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, 
   obs_vars = find_finite(mz);
   mH = Lambda.rows(obs_vars);
 
-  mIS = IS.slice(0);
   mK = aK.slice(0);
-  vv = mv.row(0);
   fk = Pi_comp * mK.cols(obs_vars);
 
   ve = me.row(0);
-  ve.cols(obs_vars) = trans(mIS(obs_vars, obs_vars) * trans(vv.cols(obs_vars)) - fk.t() * trans(mr.row(0)));
+  row_index(0) = 0;
+  ve.cols(obs_vars) = trans(trans(mvIS(row_index, obs_vars)) - fk.t() * trans(mr.row(0)));
   me.row(0) = ve;
 
   arma::mat r0 = trans(mH.t() * trans(ve.cols(obs_vars)) + Pi_comp.t() * trans(mr.row(0)));
@@ -165,6 +164,7 @@ arma::mat smoother(           arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, 
   /* The return is the smoothed state vector */
   return(mhh);
 }
+
 
 
 //' @describeIn smoother Generate pseudo-state vector

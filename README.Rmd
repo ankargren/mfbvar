@@ -91,11 +91,11 @@ Lambda <- build_Lambda(c("identity", "identity", "average"), n_lags)
 
 ## Main call
 After having set these preliminary variables, we can now call the main function `mfbvar()`:
-```{r, cache = TRUE, results = "hide"}
+```{r, cache = TRUE}
 set.seed(10237)
 mfbvar_obj <- mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, 
                      prior_nu, prior_psi_mean, prior_psi_Omega, 
-                     n_lags, n_fcst, n_burnin, n_reps) 
+                     n_lags, n_fcst, n_burnin, n_reps, verbose = FALSE) 
 ```
 
 
@@ -114,55 +114,18 @@ The package contains functions for estimating the marginal data density. This is
 
 First, we'll use grids between 0.1 and 0.5 for `lambda1` and between 1 and 4 for `lambda2`.
 ```{r, cache = TRUE}
-lambda1_vec <- seq(0.1, 0.5, by = 0.05)
-lambda2_vec <- seq(1, 4, by = 0.5)
-lambda_mat <- expand.grid(lambda1_vec, lambda2_vec)
+lambda1_grid <- seq(0.1, 0.5, by = 0.05)
+lambda2_grid <- seq(1, 4, by = 0.5)
 ```
 We can also create two wrapper functions to use for the parallel call:
 ```{r, cache = TRUE}
-mdd_search <- function(lambda1, lambda2) {
-  mfbvar_obj <- mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, 
-                     prior_nu, prior_psi_mean, prior_psi_Omega, 
-                     n_lags, n_fcst, n_burnin, n_reps) 
-  log_mdd <- mdd2(mfbvar_obj, p_trunc = 0.5)$log_mdd
-  return(c(log_mdd, lambda1, lambda2))
-}
-
-par_func <- function(j, lambda_mat) {
-  lambda1 <- lambda_mat[j, 1]
-  lambda2 <- lambda_mat[j, 2]
-  mdd_search(lambda1, lambda2)
-}
+mdd_res <- mdd_grid(mfbvar_obj, lambda1_grid, lambda2_grid, method = 2, n_cores = 7, p_trunc = 0.5)
 ```
-Finally, the parallel processing is conducted using `parLapply()`:
-
-```{r mdd, cache = TRUE, include = FALSE}
-library(parallel)
-library(doParallel)
-cl <- makePSOCKcluster(7)
-clusterSetRNGStream(cl, iseed = 2983468)
-registerDoParallel(cl)
-clusterExport(cl = cl, varlist = setdiff(ls(), c("cl", "lambda1", "lambda2")), envir = environment())
-# Load the package
-clusterEvalQ(cl, {
-  library(mfbvar)
-})
-
-mdd_res <- parSapply(cl = cl, X = 1:nrow(lambda_mat), FUN = par_func, lambda_mat = lambda_mat)
-rownames(mdd_res) <- c("log_mdd", "lambda1", "lambda2")
-stopCluster(cl)
-```
-
-Transforming the results and plotting gives us an idea of what hyperparameter values are sensible.
-```{r mddplot, fig.width = 5, fig.asp = 0.8}
-library(ggplot2)
-mdd <- data.frame(matrix(unlist(mdd_res), ncol = 3, byrow = TRUE))
-names(mdd) <- c("log_mdd", "lambda1", "lambda2")
-ggplot(mdd, aes(x = lambda1, y = lambda2, fill = log_mdd)) +
-  geom_tile() +
-  theme_minimal() +
-  scale_fill_gradient(low = "grey20", high = "grey90", name = "log(mdd)") +
-  coord_fixed(ratio = 1/10)
+The return is an object of class `mdd`, for which three methods are implemented.
+```{r mdd}
+mdd_res
+summary(mdd_res)
+plot(mdd_res)
 ```
 
 ## Profiling
@@ -177,11 +140,12 @@ profiling <- profvis({mfbvar_obj <- mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, l
 ```{r profiling}
 library(tidyverse)
 profiling <- summaryRprof("../profiling.Rprof")$by.total
-profiling <- profiling[order(profiling$total.pct, decreasing = TRUE) & profiling$total.pct < 99,]
-profiling <- head(profiling) 
 profiling$call <- rownames(profiling)
-profiling <- as_tibble(profiling)
 profiling %>%
+  as_tibble() %>%
+  filter(total.pct < 100) %>%
+  arrange(-total.pct) %>%
+  filter(row_number() < 20) %>%
   ggplot(aes(x = reorder(call, total.pct), y = total.pct)) +
   geom_bar(stat = "identity", width = 0.25) +
   theme_minimal() +
@@ -192,5 +156,4 @@ profiling %>%
 ## To do
 Some things that remain to do:
 
-- Wrapper for computing the mdd for grids of values, possibly also in parallel. Something like `mdd_search(lambda1, lambda2, n_cores = 1, method, ...)`.
 - Helper function `interval_to_moments()` which takes a matrix of lower and upper bounds for prior intervals for steady states and return `prior_psi_mean` and `prior_psi_Omega`.

@@ -347,7 +347,7 @@ plot.mdd <- function(x, ...) {
     theme_minimal() +
     scale_fill_gradient(low = "grey20", high = "grey90", name = "log(mdd)") +
     coord_fixed(ratio = 1/(c(range(unique(plot_df$lambda2)) %*% c(-1, 1))/c(range(unique(plot_df$lambda1)) %*% c(-1, 1)))) +
-    labs(title = "Tile plot of log marginal data density")
+    labs(title = "Tile plot of log marginal data density", x = expression(lambda[1]), y = expression(lambda[2]))
 }
 
 #' Summary method for class mdd
