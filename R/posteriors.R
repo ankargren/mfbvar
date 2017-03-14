@@ -37,13 +37,13 @@ posterior_Pi_Sigma <- function(Z_r1, d, psi_r1, prior_Pi_mean, prior_Pi_Omega, i
   ### Pi and Sigma step
 
   # Posterior moments of Pi
-  post_Pi_Omega <- solve(inv_prior_Pi_Omega + XXt.XX)
+  post_Pi_Omega <- chol2inv(chol(inv_prior_Pi_Omega + XXt.XX))
   post_Pi       <- post_Pi_Omega %*% (Omega_Pi + crossprod(XX, YY))
 
   # Then Sigma
   s_sample  <- crossprod(YY - XX %*% Pi_sample)
   Pi_diff <- prior_Pi_mean - Pi_sample
-  post_s <- prior_S + s_sample + t(Pi_diff) %*% solve(prior_Pi_Omega + XXt.XX.inv) %*% Pi_diff
+  post_s <- prior_S + s_sample + t(Pi_diff) %*% chol2inv(chol(prior_Pi_Omega + XXt.XX.inv)) %*% Pi_diff
   post_nu <- n_T + prior_nu # Is this the right T? Or should it be T - lags?
   Sigma_r <- rinvwish(v = post_nu, S = post_s)
 
@@ -159,15 +159,15 @@ posterior_Z <- function(Y, d, Pi_r, Sigma_r, psi_r, Z_1, Lambda, n_vars, n_lags,
 #' @return The return is:
 #' \item{psi}{The posterior mean (from \code{\link{posterior_psi_mean}})}
 posterior_psi_mean <- function(U, D_mat, Sigma, prior_psi_Omega, post_psi_Omega, Y_tilde, prior_psi_mean) {
-  SigmaYD <- matrix(c(solve(Sigma) %*% t(Y_tilde) %*% D_mat), ncol = 1)
-  psi <- post_psi_Omega %*% (t(U) %*% SigmaYD + solve(prior_psi_Omega) %*% prior_psi_mean)
+  SigmaYD <- matrix(c(chol2inv(chol(Sigma)) %*% t(Y_tilde) %*% D_mat), ncol = 1)
+  psi <- post_psi_Omega %*% (t(U) %*% SigmaYD + chol2inv(chol(prior_psi_Omega)) %*% prior_psi_mean)
   return(psi)
 }
 
 #' @rdname posterior_psi_mean
 #' @return \item{psi_Omega}{The posterior variance (from \code{\link{posterior_psi_Omega}})}
 posterior_psi_Omega <- function(U, D_mat, Sigma, prior_psi_Omega) {
-  psi_Omega <- solve(t(U) %*% (kronecker(crossprod(D_mat), solve(Sigma))) %*% U + solve(prior_psi_Omega))
+  psi_Omega <- chol2inv(chol(t(U) %*% (kronecker(crossprod(D_mat), chol2inv(chol(Sigma)))) %*% U + chol2inv(chol(prior_psi_Omega))))
   return(psi_Omega)
 }
 

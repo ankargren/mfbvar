@@ -18,6 +18,7 @@ What is new in version 0.2.3:
 - Methods (`print`, `summary`, `plot`) for class `mdd` (return of `mdd_grid()`)
 - Improved `smoother()`, the example now runs in 10 instead of 20 seconds
 - `interval_to_moments()` to convert a matrix of prior probability intervals to prior moments of `psi`
+- Unit testing (using `testthat`) is now incorporated by checking the 100th draw
 
 
 ## News (2017-03-11)
@@ -139,11 +140,11 @@ plot(mdd_res)
 
 ## Profiling
 Profiling of the code shows that `simulation_smoother` is by far the most time-consuming part of the code (this is the main call inside `posterior_Z`). 
-```{r profvis, cache = TRUE, include = FALSE}
+```{r profvis, include = FALSE}
 library(profvis)
 profiling <- profvis({mfbvar_obj <- mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, 
                      prior_nu, prior_psi_mean, prior_psi_Omega, 
-                     n_lags, n_fcst, n_burnin, n_reps) }, prof_output = "../profiling.Rprof")
+                     n_lags, n_fcst, n_burnin, n_reps, verbose = FALSE) }, prof_output = "../profiling.Rprof")
 ```
 
 ```{r profiling}
@@ -152,7 +153,7 @@ profiling <- summaryRprof("../profiling.Rprof")$by.total
 profiling$call <- rownames(profiling)
 profiling %>%
   as_tibble() %>%
-  filter(total.pct < 100) %>%
+  filter(total.pct < 99) %>%
   arrange(-total.pct) %>%
   filter(row_number() < 20) %>%
   ggplot(aes(x = reorder(call, total.pct), y = total.pct)) +

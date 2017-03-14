@@ -16,8 +16,8 @@ dnorminvwish <- function(X, Sigma, M, P, S, v) {
   q <- dim(Sigma)[1]
   p <- dim(P)[1]
   det_Sigma <- det(Sigma)
-  inv_Sigma <- solve(Sigma)
-  dmultnorm <- (-p*q/2) * log(2 * pi) + (-p/2) * log(det_Sigma) + (-q/2)*log(det(P)) + (-1/2 * sum(diag(inv_Sigma %*% t(X - M) %*% solve(P) %*% (X - M))))
+  inv_Sigma <- chol2inv(chol(Sigma))
+  dmultnorm <- (-p*q/2) * log(2 * pi) + (-p/2) * log(det_Sigma) + (-q/2)*log(det(P)) + (-1/2 * sum(diag(inv_Sigma %*% t(X - M) %*% chol2inv(chol(P)) %*% (X - M))))
   cc <- (v * q/2)*log(2) + (q*(q-1)/4)*log(pi) + sum(lgamma((v+1-1:q)/2))
   dinvwish <- -cc + (v/2) * log(det(S)) -(v+q+1)/2*log(det_Sigma) -1/2 * sum(diag(inv_Sigma %*% S))
   return(exp(dmultnorm + dinvwish))
@@ -34,7 +34,7 @@ dnorminvwish <- function(X, Sigma, M, P, S, v) {
 #' For \code{dmultn}: the evaluated density.\\n
 #' For \code{rmultn}: \eqn{p} random numbers.
 dmultn <- function(x, m, Sigma) {
-  log_d <- (-1/2)* log(det(2*pi*Sigma)) -1/2 * t(x-m) %*% solve(Sigma) %*% (x-m)
+  log_d <- (-1/2)* log(det(2*pi*Sigma)) -1/2 * t(x-m) %*% chol2inv(chol(Sigma)) %*% (x-m)
   return(exp(log_d))
 }
 

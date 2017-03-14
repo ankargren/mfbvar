@@ -9,6 +9,7 @@ What is new in version 0.2.3:
 -   Methods (`print`, `summary`, `plot`) for class `mdd` (return of `mdd_grid()`)
 -   Improved `smoother()`, the example now runs in 10 instead of 20 seconds
 -   `interval_to_moments()` to convert a matrix of prior probability intervals to prior moments of `psi`
+-   Unit testing (using `testthat`) is now incorporated by checking the 100th draw
 
 News (2017-03-11)
 -----------------
@@ -360,7 +361,7 @@ profiling <- summaryRprof("../profiling.Rprof")$by.total
 profiling$call <- rownames(profiling)
 profiling %>%
   as_tibble() %>%
-  filter(total.pct < 100) %>%
+  filter(total.pct < 99) %>%
   arrange(-total.pct) %>%
   filter(row_number() < 20) %>%
   ggplot(aes(x = reorder(call, total.pct), y = total.pct)) +

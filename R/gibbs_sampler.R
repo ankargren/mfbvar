@@ -156,7 +156,7 @@ gibbs_sampler <- function(Y, d, d_fcst = NULL, Lambda, prior_Pi_mean, prior_Pi_O
   D_mat <- build_DD(d = d, n_lags = n_lags)
 
   # For the posterior of Pi
-  inv_prior_Pi_Omega <- solve(prior_Pi_Omega)
+  inv_prior_Pi_Omega <- chol2inv(chol(prior_Pi_Omega))
   Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi_mean
 
   Z_1 <- Z[1:n_pseudolags,, 1]
