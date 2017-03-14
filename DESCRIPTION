@@ -1,6 +1,6 @@
 Package: mfbvar
 Type: Package
-Title: Mixed-Frequency Bayesian VAR Models
+Title: Mixed-Frequency Bayesian VAR Models 
 Version: 0.2.3.9001
 Date: 2017-03-14
 Authors@R: c(
