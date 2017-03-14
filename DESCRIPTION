@@ -9,7 +9,7 @@ Authors@R: c(
     person("Mans", "Unosson", email = "m.unosson@warwick.ac.uk", role = c("aut")))
 Maintainer: Sebastian Ankargren <sebastian.ankargren@statistics.uu.se>
 Description: A package for estimating mixed-frequency Bayesian VAR models with steady-state priors.
-License: MIT + file LICENSE
+License: MIT + file LICENSE 
 LazyData: TRUE
 URL: https://github.com/ankargren/mfbvar
 BugReports: https://github.com/ankargren/mfbvar/issues
