@@ -19,5 +19,5 @@
 \item{...}{Currently not in use.}
 }
 \description{
-The method for plotting mfbvar objects.
+Method for plotting mfbvar objects.
 }

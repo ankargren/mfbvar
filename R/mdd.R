@@ -318,8 +318,48 @@ mdd_grid <- function(mfbvar_obj = NULL, lambda1_grid, lambda2_grid, method, n_co
   }
 
   rownames(mdd_res) <- c("log_mdd", "lambda1", "lambda2")
+  mdd_ret <- list(mdd_res = mdd_res)
+  class(mdd_ret) <- "mdd"
+  return(mdd_ret)
+}
 
-  return(mdd_res)
+#' Printing method for class mdd
+#'
+#' Method for printing mdd objects.
+#'
+#' @param x object of class mdd
+#' @param ... Currently not in use.
+print.mdd <- function(x, ...) {
+  print(x[["mdd_res"]])
+}
+
+#' Plotting method for class mdd
+#'
+#' Method for plotting mdd objects.
+#'
+#' @param x object of class mdd
+#' @param ... Currently not in use.
+plot.mdd <- function(x, ...) {
+  plot_df <- data.frame(t(x[["mdd_res"]]))
+  lambda1 <- lambda2 <- log_mdd <- NULL
+  ggplot(plot_df, aes(x = lambda1, y = lambda2, fill = log_mdd)) +
+    geom_tile() +
+    theme_minimal() +
+    scale_fill_gradient(low = "grey20", high = "grey90", name = "log(mdd)") +
+    coord_fixed(ratio = 1/(c(range(unique(plot_df$lambda2)) %*% c(-1, 1))/c(range(unique(plot_df$lambda1)) %*% c(-1, 1)))) +
+    labs(title = "Tile plot of log marginal data density")
+}
+
+#' Summary method for class mdd
+#'
+#' Method for summarizing mdd objects.
+#'
+#' @param object object of class mdd
+#' @param ... Currently not in use.
+summary.mdd <- function(object, ...) {
+  pos <- which.max(object[["mdd_res"]][1,])
+  cat("Highest log marginal data density:", object[["mdd_res"]][1, pos],
+      "\nObtained using lambda1 =", object[["mdd_res"]][2, pos], "and lambda2 =", object[["mdd_res"]][3, pos])
 }
 
 

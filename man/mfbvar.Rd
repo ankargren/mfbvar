@@ -38,6 +38,9 @@ mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_nu = NULL,
 
 \item{verbose}{Logical, if progress should be printed to the console.}
 }
+\value{
+An \code{mfbvar} object
+}
 \description{
 The main function for running the MF-SS-BVAR.
 }

@@ -12,5 +12,5 @@
 \item{...}{Currently not in use.}
 }
 \description{
-The method for summarizing mfbvar objects (currently the same as \code{print.mfbvar}).
+Method for summarizing mfbvar objects.
 }

@@ -18,6 +18,7 @@
 #' @templateVar n_reps TRUE
 #' @templateVar verbose TRUE
 #' @template man_template
+#' @return An \code{mfbvar} object
 #' @details \code{mfbvar} calls \code{\link{gibbs_sampler}} (implemented in C++)
 
 mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_nu = NULL, prior_psi_mean, prior_psi_Omega, n_lags, n_fcst, n_burnin, n_reps, verbose) {
@@ -136,7 +137,7 @@ mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_n
 
 #' Printing method for class mfbvar
 #'
-#' The method for printing mfbvar objects.
+#' Method for printing mfbvar objects.
 #'
 #' @param x object of class mfbvar
 #' @param ... Currently not in use.
@@ -150,7 +151,7 @@ print.mfbvar <- function(x, ...){
 
 #' Plotting method for class mfbvar
 #'
-#' The method for plotting mfbvar objects.
+#' Method for plotting mfbvar objects.
 #'
 #' @param x object of class mfbvar
 #' @param plot_start Time period (number) to start plotting from. Default is to to use \code{5*n_fcst} time periods if \code{n_fcst} exists, otherwise the entire sample.
@@ -232,7 +233,7 @@ plot.mfbvar <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
 
 #' Summary method for class mfbvar
 #'
-#' The method for summarizing mfbvar objects (currently the same as \code{print.mfbvar}).
+#' Method for summarizing mfbvar objects.
 #'
 #' @param object object of class mfbvar
 #' @param ... Currently not in use.
@@ -260,7 +261,7 @@ summary.mfbvar <- function(object, ...) {
 
 #' Predict method for class mfbvar
 #'
-#' The method for predicting mfbvar objects.
+#' Method for predicting mfbvar objects.
 #'
 #' @param object object of class mfbvar
 #' @param pred_quantiles The quantiles of the posterior predictive distribution to use.

@@ -17,7 +17,7 @@
 \item{...}{Currently not in use.}
 }
 \description{
-The method for predicting mfbvar objects.
+Method for predicting mfbvar objects.
 }
 \details{
 Note that this requires that forecasts were made in the original \code{mfbvar} call.
