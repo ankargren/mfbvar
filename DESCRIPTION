@@ -2,12 +2,17 @@ Package: mfbvar
 Type: Package
 Title: Mixed-Frequency Bayesian VAR Models
 Version: 0.2.3.9000
-Date: 2017-03-09
-Author: Sebastian Ankargren, Yukai Yang, Mans Unosson
+Date: 2017-03-14
+Authors@R: c(
+    person("Sebastian", "Ankargren", email = "sebastian.ankargren@statistics.uu.se", role = c("cre", "aut")),
+    person("Yukai", "Yang", email = "yukai.yang@statistics.uu.se", role = c("aut")),
+    person("Mans", "Unosson", email = "m.unosson@warwick.ac.uk", role = c("aut")))
 Maintainer: Sebastian Ankargren <sebastian.ankargren@statistics.uu.se>
 Description: A package for estimating mixed-frequency Bayesian VAR models with steady-state priors.
 License: MIT + file LICENSE
 LazyData: TRUE
+URL: https://github.com/sebastianankargren/mfbvar
+BugReports: https://github.com/sebastianankargren/mfbvar/issues
 Imports:
     Rcpp (>= 0.12.7), RcppArmadillo (>= 0.7.600.1.0), ggplot2 (>= 2.2.1), methods
 LinkingTo:
