@@ -10,7 +10,12 @@ test_that("Output correct", {
   for (i in 2:(2*TT)) {
     Y[i, ] <- Phi %*% Y[i-1,] + rnorm(n_vars)
   }
-  Y[, n_vars] <- zoo::rollapply(Y[, n_vars], 3, mean, fill = NA, align = "right")
+
+  Y_NA <- rep(NA, nrow(Y))
+  for (i in 3:nrow(Y)) {
+    Y_NA[i] <- mean(Y[i:(i-2), 3])
+  }
+  Y[, 3] <- Y_NA
   Y <- Y[-(1:TT),]
   Y[setdiff(1:TT, seq(1, TT, 3)), n_vars] <- NA
 
@@ -49,9 +54,9 @@ test_that("Output correct", {
                        prior_nu, prior_psi_mean, prior_psi_Omega,
                        n_lags, n_fcst, n_burnin, n_reps, verbose = TRUE)
 
-  expect_equal(unname(c(mfbvar_obj$Y[, 1])), c(mfbvar_obj$Z[, 1, 100]))
+  expect_equal(c(mfbvar_obj$Y[, 1]), c(mfbvar_obj$Z[, 1, 100]))
 
-  expect_equal(unname(c(mfbvar_obj$Y[, 1])), c(mfbvar_obj$Z[, 1, 100]))
+  expect_equal(c(mfbvar_obj$Y[, 1]), c(mfbvar_obj$Z[, 1, 100]))
 
   expect_equal_to_reference(mfbvar_obj$Z[,3, 100], "Z_output.rds")
   expect_equal_to_reference(mfbvar_obj$Pi[,, 100], "Pi_output.rds")

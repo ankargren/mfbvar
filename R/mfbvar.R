@@ -140,6 +140,7 @@ mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_n
   dimnames(main_run$Sigma) <- list(names_col,
                                    names_col,
                                    iteration = 1:n_reps)
+  n_determ <- dim(d)[2]
   dimnames(main_run$psi) <- list(iteration = 1:n_reps,
                                  param = paste0(rep(names_col, n_determ), ".", rep(names_determ, each = n_vars)))
   class(main_run) <- "mfbvar"
