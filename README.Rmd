@@ -11,7 +11,16 @@ knitr::opts_chunk$set(
   fig.path = "README-"
 )
 ```
-# News (2017-03-11)
+# News (2017-03-14)
+What is new in version 0.2.3:
+
+- `mdd_grid()` to do grid search for hyperparameters, possibly using parallel computing
+- Methods (`print`, `summary`, `plot`) for class `mdd` (return of `mdd_grid()`)
+- Improved `smoother()`, the example now runs in 10 instead of 20 seconds
+- `interval_to_moments()` to convert a matrix of prior probability intervals to prior moments of `psi`
+
+
+## News (2017-03-11)
 What is new in version 0.2.1:
 
 - Methods (`print`, `summary`, `plot`, `predict`)
@@ -156,4 +165,4 @@ profiling %>%
 ## To do
 Some things that remain to do:
 
-- Helper function `interval_to_moments()` which takes a matrix of lower and upper bounds for prior intervals for steady states and return `prior_psi_mean` and `prior_psi_Omega`.
+- In terms of speed, improvements can most probably mostly be made using a different form of the state-space model as suggested by Schorfheide and Song (2015).

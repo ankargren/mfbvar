@@ -1,7 +1,17 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
-News (2017-03-11)
+News (2017-03-14)
 =================
+
+What is new in version 0.2.3:
+
+-   `mdd_grid()` to do grid search for hyperparameters, possibly using parallel computing
+-   Methods (`print`, `summary`, `plot`) for class `mdd` (return of `mdd_grid()`)
+-   Improved `smoother()`, the example now runs in 10 instead of 20 seconds
+-   `interval_to_moments()` to convert a matrix of prior probability intervals to prior moments of `psi`
+
+News (2017-03-11)
+-----------------
 
 What is new in version 0.2.1:
 
@@ -120,7 +130,7 @@ After having set these preliminary variables, we can now call the main function 
 set.seed(10237)
 mfbvar_obj <- mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, 
                      prior_nu, prior_psi_mean, prior_psi_Omega, 
-                     n_lags, n_fcst, n_burnin, n_reps) 
+                     n_lags, n_fcst, n_burnin, n_reps, verbose = FALSE) 
 ```
 
 Obtaining the results
@@ -261,45 +271,74 @@ The package contains functions for estimating the marginal data density. This is
 First, we'll use grids between 0.1 and 0.5 for `lambda1` and between 1 and 4 for `lambda2`.
 
 ``` r
-lambda1_vec <- seq(0.1, 0.5, by = 0.05)
-lambda2_vec <- seq(1, 4, by = 0.5)
-lambda_mat <- expand.grid(lambda1_vec, lambda2_vec)
+lambda1_grid <- seq(0.1, 0.5, by = 0.05)
+lambda2_grid <- seq(1, 4, by = 0.5)
 ```
 
 We can also create two wrapper functions to use for the parallel call:
 
 ``` r
-mdd_search <- function(lambda1, lambda2) {
-  mfbvar_obj <- mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, 
-                     prior_nu, prior_psi_mean, prior_psi_Omega, 
-                     n_lags, n_fcst, n_burnin, n_reps) 
-  log_mdd <- mdd2(mfbvar_obj, p_trunc = 0.5)$log_mdd
-  return(list(log_mdd = log_mdd, lambda1 = lambda1, lambda2 = lambda2))
-}
-
-par_func <- function(j, lambda_mat) {
-  lambda1 <- lambda_mat[j, 1]
-  lambda2 <- lambda_mat[j, 2]
-  mdd_search(lambda1, lambda2)
-}
+mdd_res <- mdd_grid(mfbvar_obj, lambda1_grid, lambda2_grid, method = 2, n_cores = 7, p_trunc = 0.5)
+#> Computing log marginal data density
+#> 
+#> Initiating parallel processing using 7 cores
 ```
 
-Finally, the parallel processing is conducted using `parLapply()`:
-
-Transforming the results and plotting gives us an idea of what hyperparameter values are sensible.
+The return is an object of class `mdd`, for which three methods are implemented.
 
 ``` r
-library(ggplot2)
-mdd <- data.frame(matrix(unlist(mdd_res), ncol = 3, byrow = TRUE))
-names(mdd) <- c("log_mdd", "lambda1", "lambda2")
-ggplot(mdd, aes(x = lambda1, y = lambda2, fill = log_mdd)) +
-  geom_tile() +
-  theme_minimal() +
-  scale_fill_gradient(low = "grey20", high = "grey90", name = "log(mdd)") +
-  coord_fixed(ratio = 1/10)
+mdd_res
+#>              [,1]      [,2]      [,3]      [,4]      [,5]      [,6]
+#> log_mdd -683.7274 -673.0102 -667.7217 -665.3272 -662.7505 -660.8704
+#> lambda1    0.1000    0.1500    0.2000    0.2500    0.3000    0.3500
+#> lambda2    1.0000    1.0000    1.0000    1.0000    1.0000    1.0000
+#>              [,7]      [,8]      [,9]   [,10]     [,11]     [,12]
+#> log_mdd -660.5268 -656.3475 -653.2478 -684.98 -672.0283 -664.5906
+#> lambda1    0.4000    0.4500    0.5000    0.10    0.1500    0.2000
+#> lambda2    1.0000    1.0000    1.0000    1.50    1.5000    1.5000
+#>             [,13]     [,14]     [,15]     [,16]    [,17]    [,18]    [,19]
+#> log_mdd -659.8905 -656.5388 -654.9418 -656.6594 -650.892 -651.482 -685.833
+#> lambda1    0.2500    0.3000    0.3500    0.4000    0.450    0.500    0.100
+#> lambda2    1.5000    1.5000    1.5000    1.5000    1.500    1.500    2.000
+#>             [,20]     [,21]     [,22]     [,23]     [,24]     [,25]
+#> log_mdd -672.1435 -662.9657 -657.3545 -653.6948 -649.2687 -650.0762
+#> lambda1    0.1500    0.2000    0.2500    0.3000    0.3500    0.4000
+#> lambda2    2.0000    2.0000    2.0000    2.0000    2.0000    2.0000
+#>             [,26]     [,27]    [,28]     [,29]     [,30]     [,31]
+#> log_mdd -648.4397 -651.2195 -686.509 -671.3404 -661.6287 -656.7549
+#> lambda1    0.4500    0.5000    0.100    0.1500    0.2000    0.2500
+#> lambda2    2.0000    2.0000    2.500    2.5000    2.5000    2.5000
+#>             [,32]     [,33]     [,34]     [,35]     [,36]     [,37]
+#> log_mdd -651.7985 -649.1342 -646.7131 -646.6936 -646.8671 -686.9477
+#> lambda1    0.3000    0.3500    0.4000    0.4500    0.5000    0.1000
+#> lambda2    2.5000    2.5000    2.5000    2.5000    2.5000    3.0000
+#>             [,38]     [,39]     [,40]     [,41]     [,42]     [,43]
+#> log_mdd -670.2451 -660.9317 -655.0603 -651.8939 -647.3467 -647.2382
+#> lambda1    0.1500    0.2000    0.2500    0.3000    0.3500    0.4000
+#> lambda2    3.0000    3.0000    3.0000    3.0000    3.0000    3.0000
+#>             [,44]     [,45]     [,46]     [,47]     [,48]     [,49]
+#> log_mdd -645.1904 -646.9559 -686.6875 -670.5887 -659.8894 -655.5043
+#> lambda1    0.4500    0.5000    0.1000    0.1500    0.2000    0.2500
+#> lambda2    3.0000    3.0000    3.5000    3.5000    3.5000    3.5000
+#>             [,50]     [,51]     [,52]     [,53]     [,54]     [,55]
+#> log_mdd -648.8613 -646.6725 -645.8138 -644.5609 -643.4306 -686.8019
+#> lambda1    0.3000    0.3500    0.4000    0.4500    0.5000    0.1000
+#> lambda2    3.5000    3.5000    3.5000    3.5000    3.5000    4.0000
+#>             [,56]     [,57]     [,58]    [,59]    [,60]     [,61]
+#> log_mdd -671.4148 -661.3773 -654.6615 -649.855 -646.684 -646.8024
+#> lambda1    0.1500    0.2000    0.2500    0.300    0.350    0.4000
+#> lambda2    4.0000    4.0000    4.0000    4.000    4.000    4.0000
+#>             [,62]     [,63]
+#> log_mdd -643.5514 -644.8638
+#> lambda1    0.4500    0.5000
+#> lambda2    4.0000    4.0000
+summary(mdd_res)
+#> Highest log marginal data density: -643.4306 
+#> Obtained using lambda1 = 0.5 and lambda2 = 3.5
+plot(mdd_res)
 ```
 
-![](README-mddplot-1.png)
+![](README-mdd-1.png)
 
 Profiling
 ---------
@@ -308,6 +347,7 @@ Profiling of the code shows that `simulation_smoother` is by far the most time-c
 
 ``` r
 library(tidyverse)
+#> Loading tidyverse: ggplot2
 #> Loading tidyverse: tibble
 #> Loading tidyverse: tidyr
 #> Loading tidyverse: readr
@@ -317,11 +357,12 @@ library(tidyverse)
 #> filter(): dplyr, stats
 #> lag():    dplyr, stats
 profiling <- summaryRprof("../profiling.Rprof")$by.total
-profiling <- profiling[order(profiling$total.pct, decreasing = TRUE) & profiling$total.pct < 99,]
-profiling <- head(profiling) 
 profiling$call <- rownames(profiling)
-profiling <- as_tibble(profiling)
 profiling %>%
+  as_tibble() %>%
+  filter(total.pct < 100) %>%
+  arrange(-total.pct) %>%
+  filter(row_number() < 20) %>%
   ggplot(aes(x = reorder(call, total.pct), y = total.pct)) +
   geom_bar(stat = "identity", width = 0.25) +
   theme_minimal() +
@@ -336,5 +377,4 @@ To do
 
 Some things that remain to do:
 
--   Wrapper for computing the mdd for grids of values, possibly also in parallel. Something like `mdd_search(lambda1, lambda2, n_cores = 1, method, ...)`.
--   Helper function `interval_to_moments()` which takes a matrix of lower and upper bounds for prior intervals for steady states and return `prior_psi_mean` and `prior_psi_Omega`.
+-   In terms of speed, improvements can most probably mostly be made using a different form of the state-space model as suggested by Schorfheide and Song (2015).
