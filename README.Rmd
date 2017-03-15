@@ -163,7 +163,3 @@ profiling %>%
   labs(y = "Percent", x = "Function call", title = "Most expensive functions calls in mfbvar")
 ```
 
-## To do
-Some things that remain to do:
-
-- In terms of speed, improvements can most probably mostly be made using a different form of the state-space model as suggested by Schorfheide and Song (2015).
