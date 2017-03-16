@@ -88,11 +88,11 @@ lambda2 <- 1
 ```
 The prior on the steady states also needs to be set:
 ```{r}
-prior_psi_mean <- c(0, 0, 0) 
-prior_psi_Omega <- c(0.5, 0.5, 0.5) 
-prior_psi_Omega <- diag((prior_psi_Omega / (qnorm(0.975, mean = 0, sd = 1)*2))^2) 
+prior_psi_int <- matrix(c(-0.25, 0.25), 3, 2, byrow = TRUE)
+prior_psi <- interval_to_moments(prior_psi_int)
+prior_psi_mean <- prior_psi$prior_psi_mean
+prior_psi_Omega <- prior_psi$prior_psi_Omega
 ```
-The third line simply converts the length of the prior interval to the variance in a normal distribution.
 
 Finally, we also need to create the matrix that relates unobservables to observables. In this example, the first two variables are assumed to be observed every period, whereas the third is assumed to be observed every third time period. Moreover, when it is observed, we observe the average over three periods. This can be specified using the `build_Lambda()` function:
 ```{r}
@@ -163,3 +163,50 @@ profiling %>%
   labs(y = "Percent", x = "Function call", title = "Most expensive functions calls in mfbvar")
 ```
 
+```{r}
+library(tidyverse)
+library(lubridate)
+mf_data <- mf_list$data[[192]]
+Y <- select(mf_data, date, infl:gdp) %>%
+  as.data.frame()
+rownames(Y) <- Y$date
+Y <- Y[-1, -1]
+
+n_burnin <- 2000
+n_reps <- 2000
+n_fcst <- 24
+n_lags <- 4
+n_vars <- ncol(Y)
+n_T <- nrow(Y)
+
+dates <- seq(ymd(rownames(Y)[length(rownames(Y))]) + days(1), by = "months", length.out = 24) + months(1) - days(1)
+
+d <- matrix(1, nrow = n_T, ncol = 1, dimnames = list(1:nrow(Y), "const"))
+d_fcst <- matrix(1, nrow = n_fcst, ncol = 1, 
+                 dimnames = list(dates[(nrow(Y)+1):(nrow(Y)+n_fcst)], "const"))
+
+prior_nu <- n_vars + 2 
+prior_Pi_AR1 <- c(0, 0, 0, 0) 
+lambda1 <- 0.1
+lambda2 <- 1
+
+prior_psi_int <- matrix(c(0.4/3, 0.6/3,
+                          0, 1/3,
+                          -0.1, 0.1,
+                          0.5, 0.625), 4, 2, byrow = TRUE)
+prior_psi <- interval_to_moments(prior_psi_int)
+prior_psi_mean <- prior_psi$prior_psi_mean
+prior_psi_Omega <- prior_psi$prior_psi_Omega
+Lambda <- build_Lambda(c("identity", "identity", "identity", "average"), n_lags)
+
+set.seed(10189)
+mfbvar_obj <- mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, 
+                     prior_nu, prior_psi_mean, prior_psi_Omega, 
+                     n_lags, n_fcst, n_burnin, n_reps, verbose = FALSE)
+                       
+```
+```{r}
+lambda1_grid <- seq(0.1, 1, by = 0.1)
+lambda2_grid <- seq(0.5, 4, by = 0.5)
+mdd_res <- mdd_grid(mfbvar_obj, lambda1_grid, lambda2_grid, method = 2, n_cores = 7, p_trunc = 0.5)
+```
