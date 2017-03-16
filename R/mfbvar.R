@@ -100,20 +100,20 @@ mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_n
     end_burnin <- Sys.time()
     time_diff <- end_burnin - start_burnin
     cat(paste0("\n   Time elapsed for drawing ", n_burnin, " times for burn-in: ", signif(time_diff, digits = 1), " ",
-             attr(time_diff, "units"), "\n"))
+               attr(time_diff, "units"), "\n"))
     cat(paste0("\n   Moving on to ",
-             n_reps, " replications in the main chain\n", ifelse(!is.null(n_fcst), paste0("   Making forecasts ", n_fcst, " steps ahead"), " "), "\n\n"))
+               n_reps, " replications in the main chain\n", ifelse(!is.null(n_fcst), paste0("   Making forecasts ", n_fcst, " steps ahead"), " "), "\n\n"))
   }
 
   main_run <- gibbs_sampler(Y = Y, d = d, d_fcst = d_fcst, Lambda = Lambda, prior_Pi_mean = prior_Pi_mean, prior_Pi_Omega = prior_Pi_Omega,
-                prior_S = prior_S, prior_nu = prior_nu, prior_psi_mean = prior_psi_mean, prior_psi_Omega = prior_psi_Omega,
-                n_fcst = n_fcst, n_reps = n_burnin, init_Pi  = burn_in$Pi[,,dim(burn_in$Pi)[3]], init_Sigma = burn_in$Sigma[,,dim(burn_in$Sigma)[3]],
-                init_psi = burn_in$psi[dim(burn_in$psi)[1],], init_Z   = burn_in$Z[,,dim(burn_in$Z)[3]], smooth_state = FALSE, check_roots = TRUE, verbose)
+                            prior_S = prior_S, prior_nu = prior_nu, prior_psi_mean = prior_psi_mean, prior_psi_Omega = prior_psi_Omega,
+                            n_fcst = n_fcst, n_reps = n_burnin, init_Pi  = burn_in$Pi[,,dim(burn_in$Pi)[3]], init_Sigma = burn_in$Sigma[,,dim(burn_in$Sigma)[3]],
+                            init_psi = burn_in$psi[dim(burn_in$psi)[1],], init_Z   = burn_in$Z[,,dim(burn_in$Z)[3]], smooth_state = FALSE, check_roots = TRUE, verbose)
   main_run$call <- fun_call
   if (verbose) {
     time_diff <- Sys.time() - start_burnin
     cat(paste0("\n   Total time elapsed: ", signif(time_diff, digits = 1), " ",
-             attr(time_diff, "units"), "\n"))
+               attr(time_diff, "units"), "\n"))
   }
 
   if (!is.null(n_fcst)) {
@@ -165,7 +165,6 @@ print.mfbvar <- function(x, ...){
 #' Plotting method for class mfbvar
 #'
 #' Method for plotting mfbvar objects.
-#'
 #' @param x object of class mfbvar
 #' @param plot_start Time period (number) to start plotting from. Default is to to use \code{5*n_fcst} time periods if \code{n_fcst} exists, otherwise the entire sample.
 #' @param ss_level A vector with the lower and upper quantiles for the posterior steady-state intervals.
@@ -210,14 +209,14 @@ plot.mfbvar <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
     preds <- predict(x, pred_quantiles = c(pred_level[1], 0.5, pred_level[2]))
     fcst <- data.frame(expand.grid(time = (x$n_T+1):(x$n_T+x$n_fcst), names_col = names_col),
                        lower = c(preds[[1]]), median = c(preds[[2]]),
-                     upper = c(preds[[3]]))
+                       upper = c(preds[[3]]))
     last_pos <- apply(x$Y, 2, function(yy) max(which(!is.na(yy))))
     for (i in seq_along(last_pos)) {
       fcst <- rbind(fcst, data.frame(time = (1:nrow(x$Y))[last_pos[i]],
-                                              names_col = names_col[i],
-                                              lower = x$Y[last_pos[i], i],
-                                              median = x$Y[last_pos[i], i],
-                                              upper  = x$Y[last_pos[i], i]))
+                                     names_col = names_col[i],
+                                     lower = x$Y[last_pos[i], i],
+                                     median = x$Y[last_pos[i], i],
+                                     upper  = x$Y[last_pos[i], i]))
     }
     p <- p + geom_ribbon(data = fcst, aes(ymin = lower, ymax = upper,
                                           fill = "#bdbdbd"), alpha = 1) +
@@ -243,7 +242,19 @@ plot.mfbvar <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
   p + scale_x_continuous(breaks = breaks,
                          labels = names_row[breaks])
 }
-
+#' Plotting method for class mfbvar
+#'
+#' Method for plotting mfbvar objects.
+#' @param x object of class mfbvar
+#' @param plot_start Time period (number) to start plotting from. Default is to to use \code{5*n_fcst} time periods if \code{n_fcst} exists, otherwise the entire sample.
+#' @param ss_level A vector with the lower and upper quantiles for the posterior steady-state intervals.
+#' @param pred_level A vector with the lower and upper quantiles for the forecast intervals.
+#' @param ... Currently not in use.
+#' @template man_template
+autoplot.mfbvar <- function(object, plot_start = NULL, ss_level = c(0.025, 0.975),
+                            pred_level = c(0.10, 0.90), ...){
+  plot.mfbvar(object, plot_start, ss_level, pred_level, ...)
+}
 #' Summary method for class mfbvar
 #'
 #' Method for summarizing mfbvar objects.
@@ -295,9 +306,57 @@ predict.mfbvar <- function(object, pred_quantiles = c(0.10, 0.50, 0.90), tidy = 
   } else if (tidy == TRUE) {
     ret_list <- lapply(pred_quantiles, function(xx) apply(object$Z_fcst[-(1:object$n_lags),,-1], c(1, 2), quantile, prob = xx))
     ret_tidy <- cbind(value = unlist(ret_list), expand.grid(fcst_date = rownames(object$Z_fcst[-(1:object$n_lags),,2]),
-                                        variable = object$names_col,
-                                        quantile = pred_quantiles))
+                                                            variable = object$names_col,
+                                                            quantile = pred_quantiles))
     return(ret_tidy)
   }
 
+}
+
+#' Tidy method for class mfbvar
+#'
+#' Method for obtaining tidy results from mfbvar objects.
+#'
+#' @param x object of class mfbvar
+#' @param result string containing either \code{Pi}, \code{Sigma} or \code{psi} for which object to return
+#' @param ... Currently not in use.
+#' @template man_template
+#' @details The return can be large (especially for \code{result = "Pi"}).
+#'
+tidy.mfbvar <- function(x, result, ...) {
+  dep_name <- x$names_col
+  if (result == "Pi") {
+
+    names <- expand.grid(dep_name, dep_name, 1:x$n_lags)
+    names_vec <- paste0(names[, 1], "_", names[, 2], ".l", names[, 3])
+    ret <- data.frame(value = c(x$Pi), term = names_vec, pos_row = rep(1:x$n_vars, x$n_vars*x$n_lags),
+                      pos_col = rep(1:x$n_lags, each = x$n_vars^2), iteration = rep(1:x$n_reps, each = x$n_lags*x$n_vars^2))
+  }
+
+  if (result == "Sigma") {
+    values <- c(sapply(1:x$n_reps, function(i) {
+      temp <- x$Sigma[,, i]
+      c(temp[lower.tri(x$Sigma[,, i], diag = TRUE)])
+    }))
+
+    names <- expand.grid(paste0(dep_name, "_"), dep_name)
+    names_mat <- matrix(paste0(names[,1], names[, 2]), x$n_vars)
+    names_vec <- names_mat[lower.tri(names_mat, diag = TRUE)]
+
+    rows <- matrix(1:x$n_vars, x$n_vars, x$n_vars)
+    cols <- matrix(1:x$n_vars, x$n_vars, x$n_vars, byrow = TRUE)
+
+    ret <- data.frame(value = values, term = names_vec, pos_row = rows[lower.tri(rows, diag = TRUE)], pos_col = cols[lower.tri(cols, diag = TRUE)],
+                      iteration = rep(1:x$n_reps, each = (x$n_vars*(x$n_vars+1)/2)))
+  }
+
+  if (result == "psi") {
+    values <- c(t(x$psi))
+    names <- expand.grid(paste0(dep_name, "_"), x$names_determ)
+    names_vec <- paste0(names[, 1], names[, 2])
+    ret <- cbind(values, term = names_vec, expand.grid(pos_row = 1:x$n_vars,
+                                                       pos_col = 1:x$n_determ, iteration = 1:x$n_reps))
+  }
+
+  return(ret)
 }
