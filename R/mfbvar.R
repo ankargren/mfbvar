@@ -245,7 +245,7 @@ plot.mfbvar <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
 #' Plotting method for class mfbvar
 #'
 #' Method for plotting mfbvar objects.
-#' @param x object of class mfbvar
+#' @param object object of class mfbvar
 #' @param plot_start Time period (number) to start plotting from. Default is to to use \code{5*n_fcst} time periods if \code{n_fcst} exists, otherwise the entire sample.
 #' @param ss_level A vector with the lower and upper quantiles for the posterior steady-state intervals.
 #' @param pred_level A vector with the lower and upper quantiles for the forecast intervals.

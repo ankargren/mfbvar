@@ -8,6 +8,8 @@
   0.975), pred_level = c(0.1, 0.9), ...)
 }
 \arguments{
+\item{object}{object of class mfbvar}
+
 \item{plot_start}{Time period (number) to start plotting from. Default is to to use \code{5*n_fcst} time periods if \code{n_fcst} exists, otherwise the entire sample.}
 
 \item{ss_level}{A vector with the lower and upper quantiles for the posterior steady-state intervals.}
@@ -15,8 +17,6 @@
 \item{pred_level}{A vector with the lower and upper quantiles for the forecast intervals.}
 
 \item{...}{Currently not in use.}
-
-\item{x}{object of class mfbvar}
 }
 \description{
 Method for plotting mfbvar objects.
