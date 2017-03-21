@@ -2,8 +2,8 @@ parallel_wrapper <- function(data_list, Lambda, prior_Pi_AR1, lambda1_grid, lamb
 
   # data_list is a list of lists with top components: data (with data) and fcst_date (date at which the fcst is made)
   # The components of data are data frames/matrices with rownames containing dates
-  d_list <- lapply(data_list$data, function(x) matrix(1, nrow = nrow(x), ncol = 1, dimnames = list(time = rownames(x), const = "const")))
-  d_fcst_list <- lapply(as.Date(sapply(data_list$data, function(x) rownames(x)[nrow(x)]), origin = "1970-01-01"),
+  d_list <- lapply(data_list$mf, function(x) matrix(1, nrow = nrow(x), ncol = 1, dimnames = list(time = rownames(x), const = "const")))
+  d_fcst_list <- lapply(as.Date(sapply(data_list$mf, function(x) rownames(x)[nrow(x)]), origin = "1970-01-01"),
                         function(x) matrix(1, nrow = n_fcst, ncol = 1, dimnames = list(time = as.character(x + lubridate::days(1) + months(1:n_fcst) - lubridate::days(1)), const = "const")))
 
 
@@ -22,7 +22,7 @@ parallel_wrapper <- function(data_list, Lambda, prior_Pi_AR1, lambda1_grid, lamb
   res <- parallel::clusterMap(cl, fun = worker_fun, Y = data_list$data, d = d_list, d_fcst = d_fcst_list,
                      MoreArgs = list(Lambda = Lambda, prior_Pi_AR1 = prior_Pi_AR1, lambda1_grid = lambda1_grid, lambda2_grid = lambda2_grid,
                                      prior_psi_mean = prior_psi_mean, prior_psi_Omega = prior_psi_Omega, n_burnin = n_burnin, n_reps = n_reps))
-  stopCluster(cl)
+  parallel::stopCluster(cl)
   return(res)
 #
 }
