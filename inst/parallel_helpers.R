@@ -1,9 +1,5 @@
 parallel_wrapper <- function(data_list, Lambda, prior_Pi_AR1, lambda1_grid, lambda2_grid, prior_psi_mean, prior_psi_Omega, n_lags, n_fcst, n_burnin, n_reps, n_cores, seed, cluster_type = "PSOCK") {
-  list.of.packages <- c("parallel", "lubridate")
-  new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
-  if(length(new.packages)) install.packages(new.packages)
-  library(lubridate)
-  library(parallel)
+
   # data_list is a list of lists with top components: data (with data) and fcst_date (date at which the fcst is made)
   # The components of data are data frames/matrices with rownames containing dates
   d_list <- lapply(data_list$data, function(x) matrix(1, nrow = nrow(x), ncol = 1, dimnames = list(time = rownames(x), const = "const")))
@@ -12,23 +8,18 @@ parallel_wrapper <- function(data_list, Lambda, prior_Pi_AR1, lambda1_grid, lamb
 
 
   if (cluster_type == "MPI") {
-    list.of.packages <- c("snow", "Rmpi")
-    new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
-    if(length(new.packages)) install.packages(new.packages)
-    library(snow)
-    library(Rmpi)
-    cl <- makeCluster(n_cores, type = "MPI")
+    cl <- parallel::makeCluster(n_cores, type = "MPI")
   } else {
-    cl <- makeCluster(n_cores, type = "PSOCK")
+    cl <- parallel::makeCluster(n_cores, type = "PSOCK")
   }
 
-  clusterSetRNGStream(cl, iseed = seed)
+  parallel::clusterSetRNGStream(cl, iseed = seed)
 
   # Load the package
-  clusterEvalQ(cl, {
+  parallel::clusterEvalQ(cl, {
     library(mfbvar)
   })
-  res <- clusterMap(cl, fun = worker_fun, Y = data_list$data, d = d_list, d_fcst = d_fcst_list,
+  res <- parallel::clusterMap(cl, fun = worker_fun, Y = data_list$data, d = d_list, d_fcst = d_fcst_list,
                      MoreArgs = list(Lambda = Lambda, prior_Pi_AR1 = prior_Pi_AR1, lambda1_grid = lambda1_grid, lambda2_grid = lambda2_grid,
                                      prior_psi_mean = prior_psi_mean, prior_psi_Omega = prior_psi_Omega, n_burnin = n_burnin, n_reps = n_reps))
   stopCluster(cl)
