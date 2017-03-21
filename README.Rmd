@@ -172,8 +172,8 @@ Y <- select(mf_data, date, infl:gdp) %>%
 rownames(Y) <- Y$date
 Y <- Y[-1, -1]
 
-n_burnin <- 2000
-n_reps <- 2000
+n_burnin <- 10000
+n_reps <- 10000
 n_fcst <- 24
 n_lags <- 4
 n_vars <- ncol(Y)
@@ -204,9 +204,15 @@ mfbvar_obj <- mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2,
                      prior_nu, prior_psi_mean, prior_psi_Omega, 
                      n_lags, n_fcst, n_burnin, n_reps, verbose = FALSE)
                        
-```
-```{r}
 lambda1_grid <- seq(0.1, 1, by = 0.1)
 lambda2_grid <- seq(0.5, 4, by = 0.5)
-mdd_res <- mdd_grid(mfbvar_obj, lambda1_grid, lambda2_grid, method = 2, n_cores = 7, p_trunc = 0.5)
+
+mdd_res1 <- mdd_grid(mfbvar_obj, lambda1_grid, lambda2_grid, method = 2, n_cores = 7, p_trunc = 0.2)
+mdd_res2 <- mdd_grid(mfbvar_obj, lambda1_grid, lambda2_grid, method = 2, n_cores = 7, p_trunc = 0.5)
+mdd_res3 <- mdd_grid(mfbvar_obj, lambda1_grid, lambda2_grid, method = 2, n_cores = 7, p_trunc = 0.8)
+mdd_res4 <- mdd_grid(mfbvar_obj, lambda1_grid, lambda2_grid, method = 1, n_cores = 7)
+
+lambda1_grid <- seq(1.1, 3, by = 0.1)
+lambda2_grid <- seq(0.5, 4, by = 0.5)
+mdd_res5 <- mdd_grid(mfbvar_obj, lambda1_grid, lambda2_grid, method = 1, n_cores = 7)
 ```
