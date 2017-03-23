@@ -20,6 +20,10 @@ gibbs_sampler_schorf(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lambda3, n_lags,
 
 \item{lambda2}{The lag decay.}
 
+\item{lambda3}{The tightness of the intercept prior variance.}
+
+\item{n_lags}{The number of lags.}
+
 \item{n_fcst}{The number of periods to forecast.}
 
 \item{n_reps}{The number of replications.}

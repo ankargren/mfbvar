@@ -25,6 +25,7 @@
 #' <%=ifelse(exists("m"), "@param m The mean vector of size \\code{p}.", "") %>
 #' <%=ifelse(exists("method"), "@param method The method to use for estimation of the log marginal data density. One of \\code{1} and \\code{2}.", "") %>
 #' <%=ifelse(exists("mfbvar_obj"), "@param mfbvar_obj An object of class \\code{mfbvar} containing the results.", "") %>
+#' <%=ifelse(exists("monthly_cols"), "@param monthly_cols Column indexes of monthly variables.", "") %>
 #' <%=ifelse(exists("M"), "@param M The mean matrix of size \\code{p * q}.", "") %>
 #' <%=ifelse(exists("mF"), "@param mF \\code{(n_vars*n_lags) * (n_vars*n_lags)} matrix containing parameters (companion form)", "") %>
 #' <%=ifelse(exists("mQ"), "@param mQ \\code{(n_vars*n_lags) * (n_vars*n_lags)} matrix whose \\code{n_vars*n_vars} top-left block is the Cholesky decomposition of the error covariance matrix", "") %>
@@ -41,6 +42,7 @@
 #' <%=ifelse(exists("n_vars"), "@param n_vars The number of variables.", "") %>
 #' <%=ifelse(exists("Omega_Pi"), "@param Omega_Pi The \\code{inv_prior_Pi_Omega} multiplied by \\code{prior_Pi} matrix.", "") %>
 #' <%=ifelse(exists("P"), "@param P \\code{p * p} covariance matrix.", "") %>
+#' <%=ifelse(exists("postsim"), "@param postsim The log marginal data density for \\code{Z}.", "") %>
 #' <%=ifelse(exists("Q"), "@param Q \\code{q * q} covariance matrix.", "") %>
 #' <%=ifelse(exists("Q_comp"), "@param Q_comp The lower-triangular Cholesky decomposition of the covariance matrix (in companion form).", "") %>
 #' <%=ifelse(exists("p_trunc"), "@param p_trunc \\code{1-p_trunc} is the degree of truncation (i.e. \\code{p_trunc=1} is no truncation).", "") %>
@@ -79,6 +81,7 @@
 #' <%=ifelse(exists("Y"), "@param Y The data matrix of size \\code{(n_T + n_lags) * n_vars} with \\code{NA} representing missingness. Must correspond well to the specification of \\code{M_Lambda}.", "") %>
 #' <%=ifelse(exists("Y_tilde"), "@param Y_tilde The lag-corrected data matrix (with no missing values) of size \\code{n_T * n_vars}.", "") %>
 #' <%=ifelse(exists("z"), "@param z A matrix of size \\code{(n_T + n_lags) * n_vars} of data.", "") %>
+#' <%=ifelse(exists("Z"), "@param Z The array of draws from the posterior of \\code{Z}.", "") %>
 #' <%=ifelse(exists("Z_array"), "@param Z_array The array of draws of Z from the Gibbs sampler.", "") %>
 #' <%=ifelse(exists("z0"), "@param z0 A matrix of size \\code{(n_lags*n_vars) * n_vars} of initial values of the latent variable.", "") %>
 #' <%=ifelse(exists("Z_1"), "@param Z_1 The matrix \\code{Z[1:n_lags,, 1]} (used as initial value).", "") %>

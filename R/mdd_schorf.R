@@ -10,14 +10,14 @@
 #' @return The log marginal data density estimate (bar a constant)
 mdd_schorf <- function(monthly_cols, postsim, Z, n_T) {
 
-  monthly_cols <- c(4, 5)
-  lstate0 <- Z[, monthly_cols, ]
+  n_TT <- (n_T %% 3) + 1
+  lstate0 <- Z[n_TT:n_T, monthly_cols, , drop = FALSE]
 
   lstateA <- c()
-  for (i in monthly_cols) {
-    lstate1 <- t(lstate0[seq(from = n_T-floor(n_T/3)*3, to = n_T, by = 3), i, ])
-    lstate2 <- t(lstate0[seq(from = n_T-floor(n_T/3)*3 + 1, to = n_T, by = 3), i, ])
-    lstate3 <- t(lstate0[seq(from = n_T-floor(n_T/3)*3 + 2, to = n_T, by = 3), i, ])
+  for (i in seq_along(monthly_cols)) {
+    lstate1 <- t(lstate0[seq(from = 1, to = n_T-n_TT+1, by = 3), i, ])
+    lstate2 <- t(lstate0[seq(from = 2, to = n_T-n_TT+1, by = 3), i, ])
+    lstate3 <- t(lstate0[seq(from = 3, to = n_T-n_TT+1, by = 3), i, ])
 
     # I don't know why we do this!
     temp <- cbind(lstate3 - lstate2, lstate2 - lstate1)
@@ -28,7 +28,7 @@ mdd_schorf <- function(monthly_cols, postsim, Z, n_T) {
   n_simul <- nrow(lstateA)
 
   drawmean <- colMeans(lstateA)
-  drawsig <- crossprod(lstateA)/n_simul - crossprod(drawmean)
+  drawsig <- crossprod(lstateA)/n_simul - tcrossprod(drawmean)
 
 
   svd_res <- svd(drawsig, nu = ncol(drawsig))
@@ -62,9 +62,9 @@ mdd_schorf <- function(monthly_cols, postsim, Z, n_T) {
     for (j in 1:n_simul) {
       lnfpara <- -0.5*n_para*log(2*pi) - 0.5*drawsiglndet - 0.5*quadpara[j] - log(p[i])
       indpara <- quadpara[j] < pcrit[i]
-      invlike[j, i] <- exp(lnfpara - postsim[j]) * indpara
+      invlike[j, i] <- exp(lnfpara - (postsim[j]-postsim[1])) * indpara
     }
-    meaninvlike <- mean(invlike)
+    meaninvlike <- colMeans(invlike)
     mdd <- -log(meaninvlike)
   }
   return(log_mdd = mdd)

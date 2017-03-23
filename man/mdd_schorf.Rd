@@ -7,6 +7,12 @@
 mdd_schorf(monthly_cols, postsim, Z, n_T)
 }
 \arguments{
+\item{monthly_cols}{Column indexes of monthly variables.}
+
+\item{postsim}{The log marginal data density for \code{Z}.}
+
+\item{Z}{The array of draws from the posterior of \code{Z}.}
+
 \item{n_T}{The number of time points.}
 }
 \value{

@@ -8,6 +8,7 @@
 #' @templateVar lambda1 TRUE
 #' @templateVar lambda2 TRUE
 #' @templateVar lambda3 TRUE
+#' @templateVar n_lags TRUE
 #' @templateVar n_fcst TRUE
 #' @templateVar n_reps TRUE
 #' @templateVar init_Pi TRUE
@@ -148,10 +149,8 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
   breaks[1] <- n_vars
 
   ## 2: AR(2), ..., AR(p) coefficients
+  X_dum[1:(n_vars*n_lags), 1:(n_vars*n_lags)] <- kronecker(diag((1:n_lags)^lambda2), diag(s_bar*Y_bar))*lambda1
   if (n_lags > 1) {
-    for (i in 2:n_lags) {
-      X_dum[(breaks[1] + (i-1)*n_vars + 1):(breaks[1] + i*n_vars), ((i-1)*n_vars+1):(n_vars*i)] <- (lambda1 * i^lambda2) * diag(s_bar * Y_bar)
-    }
     breaks[2] <- breaks[1] + (n_lags - 1)*n_vars
   } else {
     breaks[2] <- breaks[1]
@@ -190,30 +189,32 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
   ####################################################
 
   # MDD
-  svd_res <- svd(crossprod(X_dum), nu = n_XX)
-  ux <- svd_res$u
-  sx <- rbind(diag(svd_res$d), matrix(0, nrow = dim(ux)[1]- length(svd_res$d), ncol = length(svd_res$d)))
-  vx <- svd_res$v
-  sv_XX <- ux %*% sqrt(sx) %*% t(vx)
+  # svd_res <- svd(crossprod(X_dum), nu = n_XX)
+  # ux <- svd_res$u
+  # sx <- rbind(diag(svd_res$d), matrix(0, nrow = dim(ux)[1]- length(svd_res$d), ncol = length(svd_res$d)))
+  # vx <- svd_res$v
+  # sv_XX <- ux %*% sqrt(sx) %*% t(vx)
+  #
+  # upx <- ux
+  # spx <- sx
+  # vpx <- vx
+  # inv_spx <- matrix(0, ncol = nrow(spx), nrow = nrow(spx))
+  #
+  # for (rr in 1:nrow(spx)) {
+  #   if (spx[rr, rr] > 1e-12) {
+  #     inv_spx[rr, rr] <- 1/spx[rr, rr]
+  #   }
+  # }
+  #
+  # inv_sv_XX <- t(upx %*% inv_spx %*% t(vpx))
 
-  upx <- ux
-  spx <- sx
-  vpx <- vx
-  inv_spx <- matrix(0, ncol = nrow(spx), nrow = nrow(spx))
-
-  for (rr in 1:nrow(spx)) {
-    if (spx[rr, rr] > 1e-12) {
-      inv_spx[rr, rr] <- 1/spx[rr, rr]
-    }
-  }
-
-  inv_sv_XX <- t(upx %*% inv_spx %*% t(vpx))
 
   n_dummy <- nrow(X_dum)
-  S0 <- crossprod(Y_dum) - (crossprod(Y_dum, X_dum) %*% inv_sv_XX) %*% crossprod(X_dum, Y_dum)
+  Phi <- tcrossprod(chol2inv(chol(crossprod(X_dum))), crossprod(Y_dum, X_dum))
+  S0 <- crossprod(Y_dum - X_dum %*% Phi)
   gam0 <- sum(lgamma(0.5 * (n_dummy - n_XX + 1 - 1:n_vars)))
 
-  lnpY0 <- -n_vars * (n_dummy - n_XX) * 0.5 * log(pi) - n_vars * 0.5 * determinant(crossprod(X_dum), logarithm = TRUE)$modulus -
+  lnpY0 <- - n_vars * 0.5 * determinant(crossprod(X_dum), logarithm = TRUE)$modulus -
     (n_dummy - n_XX)*0.5*determinant(crossprod(S0), logarithm = TRUE)$modulus + n_vars * (n_vars - 1) * 0.25*log(pi) + gam0
 
 
@@ -275,31 +276,34 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
     roots[r] <- max_eig_cpp(Pi_comp)
 
 
-    # MDD
-    svd_res <- svd(crossprod(XX), nu = ncol(XX))
-    ux <- svd_res$u
-    sx <- rbind(diag(svd_res$d), matrix(0, nrow = dim(ux)[1]- length(svd_res$d), ncol = length(svd_res$d)))
-    vx <- svd_res$v
-    sv_XX <- ux %*% sqrt(sx) %*% t(vx)
+    # # MDD
+    # svd_res <- svd(crossprod(XX), nu = ncol(XX))
+    # ux <- svd_res$u
+    # sx <- rbind(diag(svd_res$d), matrix(0, nrow = dim(ux)[1]- length(svd_res$d), ncol = length(svd_res$d)))
+    # vx <- svd_res$v
+    # sv_XX <- ux %*% sqrt(sx) %*% t(vx)
+    #
+    # upx <- ux
+    # spx <- sx
+    # vpx <- vx
+    # inv_spx <- matrix(0, ncol = nrow(spx), nrow = nrow(spx))
+    #
+    # for (rr in 1:nrow(spx)) {
+    #   if (spx[rr, rr] > 1e-12) {
+    #     inv_spx[rr, rr] <- 1/spx[rr, rr]
+    #   }
+    # }
+    #
+    # inv_sv_XX <- t(upx %*% inv_spx %*% t(vpx))
 
-    upx <- ux
-    spx <- sx
-    vpx <- vx
-    inv_spx <- matrix(0, ncol = nrow(spx), nrow = nrow(spx))
 
-    for (rr in 1:nrow(spx)) {
-      if (spx[rr, rr] > 1e-12) {
-        inv_spx[rr, rr] <- 1/spx[rr, rr]
-      }
-    }
-
-    inv_sv_XX <- t(upx %*% inv_spx %*% t(vpx))
 
     n_tot <- nrow(XX)
-    S1 <- crossprod(YY) - (crossprod(YY, XX) %*% inv_sv_XX) %*% crossprod(XX, YY)
+    Phi <- tcrossprod(chol2inv(chol(crossprod(XX))), crossprod(YY, XX))
+    S1 <- crossprod(YY - XX %*% Phi)
     gam1 <- sum(lgamma(0.5 * (n_tot - n_XX + 1 - 1:n_vars)))
 
-    lnpY1[i] <- -n_vars * (n_tot - n_XX) * 0.5 * log(pi) - n_vars * 0.5 * determinant(crossprod(XX), logarithm = TRUE)$modulus -
+    lnpY1[r] <- - n_vars * 0.5 * determinant(crossprod(XX), logarithm = TRUE)$modulus -
       (n_tot - n_XX)*0.5*determinant(crossprod(S1), logarithm = TRUE)$modulus + n_vars * (n_vars - 1) * 0.25*log(pi) + gam1
 
     Pi_r <- Pi[,,r]
