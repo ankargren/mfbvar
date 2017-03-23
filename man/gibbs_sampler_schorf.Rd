@@ -14,6 +14,12 @@ gibbs_sampler_schorf(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lambda3, n_lags,
 
 \item{Lambda}{The Lambda matrix (size \code{n_vars* (n_vars*n_lags)}).}
 
+\item{prior_Pi_AR1}{The prior means for the AR(1) coefficients.}
+
+\item{lambda1}{The overall tightness.}
+
+\item{lambda2}{The lag decay.}
+
 \item{n_fcst}{The number of periods to forecast.}
 
 \item{n_reps}{The number of replications.}
@@ -29,24 +35,6 @@ gibbs_sampler_schorf(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lambda3, n_lags,
 \item{check_roots}{Logical, if roots of the companion matrix are to be checked to ensure stationarity.}
 
 \item{verbose}{Logical, if progress should be printed to the console.}
-
-\item{d}{The matrix of size \code{(n_T + n_lags) * n_determ} of deterministic terms.}
-
-\item{d_fcst}{The deterministic terms for the forecasting period.}
-
-\item{init_psi}{Matrix to initialize the steady-state parameters.}
-
-\item{prior_nu}{The prior degrees of freedom.}
-
-\item{prior_Pi_mean}{Matrix of size \code{n_vars * (n_vars*n_lags)} containing the prior for the mean of the dynamic coefficients.}
-
-\item{prior_Pi_Omega}{Matrix of size \code{(n_vars*n_lags)* (n_vars*n_lags)} containing the prior for (part of) the prior covariance of the dynamic coefficients.}
-
-\item{prior_psi_mean}{Vector of length \code{n_determ*n_vars} with the prior means of the steady-state parameters.}
-
-\item{prior_psi_Omega}{Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.}
-
-\item{prior_S}{The prior for \eqn{\Sigma}.}
 }
 \value{
 An object of class mfbvar.

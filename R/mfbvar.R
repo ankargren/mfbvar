@@ -238,7 +238,9 @@ plot.mfbvar <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
     theme_minimal() +
     theme(legend.position="bottom")
   breaks <- ggplot_build(p)$layout$panel_ranges[[1]]$x.major_source
-  breaks <- breaks[-which(!(breaks %in% 1:x$n_T))]
+  if (length(which(!(breaks %in% 1:x$n_T))) > 0) {
+    breaks <- breaks[-which(!(breaks %in% 1:x$n_T))]
+  }
   p + scale_x_continuous(breaks = breaks,
                          labels = names_row[breaks])
 }

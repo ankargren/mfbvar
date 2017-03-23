@@ -50,9 +50,9 @@ ols_initialization <- function(z, d, n_lags, n_T, n_vars, n_determ) {
   Gam <- t(ols_pi(XX, YY))
   Pi  <- Gam[, 1:(n_vars * n_lags)]
   const <- Gam[, (n_vars * n_lags + 1):(n_vars * n_lags + n_determ)]
-psi <- c(solve(diag(n_vars) - Pi %*%
-                 kronecker(matrix(1, n_lags, 1), diag(n_vars))) %*% const)
+  psi <- c(solve(diag(n_vars) - Pi %*%
+                   kronecker(matrix(1, n_lags, 1), diag(n_vars))) %*% const)
 
-         return(list(Pi = Pi, S = crossprod(YY - XX %*% t(Gam)) / n_T,
-                     psi = psi, const = const))
+  return(list(Pi = Pi, S = crossprod(YY - XX %*% t(Gam)) / n_T,
+              psi = psi, const = const))
 }

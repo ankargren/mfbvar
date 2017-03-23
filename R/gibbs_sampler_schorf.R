@@ -265,8 +265,9 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
       }
       if (root < 1) {
         stationarity_check <- TRUE
-        num_try <- iter
+        num_tries[r] <- iter
         Pi[,, r] <- Pi_temp[,,iter]
+        roots[r] <- root
       }
       if (iter == 1000) {
         stop("Attempted to draw stationary Pi 1,000 times.")
@@ -335,7 +336,7 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
                      Z_fcst = NULL, mdd = NULL, smoothed_Z = NULL, n_determ = 1,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = NULL, prior_Pi_mean = NULL,
                      prior_S = NULL, prior_nu = NULL, post_nu = NULL, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
-                     prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, Lambda = Lambda,
+                     prior_psi_Omega = NULL, prior_psi_mean = NULL, n_reps = n_reps, Lambda = Lambda,
                      lnpYY = lnpY1 - lnpY0)
 
   if (check_roots == TRUE) {
