@@ -94,7 +94,7 @@ posterior_psi <- function(Pi_r, Sigma_r, Z_r1, prior_psi_mean, prior_psi_Omega, 
   Y_tilde <- build_Y_tilde(Pi = Pi_r, z = Z_r1)
 
   post_psi <- posterior_psi_mean(U = U, D_mat = D_mat, Sigma = Sigma_r, prior_psi_Omega = prior_psi_Omega,
-                            post_psi_Omega = post_psi_Omega, Y_tilde = Y_tilde, prior_psi_mean = prior_psi_mean)
+                                 post_psi_Omega = post_psi_Omega, Y_tilde = Y_tilde, prior_psi_mean = prior_psi_mean)
   psi_r <- t(rmultn(m = post_psi, Sigma = post_psi_Omega))
   return(psi_r)
 }
