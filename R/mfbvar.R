@@ -191,15 +191,16 @@ plot.mfbvar <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
     pred_level <- c(0.10, 0.90)
   }
 
-  p <- ggplot(aes = aes(x = time))
+  names_col <- if (is.null(x$names_col)) paste0("x", 1:x$n_vars) else x$names_col
+  names_row <- if (is.null(x$names_row)) 1:x$n_T else x$names_row
+  p <- ggplot(mapping = aes(x = time))
 
   if (!is.null(x$psi)) {
 
     ss_lower  <- x$d[plot_range, ] %*% t(matrix(apply(x$psi, 2, quantile, prob = ss_level[1]), ncol = x$n_determ))
     ss_median <- x$d[plot_range, ] %*% t(matrix(apply(x$psi, 2, quantile, prob = 0.5), ncol = x$n_determ))
     ss_upper  <- x$d[plot_range, ] %*% t(matrix(apply(x$psi, 2, quantile, prob = ss_level[2]), ncol = x$n_determ))
-    names_col <- if (is.null(x$names_col)) paste0("x", 1:x$n_vars) else x$names_col
-    names_row <- if (is.null(x$names_row)) 1:x$n_T else x$names_row
+
     ss <- data.frame(expand.grid(time = plot_range, names_col = names_col), lower = c(ss_lower), median = c(ss_median),
                      upper = c(ss_upper))
     ss$value <- c(as.matrix(x$Y[plot_range,]))

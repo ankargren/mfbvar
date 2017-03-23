@@ -107,8 +107,6 @@ mfbvar_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lambda3, n_
   dimnames(main_run$Sigma) <- list(names_col,
                                    names_col,
                                    iteration = 1:n_reps)
-  dimnames(main_run$psi) <- list(iteration = 1:n_reps,
-                                 param = paste0(rep(names_col, 1), ".", rep(1, each = n_vars)))
   class(main_run) <- "mfbvar"
   return(main_run)
 

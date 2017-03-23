@@ -12,6 +12,7 @@
 #' <%=ifelse(exists("lambda1_grid"), "@param lambda1_grid The grid of values to use for lambda1.", "") %>
 #' <%=ifelse(exists("lambda2_grid"), "@param lambda2_grid The grid of values to use for lambda2.", "") %>
 #' <%=ifelse(exists("lambda2"), "@param lambda2 The lag decay.", "") %>
+#' <%=ifelse(exists("lambda3"), "@param lambda3 The tightness of the intercept prior variance.", "") %>
 #' <%=ifelse(exists("lH"), "@param lH A list of length \\code{n_T}, where \\code{M_Lambda[[t]]} corresponds to \\eqn{M_t\\Lambda}. The column dimension of each element should be \\code{n_lags*n_vars}, but the row dimension may vary.", "") %>
 #' <%=ifelse(exists("init_Pi"), "@param init_Pi Matrix to initialize the dynamic coefficients.", "") %>
 #' <%=ifelse(exists("init_psi"), "@param init_psi Matrix to initialize the steady-state parameters.", "") %>
