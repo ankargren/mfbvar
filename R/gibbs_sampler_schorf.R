@@ -62,7 +62,6 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
 
   Pi    <- array(NA, dim = c(n_vars, n_vars * n_lags + 1, n_reps))
   Sigma <- array(NA, dim = c(n_vars, n_vars, n_reps))
-  psi   <- array(NA, dim = c(n_reps, n_vars))
   Z     <- array(NA, dim = c(n_T, n_vars, n_reps))
   if (!is.null(n_fcst)) {
     Z_fcst<- array(NA, dim = c(n_fcst+n_lags, n_vars, n_reps),
@@ -186,8 +185,7 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
   Pi_r1 <- Pi[,,1]
   const_r1 <- Pi_r1[, ncol(Pi_r1)]
   Pi_r1 <- Pi_r1[, -ncol(Pi_r1)]
-  psi[1, ] <- solve(diag(n_vars) - Pi_r1 %*%
-                      kronecker(matrix(1, n_lags, 1), diag(n_vars))) %*% const_r1
+
 
   ####################################################
 
@@ -220,17 +218,38 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
 
 
 
+  mZ <- as.matrix(Y[-(1:n_lags), ])
+  mX <- matrix(1, nrow = nrow(mZ))
+  lH <- build_M_Lambda(mZ, Lambda, n_vars, n_lags, n_T_)
+
+  iT <- n_T_
+  ip <- n_vars
+  iq <- n_vars * n_lags
+  is <- 1
+  P0 <- NULL
+  X0 <- matrix(1, 1, 1)
+  lH0 <- vector("list", n_T_)
+  for(iter in 1:n_T_) {
+    lH0[[iter]] = matrix(lH[[iter]][!is.na(Y[n_lags + iter,]),], ncol = n_vars * n_lags)
+  }
+  h0 <- matrix(t(Z_1[nrow(Z_1):1, ]), ncol = 1)
+
   pb <- txtProgressBar(min = 2, max = n_reps, style = 3)
   for (r in 2:(n_reps)) {
 
     Pi_r1 <- Pi[,,r-1]
     const_r1 <- Pi_r1[, ncol(Pi_r1)]
     Pi_r1 <- Pi_r1[, -ncol(Pi_r1)]
-    psi_r1 <- psi[r-1, ]
     Sigma_r1 <- Sigma[,,r-1]
 
-    Z_res <- posterior_Z(Y, d, Pi_r1, Sigma_r1, psi_r1, Z_1, Lambda, n_vars, n_lags, n_T_, smooth_state)
-    Z[,, r] <- Z_res$Z_r
+    mF <- build_companion(Pi_r1, n_vars, n_lags)
+    mQ <- diag(0, n_vars*n_lags)
+    mQ[1:n_vars, 1:n_vars] <- t(chol(Sigma_r1))
+    mB <- matrix(c(const_r1, rep(0, n_vars*(n_lags - 1))), ncol = 1)
+    Z_res <- smooth_samp_xx(mZ = mZ, mX = mX, lH = lH, lH0 = lH0, mF = mF, mB = mB, mQ = mQ,
+                            iT = iT, ip = ip, iq = iq, is = is, h0 = h0,
+                            P0 = P0, X0 = X0)$mh[, 1:n_vars]
+    Z[,, r] <- rbind(Z_1, Z_res)
 
     Z_comp <- build_Z(z = Z[,, r], n_lags = n_lags)
     XX_act <- Z_comp[-nrow(Z_comp), ]
@@ -251,28 +270,9 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
     Sigma_r <- rinvwish(v = post_nu, S = S)
     Sigma[,, r]   <- Sigma_r
 
-    # Draw Pi conditional on Sigma
-    # This ensures that the draw is stationary
-    stationarity_check <- FALSE
-    iter <- 0
-    Pi_temp <- array(NA, dim = c(n_vars, n_vars * n_lags + 1, ifelse(check_roots, 1000, 1)))
-    while(stationarity_check == FALSE) {
-      iter <- iter + 1
-      Pi_temp[,,iter] <- rmatn(M = t(post_Pi), Q = post_Pi_Omega, P = Sigma_r)
-      Pi_comp    <- build_companion(Pi_temp[,-ncol(Pi_r1), iter], n_vars = n_vars, n_lags = n_lags)
-      if (check_roots == TRUE) {
-        root <- max_eig_cpp(Pi_comp)
-      }
-      if (root < 1) {
-        stationarity_check <- TRUE
-        num_tries[r] <- iter
-        Pi[,, r] <- Pi_temp[,,iter]
-        roots[r] <- root
-      }
-      if (iter == 1000) {
-        stop("Attempted to draw stationary Pi 1,000 times.")
-      }
-    }
+    Pi[,, r] <- rmatn(M = t(post_Pi), Q = post_Pi_Omega, P = Sigma_r)
+    Pi_comp  <- build_companion(Pi[,-ncol(Pi_r1), r], n_vars = n_vars, n_lags = n_lags)
+    roots[r] <- max_eig_cpp(Pi_comp)
 
 
     # MDD
@@ -305,22 +305,19 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
     Pi_r <- Pi[,,r]
     const_r <- Pi_r[, ncol(Pi_r)]
     Pi_r <- Pi_r[, -ncol(Pi_r)]
-    psi[r, ] <- solve(diag(n_vars) - Pi_r %*%
-                        kronecker(matrix(1, n_lags, 1), diag(n_vars))) %*% const_r
+
 
     ################################################################
     ### Forecasting step
     if (!is.null(n_fcst)) {
 
       # Forecast the process with mean subtracted
-      Z_fcst[1:n_lags, , r] <- Z[(n_T - n_lags+1):n_T,, r] - d[(n_T - n_lags+1):n_T, ] %*% t(matrix(psi[r, ], nrow = n_vars))
+      Z_fcst[1:n_lags, , r] <- Z[(n_T - n_lags+1):n_T,, r]
       for (h in 1:n_fcst) {
-        Z_fcst[n_lags + h, , r] <- Pi_r  %*% matrix(c(t(Z_fcst[(n_lags+h-1):h,, r])), ncol = 1) +
+        Z_fcst[n_lags + h, , r] <- const_r + Pi_r  %*% matrix(c(t(Z_fcst[(n_lags+h-1):h,, r])), ncol = 1) +
           rmultn(m = matrix(0, nrow = n_vars), Sigma = Sigma[,,r])
       }
 
-      # Add the mean
-      Z_fcst[, , r] <- Z_fcst[, , r] + matrix(1, nrow = nrow(Z_fcst[,,1]), ncol = 1) %*% t(matrix(psi[r, ], nrow = n_vars))
     }
     #########################################
     # Add the likelihood here
@@ -332,7 +329,7 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
 
   ################################################################
   ### Prepare the return object
-  return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z, roots = NULL, num_tries = NULL,
+  return_obj <- list(Pi = Pi, Sigma = Sigma, psi = NULL, Z = Z, roots = NULL, num_tries = NULL,
                      Z_fcst = NULL, mdd = NULL, smoothed_Z = NULL, n_determ = 1,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = NULL, prior_Pi_mean = NULL,
                      prior_S = NULL, prior_nu = NULL, post_nu = NULL, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,

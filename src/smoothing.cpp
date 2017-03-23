@@ -225,10 +225,10 @@ arma::mat simulation_smoother(arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, 
   arma::mat Z = smoother(Y-YY,  Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0-z0, P0);
   return(Z+mhh);
   /*return Rcpp::List::create(Rcpp::Named("Z1")  = Z1,
-                            Rcpp::Named("Z2")  = Z2,
-                            Rcpp::Named("mhh") = mhh,
-                            Rcpp::Named("YY") = YY,
-                            Rcpp::Named("res") = Z1-Z2+mhh);*/
+   Rcpp::Named("Z2")  = Z2,
+   Rcpp::Named("mhh") = mhh,
+   Rcpp::Named("YY") = YY,
+   Rcpp::Named("res") = Z1-Z2+mhh);*/
 
 }
 

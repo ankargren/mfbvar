@@ -35,6 +35,14 @@ rmultn <- function(m, Sigma) {
     .Call('mfbvar_rmultn', PACKAGE = 'mfbvar', m, Sigma)
 }
 
+vec_na_rm <- function(vx) {
+    .Call('mfbvar_vec_na_rm', PACKAGE = 'mfbvar', vx)
+}
+
+smooth <- function(mZ, mX, lH, mF, mB, mQ, iT, ip, iq, is, h0, P0, X0) {
+    .Call('mfbvar_smooth', PACKAGE = 'mfbvar', mZ, mX, lH, mF, mB, mQ, iT, ip, iq, is, h0, P0, X0)
+}
+
 #' @title Smooth and sample from the smoothed distribution
 #'
 #' @description Functions for smoothing and sampling from the (smoothed) distribution \eqn{p(Z_{1:T}|Y_{1:T}, \Theta)}.
