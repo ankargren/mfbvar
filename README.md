@@ -1,7 +1,32 @@
+mfbvar
+================
+
+-   [Version news](#version-news)
+    -   [0.2.5 (2017-03-24)](#section)
+    -   [0.2.3 (2017-03-14)](#section-1)
+    -   [0.2.1 (2017-03-11)](#section-2)
+-   [Example file](#example-file)
+    -   [Data generation](#data-generation)
+    -   [Settings and priors](#settings-and-priors)
+    -   [Main call](#main-call)
+    -   [Obtaining the results](#obtaining-the-results)
+    -   [Marginal data density](#marginal-data-density)
+    -   [Profiling](#profiling)
+    -   [Minnesota prior](#minnesota-prior)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
-News (2017-03-14)
-=================
+Version news
+============
+
+0.2.5 (2017-03-24)
+------------------
+
+What is new in version 0.2.5:
+
+-   A model without a steady-state prior is now implemented using a Minnesota MNIW prior, which is computed using a dummy observations implementation. It is a hybrid of what Banbura et al (2011), Brave et al (2016) and Schorfheide and Song (2015) use. It allows for an overall tightness hyperparameter, a lag decay hyperparameter and a hyperparameter for the intercept. Note that the dummy observations implementation is different in the three listed articles: Banbura et al (2011) have no sample mean included (see their equation (5) and compare it to equation (14) in Brave) and Banbura et al and Brave et al use the full-sample means and error standard deviations in the priors, whereas Schorfheide and Song only make use of a pre-sample. The current implementation in `mfbvar` is to use the full sample for both.
+
+0.2.3 (2017-03-14)
+------------------
 
 What is new in version 0.2.3:
 
@@ -11,8 +36,8 @@ What is new in version 0.2.3:
 -   `interval_to_moments()` to convert a matrix of prior probability intervals to prior moments of `psi`
 -   Unit testing (using `testthat`) is now incorporated by checking the 100th draw
 
-News (2017-03-11)
------------------
+0.2.1 (2017-03-11)
+------------------
 
 What is new in version 0.2.1:
 
@@ -31,6 +56,11 @@ First, we generate some dummy data as a VAR(1) with three variables whose uncond
 
 ``` r
 library(mfbvar)
+#> 
+#> Attaching package: 'mfbvar'
+#> The following object is masked from 'package:stats':
+#> 
+#>     smooth
 TT <- 200
 n_vars <- 3
 set.seed(100)
@@ -109,12 +139,11 @@ lambda2 <- 1
 The prior on the steady states also needs to be set:
 
 ``` r
-prior_psi_mean <- c(0, 0, 0) 
-prior_psi_Omega <- c(0.5, 0.5, 0.5) 
-prior_psi_Omega <- diag((prior_psi_Omega / (qnorm(0.975, mean = 0, sd = 1)*2))^2) 
+prior_psi_int <- matrix(c(-0.25, 0.25), 3, 2, byrow = TRUE)
+prior_psi <- interval_to_moments(prior_psi_int)
+prior_psi_mean <- prior_psi$prior_psi_mean
+prior_psi_Omega <- prior_psi$prior_psi_Omega
 ```
-
-The third line simply converts the length of the prior interval to the variance in a normal distribution.
 
 Finally, we also need to create the matrix that relates unobservables to observables. In this example, the first two variables are assumed to be observed every period, whereas the third is assumed to be observed every third time period. Moreover, when it is observed, we observe the average over three periods. This can be specified using the `build_Lambda()` function:
 
@@ -159,25 +188,29 @@ summary(mfbvar_obj)
 #> Posterior means computed
 #> 
 #> Pi:
-#>              GDP.1    Infl.1 Interest.1       GDP.2     Infl.2 Interest.2
-#> GDP      0.2467701 0.1905712 0.13849480 0.001015672 0.07926770 0.04078901
-#> Infl     0.1328758 0.2114197 0.09046319 0.016197890 0.05045790 0.03374226
-#> Interest 0.1686538 0.2654526 0.22852264 0.027153808 0.07362818 0.06835149
-#>                 GDP.3       Infl.3  Interest.3        GDP.4       Infl.4
-#> GDP      0.0009157218 0.0043586532 0.008650647  0.008153989 -0.001059212
-#> Infl     0.0056653333 0.0006571032 0.008621241 -0.000137672 -0.004142920
-#> Interest 0.0093120250 0.0174182153 0.025819416  0.006654419  0.004599498
-#>            Interest.4
-#> GDP      0.0005647538
-#> Infl     0.0030522296
-#> Interest 0.0098405867
+#>           indep
+#> dep            GDP.1    Infl.1 Interest.1       GDP.2     Infl.2
+#>   GDP      0.2467701 0.1905712 0.13849480 0.001015672 0.07926770
+#>   Infl     0.1328758 0.2114197 0.09046319 0.016197890 0.05045790
+#>   Interest 0.1686538 0.2654526 0.22852264 0.027153808 0.07362818
+#>           indep
+#> dep        Interest.2        GDP.3       Infl.3  Interest.3        GDP.4
+#>   GDP      0.04078901 0.0009157218 0.0043586532 0.008650647  0.008153989
+#>   Infl     0.03374226 0.0056653333 0.0006571032 0.008621241 -0.000137672
+#>   Interest 0.06835149 0.0093120250 0.0174182153 0.025819416  0.006654419
+#>           indep
+#> dep              Infl.4   Interest.4
+#>   GDP      -0.001059212 0.0005647538
+#>   Infl     -0.004142920 0.0030522296
+#>   Interest  0.004599498 0.0098405867
 #> 
 #> 
 #>  Sigma:
-#>                GDP      Infl  Interest
-#> GDP      1.1460172 0.1387042 0.2720717
-#> Infl     0.1387042 1.1839855 0.5274565
-#> Interest 0.2720717 0.5274565 1.6322905
+#>           
+#>                  GDP      Infl  Interest
+#>   GDP      1.1460172 0.1387042 0.2720717
+#>   Infl     0.1387042 1.1839855 0.5274565
+#>   Interest 0.2720717 0.5274565 1.6322905
 #> 
 #> 
 #>  Psi:
@@ -289,53 +322,53 @@ The return is an object of class `mdd`, for which three methods are implemented.
 
 ``` r
 mdd_res
-#>              [,1]      [,2]      [,3]      [,4]      [,5]      [,6]
-#> log_mdd -683.7274 -673.0102 -667.7217 -665.3272 -662.7505 -660.8704
+#>              [,1]    [,2]      [,3]      [,4]      [,5]      [,6]
+#> log_mdd -683.9068 -672.71 -667.5279 -664.8309 -661.5852 -658.7216
+#> lambda1    0.1000    0.15    0.2000    0.2500    0.3000    0.3500
+#> lambda2    1.0000    1.00    1.0000    1.0000    1.0000    1.0000
+#>              [,7]      [,8]      [,9]     [,10]     [,11]     [,12]
+#> log_mdd -659.8579 -659.4978 -655.0714 -685.0139 -671.6465 -664.0274
+#> lambda1    0.4000    0.4500    0.5000    0.1000    0.1500    0.2000
+#> lambda2    1.0000    1.0000    1.0000    1.5000    1.5000    1.5000
+#>             [,13]     [,14]     [,15]     [,16]     [,17]     [,18]
+#> log_mdd -659.6101 -655.7387 -654.6977 -652.0273 -651.6987 -649.1619
+#> lambda1    0.2500    0.3000    0.3500    0.4000    0.4500    0.5000
+#> lambda2    1.5000    1.5000    1.5000    1.5000    1.5000    1.5000
+#>             [,19]     [,20]     [,21]     [,22]    [,23]     [,24]
+#> log_mdd -685.7092 -671.2205 -662.7641 -657.6189 -655.236 -650.3005
+#> lambda1    0.1000    0.1500    0.2000    0.2500    0.300    0.3500
+#> lambda2    2.0000    2.0000    2.0000    2.0000    2.000    2.0000
+#>             [,25]     [,26]     [,27]     [,28]    [,29]     [,30]
+#> log_mdd -650.3692 -650.9158 -645.2381 -686.3874 -671.101 -662.3744
+#> lambda1    0.4000    0.4500    0.5000    0.1000    0.150    0.2000
+#> lambda2    2.0000    2.0000    2.0000    2.5000    2.500    2.5000
+#>            [,31]     [,32]     [,33]     [,34]     [,35]     [,36]
+#> log_mdd -655.835 -650.1671 -647.8125 -647.4244 -647.0225 -645.7987
+#> lambda1    0.250    0.3000    0.3500    0.4000    0.4500    0.5000
+#> lambda2    2.500    2.5000    2.5000    2.5000    2.5000    2.5000
+#>             [,37]     [,38]     [,39]     [,40]     [,41]     [,42]
+#> log_mdd -686.8133 -671.1491 -662.1048 -656.3391 -650.3463 -647.3307
 #> lambda1    0.1000    0.1500    0.2000    0.2500    0.3000    0.3500
-#> lambda2    1.0000    1.0000    1.0000    1.0000    1.0000    1.0000
-#>              [,7]      [,8]      [,9]   [,10]     [,11]     [,12]
-#> log_mdd -660.5268 -656.3475 -653.2478 -684.98 -672.0283 -664.5906
-#> lambda1    0.4000    0.4500    0.5000    0.10    0.1500    0.2000
-#> lambda2    1.0000    1.0000    1.0000    1.50    1.5000    1.5000
-#>             [,13]     [,14]     [,15]     [,16]    [,17]    [,18]    [,19]
-#> log_mdd -659.8905 -656.5388 -654.9418 -656.6594 -650.892 -651.482 -685.833
-#> lambda1    0.2500    0.3000    0.3500    0.4000    0.450    0.500    0.100
-#> lambda2    1.5000    1.5000    1.5000    1.5000    1.500    1.500    2.000
-#>             [,20]     [,21]     [,22]     [,23]     [,24]     [,25]
-#> log_mdd -672.1435 -662.9657 -657.3545 -653.6948 -649.2687 -650.0762
-#> lambda1    0.1500    0.2000    0.2500    0.3000    0.3500    0.4000
-#> lambda2    2.0000    2.0000    2.0000    2.0000    2.0000    2.0000
-#>             [,26]     [,27]    [,28]     [,29]     [,30]     [,31]
-#> log_mdd -648.4397 -651.2195 -686.509 -671.3404 -661.6287 -656.7549
-#> lambda1    0.4500    0.5000    0.100    0.1500    0.2000    0.2500
-#> lambda2    2.0000    2.0000    2.500    2.5000    2.5000    2.5000
-#>             [,32]     [,33]     [,34]     [,35]     [,36]     [,37]
-#> log_mdd -651.7985 -649.1342 -646.7131 -646.6936 -646.8671 -686.9477
-#> lambda1    0.3000    0.3500    0.4000    0.4500    0.5000    0.1000
-#> lambda2    2.5000    2.5000    2.5000    2.5000    2.5000    3.0000
-#>             [,38]     [,39]     [,40]     [,41]     [,42]     [,43]
-#> log_mdd -670.2451 -660.9317 -655.0603 -651.8939 -647.3467 -647.2382
-#> lambda1    0.1500    0.2000    0.2500    0.3000    0.3500    0.4000
 #> lambda2    3.0000    3.0000    3.0000    3.0000    3.0000    3.0000
-#>             [,44]     [,45]     [,46]     [,47]     [,48]     [,49]
-#> log_mdd -645.1904 -646.9559 -686.6875 -670.5887 -659.8894 -655.5043
-#> lambda1    0.4500    0.5000    0.1000    0.1500    0.2000    0.2500
-#> lambda2    3.0000    3.0000    3.5000    3.5000    3.5000    3.5000
-#>             [,50]     [,51]     [,52]     [,53]     [,54]     [,55]
-#> log_mdd -648.8613 -646.6725 -645.8138 -644.5609 -643.4306 -686.8019
-#> lambda1    0.3000    0.3500    0.4000    0.4500    0.5000    0.1000
-#> lambda2    3.5000    3.5000    3.5000    3.5000    3.5000    4.0000
-#>             [,56]     [,57]     [,58]    [,59]    [,60]     [,61]
-#> log_mdd -671.4148 -661.3773 -654.6615 -649.855 -646.684 -646.8024
-#> lambda1    0.1500    0.2000    0.2500    0.300    0.350    0.4000
-#> lambda2    4.0000    4.0000    4.0000    4.000    4.000    4.0000
-#>             [,62]     [,63]
-#> log_mdd -643.5514 -644.8638
-#> lambda1    0.4500    0.5000
-#> lambda2    4.0000    4.0000
+#>             [,43]    [,44]     [,45]     [,46]     [,47]     [,48]
+#> log_mdd -647.4566 -646.166 -644.3134 -686.9366 -670.7347 -661.7908
+#> lambda1    0.4000    0.450    0.5000    0.1000    0.1500    0.2000
+#> lambda2    3.0000    3.000    3.0000    3.5000    3.5000    3.5000
+#>             [,49]     [,50]     [,51]     [,52]    [,53]     [,54]
+#> log_mdd -653.1947 -650.4752 -647.1988 -647.1809 -644.038 -644.5792
+#> lambda1    0.2500    0.3000    0.3500    0.4000    0.450    0.5000
+#> lambda2    3.5000    3.5000    3.5000    3.5000    3.500    3.5000
+#>             [,55]     [,56]     [,57]    [,58]     [,59]     [,60]
+#> log_mdd -687.0563 -671.0388 -660.2257 -654.694 -649.4749 -646.8574
+#> lambda1    0.1000    0.1500    0.2000    0.250    0.3000    0.3500
+#> lambda2    4.0000    4.0000    4.0000    4.000    4.0000    4.0000
+#>             [,61]     [,62]     [,63]
+#> log_mdd -645.8799 -644.6532 -643.5382
+#> lambda1    0.4000    0.4500    0.5000
+#> lambda2    4.0000    4.0000    4.0000
 summary(mdd_res)
-#> Highest log marginal data density: -643.4306 
-#> Obtained using lambda1 = 0.5 and lambda2 = 3.5
+#> Highest log marginal data density: -643.5382 
+#> Obtained using lambda1 = 0.5 and lambda2 = 4
 plot(mdd_res)
 ```
 
@@ -373,9 +406,59 @@ profiling %>%
 
 ![](README-profiling-1.png)
 
-To do
------
+Minnesota prior
+---------------
 
-Some things that remain to do:
+To compare the results, we can also run the model without a steady-state prior. The code is slightly different and currently fairly ugly behind the scenes, but in principle it is similar using equivalent functions but with a `_schorf` suffix (although this naming is temporary).
 
--   In terms of speed, improvements can most probably mostly be made using a different form of the state-space model as suggested by Schorfheide and Song (2015).
+Using the same simulated data as before, the call is made using `mfbvar_schorf`:
+
+``` r
+lambda3 <- 1e-05
+set.seed(100)
+mfbvar_minn <- mfbvar_schorf(Y, Lambda, prior_Pi_AR1, 
+                             lambda1, lambda2, lambda3, 
+                             n_lags, n_fcst, n_burnin, n_reps, 
+                             verbose = FALSE)
+```
+
+An `mdd` function is also provided, although this is not comparable to the previous calculations because of the omission of the normalizing constant. The details of the method are provided in Schorfheide and Song (2015).
+
+``` r
+monthly_cols <- 3
+postsim <- mfbvar_minn$lnpYY
+Z <- mfbvar_minn$Z
+mdd_minn <- mdd_schorf(monthly_cols, postsim, Z, n_T)
+```
+
+The names are temporary and follow Schorfheide and Song's nomenclature. In the future, this could easily be wrapped into a general `mdd` function.
+
+Comparing the forecasts:
+
+``` r
+fcst_SS <- apply(mfbvar_obj$Z_fcst[,,-1], 1:2, median) %>%
+  as_tibble() %>%
+  rownames_to_column("time") %>% 
+  as_tibble() %>%
+  gather(GDP:Interest, key = "series", value = "value") %>%
+  mutate(time = as.numeric(time), prior = "SS")
+fcst_minn <- apply(mfbvar_minn$Z_fcst[,,-1], 1:2, median) %>%
+  as_tibble() %>%
+  rownames_to_column("time") %>% 
+  as_tibble() %>%
+  gather(GDP:Interest, key = "series", value = "value") %>%
+  mutate(time = as.numeric(time), prior = "Minn")
+
+fcst <- bind_rows(fcst_SS, fcst_minn)
+
+ggplot(fcst, aes(x = time, y = value, linetype = prior)) +
+  geom_line() +
+  facet_wrap(~series) +
+  theme_minimal() +
+  labs(title = "Comparisons of forecasts",
+       x = "Time",
+       y = "Value",
+       linetype = "Prior")
+```
+
+![](README-unnamed-chunk-14-1.png)

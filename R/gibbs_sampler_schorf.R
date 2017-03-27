@@ -134,9 +134,8 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
   Z_1 <- Z[1:n_pseudolags,, 1]
 
   ####################################################
-  Y_pre <- Y[1:16, ]
-  Y_bar <- colMeans(Y_pre, na.rm = TRUE)
-  s_bar <- apply(Y_pre, 2, sd, na.rm = TRUE)
+  Y_bar <- colMeans(Y, na.rm = TRUE)
+  s_bar <- sqrt(diag(prior_Pi_Sigma(0.2, 1, prior_Pi_AR1, Y, n_lags, n_vars + 2)$prior_S))
 
   dummy_size <- 1 + (n_lags + lambda3 + 1)*n_vars
   breaks <- numeric(5)

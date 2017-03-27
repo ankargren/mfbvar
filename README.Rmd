@@ -1,5 +1,9 @@
 ---
-output: github_document
+title: "mfbvar"
+output:
+  github_document:
+    toc: true
+    toc_depth: 2
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -11,7 +15,14 @@ knitr::opts_chunk$set(
   fig.path = "README-"
 )
 ```
-# News (2017-03-14)
+# Version news
+
+## 0.2.5 (2017-03-24)
+What is new in version 0.2.5:
+
+- A model without a steady-state prior is now implemented using a Minnesota MNIW prior, which is computed using a dummy observations implementation. It is a hybrid of what Banbura et al (2011), Brave et al (2016) and Schorfheide and Song (2015) use. It allows for an overall tightness hyperparameter, a lag decay hyperparameter and a hyperparameter for the intercept. Note that the dummy observations implementation is different in the three listed articles: Banbura et al (2011) have no sample mean included (see their equation (5) and compare it to equation (14) in Brave) and Banbura et al and Brave et al use the full-sample means and error standard deviations in the priors, whereas Schorfheide and Song only make use of a pre-sample. The current implementation in `mfbvar` is to use the full sample for both.
+
+## 0.2.3 (2017-03-14)
 What is new in version 0.2.3:
 
 - `mdd_grid()` to do grid search for hyperparameters, possibly using parallel computing
@@ -21,7 +32,7 @@ What is new in version 0.2.3:
 - Unit testing (using `testthat`) is now incorporated by checking the 100th draw
 
 
-## News (2017-03-11)
+## 0.2.1 (2017-03-11)
 What is new in version 0.2.1:
 
 - Methods (`print`, `summary`, `plot`, `predict`)
@@ -163,56 +174,55 @@ profiling %>%
   labs(y = "Percent", x = "Function call", title = "Most expensive functions calls in mfbvar")
 ```
 
-```{r}
-library(tidyverse)
-library(lubridate)
-mf_data <- mf_list$data[[192]]
-Y <- select(mf_data, date, infl:gdp) %>%
-  as.data.frame()
-rownames(Y) <- Y$date
-Y <- Y[-1, -1]
+## Minnesota prior
 
-n_burnin <- 10000
-n_reps <- 10000
-n_fcst <- 24
-n_lags <- 4
-n_vars <- ncol(Y)
-n_T <- nrow(Y)
+To compare the results, we can also run the model without a steady-state prior. The code is slightly different and currently fairly ugly behind the scenes, but in principle it is similar using equivalent functions but with a `_schorf` suffix (although this naming is temporary).
 
-dates <- seq(ymd(rownames(Y)[length(rownames(Y))]) + days(1), by = "months", length.out = 24) + months(1) - days(1)
-
-d <- matrix(1, nrow = n_T, ncol = 1, dimnames = list(1:nrow(Y), "const"))
-d_fcst <- matrix(1, nrow = n_fcst, ncol = 1, 
-                 dimnames = list(dates[(nrow(Y)+1):(nrow(Y)+n_fcst)], "const"))
-
-prior_nu <- n_vars + 2 
-prior_Pi_AR1 <- c(0, 0, 0, 0) 
-lambda1 <- 0.1
-lambda2 <- 1
-
-prior_psi_int <- matrix(c(0.4/3, 0.6/3,
-                          0, 1/3,
-                          -0.1, 0.1,
-                          0.5, 0.625), 4, 2, byrow = TRUE)
-prior_psi <- interval_to_moments(prior_psi_int)
-prior_psi_mean <- prior_psi$prior_psi_mean
-prior_psi_Omega <- prior_psi$prior_psi_Omega
-Lambda <- build_Lambda(c("identity", "identity", "identity", "average"), n_lags)
-
-set.seed(10189)
-mfbvar_obj <- mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, 
-                     prior_nu, prior_psi_mean, prior_psi_Omega, 
-                     n_lags, n_fcst, n_burnin, n_reps, verbose = FALSE)
-                       
-lambda1_grid <- seq(0.1, 1, by = 0.1)
-lambda2_grid <- seq(0.5, 4, by = 0.5)
-
-mdd_res1 <- mdd_grid(mfbvar_obj, lambda1_grid, lambda2_grid, method = 2, n_cores = 7, p_trunc = 0.2)
-mdd_res2 <- mdd_grid(mfbvar_obj, lambda1_grid, lambda2_grid, method = 2, n_cores = 7, p_trunc = 0.5)
-mdd_res3 <- mdd_grid(mfbvar_obj, lambda1_grid, lambda2_grid, method = 2, n_cores = 7, p_trunc = 0.8)
-mdd_res4 <- mdd_grid(mfbvar_obj, lambda1_grid, lambda2_grid, method = 1, n_cores = 7)
-
-lambda1_grid <- seq(1.1, 3, by = 0.1)
-lambda2_grid <- seq(0.5, 4, by = 0.5)
-mdd_res5 <- mdd_grid(mfbvar_obj, lambda1_grid, lambda2_grid, method = 1, n_cores = 7)
+Using the same simulated data as before, the call is made using `mfbvar_schorf`:
+```{r, cache = TRUE}
+lambda3 <- 1e-05
+set.seed(100)
+mfbvar_minn <- mfbvar_schorf(Y, Lambda, prior_Pi_AR1, 
+                             lambda1, lambda2, lambda3, 
+                             n_lags, n_fcst, n_burnin, n_reps, 
+                             verbose = FALSE)
 ```
+
+An `mdd` function is also provided, although this is not comparable to the previous calculations because of the omission of the normalizing constant. The details of the method are provided in Schorfheide and Song (2015).
+```{r, cache = TRUE}
+monthly_cols <- 3
+postsim <- mfbvar_minn$lnpYY
+Z <- mfbvar_minn$Z
+mdd_minn <- mdd_schorf(monthly_cols, postsim, Z, n_T)
+```
+The names are temporary and follow Schorfheide and Song's nomenclature. In the future, this could easily be wrapped into a general `mdd` function.
+
+Comparing the forecasts:
+```{r, fig.width = 10, fig.asp = 0.5}
+fcst_SS <- apply(mfbvar_obj$Z_fcst[,,-1], 1:2, median) %>%
+  as_tibble() %>%
+  rownames_to_column("time") %>% 
+  as_tibble() %>%
+  gather(GDP:Interest, key = "series", value = "value") %>%
+  mutate(time = as.numeric(time), prior = "SS")
+fcst_minn <- apply(mfbvar_minn$Z_fcst[,,-1], 1:2, median) %>%
+  as_tibble() %>%
+  rownames_to_column("time") %>% 
+  as_tibble() %>%
+  gather(GDP:Interest, key = "series", value = "value") %>%
+  mutate(time = as.numeric(time), prior = "Minn")
+
+fcst <- bind_rows(fcst_SS, fcst_minn)
+
+ggplot(fcst, aes(x = time, y = value, linetype = prior)) +
+  geom_line() +
+  facet_wrap(~series) +
+  theme_minimal() +
+  labs(title = "Comparisons of forecasts",
+       x = "Time",
+       y = "Value",
+       linetype = "Prior")
+  
+
+```
+

@@ -1,7 +1,10 @@
 base
 mfbvar
-foreach
-iterators
-doParallel
-ggplot2
 profvis
+tidyverse
+ggplot2
+tibble
+tidyr
+readr
+purrr
+dplyr
