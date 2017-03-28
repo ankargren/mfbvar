@@ -234,10 +234,10 @@ mdd1 <- function(mfbvar_obj) {
 #' @template man_template
 #' @return mdd_res A matrix with the results.
 #'
-mdd_grid <- function(mfbvar_obj = NULL, lambda1_grid, lambda2_grid, method, n_cores = 1, p_trunc = NULL, ...) {
+mdd_grid <- function(mfbvar_obj = NULL, lambda1_grid, lambda2_grid, method, n_cores = 1, p_trunc = NULL, same_seed = FALSE, seed = NULL, ...) {
   if (!requireNamespace(c("parallel"), quietly = TRUE) && n_cores > 1) {
     n_cores <- 1
-    warnings("The parallel and doParallel are not available. Setting n_cores to 1. To use parallel processing, please install parallel and doParallel.")
+    warnings("The parallel package is not available. Setting n_cores to 1. To use parallel processing, please install parallel.")
   }
   stopifnot((method == 1) || (method == 2))
   if (method == 2) {
@@ -262,8 +262,14 @@ mdd_grid <- function(mfbvar_obj = NULL, lambda1_grid, lambda2_grid, method, n_co
     n_burnin <- mfbvar_obj$n_burnin
     n_reps <- mfbvar_obj$n_reps
   }
+  if (same_seed && is.null(seed)) {
+    stop("Seed must be provided.")
+  }
 
-  mdd_search <- function(lambda1, lambda2, method, p_trunc = NULL) {
+  mdd_search <- function(lambda1, lambda2, method, p_trunc = NULL, same_seed, seed) {
+    if (same_seed) {
+      set.seed(seed)
+    }
     mfbvar_obj <- mfbvar(Y, d, d_fcst = NULL, Lambda, prior_Pi_AR1, lambda1, lambda2,
                          prior_nu, prior_psi_mean, prior_psi_Omega,
                          n_lags, n_fcst = NULL, n_burnin, n_reps, verbose = FALSE)
@@ -275,11 +281,11 @@ mdd_grid <- function(mfbvar_obj = NULL, lambda1_grid, lambda2_grid, method, n_co
     return(log_mdd)
   }
 
-  par_func <- function(j, lambda_mat, method, p_trunc = NULL) {
+  par_func <- function(j, lambda_mat, method, p_trunc = NULL, same_seed, seed) {
     lambda1 <- lambda_mat[j, 1]
     lambda2 <- lambda_mat[j, 2]
     cat("Combination", j, "using lambda1 =", lambda1, "lambda2 =", lambda2)
-    mdd_res <- tryCatch({mdd_search(lambda1, lambda2, method, p_trunc)},
+    mdd_res <- tryCatch({mdd_search(lambda1, lambda2, method, p_trunc, same_seed, seed)},
                         error = function(cond) return(NA),
                         warning = function(cond) return(NA))
     return(c(mdd_res, lambda1, lambda2))
@@ -299,11 +305,15 @@ mdd_grid <- function(mfbvar_obj = NULL, lambda1_grid, lambda2_grid, method, n_co
       library(mfbvar)
     })
 
+    if (!same_seed && !is.null(seed)) {
+      parallel::clusterSetRNGStream(cl, seed)
+    }
+
     if (method == 1) {
-      mdd_res <- parallel::parSapply(cl = cl, X = 1:nrow(lambda_mat), FUN = par_func, lambda_mat = lambda_mat, method = method)
+      mdd_res <- parallel::parSapply(cl = cl, X = 1:nrow(lambda_mat), FUN = par_func, lambda_mat = lambda_mat, method = method, same_seed = same_seed, seed = seed)
     }
     if (method == 2) {
-      mdd_res <- parallel::parSapply(cl = cl, X = 1:nrow(lambda_mat), FUN = par_func, lambda_mat = lambda_mat, method = method, p_trunc = p_trunc)
+      mdd_res <- parallel::parSapply(cl = cl, X = 1:nrow(lambda_mat), FUN = par_func, lambda_mat = lambda_mat, method = method, p_trunc = p_trunc, same_seed = same_seed, seed = seed)
     }
 
     parallel::stopCluster(cl)

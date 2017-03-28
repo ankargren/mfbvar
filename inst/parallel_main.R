@@ -101,7 +101,7 @@ n_burnin <- 100
 n_reps <- 100
 n_cores <- 6
 same_seed <- FALSE
-monthly_cols <- 5
+
 cluster_type <- "PSOCK"
 for (prefix in freq) {
   for (n_lags in lags) {
@@ -121,7 +121,7 @@ for (prefix in freq) {
     Ex_num <- paste0("Ex", ex_count, "b")
     assign(Ex_num,
            value = parallel_wrapper_schorf(data_list, Lambda, prior_Pi_AR1, lambda1_grid, lambda2_grid, lambda3,
-                                    n_lags, n_fcst, n_burnin, n_reps, n_cores, seed, same_seed))
+                                    n_lags, n_fcst, n_burnin, n_reps, n_cores, cluster_type, seed, same_seed))
     save(list = (Ex_num), file = paste0(save_files, "/", Ex_num, ".RData"))
   }
 }

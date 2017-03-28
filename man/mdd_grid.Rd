@@ -5,7 +5,7 @@
 \title{Marginal data density grid search}
 \usage{
 mdd_grid(mfbvar_obj = NULL, lambda1_grid, lambda2_grid, method, n_cores = 1,
-  p_trunc = NULL, ...)
+  p_trunc = NULL, same_seed = FALSE, seed = NULL, ...)
 }
 \arguments{
 \item{mfbvar_obj}{An object of class \code{mfbvar} containing the results.}

@@ -68,7 +68,7 @@ worker_fun <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1_grid, lambda2
 }
 
 
-parallel_wrapper_schorf <- function(data_list, Lambda, prior_Pi_AR1, lambda1_grid, lambda2_grid, lambda3, n_lags, n_fcst, n_burnin, n_reps, n_cores, cluster_type = "PSOCK", monthly_cols, seed, same_seed = FALSE) {
+parallel_wrapper_schorf <- function(data_list, Lambda, prior_Pi_AR1, lambda1_grid, lambda2_grid, lambda3, n_lags, n_fcst, n_burnin, n_reps, n_cores, cluster_type = "PSOCK", seed, same_seed = FALSE) {
 
   if (cluster_type == "MPI") {
     cl <- parallel::makeCluster(n_cores, type = "MPI")
@@ -88,17 +88,17 @@ parallel_wrapper_schorf <- function(data_list, Lambda, prior_Pi_AR1, lambda1_gri
   })
   res <- parallel::clusterMap(cl, fun = worker_fun_schorf, Y = data_list$data, MoreArgs = list(Lambda = Lambda, prior_Pi_AR1 = prior_Pi_AR1, lambda1_grid = lambda1_grid,
                                                                                         lambda2_grid = lambda2_grid, lambda3 = lambda3, n_fcst = n_fcst, n_burnin = n_burnin,
-                                                                                        n_reps = n_reps, monthly_cols = monthly_cols, seed = seed, same_seed = same_seed))
+                                                                                        n_reps = n_reps, seed = seed, same_seed = same_seed))
   parallel::stopCluster(cl)
   return(res)
   #
 }
 
-worker_fun_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1_grid, lambda2_grid, lambda3, n_fcst, n_burnin, n_reps, monthly_cols, seed, same_seed) {
+worker_fun_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1_grid, lambda2_grid, lambda3, n_fcst, n_burnin, n_reps, seed, same_seed) {
   n_lags <- ncol(Lambda)/nrow(Lambda)
   lambda_mat <- expand.grid(lambda1 = lambda1_grid, lambda2 = lambda2_grid)
 
-  mapply_fun <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lambda3, n_lags, n_fcst, n_burnin, n_reps, monthly_cols, seed, same_seed) {
+  mapply_fun <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lambda3, n_lags, n_fcst, n_burnin, n_reps, seed, same_seed) {
     if (same_seed) {
       set.seed(seed)
     }
@@ -111,7 +111,7 @@ worker_fun_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1_grid, lambda2_gri
     if (!is.null(mfbvar_obj$Z_fcst)) {
       fcst <- mfbvar_obj$Z_fcst
       mdd_est <- tryCatch({
-        mdd_schorf(mfbvar_obj, monthly_cols)
+        mdd_schorf(mfbvar_obj)
       }, error = function(cond) {
         NA
       })
