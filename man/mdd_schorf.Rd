@@ -4,16 +4,16 @@
 \alias{mdd_schorf}
 \title{Estimate MDD in Schorfheide-Song MFBVAR}
 \usage{
-mdd_schorf(monthly_cols, postsim, Z, n_T)
+mdd_schorf(mfbvar_obj, monthly_cols)
 }
 \arguments{
 \item{monthly_cols}{Column indexes of monthly variables.}
 
+\item{n_T}{The number of time points.}
+
 \item{postsim}{The log marginal data density for \code{Z}.}
 
 \item{Z}{The array of draws from the posterior of \code{Z}.}
-
-\item{n_T}{The number of time points.}
 }
 \value{
 The log marginal data density estimate (bar a constant)

@@ -1,8 +1,8 @@
 Package: mfbvar
 Type: Package
 Title: Mixed-Frequency Bayesian VAR Models 
-Version: 0.2.5 
-Date: 2017-03-21
+Version: 0.2.6.9000 
+Date: 2017-03-28
 Authors@R: c(
     person("Sebastian", "Ankargren", email = "sebastian.ankargren@statistics.uu.se", role = c("cre", "aut")),
     person("Yukai", "Yang", email = "yukai.yang@statistics.uu.se", role = c("aut")),
