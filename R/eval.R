@@ -17,30 +17,33 @@
 #' @return The return is:
 #' \item{evals}{A vector with the evaulations.}
 #'
-eval_Pi_Sigma_RaoBlack <- function(Z_array, d, post_psi_center, post_Pi_center, post_Sigma_center, post_nu, prior_Pi, prior_Pi_Omega, prior_S, n_vars, n_lags, n_reps) {
+eval_Pi_Sigma_RaoBlack <- function(Z_array, d, post_psi_center, post_Pi_center, post_Sigma_center, post_nu, prior_Pi_mean, prior_Pi_Omega, prior_S, n_vars, n_lags, n_reps) {
   ################################################################
   ### Compute the Rao-Blackwellized estimate of posterior
 
   evals <- vector("numeric", n_reps - 1)
-
+  inv_prior_Pi_Omega <- chol2inv(chol(prior_Pi_Omega))
+  Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi_mean
   for (i in 1:length(evals)) {
     # Demean z, create Z_array (companion form version)
     demeaned_z <- Z_array[,,i+1] - d %*% post_psi_center
     demeaned_Z <- build_Z(z = demeaned_z, n_lags = n_lags)
     XX <- demeaned_Z[-nrow(demeaned_Z), ]
     YY <- demeaned_Z[-1, 1:n_vars]
-    Pi_sample <- solve(crossprod(XX)) %*% crossprod(XX, YY)
+    XXt.XX <- crossprod(XX)
+    XXt.XX.inv <- chol2inv(chol(XXt.XX))
+    Pi_sample <- XXt.XX.inv %*% crossprod(XX, YY)
     ################################################################
     ### Pi and Sigma step
 
     # Posterior moments of Pi
-    post_Pi_Omega_i <- solve(solve(prior_Pi_Omega) + crossprod(XX))
-    post_Pi_i       <- post_Pi_Omega_i %*% (solve(prior_Pi_Omega) %*% prior_Pi + crossprod(XX, YY))
+    post_Pi_Omega_i <- chol2inv(chol(inv_prior_Pi_Omega + XXt.XX))
+    post_Pi_i       <- post_Pi_Omega_i %*% (Omega_Pi + crossprod(XX, YY))
 
     # Then Sigma
     s_sample  <- crossprod(YY - XX %*% Pi_sample)
-    Pi_diff <- prior_Pi - Pi_sample
-    post_s_i <- prior_S + s_sample + t(Pi_diff) %*% solve(post_Pi_Omega_i + solve(crossprod(XX))) %*% Pi_diff
+    Pi_diff <- prior_Pi_mean - Pi_sample
+    post_s_i <- prior_S + s_sample + t(Pi_diff) %*% chol2inv(chol(prior_Pi_Omega + XXt.XX.inv)) %*% Pi_diff
 
     # Evaluate
     evals[i] <- dnorminvwish(X = t(post_Pi_center), Sigma = post_Sigma_center, M = post_Pi_i, P = post_Pi_Omega_i, S = post_s_i, v = post_nu)

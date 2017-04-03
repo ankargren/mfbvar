@@ -5,8 +5,8 @@
 \title{Evaluate the conditional posterior of Pi and Sigma using Rao-Blackwellization}
 \usage{
 eval_Pi_Sigma_RaoBlack(Z_array, d, post_psi_center, post_Pi_center,
-  post_Sigma_center, post_nu, prior_Pi, prior_Pi_Omega, prior_S, n_vars, n_lags,
-  n_reps)
+  post_Sigma_center, post_nu, prior_Pi_mean, prior_Pi_Omega, prior_S, n_vars,
+  n_lags, n_reps)
 }
 \arguments{
 \item{Z_array}{The array of draws of Z from the Gibbs sampler.}
@@ -21,8 +21,6 @@ eval_Pi_Sigma_RaoBlack(Z_array, d, post_psi_center, post_Pi_center,
 
 \item{post_nu}{The posterior of the parameter \eqn{\nu}.}
 
-\item{prior_Pi}{Matrix of size \code{n_vars * (n_vars*n_lags)} containing the prior for the mean of the dynamic coefficients.}
-
 \item{prior_Pi_Omega}{Matrix of size \code{(n_vars*n_lags)* (n_vars*n_lags)} containing the prior for (part of) the prior covariance of the dynamic coefficients.}
 
 \item{prior_S}{The prior for \eqn{\Sigma}.}
@@ -32,6 +30,8 @@ eval_Pi_Sigma_RaoBlack(Z_array, d, post_psi_center, post_Pi_center,
 \item{n_lags}{The number of lags.}
 
 \item{n_reps}{The number of replications.}
+
+\item{prior_Pi}{Matrix of size \code{n_vars * (n_vars*n_lags)} containing the prior for the mean of the dynamic coefficients.}
 }
 \value{
 The return is:

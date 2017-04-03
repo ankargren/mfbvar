@@ -62,24 +62,30 @@ mdd2 <- function(mfbvar_obj, p_trunc) {
   eval_prior_Pi_Sigma <- vector("numeric", n_reps)
   eval_prior_psi <- vector("numeric", n_reps)
   psi_truncated <- vector("numeric", n_reps)
+
+  inv_prior_Pi_Omega <- chol2inv(chol(prior_Pi_Omega))
+  Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi_mean
   for (r in 1:n_reps) {
     # Demean z, create Z (companion form version)
     demeaned_z <- Z[,, r] - d %*% t(matrix(psi[r, ], nrow = n_vars))
     demeaned_Z <- build_Z(z = demeaned_z, n_lags = n_lags)
     XX <- demeaned_Z[-nrow(demeaned_Z), ]
     YY <- demeaned_Z[-1, 1:n_vars]
-    Pi_sample <- solve(crossprod(XX)) %*% crossprod(XX, YY)
+    XXt.XX <- crossprod(XX)
+    XXt.XX.inv <- chol2inv(chol(XXt.XX))
+    Pi_sample <- XXt.XX.inv %*% crossprod(XX, YY)
+
     ################################################################
     ### Pi and Sigma step
 
     # Posterior moments of Pi
-    post_Pi_Omega_i <- solve(solve(prior_Pi_Omega) + crossprod(XX))
-    post_Pi_i       <- post_Pi_Omega_i %*% (solve(prior_Pi_Omega) %*% prior_Pi_mean + crossprod(XX, YY))
+    post_Pi_Omega_i <- chol2inv(chol(inv_prior_Pi_Omega + XXt.XX))
+    post_Pi_i       <- post_Pi_Omega_i %*% (Omega_Pi + crossprod(XX, YY))
 
     # Then Sigma
     s_sample  <- crossprod(YY - XX %*% Pi_sample)
     Pi_diff <- prior_Pi_mean - Pi_sample
-    post_s_i <- prior_S + s_sample + t(Pi_diff) %*% solve(post_Pi_Omega_i + solve(crossprod(XX))) %*% Pi_diff
+    post_s_i <- prior_S + s_sample + t(Pi_diff) %*% chol2inv(chol(prior_Pi_Omega + XXt.XX.inv)) %*% Pi_diff
 
     # Set the variables which vary in the Kalman filtering
     mZ <- Y - d %*% t(matrix(psi[r, ], nrow = n_vars))
@@ -212,8 +218,11 @@ mdd1 <- function(mfbvar_obj) {
   lklhd          <- sum(c(loglike(Y = as.matrix(mZ), Lambda = Lambda, Pi_comp = Pi_comp, Q_comp = Q_comp, n_T = n_T_, n_vars = n_vars, n_comp = n_lags * n_vars, z0 = h0, P0 = P0)[-1]))
   eval_prior_Pi_Sigma <- log(dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = prior_Pi_mean, P = prior_Pi_Omega, S = prior_S, v = prior_nu))
   eval_prior_psi      <- log(dmultn(x = post_psi, m = prior_psi_mean, Sigma = prior_psi_Omega))
-  eval_RB_Pi_Sigma    <- log(mean(eval_Pi_Sigma_RaoBlack(Z_red, d, post_psi, post_Pi_mean, post_Sigma, post_nu, prior_Pi_mean, prior_Pi_Omega, prior_S, n_vars, n_lags, n_reps)))
-  eval_marg_psi   <- log(mean(eval_psi_MargPost(Pi, Sigma, Z, post_psi, prior_psi_mean, prior_psi_Omega, D, n_determ, n_vars, n_lags, n_reps)))
+  eval_RB_Pi_Sigma    <- log(mean(eval_Pi_Sigma_RaoBlack(Z_array = Z_red, d = d, post_psi_center = post_psi, post_Pi_center = post_Pi_mean, post_Sigma_center = post_Sigma,
+                                                         post_nu = post_nu, prior_Pi_mean = prior_Pi_mean, prior_Pi_Omega = prior_Pi_Omega, prior_S = prior_S,
+                                                         n_vars = n_vars, n_lags = n_lags, n_reps = n_reps)))
+  eval_marg_psi   <- log(mean(eval_psi_MargPost(Pi_array = Pi, Sigma_array = Sigma, Z_array = Z, post_psi_center = post_psi, prior_psi_mean = prior_psi_mean,
+                                                prior_psi_Omega = prior_psi_Omega, D_mat = D, n_determ = n_determ, n_vars = n_vars, n_lags = n_lags, n_reps = n_reps)))
 
   mdd_estimate <- lklhd + eval_prior_Pi_Sigma + eval_prior_psi - (eval_RB_Pi_Sigma + eval_marg_psi)
 

@@ -133,14 +133,14 @@ plot(mfbvar_obj)
 ## Marginal data density
 The package contains functions for estimating the marginal data density. This is most useful when done in parallel, so first we can set up a cluster and then compute the marginal data density for various values of the hyperparameters `lambda1` and `lambda2`.
 
-First, we'll use grids between 0.1 and 0.5 for `lambda1` and between 1 and 4 for `lambda2`.
+First, we'll set the grids for `lambda1` and `lambda2`.
 ```{r, cache = TRUE}
-lambda1_grid <- seq(0.1, 0.5, by = 0.05)
-lambda2_grid <- seq(1, 4, by = 0.5)
+lambda1_grid <- seq(5, 15, length.out = 10)
+lambda2_grid <- seq(0.1, 1, length.out = 10)
 ```
 We can also create two wrapper functions to use for the parallel call:
 ```{r, cache = TRUE}
-mdd_res <- mdd_grid(mfbvar_obj, lambda1_grid, lambda2_grid, method = 2, n_cores = 7, p_trunc = 0.5)
+mdd_res <- mdd_grid(mfbvar_obj, lambda1_grid, lambda2_grid, method = 1, n_cores = 7, p_trunc = 0.5, same_seed = TRUE, seed = 1229)
 ```
 The return is an object of class `mdd`, for which three methods are implemented.
 ```{r mdd}
@@ -151,14 +151,14 @@ plot(mdd_res)
 
 ## Profiling
 Profiling of the code shows that `simulation_smoother` is by far the most time-consuming part of the code (this is the main call inside `posterior_Z`). 
-```{r profvis, include = FALSE}
+```{r profvis, include = FALSE, cache = TRUE}
 library(profvis)
 profiling <- profvis({mfbvar_obj <- mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, 
                      prior_nu, prior_psi_mean, prior_psi_Omega, 
                      n_lags, n_fcst, n_burnin, n_reps, verbose = FALSE) }, prof_output = "../profiling.Rprof")
 ```
 
-```{r profiling}
+```{r profiling, cache = TRUE}
 library(tidyverse)
 profiling <- summaryRprof("../profiling.Rprof")$by.total
 profiling$call <- rownames(profiling)
@@ -190,10 +190,7 @@ mfbvar_minn <- mfbvar_schorf(Y, Lambda, prior_Pi_AR1,
 
 An `mdd` function is also provided, although this is not comparable to the previous calculations because of the omission of the normalizing constant. The details of the method are provided in Schorfheide and Song (2015).
 ```{r, cache = TRUE}
-monthly_cols <- 3
-postsim <- mfbvar_minn$lnpYY
-Z <- mfbvar_minn$Z
-mdd_minn <- mdd_schorf(monthly_cols, postsim, Z, n_T)
+mdd_minn <- mdd_schorf(mfbvar_minn)
 ```
 The names are temporary and follow Schorfheide and Song's nomenclature. In the future, this could easily be wrapped into a general `mdd` function.
 
