@@ -4,7 +4,7 @@
 \alias{mdd_schorf}
 \title{Estimate MDD in Schorfheide-Song MFBVAR}
 \usage{
-mdd_schorf(mfbvar_obj)
+mdd_schorf(mfbvar_obj, monthly_cols, type = "full", ...)
 }
 \arguments{
 \item{mfbvar_obj}{An object of class \code{mfbvar} containing the results.}

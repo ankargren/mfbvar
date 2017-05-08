@@ -137,18 +137,17 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
   Y_bar <- colMeans(Y, na.rm = TRUE)
   s_bar <- sqrt(diag(prior_Pi_Sigma(0.2, 1, prior_Pi_AR1, Y, n_lags, n_vars + 2)$prior_S))
 
-  dummy_size <- 1 + (n_lags + lambda3 + 1)*n_vars
+  dummy_size <- 1 + (n_lags + 2)*n_vars
   breaks <- numeric(5)
   Y_dum <- matrix(0, nrow = dummy_size, ncol = n_vars)
   X_dum <- matrix(0, nrow = dummy_size, ncol = n_vars*n_lags + 1)
   n_XX <- ncol(X_dum)
   ## 1: AR(1) coefficients
-  Y_dum[1:n_vars, ] <- lambda1 * diag(s_bar * prior_Pi_AR1 * Y_bar)
-  X_dum[1:n_vars, 1:n_vars] <- lambda1 * diag(s_bar * Y_bar)
+  Y_dum[1:n_vars, ] <- diag(s_bar * prior_Pi_AR1 * Y_bar)/lambda1
   breaks[1] <- n_vars
 
   ## 2: AR(2), ..., AR(p) coefficients
-  X_dum[1:(n_vars*n_lags), 1:(n_vars*n_lags)] <- kronecker(diag((1:n_lags)^lambda2), diag(s_bar*Y_bar))*lambda1
+  X_dum[1:(n_vars*n_lags), 1:(n_vars*n_lags)] <- kronecker(diag((1:n_lags)^lambda2), diag(s_bar*Y_bar))/lambda1
   if (n_lags > 1) {
     breaks[2] <- breaks[1] + (n_lags - 1)*n_vars
   } else {
@@ -160,7 +159,7 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
   breaks[3] <- breaks[2] + n_vars
 
   ## 4: Intercept
-  X_dum[breaks[3] + 1, n_XX] <- lambda3
+  X_dum[breaks[3] + 1, n_XX] <- 1/lambda3
 
   #
   #   ## 3
@@ -214,7 +213,7 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
   gam0 <- sum(lgamma(0.5 * (n_dummy - n_XX + 1 - 1:n_vars)))
 
   lnpY0 <- - n_vars * 0.5 * determinant(crossprod(X_dum), logarithm = TRUE)$modulus -
-    (n_dummy - n_XX)*0.5*determinant(crossprod(S0), logarithm = TRUE)$modulus + n_vars * (n_vars - 1) * 0.25*log(pi) + gam0
+    (n_dummy - n_XX)*0.5*determinant(S0, logarithm = TRUE)$modulus + n_vars * (n_vars - 1) * 0.25*log(pi) + gam0
 
 
 
@@ -234,7 +233,7 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
   }
   h0 <- matrix(t(Z_1[nrow(Z_1):1, ]), ncol = 1)
 
-  pb <- txtProgressBar(min = 2, max = n_reps, style = 3)
+  pb <- timerProgressBar(width = 35, char = "[=-]", style = 5)
   for (r in 2:(n_reps)) {
 
     Pi_r1 <- Pi[,,r-1]
@@ -302,8 +301,8 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
     S1 <- crossprod(YY - XX %*% Phi)
     gam1 <- sum(lgamma(0.5 * (n_tot - n_XX + 1 - 1:n_vars)))
 
-    lnpY1[r] <- - n_vars * 0.5 * determinant(crossprod(XX), logarithm = TRUE)$modulus -
-      (n_tot - n_XX)*0.5*determinant(crossprod(S1), logarithm = TRUE)$modulus + n_vars * (n_vars - 1) * 0.25*log(pi) + gam1
+    lnpY1[r] <- - n_vars * 0.5 * determinant(XXt.XX, logarithm = TRUE)$modulus -
+      (n_tot - n_XX)*0.5*determinant(S1, logarithm = TRUE)$modulus + n_vars * (n_vars - 1) * 0.25*log(pi) + gam1
 
     Pi_r <- Pi[,,r]
     const_r <- Pi_r[, ncol(Pi_r)]
@@ -325,7 +324,7 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
     #########################################
     # Add the likelihood here
     if (verbose) {
-      setTxtProgressBar(pb, r)
+      setTimerProgressBar(pb, r/n_reps)
     }
   }
   close(pb)

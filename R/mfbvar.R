@@ -21,7 +21,7 @@
 #' @return An \code{mfbvar} object
 #' @details \code{mfbvar} calls \code{\link{gibbs_sampler}} (implemented in C++)
 
-mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_nu = NULL, prior_psi_mean, prior_psi_Omega, n_lags, n_fcst, n_burnin, n_reps, verbose) {
+mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_nu = NULL, prior_psi_mean, prior_psi_Omega, n_lags, n_fcst, n_burnin, n_reps, verbose, ...) {
 
   stopifnot(is.null(n_fcst) || is.vector(n_fcst))
   stopifnot(is.matrix(d), is.matrix(prior_psi_Omega))
@@ -94,8 +94,7 @@ mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_n
   }
   burn_in <-  gibbs_sampler(Y = Y, d = d, d_fcst = NULL, Lambda = Lambda, prior_Pi_mean = prior_Pi_mean, prior_Pi_Omega = prior_Pi_Omega,
                             prior_S = prior_S, prior_nu = prior_nu, prior_psi_mean = prior_psi_mean, prior_psi_Omega = prior_psi_Omega,
-                            n_fcst = NULL, n_reps = n_burnin, init_Pi = t(prior_Pi_mean), init_Sigma = NULL, init_psi = prior_psi_mean,
-                            init_Z = NULL, smooth_state = FALSE, check_roots = TRUE, verbose)
+                            n_fcst = NULL, n_reps = n_burnin, smooth_state = FALSE, check_roots = TRUE, verbose)
   if (verbose) {
     end_burnin <- Sys.time()
     time_diff <- end_burnin - start_burnin

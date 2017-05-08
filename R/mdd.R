@@ -275,7 +275,9 @@ mdd_grid <- function(mfbvar_obj = NULL, lambda1_grid, lambda2_grid, method, n_co
     stop("Seed must be provided.")
   }
 
-  mdd_search <- function(lambda1, lambda2, method, p_trunc = NULL, same_seed, seed) {
+  mdd_search <- function(lambda1, lambda2, method, p_trunc, same_seed, seed,
+                         Y, d, Lambda, prior_Pi_AR1, prior_nu, prior_psi_mean,
+                         prior_psi_Omega, n_lags, n_burnin, n_reps) {
     if (same_seed) {
       set.seed(seed)
     }
@@ -290,18 +292,19 @@ mdd_grid <- function(mfbvar_obj = NULL, lambda1_grid, lambda2_grid, method, n_co
     return(log_mdd)
   }
 
-  par_func <- function(j, lambda_mat, method, p_trunc = NULL, same_seed, seed) {
+  par_func <- function(j, lambda_mat, method, p_trunc, same_seed, seed,
+                       Y, d, Lambda, prior_Pi_AR1, prior_nu, prior_psi_mean,
+                       prior_psi_Omega, n_lags, n_burnin, n_reps) {
     lambda1 <- lambda_mat[j, 1]
     lambda2 <- lambda_mat[j, 2]
-    cat("Combination", j, "using lambda1 =", lambda1, "lambda2 =", lambda2)
-    mdd_res <- tryCatch({mdd_search(lambda1, lambda2, method, p_trunc, same_seed, seed)},
-                        error = function(cond) return(NA),
-                        warning = function(cond) return(NA))
+    cat("Combination", j, "using lambda1 =", lambda1, "lambda2 =", lambda2, "\n\n")
+    mdd_res <- mdd_search(lambda1 = lambda1, lambda2 = lambda2, method = method, p_trunc = p_trunc, same_seed = same_seed, seed = seed,
+                          Y = Y, d = d, Lambda = Lambda, prior_Pi_AR1 = prior_Pi_AR1, prior_nu = prior_nu, prior_psi_mean = prior_psi_mean,
+                          prior_psi_Omega = prior_psi_Omega, n_lags = n_lags, n_burnin = n_burnin, n_reps = n_reps)#}, error = function(cond) return(NA), warning = function(cond) return(NA))
     return(c(mdd_res, lambda1, lambda2))
   }
 
   lambda_mat <- expand.grid(lambda1_grid, lambda2_grid)
-
   #library(parallel)
   #library(doParallel)
   if (n_cores > 1) {
@@ -319,20 +322,28 @@ mdd_grid <- function(mfbvar_obj = NULL, lambda1_grid, lambda2_grid, method, n_co
     }
 
     if (method == 1) {
-      mdd_res <- parallel::parSapply(cl = cl, X = 1:nrow(lambda_mat), FUN = par_func, lambda_mat = lambda_mat, method = method, same_seed = same_seed, seed = seed)
+      mdd_res <- parallel::parSapply(cl = cl, X = 1:nrow(lambda_mat), FUN = par_func, lambda_mat = lambda_mat, method = method, p_trunc = NULL,    same_seed = same_seed, seed = seed,
+                                     Y = Y, d = d, Lambda = Lambda, prior_Pi_AR1 = prior_Pi_AR1, prior_nu = prior_nu, prior_psi_mean = prior_psi_mean,
+                                     prior_psi_Omega = prior_psi_Omega, n_lags = n_lags, n_burnin = n_burnin, n_reps = n_reps)
     }
     if (method == 2) {
-      mdd_res <- parallel::parSapply(cl = cl, X = 1:nrow(lambda_mat), FUN = par_func, lambda_mat = lambda_mat, method = method, p_trunc = p_trunc, same_seed = same_seed, seed = seed)
+      mdd_res <- parallel::parSapply(cl = cl, X = 1:nrow(lambda_mat), FUN = par_func, lambda_mat = lambda_mat, method = method, p_trunc = p_trunc, same_seed = same_seed, seed = seed,
+                                     Y = Y, d = d, Lambda = Lambda, prior_Pi_AR1 = prior_Pi_AR1, prior_nu = prior_nu, prior_psi_mean = prior_psi_mean,
+                                     prior_psi_Omega = prior_psi_Omega, n_lags = n_lags, n_burnin = n_burnin, n_reps = n_reps)
     }
 
     parallel::stopCluster(cl)
   } else {
     cat("Computing log marginal data density\n\n")
     if (method == 1) {
-      mdd_res <- sapply(X = 1:nrow(lambda_mat), FUN = par_func, lambda_mat = lambda_mat, method = method)
+      mdd_res <- sapply(X = 1:nrow(lambda_mat), FUN = par_func, lambda_mat = lambda_mat, method = method, same_seed = same_seed, seed = seed,
+                        Y = Y, d = d, Lambda = Lambda, prior_Pi_AR1 = prior_Pi_AR1, prior_nu = prior_nu, prior_psi_mean = prior_psi_mean,
+                        prior_psi_Omega = prior_psi_Omega, n_lags = n_lags, n_burnin = n_burnin, n_reps = n_reps)
     }
     if (method == 2) {
-      mdd_res <- sapply(X = 1:nrow(lambda_mat), FUN = par_func, lambda_mat = lambda_mat, method = method, p_trunc = p_trunc)
+      mdd_res <- sapply(X = 1:nrow(lambda_mat), FUN = par_func, lambda_mat = lambda_mat, method = method, p_trunc = p_trunc, same_seed = same_seed, seed = seed,
+                        Y = Y, d = d, Lambda = Lambda, prior_Pi_AR1 = prior_Pi_AR1, prior_nu = prior_nu, prior_psi_mean = prior_psi_mean,
+                        prior_psi_Omega = prior_psi_Omega, n_lags = n_lags, n_burnin = n_burnin, n_reps = n_reps)
     }
   }
 

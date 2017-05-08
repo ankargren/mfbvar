@@ -5,7 +5,7 @@
 \title{MF-BVAR with a steady-state prior}
 \usage{
 mfbvar_schorf(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lambda3, n_lags,
-  n_fcst, n_burnin, n_reps, verbose)
+  n_fcst, n_burnin, n_reps, verbose, ...)
 }
 \arguments{
 \item{Y}{The data matrix of size \code{(n_T + n_lags) * n_vars} with \code{NA} representing missingness. Must correspond well to the specification of \code{M_Lambda}.}
