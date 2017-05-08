@@ -73,6 +73,7 @@ mdd1_qf <- function(mfbvar_obj) {
   ####
   # Likelihood
   Lambda <- matrix(0, nrow = n_vars, ncol = n_vars*n_lags)
+  Lambda[1:n_vars, 1:n_vars] <- diag(n_vars)
   lklhd          <- sum(c(loglike(Y = as.matrix(mZ), Lambda = Lambda, Pi_comp = Pi_comp, Q_comp = Q_comp, n_T = n_T_, n_vars = n_vars, n_comp = n_lags * n_vars, z0 = h0, P0 = P0)[-1]))
 
   ####
@@ -103,7 +104,7 @@ mdd1_qf <- function(mfbvar_obj) {
   post_s_i <- prior_S + s_sample + t(Pi_diff) %*% chol2inv(chol(prior_Pi_Omega + XXt.XX.inv)) %*% Pi_diff
 
   # Evaluate
-  eval_RB_Pi_Sigma <- dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = post_Pi_i, P = post_Pi_Omega_i, S = post_s_i, v = post_nu)
+  eval_RB_Pi_Sigma <- log(dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = post_Pi_i, P = post_Pi_Omega_i, S = post_s_i, v = post_nu))
 
   ####
   # p(psi|Y)

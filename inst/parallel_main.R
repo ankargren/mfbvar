@@ -18,6 +18,7 @@ freq <- c("MF", "QF")
 prior_Pi_AR1 <- rep(0, 6)
 lambda1_grid <- c(0.1, 0.2)
 lambda2_grid <- 1:2
+lambda3 <- 10000
 n_fcst <- 8
 n_burnin <- 100
 n_reps <- 100
@@ -80,7 +81,7 @@ for (prefix in freq) {
       seed <- 10847 + ex_count
 
       assign(Ex_name,
-             value = parallel_wrapper(data_list, prior, SS_pars, n_cores, cluster_type = "PSOCK", seed, same_seed))
+             value = parallel_wrapper(data_list, prior, prefix, pars, n_cores, cluster_type = "PSOCK", seed, same_seed))
       save(list = (Ex_name), file = paste0(save_files, "/", Ex_name, ".RData"))
     }
   }

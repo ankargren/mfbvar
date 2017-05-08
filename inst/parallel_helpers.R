@@ -1,4 +1,4 @@
-parallel_wrapper <- function(data_list, prior, pars, n_cores, cluster_type = "PSOCK", seed, same_seed = FALSE) {
+parallel_wrapper <- function(data_list, prior, freq, pars, n_cores, cluster_type = "PSOCK", seed, same_seed = FALSE) {
 
 
   if (prior == "SS") {
@@ -26,20 +26,19 @@ parallel_wrapper <- function(data_list, prior, pars, n_cores, cluster_type = "PS
     library(mfbvar)
   })
   res <- parallel::clusterMap(cl, fun = worker_fun, Y = data_list$data, d = d_list, d_fcst = d_fcst_list,
-                     MoreArgs = list(prior = prior, pars, n_burnin = n_burnin, n_reps = n_reps,
+                     MoreArgs = list(prior = prior, freq = freq, pars = pars, n_burnin = n_burnin, n_reps = n_reps,
                                      seed = seed, same_seed = same_seed))
   parallel::stopCluster(cl)
   return(res)
 #
 }
 
-worker_fun <- function(Y, prior, d, d_fcst, pars, n_burnin, n_reps, seed, same_seed) {
-  Lambda <- pars$Lambda
+worker_fun <- function(Y, prior, freq, d, d_fcst, pars, n_burnin, n_reps, seed, same_seed) {
   n_fcst <- pars$n_fcst
   n_lags <- pars$n_lags
   lambda_mat <- expand.grid(lambda1 = pars$lambda1_grid, lambda2 = pars$lambda2_grid)
 
-  mapply_fun <- function(Y, prior, lambda1, lambda2, pars, n_burnin, n_reps, seed, same_seed) {
+  mapply_fun <- function(Y, prior, freq, d, d_fcst, lambda1, lambda2, pars, n_burnin, n_reps, seed, same_seed) {
     for (i in names(pars)) {
       assign(i, pars[[i]])
     }
@@ -47,45 +46,81 @@ worker_fun <- function(Y, prior, d, d_fcst, pars, n_burnin, n_reps, seed, same_s
       set.seed(seed)
     }
     if (prior == "SS") {
-      mfbvar_obj <- tryCatch({
-        mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_nu, prior_psi_mean, prior_psi_Omega, n_lags, n_fcst, n_burnin, n_reps, verbose = FALSE)
-      }, error = function(cond) {
-        NULL
+      if (freq == "MF") {
+        mfbvar_obj <- tryCatch({
+          mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_nu, prior_psi_mean, prior_psi_Omega, n_lags, n_fcst, n_burnin, n_reps, verbose = FALSE)
+        }, error = function(cond) {
+          NULL
+        }
+        )
       }
-      )
+      if (freq == "QF") {
+        mfbvar_obj <- tryCatch({
+          qfbvar(Y, d, d_fcst, prior_Pi_AR1, lambda1, lambda2, prior_nu, prior_psi_mean, prior_psi_Omega, n_lags, n_fcst, n_burnin, n_reps, verbose = FALSE)
+        }, error = function(cond) {
+          NULL
+        }
+        )
+      }
     } else {
-      mfbvar_obj <- tryCatch({
-        mfbvar_schorf(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lambda3, n_lags, n_fcst, n_burnin, n_reps, verbose = FALSE)
-      }, error = function(cond) {
-        NULL
+      if (freq == "MF") {
+        mfbvar_obj <- tryCatch({
+          mfbvar_schorf(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lambda3, n_lags, n_fcst, n_burnin, n_reps, verbose = FALSE)
+        }, error = function(cond) {
+          NULL
+        }
+        )
       }
-      )
+      if (freq == "QF") {
+        mfbvar_obj <- tryCatch({
+          qfbvar_schorf(Y, prior_Pi_AR1, lambda1, lambda2, lambda3, n_lags, n_fcst, n_burnin, n_reps, verbose = FALSE)
+        }, error = function(cond) {
+          NULL
+        }
+        )
+      }
     }
 
     if (!is.null(mfbvar_obj$Z_fcst)) {
       fcst <- mfbvar_obj$Z_fcst
       if (prior == "SS") {
-        mdd_est <- tryCatch({
-          mdd1(mfbvar_obj)$log_mdd
-        }, error = function(cond) {
-          NA
-        })
-      } else {
-        mdd_est <- tryCatch({
-          mdd_schorf(mfbvar_obj)
-        }, error = function(cond) {
-          NA
-        })
-      }
+        if (freq == "MF") {
+          mdd_est <- tryCatch({
+            mdd1(mfbvar_obj)$log_mdd
+          }, error = function(cond) {
+            NA
+          })
+        }
+        if (freq == "QF") {
+          mdd_est <- tryCatch({
+            mdd1_qf(mfbvar_obj)$log_mdd
+          }, error = function(cond) {
+            NA
+          })
+        }
 
-    } else {
+      }
+      if (prior == "Minn") {
+        if (freq == "MF") {
+          mdd_est <- tryCatch({
+            mdd_schorf(mfbvar_obj)
+          }, error = function(cond) {
+            NA
+          })
+        }
+        if (freq == "QF") {
+          mdd_est <- mfbvar_obj$lnpYY
+        }
+      }
+    }
+    else {
       mdd_est <- NA
       fcst <- NULL
     }
     return(list(lambda1 = lambda1, lambda2 = lambda2, log_mdd = c(mdd_est), fcst = fcst))
   }
   ret <- mapply(mapply_fun, lambda1 = lambda_mat[, 1], lambda2 = lambda_mat[, 2],
-                MoreArgs = list(Y = Y, prior = prior, pars = pars, n_burnin = n_burnin, n_reps = n_reps, seed = seed, same_seed = same_seed))
+                MoreArgs = list(Y = Y, prior = prior, freq = freq, d = d, d_fcst = d_fcst, pars = pars, n_burnin = n_burnin, n_reps = n_reps, seed = seed, same_seed = same_seed))
   return(ret)
 }
 
