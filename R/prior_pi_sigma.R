@@ -20,8 +20,25 @@ prior_Pi_Sigma <- function(lambda1, lambda2, prior_Pi_AR1, Y, n_lags, prior_nu) 
   n_vars <- length(prior_Pi_AR1)
   prior_Pi_mean <- rbind(diag(prior_Pi_AR1), matrix(0, nrow = n_vars*(n_lags-1), ncol = n_vars))
 
-  error_variance <- apply(Y, 2, function(x) arima(na.omit(x), order = c(4, 0, 0), method = "ML")$sigma2)
   prior_Pi_Omega <- rep(0, n_lags * n_vars)
+  error_variance <- rep(NA, n_vars)
+  for (i in 1:n_vars) {
+    success <- NULL
+    init_order <- 4
+    while(is.null(success)) {
+      error_variance[i] <- tryCatch(arima(na.omit(Y[,i]), order = c(init_order, 0, 0), method = "ML")$sigma2,
+                                 error = function(cond) NA)
+      if (!is.na(error_variance[i])) {
+        success <- 1
+      } else {
+        init_order <- init_order - 1
+        if (init_order < 1) {
+          stop("Too low order.")
+        }
+      }
+    }
+  }
+
   for (l in 1:n_lags) {
     for (r in 1:n_vars) {
       i <- (l - 1) * n_vars + r

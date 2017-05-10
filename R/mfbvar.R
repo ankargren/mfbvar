@@ -94,7 +94,7 @@ mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_n
   }
   burn_in <-  gibbs_sampler(Y = Y, d = d, d_fcst = NULL, Lambda = Lambda, prior_Pi_mean = prior_Pi_mean, prior_Pi_Omega = prior_Pi_Omega,
                             prior_S = prior_S, prior_nu = prior_nu, prior_psi_mean = prior_psi_mean, prior_psi_Omega = prior_psi_Omega,
-                            n_fcst = NULL, n_reps = n_burnin, smooth_state = FALSE, check_roots = TRUE, verbose)
+                            n_fcst = NULL, n_reps = n_burnin, smooth_state = FALSE, check_roots = TRUE, verbose = verbose)
   if (verbose) {
     end_burnin <- Sys.time()
     time_diff <- end_burnin - start_burnin
@@ -107,7 +107,7 @@ mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_n
   main_run <- gibbs_sampler(Y = Y, d = d, d_fcst = d_fcst, Lambda = Lambda, prior_Pi_mean = prior_Pi_mean, prior_Pi_Omega = prior_Pi_Omega,
                             prior_S = prior_S, prior_nu = prior_nu, prior_psi_mean = prior_psi_mean, prior_psi_Omega = prior_psi_Omega,
                             n_fcst = n_fcst, n_reps = n_reps, init_Pi  = burn_in$Pi[,,dim(burn_in$Pi)[3]], init_Sigma = burn_in$Sigma[,,dim(burn_in$Sigma)[3]],
-                            init_psi = burn_in$psi[dim(burn_in$psi)[1],], init_Z   = burn_in$Z[,,dim(burn_in$Z)[3]], smooth_state = FALSE, check_roots = TRUE, verbose)
+                            init_psi = burn_in$psi[dim(burn_in$psi)[1],], init_Z   = burn_in$Z[,,dim(burn_in$Z)[3]], smooth_state = FALSE, check_roots = TRUE, verbose = verbose)
   main_run$call <- fun_call
   if (verbose) {
     time_diff <- Sys.time() - start_burnin

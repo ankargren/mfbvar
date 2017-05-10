@@ -106,7 +106,14 @@ gibbs_sampler <- function(Y, d, d_fcst = NULL, Lambda, prior_Pi_mean, prior_Pi_O
 
   }
 
-  ols_results <- ols_initialization(z = Z[,, 1], d = d, n_lags = n_lags, n_T = n_T, n_vars = n_vars, n_determ = n_determ)
+  ols_results <- tryCatch(ols_initialization(z = Z[,, 1], d = d, n_lags = n_lags, n_T = n_T, n_vars = n_vars, n_determ = n_determ),
+                          error = function(cond) NULL)
+  if (is.null(ols_results)) {
+    ols_results <- list()
+    ols_results$Pi <- prior_Pi_mean
+    ols_results$S <- prior_S
+    ols_results$psi <- prior_psi_mean
+  }
 
   if (is.null(init_Pi)) {
     Pi[,, 1]    <- ols_results$Pi
