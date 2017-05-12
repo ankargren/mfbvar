@@ -169,7 +169,7 @@ gibbs_sampler_qf <- function(Y, d, d_fcst = NULL, prior_Pi_mean, prior_Pi_Omega,
     if (!is.null(n_fcst)) {
 
       # Forecast the process with mean subtracted
-      Z_fcst[1:n_lags, , r] <- Y[(n_T - n_lags+1):n_T,, r] - d[(n_T - n_lags+1):n_T, ] %*% t(matrix(psi[r, ], nrow = n_vars))
+      Z_fcst[1:n_lags, , r] <- Y[(n_T - n_lags+1):n_T,] - d[(n_T - n_lags+1):n_T, ] %*% t(matrix(psi[r, ], nrow = n_vars))
       for (h in 1:n_fcst) {
         Z_fcst[n_lags + h, , r] <- Pi[,, r] %*% matrix(c(t(Z_fcst[(n_lags+h-1):h,, r])), ncol = 1) +
           rmultn(m = matrix(0, nrow = n_vars), Sigma = Sigma[,,r])

@@ -8,16 +8,17 @@ library(lubridate)
 library(mfbvar)
 source(system.file("parallel_helpers.R", package = "mfbvar"))
 data(mf_list)
-mf_list$fcst_date <- mf_list$fcst_date[13:192]
-mf_list$data <- mf_list$data[13:192]
-#mf_list$data <- lapply(mf_list$data, FUN = function(x) x[, -6])
+start_period <- 49
+mf_list$fcst_date <- mf_list$fcst_date[start_period:192]
+mf_list$data <- mf_list$data[start_period:192]
+mf_list$data <- lapply(mf_list$data, FUN = function(x) x[, -6])
 ####################################################################
 ## SETTINGS
 
 
-lags <- c(4)
+lags <- c(4, 12)
 freq <- c("QF")
-prior_Pi_AR1 <- rep(0, 6)
+prior_Pi_AR1 <- rep(0, 5)
 lambda1_grid <- c(0.1, 0.2)
 lambda2_grid <- 1:2
 lambda3 <- 10000
@@ -31,8 +32,7 @@ intervals <- matrix(c(6.5, 7.5,
                       0.4/3, 0.6/3,
                       0.25, 0.75,
                       -1, 1,
-                      0.5, 0.65,
-                      3.5, 4.5), ncol = 2, byrow = TRUE)
+                      0.5, 0.65), ncol = 2, byrow = TRUE)
 prior_psi_mean <- interval_to_moments(intervals)$prior_psi_mean
 prior_psi_Omega <- interval_to_moments(intervals)$prior_psi_Omega
 
@@ -71,7 +71,7 @@ pars <- list(prior_Pi_AR1 = prior_Pi_AR1, lambda1_grid = lambda1_grid, lambda2_g
 ex_count <- 0
 for (prefix in freq) {
   for (n_lags in lags) {
-    for (prior in c("SS", "Minn")) {
+    for (prior in c("Minn")) {
       ex_count <- ex_count + 1
       Ex_name <- paste("Ex", prefix, n_lags, prior, sep = "_")
       cat("Starting Experiment", Ex_name, paste0("(#", ex_count, ")"), "at", as.character(Sys.time()), "\n")
@@ -80,7 +80,7 @@ for (prefix in freq) {
         pars$Lambda <- build_Lambda(c(rep("identity", 5)), n_lags)
       } else {
         data_list <- data_MF
-        pars$Lambda <- build_Lambda(c(rep("identity", 4), "average", "identity"), n_lags)
+        pars$Lambda <- build_Lambda(c(rep("identity", 4), "average"), n_lags)
       }
 
       pars$n_lags <- n_lags
