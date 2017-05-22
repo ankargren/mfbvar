@@ -8,7 +8,7 @@
 #' \item{pi_sample}{Estimated coefficients.}
 
 ols_pi <- function(X, Y) {
-  pi_sample <- chol2inv(chol(crossprod(X))) %*% crossprod(X, Y)
+  pi_sample <- solve(crossprod(X)) %*% crossprod(X, Y)
   return(pi_sample)
 }
 

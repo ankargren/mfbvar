@@ -193,7 +193,7 @@ gibbs_sampler_schorf_qf <- function(Y, prior_Pi_AR1, lambda1, lambda2, lambda3, 
   S0 <- crossprod(Y_dum - X_dum %*% Phi)
   gam0 <- sum(lgamma(0.5 * (n_dummy - n_XX + 1 - 1:n_vars)))
 
-  lnpY0 <- - n_vars * 0.5 * determinant(crossprod(X_dum), logarithm = TRUE)$modulus -
+  lnpY0 <-  -0.5*(n_dummy - n_XX)*n_vars*log(pi) - n_vars * 0.5 * determinant(crossprod(X_dum), logarithm = TRUE)$modulus -
     (n_dummy - n_XX)*0.5*determinant(S0, logarithm = TRUE)$modulus + n_vars * (n_vars - 1) * 0.25*log(pi) + gam0
 
    pb <- timerProgressBar(width = 35, char = "[=-]", style = 5)
@@ -217,7 +217,7 @@ gibbs_sampler_schorf_qf <- function(Y, prior_Pi_AR1, lambda1, lambda2, lambda3, 
    Phi <- tcrossprod(chol2inv(chol(crossprod(XX))), crossprod(YY, XX))
    S1 <- crossprod(YY - XX %*% Phi)
    gam1 <- sum(lgamma(0.5 * (n_tot - n_XX + 1 - 1:n_vars)))
-   lnpY1 <- - n_vars * 0.5 * determinant(XXt.XX, logarithm = TRUE)$modulus -
+   lnpY1 <- -0.5*(n_tot - n_XX)*n_vars*log(pi) - n_vars * 0.5 * determinant(XXt.XX, logarithm = TRUE)$modulus -
      (n_tot - n_XX)*0.5*determinant(S1, logarithm = TRUE)$modulus + n_vars * (n_vars - 1) * 0.25*log(pi) + gam1
 
    for (r in 2:(n_reps)) {
