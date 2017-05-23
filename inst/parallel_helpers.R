@@ -82,7 +82,7 @@ worker_fun <- function(Y, prior, freq, d, d_fcst, pars, n_burnin, n_reps, seed, 
     }
 
     if (!is.null(mfbvar_obj$Z_fcst)) {
-      fcst <- mfbvar_obj$Z_fcst
+      fcst <- t(mfbvar_obj$Z_fcst[-(1:3),5,])
       if (prior == "SS") {
         if (freq == "MF") {
           mdd_est <- tryCatch({
