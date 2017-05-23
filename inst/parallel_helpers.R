@@ -166,7 +166,7 @@ worker_fun_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1_grid, lambda2_gri
     }
     )
     if (!is.null(mfbvar_obj$Z_fcst)) {
-      fcst <- mfbvar_obj$Z_fcst
+      fcst <- t(mfbvar_obj$Z_fcst[-(1:3),5,])
       mdd_est <- tryCatch({
         mdd_schorf(mfbvar_obj)
       }, error = function(cond) {

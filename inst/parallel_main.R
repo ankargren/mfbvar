@@ -19,7 +19,7 @@ mf_list$data <- lapply(mf_list$data, FUN = function(x) x[, -6])
 
 
 lags <- c(4)
-freq <- c("MF")
+freq <- c("MF", "QF")
 prior_Pi_AR1 <- rep(0, 5)
 lambda1_grid <- seq(0.05, 1, length.out = 8)
 lambda2_grid <- seq(0.5, 5, length.out = 8)
@@ -105,4 +105,4 @@ for (prefix in freq) {
   }
 }
 
-Sys.time()
+cat("Finishing at", as.character(Sys.time()), "\n")
