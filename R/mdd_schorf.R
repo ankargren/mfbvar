@@ -5,7 +5,7 @@
 #' @templateVar mfbvar_obj TRUE
 #' @template man_template
 #' @return The log marginal data density estimate (bar a constant)
-mdd_schorf <- function(mfbvar_obj, monthly_cols, type = "full", ...) {
+mdd_schorf <- function(mfbvar_obj, quarterly_cols, type = "full", ...) {
   postsim <- mfbvar_obj$lnpYY[-1]
   Z <- mfbvar_obj$Z[,, -1]
   n_T <- dim(Z)[1]
@@ -18,10 +18,10 @@ mdd_schorf <- function(mfbvar_obj, monthly_cols, type = "full", ...) {
   } else {
     if (type == "diff") {
       n_TT <- (n_T %% 3) + 1
-      lstate0 <- Z[n_TT:n_T, monthly_cols, , drop = FALSE]
+      lstate0 <- Z[n_TT:n_T, quarterly_cols, , drop = FALSE]
 
       lstateA <- c()
-      for (i in seq_along(monthly_cols)) {
+      for (i in seq_along(quarterly_cols)) {
         lstate1 <- t(lstate0[seq(from = 1, to = n_T-n_TT+1, by = 3), i, ])
         lstate2 <- t(lstate0[seq(from = 2, to = n_T-n_TT+1, by = 3), i, ])
         lstate3 <- t(lstate0[seq(from = 3, to = n_T-n_TT+1, by = 3), i, ])

@@ -62,7 +62,7 @@ mfbvar_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lambda3, n_
     start_burnin <- Sys.time()
   }
   burn_in <-  gibbs_sampler_schorf(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lambda3, n_lags, n_fcst = NULL, n_burnin,
-                                   smooth_state = FALSE, check_roots = TRUE, verbose = verbose, ...)
+                                   smooth_state = FALSE, check_roots = TRUE, verbose = verbose)
   if (verbose) {
     end_burnin <- Sys.time()
     time_diff <- end_burnin - start_burnin
