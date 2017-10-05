@@ -143,11 +143,11 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
   X_dum <- matrix(0, nrow = dummy_size, ncol = n_vars*n_lags + 1)
   n_XX <- ncol(X_dum)
   ## 1: AR(1) coefficients
-  Y_dum[1:n_vars, ] <- diag(s_bar * prior_Pi_AR1 * Y_bar)/lambda1
+  Y_dum[1:n_vars, ] <- diag(s_bar * prior_Pi_AR1)/lambda1
   breaks[1] <- n_vars
 
   ## 2: AR(2), ..., AR(p) coefficients
-  X_dum[1:(n_vars*n_lags), 1:(n_vars*n_lags)] <- kronecker(diag((1:n_lags)^lambda2), diag(s_bar*Y_bar))/lambda1
+  X_dum[1:(n_vars*n_lags), 1:(n_vars*n_lags)] <- kronecker(diag((1:n_lags)^lambda2), diag(s_bar))/lambda1
   if (n_lags > 1) {
     breaks[2] <- breaks[1] + (n_lags - 1)*n_vars
   } else {
