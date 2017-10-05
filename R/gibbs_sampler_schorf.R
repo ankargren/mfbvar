@@ -233,7 +233,10 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
   }
   h0 <- matrix(t(Z_1[nrow(Z_1):1, ]), ncol = 1)
 
-  pb <- timerProgressBar(width = 35, char = "[=-]", style = 5)
+  if (verbose == TRUE) {
+    pb <- timerProgressBar(width = 35, char = "[=-]", style = 5)
+  }
+
   for (r in 2:(n_reps)) {
 
     Pi_r1 <- Pi[,,r-1]
@@ -323,11 +326,15 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
     }
     #########################################
     # Add the likelihood here
-    if (verbose) {
+    if (verbose == TRUE) {
       setTimerProgressBar(pb, r/n_reps)
     }
   }
-  close(pb)
+
+  if (verbose == TRUE) {
+    close(pb)
+  }
+
 
   ################################################################
   ### Prepare the return object

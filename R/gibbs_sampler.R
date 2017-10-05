@@ -168,7 +168,10 @@ gibbs_sampler <- function(Y, d, d_fcst = NULL, Lambda, prior_Pi_mean, prior_Pi_O
 
   Z_1 <- Z[1:n_pseudolags,, 1]
 
-  pb <- timerProgressBar(width = 35, char = "[=-]", style = 5)
+  if (verbose == TRUE) {
+    pb <- timerProgressBar(width = 35, char = "[=-]", style = 5)
+  }
+
   for (r in 2:(n_reps)) {
     ################################################################
     ### Pi and Sigma step
@@ -208,11 +211,14 @@ gibbs_sampler <- function(Y, d, d_fcst = NULL, Lambda, prior_Pi_mean, prior_Pi_O
       Z_fcst[, , r] <- Z_fcst[, , r] + d_fcst_lags %*% t(matrix(psi[r, ], nrow = n_vars))
     }
 
-    if (verbose) {
+    if (verbose == TRUE) {
       setTimerProgressBar(pb, r/n_reps)
     }
   }
-  close(pb)
+  if (verbose == TRUE) {
+    close(pb)
+  }
+
 
   ################################################################
   ### Prepare the return object

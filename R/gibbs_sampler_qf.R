@@ -147,8 +147,10 @@ gibbs_sampler_qf <- function(Y, d, d_fcst = NULL, prior_Pi_mean, prior_Pi_Omega,
   inv_prior_Pi_Omega <- chol2inv(chol(prior_Pi_Omega))
   Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi_mean
 
+  if (verbose == TRUE) {
+    pb <- timerProgressBar(width = 35, char = "[=-]", style = 5)
+  }
 
-  pb <- timerProgressBar(width = 35, char = "[=-]", style = 5)
   for (r in 2:(n_reps)) {
     ################################################################
     ### Pi and Sigma step
@@ -183,7 +185,10 @@ gibbs_sampler_qf <- function(Y, d, d_fcst = NULL, prior_Pi_mean, prior_Pi_Omega,
       setTimerProgressBar(pb, r/n_reps)
     }
   }
-  close(pb)
+  if (verbose == TRUE) {
+    close(pb)
+  }
+
 
   ################################################################
   ### Prepare the return object

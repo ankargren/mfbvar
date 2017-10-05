@@ -8,7 +8,7 @@ using namespace Rcpp;
 
 // build_U_cpp
 arma::mat build_U_cpp(arma::mat Pi, int n_determ, int n_vars, int n_lags);
-RcppExport SEXP mfbvar_build_U_cpp(SEXP PiSEXP, SEXP n_determSEXP, SEXP n_varsSEXP, SEXP n_lagsSEXP) {
+RcppExport SEXP _mfbvar_build_U_cpp(SEXP PiSEXP, SEXP n_determSEXP, SEXP n_varsSEXP, SEXP n_lagsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -22,7 +22,7 @@ END_RCPP
 }
 // max_eig_cpp
 double max_eig_cpp(arma::mat A);
-RcppExport SEXP mfbvar_max_eig_cpp(SEXP ASEXP) {
+RcppExport SEXP _mfbvar_max_eig_cpp(SEXP ASEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -33,7 +33,7 @@ END_RCPP
 }
 // rmatn
 arma::mat rmatn(arma::mat M, arma::mat Q, arma::mat P);
-RcppExport SEXP mfbvar_rmatn(SEXP MSEXP, SEXP QSEXP, SEXP PSEXP) {
+RcppExport SEXP _mfbvar_rmatn(SEXP MSEXP, SEXP QSEXP, SEXP PSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -46,7 +46,7 @@ END_RCPP
 }
 // rinvwish
 arma::mat rinvwish(int v, arma::mat S);
-RcppExport SEXP mfbvar_rinvwish(SEXP vSEXP, SEXP SSEXP) {
+RcppExport SEXP _mfbvar_rinvwish(SEXP vSEXP, SEXP SSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -58,7 +58,7 @@ END_RCPP
 }
 // rmultn
 arma::vec rmultn(arma::vec m, arma::mat Sigma);
-RcppExport SEXP mfbvar_rmultn(SEXP mSEXP, SEXP SigmaSEXP) {
+RcppExport SEXP _mfbvar_rmultn(SEXP mSEXP, SEXP SigmaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -70,7 +70,7 @@ END_RCPP
 }
 // vec_na_rm
 arma::vec vec_na_rm(const arma::vec vx);
-RcppExport SEXP mfbvar_vec_na_rm(SEXP vxSEXP) {
+RcppExport SEXP _mfbvar_vec_na_rm(SEXP vxSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -81,7 +81,7 @@ END_RCPP
 }
 // smooth
 arma::mat smooth(const arma::mat& mZ, const arma::mat& mX, const Rcpp::List& lH, arma::mat& mF, const arma::mat& mB, const arma::mat& mQ, const int iT, const int ip, const int iq, const int is, const arma::vec& h0, const arma::mat& P0, const arma::vec& X0);
-RcppExport SEXP mfbvar_smooth(SEXP mZSEXP, SEXP mXSEXP, SEXP lHSEXP, SEXP mFSEXP, SEXP mBSEXP, SEXP mQSEXP, SEXP iTSEXP, SEXP ipSEXP, SEXP iqSEXP, SEXP isSEXP, SEXP h0SEXP, SEXP P0SEXP, SEXP X0SEXP) {
+RcppExport SEXP _mfbvar_smooth(SEXP mZSEXP, SEXP mXSEXP, SEXP lHSEXP, SEXP mFSEXP, SEXP mBSEXP, SEXP mQSEXP, SEXP iTSEXP, SEXP ipSEXP, SEXP iqSEXP, SEXP isSEXP, SEXP h0SEXP, SEXP P0SEXP, SEXP X0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -104,7 +104,7 @@ END_RCPP
 }
 // smoother
 arma::mat smoother(arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, arma::mat Q_comp, int n_T, int n_vars, int n_comp, arma::mat z0, arma::mat P0);
-RcppExport SEXP mfbvar_smoother(SEXP YSEXP, SEXP LambdaSEXP, SEXP Pi_compSEXP, SEXP Q_compSEXP, SEXP n_TSEXP, SEXP n_varsSEXP, SEXP n_compSEXP, SEXP z0SEXP, SEXP P0SEXP) {
+RcppExport SEXP _mfbvar_smoother(SEXP YSEXP, SEXP LambdaSEXP, SEXP Pi_compSEXP, SEXP Q_compSEXP, SEXP n_TSEXP, SEXP n_varsSEXP, SEXP n_compSEXP, SEXP z0SEXP, SEXP P0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -123,7 +123,7 @@ END_RCPP
 }
 // generate_mhh
 arma::mat generate_mhh(arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, arma::mat Q_comp, int n_T, int n_vars, int n_comp, arma::mat z0, arma::mat P0);
-RcppExport SEXP mfbvar_generate_mhh(SEXP YSEXP, SEXP LambdaSEXP, SEXP Pi_compSEXP, SEXP Q_compSEXP, SEXP n_TSEXP, SEXP n_varsSEXP, SEXP n_compSEXP, SEXP z0SEXP, SEXP P0SEXP) {
+RcppExport SEXP _mfbvar_generate_mhh(SEXP YSEXP, SEXP LambdaSEXP, SEXP Pi_compSEXP, SEXP Q_compSEXP, SEXP n_TSEXP, SEXP n_varsSEXP, SEXP n_compSEXP, SEXP z0SEXP, SEXP P0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -142,7 +142,7 @@ END_RCPP
 }
 // simulation_smoother
 arma::mat simulation_smoother(arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, arma::mat Q_comp, int n_T, int n_vars, int n_comp, arma::mat z0, arma::mat P0);
-RcppExport SEXP mfbvar_simulation_smoother(SEXP YSEXP, SEXP LambdaSEXP, SEXP Pi_compSEXP, SEXP Q_compSEXP, SEXP n_TSEXP, SEXP n_varsSEXP, SEXP n_compSEXP, SEXP z0SEXP, SEXP P0SEXP) {
+RcppExport SEXP _mfbvar_simulation_smoother(SEXP YSEXP, SEXP LambdaSEXP, SEXP Pi_compSEXP, SEXP Q_compSEXP, SEXP n_TSEXP, SEXP n_varsSEXP, SEXP n_compSEXP, SEXP z0SEXP, SEXP P0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -161,7 +161,7 @@ END_RCPP
 }
 // loglike
 arma::mat loglike(arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, arma::mat Q_comp, int n_T, int n_vars, int n_comp, arma::mat z0, arma::mat P0);
-RcppExport SEXP mfbvar_loglike(SEXP YSEXP, SEXP LambdaSEXP, SEXP Pi_compSEXP, SEXP Q_compSEXP, SEXP n_TSEXP, SEXP n_varsSEXP, SEXP n_compSEXP, SEXP z0SEXP, SEXP P0SEXP) {
+RcppExport SEXP _mfbvar_loglike(SEXP YSEXP, SEXP LambdaSEXP, SEXP Pi_compSEXP, SEXP Q_compSEXP, SEXP n_TSEXP, SEXP n_varsSEXP, SEXP n_compSEXP, SEXP z0SEXP, SEXP P0SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -177,4 +177,24 @@ BEGIN_RCPP
     rcpp_result_gen = Rcpp::wrap(loglike(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0));
     return rcpp_result_gen;
 END_RCPP
+}
+
+static const R_CallMethodDef CallEntries[] = {
+    {"_mfbvar_build_U_cpp", (DL_FUNC) &_mfbvar_build_U_cpp, 4},
+    {"_mfbvar_max_eig_cpp", (DL_FUNC) &_mfbvar_max_eig_cpp, 1},
+    {"_mfbvar_rmatn", (DL_FUNC) &_mfbvar_rmatn, 3},
+    {"_mfbvar_rinvwish", (DL_FUNC) &_mfbvar_rinvwish, 2},
+    {"_mfbvar_rmultn", (DL_FUNC) &_mfbvar_rmultn, 2},
+    {"_mfbvar_vec_na_rm", (DL_FUNC) &_mfbvar_vec_na_rm, 1},
+    {"_mfbvar_smooth", (DL_FUNC) &_mfbvar_smooth, 13},
+    {"_mfbvar_smoother", (DL_FUNC) &_mfbvar_smoother, 9},
+    {"_mfbvar_generate_mhh", (DL_FUNC) &_mfbvar_generate_mhh, 9},
+    {"_mfbvar_simulation_smoother", (DL_FUNC) &_mfbvar_simulation_smoother, 9},
+    {"_mfbvar_loglike", (DL_FUNC) &_mfbvar_loglike, 9},
+    {NULL, NULL, 0}
+};
+
+RcppExport void R_init_mfbvar(DllInfo *dll) {
+    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+    R_useDynamicSymbols(dll, FALSE);
 }
