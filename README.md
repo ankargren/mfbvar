@@ -167,10 +167,13 @@ To estimate the marginal data density, there is a generic function `mdd()` for w
 
 ``` r
 mdd(mod_minn, quarterly_cols = 5)
+#> Warning in if (type == "diff") {: the condition has length > 1 and only the
+#> first element will be used
+#> Warning in if (type == "full") {: the condition has length > 1 and only the
+#> first element will be used
 #> [1] -29.49761
-mdd(mod_ss)
-#>          [,1]
-#> [1,] -732.498
+mdd(mod_ss) 
+#> [1] -732.498
 ```
 
 The caveat is that the mdd is estimated up to a constant and thus not directly comparable between models based on different prios.

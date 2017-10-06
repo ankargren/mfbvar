@@ -88,6 +88,6 @@ head(predict(mod_minn, pred_quantiles = 0.5, tidy = TRUE))
 To estimate the marginal data density, there is a generic function `mdd()` for which there are methods for classes `mfbvar_ss` and `mfbvar_minn`.
 ```{r, cache = TRUE}
 mdd(mod_minn, quarterly_cols = 5)
-mdd(mod_ss)
+mdd(mod_ss) 
 ```
 The caveat is that the mdd is estimated up to a constant and thus not directly comparable between models based on different prios.
