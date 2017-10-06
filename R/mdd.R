@@ -37,6 +37,7 @@ mdd.mfbvar_ss <- function(x, method = 1, ...) {
 #' @param x object of class \code{mfbvar_minn}
 #' @param quarterly_cols numeric vector with positions of quarterly variables
 #' @param type \code{"full"} gives implementation based on the paper by Schorfheide and Song (2015), \code{"diff"} implementation on MATLAB code by Schorfheide and Song (2015)
+#' @param ... additional arguments (currently unused)
 #' @template man_template
 #' @seealso \code{\link{mdd}}, \code{\link{mdd.mfbvar_ss}}
 mdd.mfbvar_minn <- function(x, quarterly_cols, type = c("full", "diff"), ...) {

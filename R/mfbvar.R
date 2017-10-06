@@ -39,7 +39,7 @@ mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_n
     }
   }
 
-  if (!is.null(n_fcst)) {
+  if (n_fcst > 0) {
     if (nrow(d_fcst) != n_fcst) {
       stop(paste0("d_fcst has ", nrow(d_fcst), " rows, but n_fcst is ", n_fcst, "."))
     } else {
@@ -95,7 +95,7 @@ mfbvar <- function(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, prior_n
   }
   burn_in <-  gibbs_sampler(Y = Y, d = d, d_fcst = NULL, Lambda = Lambda, prior_Pi_mean = prior_Pi_mean, prior_Pi_Omega = prior_Pi_Omega,
                             prior_S = prior_S, prior_nu = prior_nu, prior_psi_mean = prior_psi_mean, prior_psi_Omega = prior_psi_Omega,
-                            n_fcst = NULL, n_reps = n_burnin, smooth_state = FALSE, check_roots = TRUE, verbose = verbose)
+                            n_fcst = 0, n_reps = n_burnin, smooth_state = FALSE, check_roots = TRUE, verbose = verbose)
   if (verbose) {
     end_burnin <- Sys.time()
     time_diff <- end_burnin - start_burnin

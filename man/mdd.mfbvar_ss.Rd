@@ -13,6 +13,8 @@ mdd1(mfbvar_obj)
 mdd2(mfbvar_obj, p_trunc)
 }
 \arguments{
+\item{x}{object of class \code{mfbvar_ss}}
+
 \item{method}{option for which method to choose for computing the mdd}
 
 \item{...}{additional arguments (currently only \code{p_trunc} available)}

@@ -235,7 +235,7 @@ summary.mfbvar_prior <- function(prior_obj, ...) {
 }
 #' Update priors for an mfbvar model
 #'
-#' @param obj an object of class \code{mfbvar\_prior}
+#' @param prior_obj an object of class \code{mfbvar\_prior}
 #' @param ... named arguments for prior attributes to update
 #' @seealso \code{\link{set_prior}}
 update_prior <- function(prior_obj, ...)
