@@ -18,5 +18,5 @@ mdd(x, ...)
 This is a generic function. See the methods for more information.
 }
 \seealso{
-\code{\link{mdd.ss}}, \code{\link{mdd.minn}}
+\code{\link{mdd.mfbvar_ss}}, \code{\link{mdd.mfbvar_minn}}
 }

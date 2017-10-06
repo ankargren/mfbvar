@@ -70,7 +70,7 @@ gibbs_sampler <- function(Y, d, d_fcst = NULL, Lambda, prior_Pi_mean, prior_Pi_O
   Sigma <- array(NA, dim = c(n_vars, n_vars, n_reps))
   psi   <- array(NA, dim = c(n_reps, n_vars * n_determ))
   Z     <- array(NA, dim = c(n_T, n_vars, n_reps))
-  if (!is.null(n_fcst)) {
+  if (n_fcst > 0) {
     Z_fcst<- array(NA, dim = c(n_fcst+n_lags, n_vars, n_reps),
                    dimnames = list(c((n_T-n_lags+1):n_T, paste0("fcst_", 1:n_fcst)), NULL, NULL))
     d_fcst_lags <- matrix(rbind(d[(n_T-n_lags+1):n_T, , drop = FALSE], d_fcst), nrow = n_fcst + n_lags)
@@ -199,7 +199,7 @@ gibbs_sampler <- function(Y, d, d_fcst = NULL, Lambda, prior_Pi_mean, prior_Pi_O
 
     ################################################################
     ### Forecasting step
-    if (!is.null(n_fcst)) {
+    if (n_fcst > 0) {
 
       # Forecast the process with mean subtracted
       Z_fcst[1:n_lags, , r] <- Z[(n_T - n_lags+1):n_T,, r] - d[(n_T - n_lags+1):n_T, ] %*% t(matrix(psi[r, ], nrow = n_vars))
@@ -233,7 +233,7 @@ gibbs_sampler <- function(Y, d, d_fcst = NULL, Lambda, prior_Pi_mean, prior_Pi_O
     return_obj$roots <- roots
     return_obj$num_tries <- num_tries
   }
-  if (!is.null(n_fcst)) {
+  if (n_fcst > 0) {
     return_obj$Z_fcst <- Z_fcst
   }
   if (smooth_state == TRUE) {

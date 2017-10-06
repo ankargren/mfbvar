@@ -3,7 +3,7 @@
 #' \code{mdd} estimates the marginal data density.
 #'
 #' This is a generic function. See the methods for more information.
-#' @seealso \code{\link{mdd.ss}}, \code{\link{mdd.minn}}
+#' @seealso \code{\link{mdd.mfbvar_ss}}, \code{\link{mdd.mfbvar_minn}}
 #' @param x argument to dispatch on (of class \code{mfbvar_ss} or \code{mfbvar_minn})
 #' @param ... additional named arguments passed on to the methods
 
@@ -14,30 +14,36 @@ mdd <- function(x, ...) {
 #' Marginal data density
 #'
 #' Estimate the marginal data density for the model with a steady-state prior.
+#' @param x object of class \code{mfbvar_ss}
 #' @param method option for which method to choose for computing the mdd
 #' @param ... additional arguments (currently only \code{p_trunc} available)
 #' @details The generic \code{mdd} calls either \code{mdd1} or \code{mdd2} if \code{mfbvar_obj} is of class \code{mfbvar_ss}.
-#' @seealso \code{\link{mdd}}, \code{\link{mdd.minn}}
-mdd.ss <- function(mfbvar_obj, method = c(1, 2), ...) {
+#' @seealso \code{\link{mdd}}, \code{\link{mdd.mfbvar_minn}}
+mdd.mfbvar_ss <- function(x, method = 1, ...) {
   if (method == 1) {
-    mdd_est <- mdd1(mfbvar_obj)
+    mdd_est <- mdd1(x)
   } else if (method == 2) {
-    mdd_est <- mdd2(mfbvar_obj, ...)
+    mdd_est <- mdd2(x, ...)
   } else {
     stop("method: Must be 1 or 2.")
   }
+  return(c(mdd_est$log_mdd))
 }
 
 #' Marginal data density
 #'
 #' Estimate the marginal data density for the model with a Minnesota prior.
 #' @details The generic \code{mdd} calls \code{mdd_minn} if \code{mfbvar_obj} is of class \code{mfbvar_minn}.
-#' @seealso \code{\link{mdd}}, \code{\link{mdd.ss}}
-mdd.minn <- function(mfbvar_obj, quarterly_cols, type = "full", ...) {
-  mdd_minn(mfbvar_obj, quarterly_cols, type)
+#' @param x object of class \code{mfbvar_minn}
+#' @param quarterly_cols numeric vector with positions of quarterly variables
+#' @param type \code{"full"} gives implementation based on the paper by Schorfheide and Song (2015), \code{"diff"} implementation on MATLAB code by Schorfheide and Song (2015)
+#' @template man_template
+#' @seealso \code{\link{mdd}}, \code{\link{mdd.mfbvar_ss}}
+mdd.mfbvar_minn <- function(x, quarterly_cols, type = c("full", "diff"), ...) {
+  mdd_minn(x, quarterly_cols, type)
 }
 
-#' @rdname mdd.ss
+#' @rdname mdd.mfbvar_ss
 #' @keywords internal
 #' @return
 #' \code{mdd1} returns a list with components (all are currently in logarithms):
@@ -157,7 +163,7 @@ mdd1 <- function(mfbvar_obj) {
 }
 
 
-#' @rdname mdd.ss
+#' @rdname mdd.mfbvar_ss
 #' @details \code{mdd1} uses method 1, \code{mdd2} uses method 2.
 #' @templateVar mfbvar_obj TRUE
 #' @templateVar p_trunc TRUE
@@ -279,7 +285,93 @@ mdd2 <- function(mfbvar_obj, p_trunc) {
 #' @return The log marginal data density estimate (bar a constant)
 #'
 mdd_minn <- function(mfbvar_obj, quarterly_cols, type = "full", ...) {
+  postsim <- mfbvar_obj$lnpYY[-1]
+  Z <- mfbvar_obj$Z[,, -1]
+  n_T <- dim(Z)[1]
+  n_reps <- dim(Z)[3]
 
+  temp <- apply(Z[-(1:mfbvar_obj$n_lags), , ], 3, function(x) x[is.na(c(mfbvar_obj$Y[-(1:mfbvar_obj$n_lags),]))])
+
+  if (length(temp) == 0) {
+    return(log_mdd = mean(postsim))
+  } else {
+    if (type == "diff") {
+      n_TT <- (n_T %% 3) + 1
+      lstate0 <- Z[n_TT:n_T, quarterly_cols, , drop = FALSE]
+
+      lstateA <- c()
+      for (i in seq_along(quarterly_cols)) {
+        lstate1 <- t(lstate0[seq(from = 1, to = n_T-n_TT+1, by = 3), i, ])
+        lstate2 <- t(lstate0[seq(from = 2, to = n_T-n_TT+1, by = 3), i, ])
+        lstate3 <- t(lstate0[seq(from = 3, to = n_T-n_TT+1, by = 3), i, ])
+
+        # I don't know why we do this!
+        temp <- cbind(lstate3 - lstate2, lstate2 - lstate1)
+        lstateA <- cbind(lstateA, temp)
+      }
+
+      n_para <- ncol(lstateA)
+      n_simul <- nrow(lstateA)
+
+      drawmean <- matrix(colMeans(lstateA), ncol = 1)
+      drawsig <- crossprod(lstateA)/n_simul - tcrossprod(drawmean)
+
+
+      svd_res <- svd(drawsig, nu = ncol(drawsig))
+      up <- svd_res$u
+      sp <- rbind(diag(svd_res$d), matrix(0, nrow = dim(up)[1]- length(svd_res$d), ncol = length(svd_res$d)))
+      vp <- svd_res$v
+
+      sp_inv <- diag(ifelse(diag(sp) > 1e-12, 1/diag(sp), 0))
+      drawsiglndet <- sum(log(ifelse(diag(sp) > 1e-12, diag(sp), 1)))
+
+      drawsiginv <- 0*drawsig
+      drawsigdet <- 0*drawsig
+      for (j in 1:nrow(drawsig)) {
+        if (sp[j, j] > 1e-12) {
+          drawsiginv[j, j] <- 1/sp[j, j]
+          drawsigdet[j, j] <- sp[j, j]
+        } else {
+          drawsigdet[j, j] <- 1
+        }
+      }
+
+
+      drawsiginv <- vp %*% tcrossprod(sp_inv, up)
+
+      paradev  <- lstateA - kronecker(matrix(1, n_simul, 1), matrix(drawmean, nrow = 1))
+      quadpara <- rowSums((paradev %*% drawsiginv) * paradev)
+    } else if (type == "full") {
+      n_para <- nrow(temp)
+
+      drawmean <- matrix(rowMeans(temp), ncol = 1)
+      drawsig <- tcrossprod(temp/sqrt(ncol(temp))) - tcrossprod(drawmean)
+      drawsiginv <- chol2inv(chol(drawsig))
+      drawsiglndet <- as.numeric(determinant(drawsiginv, logarithm = TRUE)$modulus)
+
+      paradev  <- temp - kronecker(matrix(1, 1, n_reps), drawmean)
+      quadpara <- rowSums((t(paradev) %*% drawsiginv) * t(paradev))
+    }
+
+    p <- seq(from = 0.1, to = 0.9, by = 0.1)
+    pcrit <- qchisq(p, df = nrow(drawmean))
+
+    invlike <- matrix(NA, n_reps, length(p))
+    indpara <- invlike
+    lnfpara <- indpara
+    densfac <- -0.5*n_para*log(2*pi) - 0.5*drawsiglndet - 0.5*quadpara[1] - log(p) - postsim[1]
+    densfac <- -mean(densfac)
+    for (i in seq_along(p)) {
+      for (j in 1:n_reps) {
+        lnfpara[j, i] <- -0.5*n_para*log(2*pi) - 0.5*drawsiglndet - 0.5*quadpara[j] - log(p[i])
+        indpara[j, i] <- quadpara[j] < pcrit[i]
+        invlike[j, i] <- exp(lnfpara[j, i] - postsim[j]+densfac) * indpara[j, i]
+      }
+      meaninvlike <- colMeans(invlike)
+      mdd <- -log(meaninvlike)
+    }
+    return(log_mdd = mean(mdd))
+  }
 }
 
 #' Marginal data density grid search

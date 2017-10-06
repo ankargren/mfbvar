@@ -5,9 +5,9 @@
 \title{Set priors for an mfbvar model}
 \usage{
 set_prior(Y, d = NULL, d_fcst = NULL, Lambda, prior_Pi_AR1 = rep(0,
-  ncol(Y)), lambda1 = 0.2, lambda2 = 1, lambda3 = NULL, prior_nu = NULL,
-  prior_psi_mean = NULL, prior_psi_Omega = NULL, n_lags, n_fcst = 0,
-  n_burnin, n_reps, verbose = FALSE)
+  ncol(Y)), lambda1 = 0.2, lambda2 = 1, lambda3 = 10000,
+  prior_nu = ncol(Y) + 2, prior_psi_mean = NULL, prior_psi_Omega = NULL,
+  n_lags, n_fcst = 0, n_burnin, n_reps, verbose = FALSE)
 }
 \arguments{
 \item{Y}{The data matrix of size \code{(n_T + n_lags) * n_vars} with \code{NA} representing missingness. Must correspond well to the specification of \code{M_Lambda}.}
@@ -33,6 +33,8 @@ set_prior(Y, d = NULL, d_fcst = NULL, Lambda, prior_Pi_AR1 = rep(0,
 \item{prior_psi_Omega}{Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.}
 
 \item{n_lags}{The number of lags.}
+
+\item{n_fcst}{The number of periods to forecast.}
 
 \item{n_burnin}{The number of burn-in replications.}
 

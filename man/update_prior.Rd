@@ -4,12 +4,12 @@
 \alias{update_prior}
 \title{Update priors for an mfbvar model}
 \usage{
-update_prior(obj, ...)
+update_prior(prior_obj, ...)
 }
 \arguments{
-\item{obj}{an object of class \code{mfbvar\_prior}}
-
 \item{...}{named arguments for prior attributes to update}
+
+\item{obj}{an object of class \code{mfbvar\_prior}}
 }
 \description{
 Update priors for an mfbvar model

@@ -64,7 +64,7 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
   Pi    <- array(NA, dim = c(n_vars, n_vars * n_lags + 1, n_reps))
   Sigma <- array(NA, dim = c(n_vars, n_vars, n_reps))
   Z     <- array(NA, dim = c(n_T, n_vars, n_reps))
-  if (!is.null(n_fcst)) {
+  if (n_fcst>0) {
     Z_fcst<- array(NA, dim = c(n_fcst+n_lags, n_vars, n_reps),
                    dimnames = list(c((n_T-n_lags+1):n_T, paste0("fcst_", 1:n_fcst)), NULL, NULL))
   }
@@ -250,7 +250,7 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
     mB <- matrix(c(const_r1, rep(0, n_vars*(n_lags - 1))), ncol = 1)
     Z_res <- smooth_samp_xx(mZ = mZ, mX = mX, lH = lH, lH0 = lH0, mF = mF, mB = mB, mQ = mQ,
                             iT = iT, ip = ip, iq = iq, is = is, h0 = h0,
-                            P0 = P0, X0 = X0)$mh[, 1:n_vars]
+                            P0 = P0, X0 = X0, Lambda = Lambda)$mh[, 1:n_vars]
     Z[,, r] <- rbind(Z_1, Z_res)
 
     Z_comp <- build_Z(z = Z[,, r], n_lags = n_lags)
@@ -314,7 +314,7 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
 
     ################################################################
     ### Forecasting step
-    if (!is.null(n_fcst)) {
+    if (n_fcst>0) {
 
       # Forecast the process with mean subtracted
       Z_fcst[1:n_lags, , r] <- Z[(n_T - n_lags+1):n_T,, r]
@@ -349,7 +349,7 @@ gibbs_sampler_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lamb
     return_obj$roots <- roots
     return_obj$num_tries <- num_tries
   }
-  if (!is.null(n_fcst)) {
+  if (n_fcst>0) {
     return_obj$Z_fcst <- Z_fcst
   }
   if (smooth_state == TRUE) {

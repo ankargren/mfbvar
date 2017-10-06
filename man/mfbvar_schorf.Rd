@@ -38,5 +38,5 @@ The main function for running the MF-SS-BVAR.
 }
 \details{
 \code{mfbvar} calls \code{\link{gibbs_sampler}} (implemented in C++)
- @keywords internal
 }
+\keyword{internal}

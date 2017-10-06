@@ -17,6 +17,7 @@
 #' @templateVar n_burnin TRUE
 #' @templateVar n_reps TRUE
 #' @templateVar verbose TRUE
+#' @keywords internal
 #' @template man_template
 #' @return An \code{mfbvar} object
 #' @details \code{mfbvar} calls \code{\link{gibbs_sampler}} (implemented in C++)
@@ -317,52 +318,4 @@ predict.mfbvar <- function(object, pred_quantiles = c(0.10, 0.50, 0.90), tidy = 
     return(ret_tidy)
   }
 
-}
-
-#' Tidy method for class mfbvar
-#'
-#' Method for obtaining tidy results from mfbvar objects.
-#'
-#' @param x object of class mfbvar
-#' @param result string containing either \code{Pi}, \code{Sigma} or \code{psi} for which object to return
-#' @param ... Currently not in use.
-#' @template man_template
-#' @details The return can be large (especially for \code{result = "Pi"}).
-#'
-tidy.mfbvar <- function(x, result, ...) {
-  dep_name <- x$names_col
-  if (result == "Pi") {
-
-    names <- expand.grid(dep_name, dep_name, 1:x$n_lags)
-    names_vec <- paste0(names[, 1], "_", names[, 2], ".l", names[, 3])
-    ret <- data.frame(value = c(x$Pi), term = names_vec, pos_row = rep(1:x$n_vars, x$n_vars*x$n_lags),
-                      pos_col = rep(1:x$n_lags, each = x$n_vars^2), iteration = rep(1:x$n_reps, each = x$n_lags*x$n_vars^2))
-  }
-
-  if (result == "Sigma") {
-    values <- c(sapply(1:x$n_reps, function(i) {
-      temp <- x$Sigma[,, i]
-      c(temp[lower.tri(x$Sigma[,, i], diag = TRUE)])
-    }))
-
-    names <- expand.grid(paste0(dep_name, "_"), dep_name)
-    names_mat <- matrix(paste0(names[,1], names[, 2]), x$n_vars)
-    names_vec <- names_mat[lower.tri(names_mat, diag = TRUE)]
-
-    rows <- matrix(1:x$n_vars, x$n_vars, x$n_vars)
-    cols <- matrix(1:x$n_vars, x$n_vars, x$n_vars, byrow = TRUE)
-
-    ret <- data.frame(value = values, term = names_vec, pos_row = rows[lower.tri(rows, diag = TRUE)], pos_col = cols[lower.tri(cols, diag = TRUE)],
-                      iteration = rep(1:x$n_reps, each = (x$n_vars*(x$n_vars+1)/2)))
-  }
-
-  if (result == "psi") {
-    values <- c(t(x$psi))
-    names <- expand.grid(paste0(dep_name, "_"), x$names_determ)
-    names_vec <- paste0(names[, 1], names[, 2])
-    ret <- cbind(values, term = names_vec, expand.grid(pos_row = 1:x$n_vars,
-                                                       pos_col = 1:x$n_determ, iteration = 1:x$n_reps))
-  }
-
-  return(ret)
 }
