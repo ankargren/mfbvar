@@ -17,3 +17,4 @@ build_DD(d, n_lags)
 \description{
 \code{build_DD} builds the \eqn{D} matrix.
 }
+\keyword{internal}

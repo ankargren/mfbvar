@@ -37,3 +37,4 @@ The return is:
 \description{
 Evaluates the marginal posterior of psi using the draws from the Gibbs sampler.
 }
+\keyword{internal}

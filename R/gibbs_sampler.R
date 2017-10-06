@@ -22,6 +22,7 @@
 #' @templateVar check_roots TRUE
 #' @templateVar verbose TRUE
 #' @template man_template
+#' @keywords internal
 #'
 #' @details
 #' The prior covariance of \eqn{\Pi} given \eqn{\Sigma} is \eqn{\Sigma \otimes \Omega_\Pi}.

@@ -23,6 +23,7 @@ using namespace arma;
 //' @templateVar z0 TRUE
 //' @templateVar P0 TRUE
 //' @template man_template
+//' @keywords internal
 //' @return For \code{smoother}:
 //' \item{}{The smoothed states.}
 // [[Rcpp::export]]
@@ -168,6 +169,7 @@ arma::mat smoother(           arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, 
 
 
 //' @describeIn smoother Generate pseudo-state vector
+//' @keywords internal
 //' @return For \code{generate_mhh}:
 //' \item{}{Generated (pseudo-)state vector.}
 // [[Rcpp::export]]
@@ -199,6 +201,7 @@ arma::mat generate_mhh(       arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, 
 }
 
 //' @describeIn smoother Simulation smoother
+//' @keywords internal
 //' @return For \code{simulation_smoother}:
 //' \item{}{The draw from the posterior distribution.}
 // [[Rcpp::export]]
@@ -234,6 +237,7 @@ arma::mat simulation_smoother(arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, 
 
 
 //' @describeIn smoother Compute log-likelihood
+//' @keywords internal
 //' @return For \code{loglike}:
 //' \item{}{An \code{n_T}-long vector of the log-likelihoods. \code{exp(sum(loglike(...)))} is the likelihood.}
 // [[Rcpp::export]]

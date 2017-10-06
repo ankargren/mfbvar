@@ -38,3 +38,4 @@ posterior_Z(Y, d, Pi_r, Sigma_r, psi_r, Z_1, Lambda, n_vars, n_lags, n_T_,
 \description{
 Function for drawing from the posterior of Z using a simulation smoother, which can be used as a block in a Gibbs sampler.
 }
+\keyword{internal}

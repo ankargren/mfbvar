@@ -45,3 +45,4 @@ posterior_Pi_Sigma(Z_r1, d, psi_r1, prior_Pi_mean, prior_Pi_Omega,
 \description{
 Function for drawing from the posterior of Pi and Sigma, which can be used as a block in a Gibbs sampler.
 }
+\keyword{internal}

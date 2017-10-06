@@ -19,3 +19,4 @@ build_companion(Pi, n_vars, n_lags)
 \description{
 Builds the parameter matrix of dynamic coefficients for the companion form representation.
 }
+\keyword{internal}

@@ -11,6 +11,7 @@
 #' @return \item{prior_Pi}{The prior mean matrix for Pi.}
 #' \item{prior_Pi_Omega}{The prior covariance matrix for Pi.}
 #' \item{prior_s}{The prior for Sigma.}
+#' @keywords internal
 prior_Pi_Sigma <- function(lambda1, lambda2, prior_Pi_AR1, Y, n_lags, prior_nu) {
   # lambda1: 1-long vector (overall tightness)
   # lambda2: 1-long vector (lag decay)

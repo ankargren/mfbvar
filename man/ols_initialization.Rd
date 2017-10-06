@@ -28,3 +28,4 @@ A list with components:
 \description{
 Initializes the Gibbs sampler using OLS.
 }
+\keyword{internal}

@@ -23,3 +23,4 @@ For \code{rmultn}: \eqn{p} random numbers.
 \description{
 Density function for the multivariate normal distribution
 }
+\keyword{internal}

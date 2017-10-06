@@ -17,3 +17,4 @@ A list with two components:
 \description{
 Convert a matrix of 95 \% prior probability intervals for the steady states to prior moments.
 }
+\keyword{internal}

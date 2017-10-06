@@ -31,3 +31,4 @@ Builds the parameter matrix of dynamic coefficients for the companion form repre
 \item \code{build_U}: Build the U matrix (R implementation)
 }}
 
+\keyword{internal}

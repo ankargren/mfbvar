@@ -34,3 +34,4 @@ For \code{rmatn} or \code{rinvwish}: the random numbers.
 \description{
 Density function for the (matrix) normal inverse Wishart distribution
 }
+\keyword{internal}

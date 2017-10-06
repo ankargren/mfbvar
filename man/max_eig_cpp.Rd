@@ -16,3 +16,4 @@ The maximum eigenvalue.
 \description{
 The function computes the maximum eigenvalue.
 }
+\keyword{internal}

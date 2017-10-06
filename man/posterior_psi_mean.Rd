@@ -34,3 +34,4 @@ The return is:
 \description{
 Computes the mean and variance of the conditional posterior distribution of the steady-state parameters.
 }
+\keyword{internal}

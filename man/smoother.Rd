@@ -67,3 +67,4 @@ Implemented in C++.
 \item \code{loglike}: Compute log-likelihood
 }}
 
+\keyword{internal}

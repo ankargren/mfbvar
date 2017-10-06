@@ -15,3 +15,4 @@ A matrix with no \code{NA}s.
 \description{
 The function fills elements with \code{NA} with the next non-\code{NA} value (so that quarterly averages observed at the end of the quarter are assumed as observations for the remaining months of the quarter).
 }
+\keyword{internal}

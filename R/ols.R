@@ -4,6 +4,7 @@
 #'
 #' @param X The regressor matrix.
 #' @param Y The dependnet variable matrix.
+#' @keywords internal
 #' @return
 #' \item{pi_sample}{Estimated coefficients.}
 
@@ -14,6 +15,7 @@ ols_pi <- function(X, Y) {
 
 #' @rdname ols_pi
 #' @param Pi The estimated coefficients.
+#'  @keywords internal
 #' @return
 #' \item{s_sample}{The sum of squared residuals matrix.}
 ols_s <- function(X, Y, Pi) {
@@ -35,6 +37,7 @@ ols_s <- function(X, Y, Pi) {
 #' \item{Gam}{A matrix of size \code{n_vars * (n_vars*n_lags +n_determ)} of estimated parameters.}
 #' \item{S}{Estimated error covariance matrix.}
 #' \item{psi}{The estimated steady-state parameters.}
+#' @keywords internal
 
 ols_initialization <- function(z, d, n_lags, n_T, n_vars, n_determ) {
   n_T <- nrow(z)

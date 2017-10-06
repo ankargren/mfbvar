@@ -8,6 +8,7 @@
 #' @templateVar P TRUE
 #' @templateVar S TRUE
 #' @templateVar v TRUE
+#' @keywords internal
 #' @template man_template
 #' @return
 #' For \code{dnorminvwish}: the evaluated density.\\n
@@ -30,6 +31,7 @@ dnorminvwish <- function(X, Sigma, M, P, S, v) {
 #' @templateVar m TRUE
 #' @template man_template
 #' @inherit dnorminvwish
+#' @keywords internal
 #' @return
 #' For \code{dmultn}: the evaluated density.\\n
 #' For \code{rmultn}: \eqn{p} random numbers.
@@ -46,6 +48,7 @@ dmultn <- function(x, m, Sigma) {
 #' @templateVar p_trunc TRUE
 #' @templateVar chisq_val TRUE
 #' @template man_template
+#' @keywords internal
 #' @inherit dmultn
 dnorm_trunc <- function(x, m, V_inv, d, p_trunc, chisq_val) {
   qf <- t(x - m) %*% V_inv %*% (x - m)

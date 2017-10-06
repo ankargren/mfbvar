@@ -17,3 +17,4 @@ build_Z(z, n_lags)
 \description{
 Builds the \eqn{Z} matrix, which consists of lags of \eqn{z}.
 }
+\keyword{internal}

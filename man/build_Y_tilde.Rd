@@ -20,3 +20,4 @@ Builds the \eqn{\tilde{Y}=\Pi(L)Y} matrix.
 \details{
 Note that \code{z} does not contain missing values; at this point, the missing values have been replaced by values drawn using the simulation smoother.
 }
+\keyword{internal}

@@ -26,3 +26,4 @@ Builds the selection matrices \eqn{M_t\Lambda}.
 \details{
 The element \code{M_Lambda[[t]]} corresponds to \eqn{M_t\Lambda}. Currently, if element \code{i} of \code{Y[t, ]} is \code{NA}, then row \code{i} of \code{M_Lambda[[t]]} is all \code{NA}.
 }
+\keyword{internal}

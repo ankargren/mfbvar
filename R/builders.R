@@ -4,6 +4,7 @@
 #'
 #' @templateVar d TRUE
 #' @templateVar n_lags TRUE
+#' @keywords internal
 #' @template man_template
 #'
 #' @return
@@ -29,6 +30,7 @@ build_DD <- function(d, n_lags) {
 #' @templateVar Pi TRUE
 #' @templateVar n_vars TRUE
 #' @templateVar n_lags TRUE
+#' @keywords internal
 #' @template man_template
 #'
 #' @return
@@ -44,6 +46,7 @@ build_companion <- function(Pi, n_vars, n_lags) {
 #'
 #' @templateVar z TRUE
 #' @templateVar n_lags TRUE
+#' @keywords internal
 #' @template man_template
 #'
 #' @return
@@ -69,6 +72,7 @@ build_Z <- function(z, n_lags) {
 #' @templateVar Pi TRUE
 #' @templateVar n_determ TRUE
 #' @template man_template
+#' @keywords internal
 #' @describeIn build_U Build the U matrix (R implementation)
 #'
 #' @return
@@ -92,6 +96,7 @@ build_U <- function(Pi, n_determ) {
 #' @templateVar Pi TRUE
 #' @templateVar z TRUE
 #' @template man_template
+#' @keywords internal
 #'
 #' @return
 #' \item{Y_tilde}{A matrix of size \code{n_T * n_vars}.}
@@ -115,6 +120,7 @@ build_Y_tilde <- function(Pi, z) {
 #' @templateVar n_vars TRUE
 #' @templateVar n_lags TRUE
 #' @templateVar n_T TRUE
+#' @keywords internal
 #' @template man_template
 #'
 #' @return
@@ -138,6 +144,7 @@ build_M_Lambda <- function(Y, Lambda, n_vars, n_lags, n_T) {
 #' @templateVar aggregation TRUE
 #' @templateVar n_lags TRUE
 #' @template man_template
+#' @keywords internal
 #' @return
 #' \item{Lambda}{An \code{n_vars * (n_vars*n_pseudolags)} matrix, where \code{n_pseudolags} is \code{max(5, n_lags)} if any variable uses the triangular aggregation scheme, \code{max(3, n_lags)} if any uses the quarterly average.}
 #' @details The choice \code{aggregation = "identity"} means that what is observed is assumed to be exactly the underlying variable, whereas \code{aggregation = "average"} uses the quarterly average of the monthly underlying observations. Lastly, \code{aggregation = "triangular"} uses the triangular specification used by Mariano and Murasawa (2010).

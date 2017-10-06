@@ -4,9 +4,10 @@
 #' @describeIn build_U Build the U matrix (C++ implementation)
 #' @templateVar n_vars TRUE
 #' @templateVar n_lags TRUE
+#' @keywords internal
 #' @template man_template
 build_U_cpp <- function(Pi, n_determ, n_vars, n_lags) {
-    .Call('_mfbvar_build_U_cpp', PACKAGE = 'mfbvar', Pi, n_determ, n_vars, n_lags)
+    .Call(`_mfbvar_build_U_cpp`, Pi, n_determ, n_vars, n_lags)
 }
 
 #' @title Find maximum eigenvalue
@@ -15,32 +16,28 @@ build_U_cpp <- function(Pi, n_determ, n_vars, n_lags) {
 #' @aliases max_eig max_eig_cpp
 #' @templateVar A TRUE
 #' @template man_template
+#' @keywords internal
 #' @return The maximum eigenvalue.
 max_eig_cpp <- function(A) {
-    .Call('_mfbvar_max_eig_cpp', PACKAGE = 'mfbvar', A)
+    .Call(`_mfbvar_max_eig_cpp`, A)
 }
 
 #' @rdname dnorminvwish
+#' @keywords internal
 rmatn <- function(M, Q, P) {
-    .Call('_mfbvar_rmatn', PACKAGE = 'mfbvar', M, Q, P)
+    .Call(`_mfbvar_rmatn`, M, Q, P)
 }
 
 #' @rdname dnorminvwish
+#' @keywords internal
 rinvwish <- function(v, S) {
-    .Call('_mfbvar_rinvwish', PACKAGE = 'mfbvar', v, S)
+    .Call(`_mfbvar_rinvwish`, v, S)
 }
 
 #' @rdname dmultn
+#' @keywords internal
 rmultn <- function(m, Sigma) {
-    .Call('_mfbvar_rmultn', PACKAGE = 'mfbvar', m, Sigma)
-}
-
-vec_na_rm <- function(vx) {
-    .Call('_mfbvar_vec_na_rm', PACKAGE = 'mfbvar', vx)
-}
-
-smooth <- function(mZ, mX, lH, mF, mB, mQ, iT, ip, iq, is, h0, P0, X0) {
-    .Call('_mfbvar_smooth', PACKAGE = 'mfbvar', mZ, mX, lH, mF, mB, mQ, iT, ip, iq, is, h0, P0, X0)
+    .Call(`_mfbvar_rmultn`, m, Sigma)
 }
 
 #' @title Smooth and sample from the smoothed distribution
@@ -59,30 +56,34 @@ smooth <- function(mZ, mX, lH, mF, mB, mQ, iT, ip, iq, is, h0, P0, X0) {
 #' @templateVar z0 TRUE
 #' @templateVar P0 TRUE
 #' @template man_template
+#' @keywords internal
 #' @return For \code{smoother}:
 #' \item{}{The smoothed states.}
 smoother <- function(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0) {
-    .Call('_mfbvar_smoother', PACKAGE = 'mfbvar', Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
+    .Call(`_mfbvar_smoother`, Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
 }
 
 #' @describeIn smoother Generate pseudo-state vector
+#' @keywords internal
 #' @return For \code{generate_mhh}:
 #' \item{}{Generated (pseudo-)state vector.}
 generate_mhh <- function(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0) {
-    .Call('_mfbvar_generate_mhh', PACKAGE = 'mfbvar', Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
+    .Call(`_mfbvar_generate_mhh`, Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
 }
 
 #' @describeIn smoother Simulation smoother
+#' @keywords internal
 #' @return For \code{simulation_smoother}:
 #' \item{}{The draw from the posterior distribution.}
 simulation_smoother <- function(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0) {
-    .Call('_mfbvar_simulation_smoother', PACKAGE = 'mfbvar', Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
+    .Call(`_mfbvar_simulation_smoother`, Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
 }
 
 #' @describeIn smoother Compute log-likelihood
+#' @keywords internal
 #' @return For \code{loglike}:
 #' \item{}{An \code{n_T}-long vector of the log-likelihoods. \code{exp(sum(loglike(...)))} is the likelihood.}
 loglike <- function(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0) {
-    .Call('_mfbvar_loglike', PACKAGE = 'mfbvar', Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
+    .Call(`_mfbvar_loglike`, Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
 }
 

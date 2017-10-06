@@ -16,6 +16,7 @@
 #' @template man_template
 #' @return An \code{mfbvar} object
 #' @details \code{mfbvar} calls \code{\link{gibbs_sampler}} (implemented in C++)
+#'  @keywords internal
 
 mfbvar_schorf <- function(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lambda3, n_lags, n_fcst, n_burnin, n_reps, verbose, ...) {
 

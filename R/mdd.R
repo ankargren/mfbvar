@@ -1,117 +1,44 @@
+#' Marginal data density estimation
+#'
+#' \code{mdd} estimates the marginal data density.
+#'
+#' This is a generic function. See the methods for more information.
+#' @seealso \code{\link{mdd.ss}}, \code{\link{mdd.minn}}
+#' @param x argument to dispatch on (of class \code{mfbvar_ss} or \code{mfbvar_minn})
+#' @param ... additional named arguments passed on to the methods
+
+mdd <- function(x, ...) {
+  UseMethod("mdd")
+}
 
 #' Marginal data density
 #'
-#' Estimate the marginal data density.
-#' @details \code{mdd1} uses method 1, \code{mdd2} uses method 2.
-#' @templateVar mfbvar_obj TRUE
-#' @templateVar p_trunc TRUE
-#' @template man_template
-#' @return
-#' \code{mdd} returns a list with components being \code{n_reps}-long vectors and a scalar (the final estimate).
-#' \item{eval_posterior_Pi_Sigma}{Posterior of Pi and Sigma.}
-#' \item{data_likelihood}{The likelihood.}
-#' \item{eval_prior_Pi_Sigma}{Prior of Pi and Sigma.}
-#' \item{eval_prior_psi}{Prior of psi.}
-#' \item{psi_truncated}{The truncated psi pdf.}
-#' \item{log_mdd}{The mdd estimate (in log).}
-
-mdd2 <- function(mfbvar_obj, p_trunc) {
-  # Get things from the MFBVAR object
-  n_determ <- mfbvar_obj$n_determ
-  n_vars <- mfbvar_obj$n_vars
-  n_lags <- mfbvar_obj$n_lags
-  n_T <- mfbvar_obj$n_T
-  n_T_ <- mfbvar_obj$n_T_
-  n_reps <- mfbvar_obj$n_reps
-
-  psi <- mfbvar_obj$psi
-  prior_Pi_Omega <- mfbvar_obj$prior_Pi_Omega
-  prior_Pi_mean <- mfbvar_obj$prior_Pi_mean
-  prior_S <- mfbvar_obj$prior_S
-  post_nu <- mfbvar_obj$post_nu
-
-  Y <- mfbvar_obj$Y
-  Z <- mfbvar_obj$Z
-  d <- mfbvar_obj$d
-
-  Lambda <- mfbvar_obj$Lambda
-
-  post_Pi_mean <- apply(mfbvar_obj$Pi, c(1, 2), mean)
-  post_Sigma <- apply(mfbvar_obj$Sigma, c(1, 2), mean)
-  post_psi <- colMeans(psi)
-  post_psi_Omega <- cov(psi)
-
-  prior_S <- mfbvar_obj$prior_S
-  prior_nu <- mfbvar_obj$prior_nu
-  prior_Pi_Omega <- mfbvar_obj$prior_Pi_Omega
-  prior_Pi_mean <- mfbvar_obj$prior_Pi_mean
-  prior_psi_Omega <- mfbvar_obj$prior_psi_Omega
-  prior_psi_mean <- mfbvar_obj$prior_psi_mean
-
-  # For the truncated normal
-  chisq_val <- qchisq(p_trunc, n_determ*n_vars)
-
-  #(mZ,lH,mF,mQ,iT,ip,iq,h0,P0)
-  Pi_comp <- build_companion(post_Pi_mean, n_vars = n_vars, n_lags = n_lags)
-  Q_comp  <- matrix(0, ncol = n_vars*n_lags, nrow = n_vars*n_lags)
-  Q_comp[1:n_vars, 1:n_vars] <- t(chol(post_Sigma))
-  P0      <- matrix(0, n_lags*n_vars, n_lags*n_vars)
-
-  eval_posterior_Pi_Sigma <- vector("numeric", n_reps)
-  data_likelihood <- vector("numeric", n_reps)
-  eval_prior_Pi_Sigma <- vector("numeric", n_reps)
-  eval_prior_psi <- vector("numeric", n_reps)
-  psi_truncated <- vector("numeric", n_reps)
-
-  inv_prior_Pi_Omega <- chol2inv(chol(prior_Pi_Omega))
-  Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi_mean
-  for (r in 1:n_reps) {
-    # Demean z, create Z (companion form version)
-    demeaned_z <- Z[,, r] - d %*% t(matrix(psi[r, ], nrow = n_vars))
-    demeaned_Z <- build_Z(z = demeaned_z, n_lags = n_lags)
-    XX <- demeaned_Z[-nrow(demeaned_Z), ]
-    YY <- demeaned_Z[-1, 1:n_vars]
-    XXt.XX <- crossprod(XX)
-    XXt.XX.inv <- chol2inv(chol(XXt.XX))
-    Pi_sample <- XXt.XX.inv %*% crossprod(XX, YY)
-
-    ################################################################
-    ### Pi and Sigma step
-
-    # Posterior moments of Pi
-    post_Pi_Omega_i <- chol2inv(chol(inv_prior_Pi_Omega + XXt.XX))
-    post_Pi_i       <- post_Pi_Omega_i %*% (Omega_Pi + crossprod(XX, YY))
-
-    # Then Sigma
-    s_sample  <- crossprod(YY - XX %*% Pi_sample)
-    Pi_diff <- prior_Pi_mean - Pi_sample
-    post_s_i <- prior_S + s_sample + t(Pi_diff) %*% chol2inv(chol(prior_Pi_Omega + XXt.XX.inv)) %*% Pi_diff
-
-    # Set the variables which vary in the Kalman filtering
-    mZ <- Y - d %*% t(matrix(psi[r, ], nrow = n_vars))
-    mZ <- mZ[-(1:n_lags), ]
-    demeaned_z0 <- Z[1:n_lags,, 1] - d[1:n_lags, ] %*% t(matrix(psi[r, ], nrow = n_vars))
-    h0 <- matrix(t(demeaned_z0), ncol = 1)
-    h0 <- h0[(n_vars*n_lags):1,,drop = FALSE] # have to reverse the order
-
-
-    eval_posterior_Pi_Sigma[r] <- dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = post_Pi_i, P = post_Pi_Omega_i, S = post_s_i, v = post_nu)
-    data_likelihood[r] <- exp(sum(c(loglike(Y = as.matrix(mZ), Lambda = Lambda, Pi_comp = Pi_comp, Q_comp = Q_comp, n_T = n_T_, n_vars = n_vars, n_comp = n_lags * n_vars, z0 = h0, P0 = P0)[-1])))
-    eval_prior_Pi_Sigma[r] <- dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = prior_Pi_mean, P = prior_Pi_Omega, S = prior_S, v = prior_nu)
-    eval_prior_psi[r] <- dmultn(x = psi[r, ], m = prior_psi_mean, Sigma = prior_psi_Omega)
-    psi_truncated[r] <- dnorm_trunc(psi[r, ], post_psi, solve(post_psi_Omega), n_determ*n_vars, p_trunc, chisq_val)
-
+#' Estimate the marginal data density for the model with a steady-state prior.
+#' @param method option for which method to choose for computing the mdd
+#' @param ... additional arguments (currently only \code{p_trunc} available)
+#' @details The generic \code{mdd} calls either \code{mdd1} or \code{mdd2} if \code{mfbvar_obj} is of class \code{mfbvar_ss}.
+#' @seealso \code{\link{mdd}}, \code{\link{mdd.minn}}
+mdd.ss <- function(mfbvar_obj, method = c(1, 2), ...) {
+  if (method == 1) {
+    mdd_est <- mdd1(mfbvar_obj)
+  } else if (method == 2) {
+    mdd_est <- mdd2(mfbvar_obj, ...)
+  } else {
+    stop("method: Must be 1 or 2.")
   }
-
-  mdd_num <- eval_posterior_Pi_Sigma * psi_truncated
-  log_mdd_den <- log(data_likelihood) + log(eval_prior_Pi_Sigma) + log(eval_prior_psi) # pi_sigma_prior constant? likelihood 0?
-  log_mdd <- -log(mean(mdd_num/exp(log_mdd_den)))
-
-  return(list(eval_posterior_Pi_Sigma = eval_posterior_Pi_Sigma, data_likelihood = data_likelihood, eval_prior_Pi_Sigma = eval_prior_Pi_Sigma,
-              eval_prior_psi = eval_prior_psi, psi_truncated = psi_truncated, log_mdd = log_mdd))
 }
 
-#' @rdname mdd2
+#' Marginal data density
+#'
+#' Estimate the marginal data density for the model with a Minnesota prior.
+#' @details The generic \code{mdd} calls \code{mdd_minn} if \code{mfbvar_obj} is of class \code{mfbvar_minn}.
+#' @seealso \code{\link{mdd}}, \code{\link{mdd.ss}}
+mdd.minn <- function(mfbvar_obj, quarterly_cols, type = "full", ...) {
+  mdd_minn(mfbvar_obj, quarterly_cols, type)
+}
+
+#' @rdname mdd.ss
+#' @keywords internal
 #' @return
 #' \code{mdd1} returns a list with components (all are currently in logarithms):
 #' \item{lklhd}{The likelihood.}
@@ -229,6 +156,132 @@ mdd1 <- function(mfbvar_obj) {
   return(list(lklhd = lklhd, eval_prior_Pi_Sigma = eval_prior_Pi_Sigma, eval_prior_psi = eval_prior_psi, eval_RB_Pi_Sigma = eval_RB_Pi_Sigma, eval_marg_psi = eval_marg_psi, log_mdd = mdd_estimate))
 }
 
+
+#' @rdname mdd.ss
+#' @details \code{mdd1} uses method 1, \code{mdd2} uses method 2.
+#' @templateVar mfbvar_obj TRUE
+#' @templateVar p_trunc TRUE
+#' @template man_template
+#' @keywords internal
+#' @return
+#' \code{mdd} returns a list with components being \code{n_reps}-long vectors and a scalar (the final estimate).
+#' \item{eval_posterior_Pi_Sigma}{Posterior of Pi and Sigma.}
+#' \item{data_likelihood}{The likelihood.}
+#' \item{eval_prior_Pi_Sigma}{Prior of Pi and Sigma.}
+#' \item{eval_prior_psi}{Prior of psi.}
+#' \item{psi_truncated}{The truncated psi pdf.}
+#' \item{log_mdd}{The mdd estimate (in log).}
+
+mdd2 <- function(mfbvar_obj, p_trunc) {
+  # Get things from the MFBVAR object
+  n_determ <- mfbvar_obj$n_determ
+  n_vars <- mfbvar_obj$n_vars
+  n_lags <- mfbvar_obj$n_lags
+  n_T <- mfbvar_obj$n_T
+  n_T_ <- mfbvar_obj$n_T_
+  n_reps <- mfbvar_obj$n_reps
+
+  psi <- mfbvar_obj$psi
+  prior_Pi_Omega <- mfbvar_obj$prior_Pi_Omega
+  prior_Pi_mean <- mfbvar_obj$prior_Pi_mean
+  prior_S <- mfbvar_obj$prior_S
+  post_nu <- mfbvar_obj$post_nu
+
+  Y <- mfbvar_obj$Y
+  Z <- mfbvar_obj$Z
+  d <- mfbvar_obj$d
+
+  Lambda <- mfbvar_obj$Lambda
+
+  post_Pi_mean <- apply(mfbvar_obj$Pi, c(1, 2), mean)
+  post_Sigma <- apply(mfbvar_obj$Sigma, c(1, 2), mean)
+  post_psi <- colMeans(psi)
+  post_psi_Omega <- cov(psi)
+
+  prior_S <- mfbvar_obj$prior_S
+  prior_nu <- mfbvar_obj$prior_nu
+  prior_Pi_Omega <- mfbvar_obj$prior_Pi_Omega
+  prior_Pi_mean <- mfbvar_obj$prior_Pi_mean
+  prior_psi_Omega <- mfbvar_obj$prior_psi_Omega
+  prior_psi_mean <- mfbvar_obj$prior_psi_mean
+
+  # For the truncated normal
+  chisq_val <- qchisq(p_trunc, n_determ*n_vars)
+
+  #(mZ,lH,mF,mQ,iT,ip,iq,h0,P0)
+  Pi_comp <- build_companion(post_Pi_mean, n_vars = n_vars, n_lags = n_lags)
+  Q_comp  <- matrix(0, ncol = n_vars*n_lags, nrow = n_vars*n_lags)
+  Q_comp[1:n_vars, 1:n_vars] <- t(chol(post_Sigma))
+  P0      <- matrix(0, n_lags*n_vars, n_lags*n_vars)
+
+  eval_posterior_Pi_Sigma <- vector("numeric", n_reps)
+  data_likelihood <- vector("numeric", n_reps)
+  eval_prior_Pi_Sigma <- vector("numeric", n_reps)
+  eval_prior_psi <- vector("numeric", n_reps)
+  psi_truncated <- vector("numeric", n_reps)
+
+  inv_prior_Pi_Omega <- chol2inv(chol(prior_Pi_Omega))
+  Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi_mean
+  for (r in 1:n_reps) {
+    # Demean z, create Z (companion form version)
+    demeaned_z <- Z[,, r] - d %*% t(matrix(psi[r, ], nrow = n_vars))
+    demeaned_Z <- build_Z(z = demeaned_z, n_lags = n_lags)
+    XX <- demeaned_Z[-nrow(demeaned_Z), ]
+    YY <- demeaned_Z[-1, 1:n_vars]
+    XXt.XX <- crossprod(XX)
+    XXt.XX.inv <- chol2inv(chol(XXt.XX))
+    Pi_sample <- XXt.XX.inv %*% crossprod(XX, YY)
+
+    ################################################################
+    ### Pi and Sigma step
+
+    # Posterior moments of Pi
+    post_Pi_Omega_i <- chol2inv(chol(inv_prior_Pi_Omega + XXt.XX))
+    post_Pi_i       <- post_Pi_Omega_i %*% (Omega_Pi + crossprod(XX, YY))
+
+    # Then Sigma
+    s_sample  <- crossprod(YY - XX %*% Pi_sample)
+    Pi_diff <- prior_Pi_mean - Pi_sample
+    post_s_i <- prior_S + s_sample + t(Pi_diff) %*% chol2inv(chol(prior_Pi_Omega + XXt.XX.inv)) %*% Pi_diff
+
+    # Set the variables which vary in the Kalman filtering
+    mZ <- Y - d %*% t(matrix(psi[r, ], nrow = n_vars))
+    mZ <- mZ[-(1:n_lags), ]
+    demeaned_z0 <- Z[1:n_lags,, 1] - d[1:n_lags, ] %*% t(matrix(psi[r, ], nrow = n_vars))
+    h0 <- matrix(t(demeaned_z0), ncol = 1)
+    h0 <- h0[(n_vars*n_lags):1,,drop = FALSE] # have to reverse the order
+
+
+    eval_posterior_Pi_Sigma[r] <- dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = post_Pi_i, P = post_Pi_Omega_i, S = post_s_i, v = post_nu)
+    data_likelihood[r] <- exp(sum(c(loglike(Y = as.matrix(mZ), Lambda = Lambda, Pi_comp = Pi_comp, Q_comp = Q_comp, n_T = n_T_, n_vars = n_vars, n_comp = n_lags * n_vars, z0 = h0, P0 = P0)[-1])))
+    eval_prior_Pi_Sigma[r] <- dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = prior_Pi_mean, P = prior_Pi_Omega, S = prior_S, v = prior_nu)
+    eval_prior_psi[r] <- dmultn(x = psi[r, ], m = prior_psi_mean, Sigma = prior_psi_Omega)
+    psi_truncated[r] <- dnorm_trunc(psi[r, ], post_psi, solve(post_psi_Omega), n_determ*n_vars, p_trunc, chisq_val)
+
+  }
+
+  mdd_num <- eval_posterior_Pi_Sigma * psi_truncated
+  log_mdd_den <- log(data_likelihood) + log(eval_prior_Pi_Sigma) + log(eval_prior_psi) # pi_sigma_prior constant? likelihood 0?
+  log_mdd <- -log(mean(mdd_num/exp(log_mdd_den)))
+
+  return(list(eval_posterior_Pi_Sigma = eval_posterior_Pi_Sigma, data_likelihood = data_likelihood, eval_prior_Pi_Sigma = eval_prior_Pi_Sigma,
+              eval_prior_psi = eval_prior_psi, psi_truncated = psi_truncated, log_mdd = log_mdd))
+}
+
+
+#' Estimate MDD in Schorfheide-Song MFBVAR
+#'
+#' This function provides the possibility to estimate the log marginal density (up to a constant) using the Schorfheide-Song MFBVAR.
+#' @rdname mdd.minn
+#' @templateVar mfbvar_obj TRUE
+#' @template man_template
+#' @keywords internal
+#' @return The log marginal data density estimate (bar a constant)
+#'
+mdd_minn <- function(mfbvar_obj, quarterly_cols, type = "full", ...) {
+
+}
+
 #' Marginal data density grid search
 #'
 #' Use a grid search to estimate the marginal data density for multiple values, possibly using parallel computation.
@@ -241,8 +294,8 @@ mdd1 <- function(mfbvar_obj) {
 #' @templateVar p_trunc TRUE
 #' @param ... Additional parameters. This includes \code{p_trunc} if \code{method == 2} and if \code{mfbvar_obj} is omitted, it must include all the necessary variables to the \code{mfbvar()} call.
 #' @template man_template
+#' @keywords internal
 #' @return mdd_res A matrix with the results.
-#'
 mdd_grid <- function(mfbvar_obj = NULL, lambda1_grid, lambda2_grid, method, n_cores = 1, p_trunc = NULL, same_seed = FALSE, seed = NULL, ...) {
   if (!requireNamespace(c("parallel"), quietly = TRUE) && n_cores > 1) {
     n_cores <- 1

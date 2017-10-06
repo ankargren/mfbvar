@@ -68,40 +68,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// vec_na_rm
-arma::vec vec_na_rm(const arma::vec vx);
-RcppExport SEXP _mfbvar_vec_na_rm(SEXP vxSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::vec >::type vx(vxSEXP);
-    rcpp_result_gen = Rcpp::wrap(vec_na_rm(vx));
-    return rcpp_result_gen;
-END_RCPP
-}
-// smooth
-arma::mat smooth(const arma::mat& mZ, const arma::mat& mX, const Rcpp::List& lH, arma::mat& mF, const arma::mat& mB, const arma::mat& mQ, const int iT, const int ip, const int iq, const int is, const arma::vec& h0, const arma::mat& P0, const arma::vec& X0);
-RcppExport SEXP _mfbvar_smooth(SEXP mZSEXP, SEXP mXSEXP, SEXP lHSEXP, SEXP mFSEXP, SEXP mBSEXP, SEXP mQSEXP, SEXP iTSEXP, SEXP ipSEXP, SEXP iqSEXP, SEXP isSEXP, SEXP h0SEXP, SEXP P0SEXP, SEXP X0SEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type mZ(mZSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type mX(mXSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type lH(lHSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type mF(mFSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type mB(mBSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type mQ(mQSEXP);
-    Rcpp::traits::input_parameter< const int >::type iT(iTSEXP);
-    Rcpp::traits::input_parameter< const int >::type ip(ipSEXP);
-    Rcpp::traits::input_parameter< const int >::type iq(iqSEXP);
-    Rcpp::traits::input_parameter< const int >::type is(isSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type h0(h0SEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type P0(P0SEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type X0(X0SEXP);
-    rcpp_result_gen = Rcpp::wrap(smooth(mZ, mX, lH, mF, mB, mQ, iT, ip, iq, is, h0, P0, X0));
-    return rcpp_result_gen;
-END_RCPP
-}
 // smoother
 arma::mat smoother(arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, arma::mat Q_comp, int n_T, int n_vars, int n_comp, arma::mat z0, arma::mat P0);
 RcppExport SEXP _mfbvar_smoother(SEXP YSEXP, SEXP LambdaSEXP, SEXP Pi_compSEXP, SEXP Q_compSEXP, SEXP n_TSEXP, SEXP n_varsSEXP, SEXP n_compSEXP, SEXP z0SEXP, SEXP P0SEXP) {
@@ -185,8 +151,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mfbvar_rmatn", (DL_FUNC) &_mfbvar_rmatn, 3},
     {"_mfbvar_rinvwish", (DL_FUNC) &_mfbvar_rinvwish, 2},
     {"_mfbvar_rmultn", (DL_FUNC) &_mfbvar_rmultn, 2},
-    {"_mfbvar_vec_na_rm", (DL_FUNC) &_mfbvar_vec_na_rm, 1},
-    {"_mfbvar_smooth", (DL_FUNC) &_mfbvar_smooth, 13},
     {"_mfbvar_smoother", (DL_FUNC) &_mfbvar_smoother, 9},
     {"_mfbvar_generate_mhh", (DL_FUNC) &_mfbvar_generate_mhh, 9},
     {"_mfbvar_simulation_smoother", (DL_FUNC) &_mfbvar_simulation_smoother, 9},

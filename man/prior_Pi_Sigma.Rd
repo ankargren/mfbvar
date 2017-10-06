@@ -27,3 +27,4 @@ prior_Pi_Sigma(lambda1, lambda2, prior_Pi_AR1, Y, n_lags, prior_nu)
 \description{
 Creates the prior mean and covariance for Pi given the hyperparameters, and the prior parameters for Sigma.
 }
+\keyword{internal}

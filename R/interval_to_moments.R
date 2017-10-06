@@ -3,6 +3,7 @@
 #' Convert a matrix of 95 \% prior probability intervals for the steady states to prior moments.
 #' @templateVar prior_psi_int TRUE
 #' @template man_template
+#' @keywords internal
 #' @return A list with two components:
 #' \item{prior_psi_mean}{The prior mean of psi}
 #' \item{prior_psi_Omega}{The prior covariance matrix of psi}

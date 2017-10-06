@@ -5,6 +5,7 @@ using namespace Rcpp;
 using namespace arma;
 
 //' @rdname dnorminvwish
+//' @keywords internal
 // [[Rcpp::export]]
 arma::mat rmatn(arma::mat M, arma::mat Q, arma::mat P){
 /*-------------------------------------------------------
@@ -22,6 +23,7 @@ arma::mat rmatn(arma::mat M, arma::mat Q, arma::mat P){
 
 
 //' @rdname dnorminvwish
+//' @keywords internal
 // [[Rcpp::export]]
 arma::mat rinvwish(int v, arma::mat S){
   RNGScope scope;
@@ -45,6 +47,7 @@ arma::mat rinvwish(int v, arma::mat S){
 
 
 //' @rdname dmultn
+//' @keywords internal
 // [[Rcpp::export]]
 arma::vec rmultn(arma::vec m, arma::mat Sigma){
   /*-------------------------------------------------------

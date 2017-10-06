@@ -20,3 +20,4 @@ Builds the aggregation matrix \eqn{\Lambda}.
 \details{
 The choice \code{aggregation = "identity"} means that what is observed is assumed to be exactly the underlying variable, whereas \code{aggregation = "average"} uses the quarterly average of the monthly underlying observations. Lastly, \code{aggregation = "triangular"} uses the triangular specification used by Mariano and Murasawa (2010).
 }
+\keyword{internal}

@@ -14,7 +14,8 @@ ols_s(X, Y, Pi)
 
 \item{Y}{The dependnet variable matrix.}
 
-\item{Pi}{The estimated coefficients.}
+\item{Pi}{The estimated coefficients.
+@keywords internal}
 }
 \value{
 \item{pi_sample}{Estimated coefficients.}
@@ -24,3 +25,4 @@ ols_s(X, Y, Pi)
 \description{
 Helper functions for multivariate regression and sum of squared error computations
 }
+\keyword{internal}

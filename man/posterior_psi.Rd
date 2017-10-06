@@ -33,3 +33,4 @@ posterior_psi(Pi_r, Sigma_r, Z_r1, prior_psi_mean, prior_psi_Omega, D_mat,
 \description{
 Function for drawing from the posterior of psi, which can be used as a block in a Gibbs sampler.
 }
+\keyword{internal}

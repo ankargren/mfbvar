@@ -31,3 +31,4 @@ Use a grid search to estimate the marginal data density for multiple values, pos
 \details{
 Only one of \code{mfbvar_obj} and the entire suite of \code{Y}, \code{d}, \code{Lambda}, \code{prior_Pi_AR1}, \code{prior_nu}, \code{prior_psi_mean}, \code{prior_psi_Omega}, \code{n_lags}, \code{n_burnin} and \code{n_reps} must be provided. If \code{mfbvar_obj} is not \code{NULL}, its components are extracted.\cr \cr In order to use \code{n_cores > 1}, the \code{parallel} package must be installed.
 }
+\keyword{internal}

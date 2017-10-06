@@ -1,12 +1,23 @@
-#' Create a new object of the S3 class MFBVAR (the class name can be changed)
+#' Set priors for an mfbvar model
 #'
-#' An object of the S3 class MFBVAR will be created inside the function.
+#' Create an object storing all information needed for estimation, including data as well as model and prior specifications for both a Minnesota or steady-state prior.
 #'
-#' The members (attributes) of the object give the settings for the mfbvar model.
-#' The functions in the package take the object as the input.
-#' The members of the object can be initialized by the function, and can also be changed by the following "set..." functions.
-#'
-#'
+#' @templateVar Y TRUE
+#' @templateVar d TRUE
+#' @templateVar d_fcst TRUE
+#' @templateVar Lambda TRUE
+#' @templateVar prior_Pi_AR1 TRUE
+#' @templateVar lambda1 TRUE
+#' @templateVar lambda2 TRUE
+#' @templateVar lambda3 TRUE
+#' @templateVar prior_nu TRUE
+#' @templateVar prior_psi_mean TRUE
+#' @templateVar prior_psi_Omega TRUE
+#' @templateVar n_lags TRUE
+#' @templateVar n_burnin TRUE
+#' @templateVar n_reps TRUE
+#' @templateVar verbose TRUE
+#' @template man_template
 set_prior <- function(Y, d = NULL, d_fcst = NULL, Lambda, prior_Pi_AR1 = rep(0, ncol(Y)), lambda1 = 0.2, lambda2 = 1, lambda3 = NULL, prior_nu = NULL, prior_psi_mean = NULL, prior_psi_Omega = NULL, n_lags, n_fcst = 0, n_burnin, n_reps, verbose = FALSE) {
   if (!is.matrix(Y)) {
     if (!is.data.frame(Y)) {
@@ -47,7 +58,7 @@ set_prior <- function(Y, d = NULL, d_fcst = NULL, Lambda, prior_Pi_AR1 = rep(0, 
       stop("The column dimension of Lambda is ", ncol(Lambda), ", but it must be a multiple of the number of variables (", ncol(Y), ").")
     }
   }
-  if (is.vector(Lambda) !all(Lambda %in% c("identity", "average", "triangular"))) {
+  if (is.vector(Lambda) && !all(Lambda %in% c("identity", "average", "triangular"))) {
     stop("Valid aggregations are 'identity', 'average' and 'triangular', but specification includes ", Lambda[!which(Lambda %in% c("identity", "average", "triangular"))], ".")
   }
 
@@ -166,11 +177,11 @@ set_prior <- function(Y, d = NULL, d_fcst = NULL, Lambda, prior_Pi_AR1 = rep(0, 
   return(ret)
 }
 
-#' Set attributes or members in an object of the class MFBVAR
+#' Update priors for an mfbvar model
 #'
-#' @param obj an object of the class MFBVAR
-#' @param ... the attributes and their values to be changed
-#'
+#' @param obj an object of class \code{mfbvar\_prior}
+#' @param ... named arguments for prior attributes to update
+#' @seealso \code{\link{set_prior}}
 update_prior <- function(obj, ...)
 {
   if(class(obj) != "mfbvar_prior") {
@@ -184,6 +195,13 @@ update_prior <- function(obj, ...)
   return(obj)
 }
 
+#' Mixed-frequency Bayesian VAR
+#'
+#' The main function for running the MF-SS-BVAR.
+#'
+#' @param mfbvar_prior Test
+#' @param prior_type Test 2
+#' @param ... test 3
 
 estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type = c("ss", "minn"), ...) {
   if (hasArg(mfbvar_prior)) {
@@ -318,7 +336,7 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type = c("ss", "minn"), .
   main_run$names_row <- names_row
   main_run$names_col <- names_col
   main_run$names_fcst <- names_fcst
-    main_run$mfbvar_prior <- mfbvar_prior
+  main_run$mfbvar_prior <- mfbvar_prior
 
   dimnames(main_run$Z) <- list(time = names_row,
                                variable = names_col,
@@ -337,7 +355,7 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type = c("ss", "minn"), .
                                    param = paste0(rep(names_col, n_determ), ".", rep(names_determ, each = n_vars)))
   }
 
-  class(main_run) <- "mfbvar"
+  class(main_run) <- c("mfbvar", paste0("mfbvar_", prior_type))
   return(main_run)
 }
 

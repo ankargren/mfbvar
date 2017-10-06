@@ -26,3 +26,4 @@ For \code{rmultn}: \eqn{p} random numbers.
 \description{
 Density function for the truncated multivariate normal distribution
 }
+\keyword{internal}

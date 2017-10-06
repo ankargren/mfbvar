@@ -40,3 +40,4 @@ The return is:
 \description{
 Evaluates the conditional posterior of Pi and Sigma using Rao-Blackwellization of the draws from the Gibbs sampler.
 }
+\keyword{internal}
