@@ -1,10 +1,11 @@
+
 mfbvar
-================
+======
 
--   [Mixed-frequency Bayesian Vector Autoregressive Models](#mixed-frequency-bayesian-vector-autoregressive-models)
+[![Travis-CI Build Status](https://travis-ci.org/ankargren/mfbvar.svg?branch=master)](https://travis-ci.org/ankargren/mfbvar)
 
-Mixed-frequency Bayesian Vector Autoregressive Models
-=====================================================
+Overview
+--------
 
 The `mfbvar` package implements a steady-state prior and a Minnesota prior for state space-based mixed-frequency VAR models. *Note that the examples require the development version 0.3.0.900 (available in its own branch) to work.* <!-- README.md is generated from README.Rmd. Please edit that file -->
 
