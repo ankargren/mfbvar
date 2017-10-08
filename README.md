@@ -2,7 +2,7 @@
 mfbvar
 ======
 
-[![Travis-CI Build Status](https://travis-ci.org/ankargren/mfbvar.svg?branch=master)](https://travis-ci.org/ankargren/mfbvar)
+[![Travis-CI Build Status](https://travis-ci.org/ankargren/mfbvar.svg?branch=0.3.0.9000)](https://travis-ci.org/ankargren/mfbvar)
 
 Overview
 --------
