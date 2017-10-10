@@ -23,18 +23,19 @@ First, obtain some data stored in the package.
 ```{r}
 library(mfbvar)
 Y <- mf_list$data[[192]]
+Y <- Y[-1, c(1:4, 6, 5)]
 head(Y)
 tail(Y)
 ```
 Next, we create a minimal prior object. We must specify: 1) data, 2) an aggregation matrix or a vector of strings with aggregation schemes, 3) the number of lags, 4) the length of burn-in and main chains, respectively. This is done by calling the `set_prior()` function and giving named arguments. The resulting object is of class `mfbvar_prior` and has a basic `print` method.
 ```{r}
-prior_obj <- set_prior(Y = Y, Lambda = c(rep("identity", 4), "average", "identity"), 
+prior_obj <- set_prior(Y = Y, freq = c(rep("m", 5), "q"), 
                        n_lags = 4, n_burnin = 1000, n_reps = 1000)
 ```
 Warnings are produced because we haven't specified values for some of the prior elements and instead the function uses default values.
 
 There is a print method for the prior object, showing some basic information:
-```{r]}
+```{r}
 prior_obj
 ```
 The message tells us what elements of the prior have not yet been set, and if each of the two priors can be run with the current specification. The check is very minimal; the steady-state prior cannot be used to make forecasts (which it will attempt to if `n_fcst` is greater than `0`) unless also `d_fcst` is given, but to run the model with no forecasts only the three indicated elements are missing.

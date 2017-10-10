@@ -4,7 +4,7 @@
 \alias{gibbs_sampler_schorf}
 \title{Gibbs sampler for Mixed-Frequency BVAR}
 \usage{
-gibbs_sampler_schorf(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lambda3, n_lags,
+gibbs_sampler_schorf(Y, freq, prior_Pi_AR1, lambda1, lambda2, lambda3, n_lags,
   n_fcst = NULL, n_reps, init_Pi = NULL, init_Sigma = NULL,
   init_Z = NULL, smooth_state = FALSE, check_roots = TRUE,
   verbose = TRUE)
@@ -12,7 +12,7 @@ gibbs_sampler_schorf(Y, Lambda, prior_Pi_AR1, lambda1, lambda2, lambda3, n_lags,
 \arguments{
 \item{Y}{The data matrix of size \code{(n_T + n_lags) * n_vars} with \code{NA} representing missingness. Must correspond well to the specification of \code{M_Lambda}.}
 
-\item{Lambda}{The Lambda matrix (size \code{n_vars* (n_vars*n_lags)}).}
+\item{freq}{Character vector with elements 'm' (monthly) or 'q' (quarterly) for sampling frequency.}
 
 \item{prior_Pi_AR1}{The prior means for the AR(1) coefficients.}
 

@@ -5,7 +5,7 @@
 #' @templateVar Y TRUE
 #' @templateVar d TRUE
 #' @templateVar d_fcst TRUE
-#' @templateVar Lambda TRUE
+#' @templateVar freq TRUE
 #' @templateVar prior_Pi_AR1 TRUE
 #' @templateVar lambda1 TRUE
 #' @templateVar lambda2 TRUE
@@ -18,8 +18,13 @@
 #' @templateVar n_burnin TRUE
 #' @templateVar n_reps TRUE
 #' @templateVar verbose TRUE
+#' @templateVar smooth_state TRUE
+#' @templateVar check_roots TRUE
 #' @template man_template
-set_prior <- function(Y, d = NULL, d_fcst = NULL, Lambda, prior_Pi_AR1 = rep(0, ncol(Y)), lambda1 = 0.2, lambda2 = 1, lambda3 = 10000, prior_nu = ncol(Y) + 2, prior_psi_mean = NULL, prior_psi_Omega = NULL, n_lags, n_fcst = 0, n_burnin, n_reps, verbose = FALSE) {
+set_prior <- function(Y, d = NULL, d_fcst = NULL, freq = c("m", "q"), prior_Pi_AR1 = rep(0, ncol(Y)),
+                      lambda1 = 0.2, lambda2 = 1, lambda3 = 10000, prior_nu = ncol(Y) + 2,
+                      prior_psi_mean = NULL, prior_psi_Omega = NULL, n_lags, n_fcst = 0, n_burnin, n_reps,
+                      verbose = FALSE, smooth_state = FALSE, check_roots = TRUE) {
   if (!is.matrix(Y)) {
     if (!is.data.frame(Y)) {
       stop(paste0("Y is of class ", class(Y), ", but must be matrix or data frame."))
@@ -48,34 +53,25 @@ set_prior <- function(Y, d = NULL, d_fcst = NULL, Lambda, prior_Pi_AR1 = rep(0, 
     }
   }
 
-  if (!is.matrix(Lambda) && !is.vector(Lambda)) {
-    stop("Lambda is of class ", class(Lambda), ", but it must be a matrix or a character vector.")
+  if (!is.vector(freq)) {
+    stop("freq is of class ", class(freq), ", but it must be a character vector.")
+  } else if (!all(freq %in% c("m", "q"))) {
+    stop("Elements of freq must be 'm' or 'q'.")
+  } else if (length(freq) != ncol(Y)) {
+    stop("The length of freq is ", length(freq), ", but Y has ", ncol(Y), " columns.")
   }
-  if (is.matrix(Lambda)) {
-    if (nrow(Lambda) != ncol(Y)) {
-      stop("Lambda has ", nrow(Lambda), " and Y has ", ncol(Y), " columns. The dimensions must match.")
-    }
-    if (!(ncol(Lambda %% ncol(Y)))) {
-      stop("The column dimension of Lambda is ", ncol(Lambda), ", but it must be a multiple of the number of variables (", ncol(Y), ").")
-    }
-  }
-  if (is.vector(Lambda) && !all(Lambda %in% c("identity", "average", "triangular"))) {
-    stop("Valid aggregations are 'identity', 'average' and 'triangular', but specification includes ", Lambda[!which(Lambda %in% c("identity", "average", "triangular"))], ".")
-  }
-
-
 
   if (hasArg(prior_Pi_AR1)) {
     if (is.vector(prior_Pi_AR1)) {
       if (length(prior_Pi_AR1) == 1) {
-        warning("prior_Pi_AR1: Recycling ", prior_Pi_AR1, " to use as prior mean for AR(1) coefficients for all variables.\n")
+        warning("prior_Pi_AR1: Recycling ", prior_Pi_AR1, " to use as prior mean for AR(1) coefficients for all variables.\n", call. = FALSE)
         prior_Pi_AR1 <- rep(prior_Pi_AR1, ncol(Y))
       }
     } else {
       stop("prior_Pi_AR1 must be a vector, but is now of class ", class(prior_Pi_AR1), ".")
     }
   } else {
-    warning("prior_Pi_AR1: Using 0 as prior mean for AR(1) coefficients for all variables.\n")
+    warning("prior_Pi_AR1: Using 0 as prior mean for AR(1) coefficients for all variables.\n", call. = FALSE)
     prior_Pi_AR1 <- rep(0, ncol(Y))
   }
 
@@ -84,7 +80,7 @@ set_prior <- function(Y, d = NULL, d_fcst = NULL, Lambda, prior_Pi_AR1 = rep(0, 
       stop("lambda1 must be a vector with a single element.")
     }
   } else {
-    warning("lambda1: Using the default ", lambda1, " as the value for the lag decay hyperparameter.\n")
+    warning("lambda1: Using the default ", lambda1, " as the value for the overall tightness hyperparameter.\n", call. = FALSE)
   }
 
   if (hasArg(lambda2)) {
@@ -92,7 +88,7 @@ set_prior <- function(Y, d = NULL, d_fcst = NULL, Lambda, prior_Pi_AR1 = rep(0, 
       stop("lambda2 must be a vector with a single element.")
     }
   } else {
-    warning("lambda2: Using the default ", lambda2, " as the value for the lag decay hyperparameter.\n")
+    warning("lambda2: Using the default ", lambda2, " as the value for the lag decay hyperparameter.\n", call. = FALSE)
   }
 
   if (hasArg(lambda3)) {
@@ -100,7 +96,7 @@ set_prior <- function(Y, d = NULL, d_fcst = NULL, Lambda, prior_Pi_AR1 = rep(0, 
       stop("lambda3 must be a vector with a single element.")
     }
   } else {
-    warning("lambda3: Using the default ", lambda3, " as the constant's prior variance.\n")
+    warning("lambda3: Using the default ", lambda3, " as the constant's prior variance.\n", call. = FALSE)
   }
 
   if (hasArg(prior_nu)) {
@@ -108,7 +104,7 @@ set_prior <- function(Y, d = NULL, d_fcst = NULL, Lambda, prior_Pi_AR1 = rep(0, 
       stop("prior_nu must be a vector with a single element.")
     }
   } else {
-    warning(paste0("prior_nu: Using the default n_vars + 2 = ", prior_nu, " prior for prior_nu.\n"))
+    warning(paste0("prior_nu: Using the default n_vars + 2 = ", prior_nu, " prior for prior_nu.\n"), call. = FALSE)
   }
 
 
@@ -144,9 +140,6 @@ set_prior <- function(Y, d = NULL, d_fcst = NULL, Lambda, prior_Pi_AR1 = rep(0, 
     if (!is.vector(n_lags) || length(n_lags) > 1) {
       stop("n_lags must be a vector with a single element.")
     }
-    if (is.vector(Lambda)) {
-      Lambda <- build_Lambda(Lambda, n_lags)
-    }
   } else {
     stop("n_lags: No lag length specified.\n")
   }
@@ -156,7 +149,7 @@ set_prior <- function(Y, d = NULL, d_fcst = NULL, Lambda, prior_Pi_AR1 = rep(0, 
       stop("n_fcst must be a vector with a single element.")
     }
   } else {
-    warning("n_fcst: Using the default ", n_fcst, " for the number of forecasts to compute.\n")
+    warning("n_fcst: Using the default ", n_fcst, " for the number of forecasts to compute.\n", call. = FALSE)
   }
 
   if (hasArg(n_burnin)) {
@@ -175,67 +168,94 @@ set_prior <- function(Y, d = NULL, d_fcst = NULL, Lambda, prior_Pi_AR1 = rep(0, 
     stop("n_reps: Number of draws to use in main chain not specified.\n")
   }
 
-  ret <- list(Y = Y, d = d, d_fcst = d_fcst, Lambda = Lambda, prior_Pi_AR1 = prior_Pi_AR1, lambda1 = lambda1, lambda2 = lambda2, lambda3 = lambda3,
+  if (!is.logical(smooth_state)) {
+    stop("smooth_state: must be logical.\n")
+  }
+
+  if (!is.logical(check_roots)) {
+    stop("check_roots: must be logical.\n")
+  }
+
+  ret <- list(Y = Y, d = d, d_fcst = d_fcst, freq = freq, prior_Pi_AR1 = prior_Pi_AR1, lambda1 = lambda1, lambda2 = lambda2, lambda3 = lambda3,
               prior_nu = prior_nu, prior_psi_mean = prior_psi_mean, prior_psi_Omega = prior_psi_Omega, n_lags = n_lags, n_fcst = n_fcst, n_burnin = n_burnin,
-              n_reps = n_reps, verbose = verbose)
+              n_reps = n_reps, verbose = verbose, smooth_state = smooth_state, check_roots = check_roots)
   class(ret) <- "mfbvar_prior"
 
   return(ret)
 }
 
-print.mfbvar_prior <- function(prior_obj, ...) {
-  cat("The following elements of the prior have not been set: \n", names(sapply(prior_obj, is.null))[sapply(prior_obj, is.null)])
+#' Print method for mfbvar_prior
+#'
+#' Printing method for object of class mfbvar_prior, checking if information
+#' in the prior is sufficient for estimating models.
+#' @param x prior object (class \code{mfbvar_prior})
+#' @details The print method checks whether the steady-state and Minnesota
+#'   priors can be run with the current specification. This check is minimal in
+#'   the sense that it checks only prior elements with no defaults, and it only
+#'   checks for estimation and not forecasting (for which the steady-state prior
+#'   requires additional information).
+#' @seealso \code{\link{set_prior}}, \code{\link{update_prior}}, \code{\link{estimate_mfbvar}}, \code{\link{summary.mfbvar_prior}}
+print.mfbvar_prior <- function(x, ...) {
+  cat("The following elements of the prior have not been set: \n", names(sapply(x, is.null))[sapply(x, is.null)])
   cat("\n\n")
   cat("Checking if steady-state prior can be run... ")
-  if (!is.null(prior_obj$Y) && !is.null(prior_obj$d) && !is.null(prior_obj$prior_psi_mean) && !is.null(prior_obj$prior_psi_Omega) && !is.null(prior_obj$n_lags) && !is.null(prior_obj$n_burnin) && !is.null(prior_obj$n_reps)) {
+  if (!is.null(x$Y) && !is.null(x$d) && !is.null(x$prior_psi_mean) && !is.null(x$prior_psi_Omega) && !is.null(x$n_lags) && !is.null(x$n_burnin) && !is.null(x$n_reps)) {
     cat("TRUE\n\n")
   } else {
-    test_all <- sapply(prior_obj, is.null)
+    test_all <- sapply(x, is.null)
     test_sub <- test_all[c("Y", "d", "prior_psi_mean", "prior_psi_Omega", "n_lags", "n_burnin", "n_reps")]
     cat("FALSE\n Missing elements:", names(test_sub)[which(test_sub)], "\n")
   }
 
   cat("Checking if Minnesota prior can be run... ")
-  if (!is.null(prior_obj$Y) && !is.null(prior_obj$n_lags) && !is.null(prior_obj$n_burnin) && !is.null(prior_obj$n_reps)) {
+  if (!is.null(x$Y) && !is.null(x$n_lags) && !is.null(x$n_burnin) && !is.null(x$n_reps)) {
     cat("TRUE\n\n")
   } else {
-    test_all <- sapply(prior_obj, is.null)
+    test_all <- sapply(x, is.null)
     test_sub <- test_all[c("Y", "n_lags", "n_burnin", "n_reps")]
     cat("FALSE\n Missing elements:", names(test_sub)[which(test_sub)], "\n\n")
   }
 }
 
-summary.mfbvar_prior <- function(prior_obj, ...) {
+#' Summary method for mfbvar_prior
+#'
+#' summary method for object of class mfbvar_prior, showing some basic
+#' information regarding the contents of the prior.
+#' @param object prior object (class \code{mfbvar_prior})
+#' @seealso \code{\link{set_prior}}, \code{\link{update_prior}}, \code{\link{estimate_mfbvar}}, \code{\link{print.mfbvar_prior}}
+summary.mfbvar_prior <- function(object, ...) {
   cat("PRIOR SUMMARY\n")
   cat("----------------------------\n")
   cat("Required elements:\n")
-  cat("  Y:", ncol(prior_obj$Y), "variables, ", nrow(prior_obj$Y), "time points\n")
-  cat("  Lambda:", ifelse(is.matrix(prior_obj$Lambda), "an aggregation matrix", "string of aggregation schemes"), "\n")
-  cat("  prior_Pi_AR1: ", prior_obj$prior_Pi_AR1, "\n")
-  cat("  lambda1:", prior_obj$lambda1, "\n")
-  cat("  lambda2:", prior_obj$lambda2, "\n")
-  cat("  n_lags:", prior_obj$n_lags, "\n")
-  cat("  n_fcst:", prior_obj$n_fcst, "\n")
-  cat("  n_burnin:", prior_obj$n_burnin, "\n")
-  cat("  n_reps:", prior_obj$n_reps, "\n")
+  cat("  Y:", ncol(object$Y), "variables,", nrow(object$Y), "time points\n")
+  cat("  freq:", object$freq, "\n")
+  cat("  prior_Pi_AR1:", object$prior_Pi_AR1, "\n")
+  cat("  lambda1:", object$lambda1, "\n")
+  cat("  lambda2:", object$lambda2, "\n")
+  cat("  n_lags:", object$n_lags, "\n")
+  cat("  n_fcst:", object$n_fcst, "\n")
+  cat("  n_burnin:", object$n_burnin, "\n")
+  cat("  n_reps:", object$n_reps, "\n")
   cat("----------------------------\n")
   cat("Steady-state-specific elements:\n")
-  cat("  d:", ifelse(is.null(prior_obj$d), "<missing>", paste0(ncol(prior_obj$d), "deterministic variables")),"\n")
-  cat("  d_fcst:", ifelse(is.null(prior_obj$d_fcst), "<missing>", paste0(nrow(prior_obj$d_fcst), "forecasts, ", ncol(prior_obj$d), "deterministic variables")),"\n")
-  cat("  prior_nu:", ifelse(is.null(prior_obj$prior_nu), "<missing> (will rely on default)", prior_obj$prior_nu), "\n")
-  cat("  prior_psi_mean:", ifelse(is.null(prior_obj$prior_psi_mean), "<missing>", "vector of prior steady-state means"), "\n")
-  cat("  prior_psi_Omega:", ifelse(is.null(prior_obj$prior_psi_Omega), "<missing>", "prior covariance matrix of prior steady states"), "\n")
+  cat("  d:", ifelse(is.null(object$d), "<missing>", paste0(ncol(object$d), "deterministic variables")),"\n")
+  cat("  d_fcst:", ifelse(is.null(object$d_fcst), "<missing>", paste0(nrow(object$d_fcst), "forecasts, ", ncol(object$d), "deterministic variables")),"\n")
+  cat("  prior_nu:", ifelse(is.null(object$prior_nu), "<missing> (will rely on default)", object$prior_nu), "\n")
+  cat("  prior_psi_mean:", ifelse(is.null(object$prior_psi_mean), "<missing>", "vector of prior steady-state means"), "\n")
+  cat("  prior_psi_Omega:", ifelse(is.null(object$prior_psi_Omega), "<missing>", "prior covariance matrix of prior steady states"), "\n")
   cat("----------------------------\n")
   cat("Minnesota-specific elements:\n")
-  cat("  lambda3:", ifelse(is.null(prior_obj$lambda3), "<missing> (will rely on default)", prior_obj$lambda3), "\n")
+  cat("  lambda3:", ifelse(is.null(object$lambda3), "<missing> (will rely on default)", object$lambda3), "\n")
   cat("----------------------------\n")
   cat("Other:\n")
-  cat("  verbose:", prior_obj$verbose, "\n")
+  cat("  verbose:", object$verbose, "\n")
+  cat("  smooth_state:", object$smooth_state, "\n")
+  cat("  check_roots:", object$check_roots, "\n")
 
 }
 #' Update priors for an mfbvar model
 #'
-#' @param prior_obj an object of class \code{mfbvar\_prior}
+#' @param object an object of class \code{mfbvar\_prior}
 #' @param ... named arguments for prior attributes to update
 #' @seealso \code{\link{set_prior}}
 update_prior <- function(prior_obj, ...)
@@ -327,21 +347,22 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type = c("ss", "minn"), .
   }
 
 
+  Lambda <- build_Lambda(mfbvar_prior$freq, mfbvar_prior$n_lags)
 
   if (mfbvar_prior$verbose) {
     cat(paste0("############################################\n   Running the burn-in sampler with ", mfbvar_prior$n_burnin, " draws\n\n"))
     start_burnin <- Sys.time()
   }
   if (prior_type == "ss") {
-    burn_in <-  gibbs_sampler(Y = mfbvar_prior$Y, d = mfbvar_prior$d, d_fcst = NULL, Lambda = mfbvar_prior$Lambda, prior_Pi_mean = prior_Pi_mean,
+    burn_in <-  gibbs_sampler(Y = mfbvar_prior$Y, d = mfbvar_prior$d, d_fcst = NULL, Lambda = Lambda, prior_Pi_mean = prior_Pi_mean,
                               prior_Pi_Omega = prior_Pi_Omega, prior_S = prior_S, prior_nu = mfbvar_prior$prior_nu,
                               prior_psi_mean = mfbvar_prior$prior_psi_mean, prior_psi_Omega = mfbvar_prior$prior_psi_Omega,
-                              n_fcst = 0, n_reps = mfbvar_prior$n_burnin, smooth_state = FALSE, check_roots = TRUE, verbose = mfbvar_prior$verbose)
+                              n_fcst = 0, n_reps = mfbvar_prior$n_burnin, smooth_state = FALSE, check_roots = mfbvar_prior$check_roots, verbose = mfbvar_prior$verbose)
   } else {
-    burn_in <-  gibbs_sampler_schorf(Y = mfbvar_prior$Y, Lambda = mfbvar_prior$Lambda, prior_Pi_AR1 = mfbvar_prior$prior_Pi_AR1,
+    burn_in <-  gibbs_sampler_schorf(Y = mfbvar_prior$Y, freq = mfbvar_prior$freq, prior_Pi_AR1 = mfbvar_prior$prior_Pi_AR1,
                                      lambda1 = mfbvar_prior$lambda1, lambda2 = mfbvar_prior$lambda2, lambda3 = mfbvar_prior$lambda3,
                                      n_lags = mfbvar_prior$n_lags, n_fcst = 0, n_reps = mfbvar_prior$n_burnin,
-                                     smooth_state = FALSE, check_roots = TRUE, verbose = mfbvar_prior$verbose)
+                                     smooth_state = FALSE, check_roots = FALSE, verbose = mfbvar_prior$verbose)
   }
 
   if (mfbvar_prior$verbose) {
@@ -349,22 +370,22 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type = c("ss", "minn"), .
     time_diff <- end_burnin - start_burnin
     cat(paste0("\n   Time elapsed for drawing ", mfbvar_prior$n_burnin, " times for burn-in: ", signif(time_diff, digits = 1), " ",
                attr(time_diff, "units"), "\n"))
-    cat(paste0("\n   Moving on to ",
-               mfbvar_prior$n_reps, " replications in the main chain\n", ifelse(mfbvar_prior$n_fcst > 0, paste0("   Making forecasts ", mfbvar_prior$n_fcst, " steps ahead"), ""), "\n\n"))
+    cat(paste0("\n   Moving on to the main chain with ",
+               mfbvar_prior$n_reps, " draws \n\n", ifelse(mfbvar_prior$n_fcst > 0, paste0("   Making forecasts ", mfbvar_prior$n_fcst, " steps ahead"), ""), "\n\n"))
   }
 
   if (prior_type == "ss") {
-    main_run <- gibbs_sampler(Y = mfbvar_prior$Y, d = mfbvar_prior$d, d_fcst = mfbvar_prior$d_fcst, Lambda = mfbvar_prior$Lambda, prior_Pi_mean = prior_Pi_mean,
+    main_run <- gibbs_sampler(Y = mfbvar_prior$Y, d = mfbvar_prior$d, d_fcst = mfbvar_prior$d_fcst, Lambda = Lambda, prior_Pi_mean = prior_Pi_mean,
                               prior_Pi_Omega = prior_Pi_Omega, prior_S = prior_S, prior_nu = mfbvar_prior$prior_nu,
                               prior_psi_mean = mfbvar_prior$prior_psi_mean, prior_psi_Omega = mfbvar_prior$prior_psi_Omega, n_fcst = mfbvar_prior$n_fcst,
                               n_reps = mfbvar_prior$n_reps+1, init_Pi  = burn_in$Pi[,,dim(burn_in$Pi)[3]], init_Sigma = burn_in$Sigma[,,dim(burn_in$Sigma)[3]],
-                              init_psi = burn_in$psi[dim(burn_in$psi)[1],], init_Z = burn_in$Z[,,dim(burn_in$Z)[3]], smooth_state = FALSE, check_roots = TRUE,
-                              verbose = mfbvar_prior$verbose)
+                              init_psi = burn_in$psi[dim(burn_in$psi)[1],], init_Z = burn_in$Z[,,dim(burn_in$Z)[3]], smooth_state = mfbvar_prior$smooth_state,
+                              check_roots = mfbvar_prior$check_roots, verbose = mfbvar_prior$verbose)
   } else {
-    main_run <- gibbs_sampler_schorf(Y = mfbvar_prior$Y, Lambda = mfbvar_prior$Lambda, prior_Pi_AR1 = mfbvar_prior$prior_Pi_AR1, lambda1 = mfbvar_prior$lambda1,
+    main_run <- gibbs_sampler_schorf(Y = mfbvar_prior$Y, freq = mfbvar_prior$freq, prior_Pi_AR1 = mfbvar_prior$prior_Pi_AR1, lambda1 = mfbvar_prior$lambda1,
                                      lambda2 = mfbvar_prior$lambda2, lambda3 = mfbvar_prior$lambda3, n_lags = mfbvar_prior$n_lags, n_fcst = mfbvar_prior$n_fcst,
                                      n_reps = mfbvar_prior$n_reps+1, init_Pi  = burn_in$Pi[,,dim(burn_in$Pi)[3]], init_Sigma = burn_in$Sigma[,,dim(burn_in$Sigma)[3]],
-                                     init_Z = burn_in$Z[,,dim(burn_in$Z)[3]], smooth_state = FALSE, check_roots = TRUE, mfbvar_prior$verbose)
+                                     init_Z = burn_in$Z[,,dim(burn_in$Z)[3]], smooth_state = mfbvar_prior$smooth_state, check_roots = mfbvar_prior$check_roots, mfbvar_prior$verbose)
   }
 
 

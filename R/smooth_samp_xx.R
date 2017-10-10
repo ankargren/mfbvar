@@ -69,6 +69,6 @@ smooth_samp_xx <- function(mZ,mX,lH,lH0=NULL,mF,mB,mQ,iT,ip,iq,is,h0,P0=NULL,X0,
 
   u4 <- mfbvar::smoother(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, h00, P0)
 
-  return(list(mh=u4+mhhE))
+  return(list(mh=u4+mhhE, u4 = u4, mhhE = mhhE))
 }
 

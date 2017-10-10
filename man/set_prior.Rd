@@ -4,10 +4,11 @@
 \alias{set_prior}
 \title{Set priors for an mfbvar model}
 \usage{
-set_prior(Y, d = NULL, d_fcst = NULL, Lambda, prior_Pi_AR1 = rep(0,
-  ncol(Y)), lambda1 = 0.2, lambda2 = 1, lambda3 = 10000,
-  prior_nu = ncol(Y) + 2, prior_psi_mean = NULL, prior_psi_Omega = NULL,
-  n_lags, n_fcst = 0, n_burnin, n_reps, verbose = FALSE)
+set_prior(Y, d = NULL, d_fcst = NULL, freq = c("m", "q"),
+  prior_Pi_AR1 = rep(0, ncol(Y)), lambda1 = 0.2, lambda2 = 1,
+  lambda3 = 10000, prior_nu = ncol(Y) + 2, prior_psi_mean = NULL,
+  prior_psi_Omega = NULL, n_lags, n_fcst = 0, n_burnin, n_reps,
+  verbose = FALSE, smooth_state = FALSE, check_roots = TRUE)
 }
 \arguments{
 \item{Y}{The data matrix of size \code{(n_T + n_lags) * n_vars} with \code{NA} representing missingness. Must correspond well to the specification of \code{M_Lambda}.}
@@ -16,7 +17,7 @@ set_prior(Y, d = NULL, d_fcst = NULL, Lambda, prior_Pi_AR1 = rep(0,
 
 \item{d_fcst}{The deterministic terms for the forecasting period.}
 
-\item{Lambda}{The Lambda matrix (size \code{n_vars* (n_vars*n_lags)}).}
+\item{freq}{Character vector with elements 'm' (monthly) or 'q' (quarterly) for sampling frequency.}
 
 \item{prior_Pi_AR1}{The prior means for the AR(1) coefficients.}
 
@@ -41,6 +42,10 @@ set_prior(Y, d = NULL, d_fcst = NULL, Lambda, prior_Pi_AR1 = rep(0,
 \item{n_reps}{The number of replications.}
 
 \item{verbose}{Logical, if progress should be printed to the console.}
+
+\item{smooth_state}{Logical, if \code{TRUE} then the smoothed estimates of the latent states are also returned.}
+
+\item{check_roots}{Logical, if roots of the companion matrix are to be checked to ensure stationarity.}
 }
 \description{
 Create an object storing all information needed for estimation, including data as well as model and prior specifications for both a Minnesota or steady-state prior.

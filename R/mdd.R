@@ -40,7 +40,8 @@ mdd.mfbvar_ss <- function(x, method = 1, ...) {
 #' @param ... additional arguments (currently unused)
 #' @template man_template
 #' @seealso \code{\link{mdd}}, \code{\link{mdd.mfbvar_ss}}
-mdd.mfbvar_minn <- function(x, quarterly_cols, type = c("full", "diff"), ...) {
+mdd.mfbvar_minn <- function(x, type = "full", ...) {
+  quarterly_cols <- which(x$mfbvar_prior$freq == "q")
   mdd_minn(x, quarterly_cols, type)
 }
 

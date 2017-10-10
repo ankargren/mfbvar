@@ -12,7 +12,8 @@ build_DD(d, n_lags)
 \item{n_lags}{The number of lags.}
 }
 \value{
-\item{DD}{A matrix of size \code{n_T * ((n_lags + 1)*n_determ)} where row \code{t} is \eqn{(d_t', -d_{t-1}', \dots, -d_{t-k}')}.}
+\item{DD}{A matrix of size \code{n_T * ((n_lags + 1)*n_determ)} where
+row \code{t} is \eqn{(d_t', -d_{t-1}', \dots, -d_{t-k}')}.}
 }
 \description{
 \code{build_DD} builds the \eqn{D} matrix.

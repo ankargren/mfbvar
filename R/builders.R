@@ -7,8 +7,8 @@
 #' @keywords internal
 #' @template man_template
 #'
-#' @return
-#' \item{DD}{A matrix of size \code{n_T * ((n_lags + 1)*n_determ)} where row \code{t} is \eqn{(d_t', -d_{t-1}', \dots, -d_{t-k}')}.}
+#' @return \item{DD}{A matrix of size \code{n_T * ((n_lags + 1)*n_determ)} where
+#' row \code{t} is \eqn{(d_t', -d_{t-1}', \dots, -d_{t-k}')}.}
 
 build_DD <- function(d, n_lags) {
   # Inputs:
@@ -160,15 +160,15 @@ build_Lambda <- function(aggregation, n_lags) {
 
   n_pseudolags <- dim(Lambda)[2]/n_vars
   for (i in 1:n_vars) {
-    if (aggregation[i] == "identity") {
+    if (aggregation[i] == "m") {
       fill_vec <- c(1, rep(0, n_pseudolags - 1))
     }
-    if (aggregation[i] == "average") {
+    if (aggregation[i] == "q") {
       fill_vec <- c(rep(1/3, 3), rep(0, n_pseudolags - 3))
     }
-    if (aggregation[i] == "triangular") {
-      fill_vec <- c(1/3, 2/3, 1, 2/3, 1/3, rep(0, n_pseudolags - 5))
-    }
+    # if (aggregation[i] == "triangular") {
+    #   fill_vec <- c(1/3, 2/3, 1, 2/3, 1/3, rep(0, n_pseudolags - 5))
+    # }
 
     Lambda[i, seq(i, n_pseudolags * n_vars, by = n_vars)] <- fill_vec
   }
