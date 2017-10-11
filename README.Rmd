@@ -20,6 +20,7 @@ thm = knitr::knit_theme$get("edit-xcode")
 knitr::knit_theme$set(thm)
 ```
 
+### Prior specification
 First, obtain some data stored in the package.
 ```{r}
 library(mfbvar)
@@ -44,10 +45,13 @@ The summary method provides a little bit more detail:
 ```{r}
 summary(prior_obj)
 ```
-As the print method told us before, we can run the Minnesota prior, but not the steady-state prior with the current prior specification. The model is run by calling `estimate_mfbvar()`.
+
+### Model estimation
+As the print method told us before, we can run the Minnesota prior, but not the steady-state prior with the current prior specification. The model is estimated by calling `estimate_mfbvar()`.
 ```{r, cache = TRUE}
-mod_minn <- estimate_mfbvar(mfbvar_prior = prior_obj, prior_type = "minn", n_fcst = 8)
+mod_minn <- estimate_mfbvar(mfbvar_prior = prior_obj, prior_type = "minn")
 ```
+
 To use the steady-state prior, we need to specify `d`, `prior_psi_mean` and `prior_psi_Omega`. We specify the prior moments for $\psi$ using the helper function `interval_to_moments()` which converts 95 % prior probability intervals to prior moments, assuming independence.
 ```{r}
 prior_intervals <- matrix(c( 6,   7,
@@ -58,25 +62,34 @@ prior_intervals <- matrix(c( 6,   7,
 psi_moments <- interval_to_moments(prior_intervals)
 prior_psi_mean <- psi_moments$prior_psi_mean
 prior_psi_Omega <- psi_moments$prior_psi_Omega
-
-prior_obj <- update_prior(prior_obj, d = "intercept", prior_psi_mean = prior_psi_mean, prior_psi_Omega = prior_psi_Omega)
-prior_obj
-
 ```
 
-It is now possible to run the model using the steady-state prior.
+Instead of creating a new prior object, we can update the old by use of the `update_prior()` function. Note also that it is possible to specify `"intercept"` for `d` rather than a matrix containing a constant for the deterministic term.
+```{r}
+prior_obj <- update_prior(prior_obj, d = "intercept", prior_psi_mean = prior_psi_mean, 
+                          prior_psi_Omega = prior_psi_Omega)
+prior_obj
+```
 
+It is now possible to estimate the model using the steady-state prior.
 ```{r, cache = TRUE}
 mod_ss <- estimate_mfbvar(prior_obj, "ss")
 ```
 
-It is also allowed to temporarily override elements in the prior object by adding them as separate arguments to the `estimate_mfbvar()` function. Thus, to get forecasts eight steps ahead we could do:
+It is also allowed to temporarily override elements in the prior object by adding them as separate arguments to the `estimate_mfbvar()` function. Thus, to get forecasts eight steps ahead we would use:
 ```{r, cache = TRUE}
 mod_minn <- estimate_mfbvar(prior_obj, "minn", n_fcst = 8)
-mod_ss <- estimate_mfbvar(prior_obj, "ss", n_fcst = 8, d_fcst = matrix(1, nrow = 8, ncol = 1))
+mod_ss <- estimate_mfbvar(prior_obj, "ss", n_fcst = 8)
 ```
-The resulting objects contain all of the posterior information. For forecasts, there is a `predict` method which computes forecasts for selected quantiles. By default, it returns the 10%, 50% and 90% quantiles.
 
+### Processing results
+The resulting objects contain all of the posterior information. The returned objects from `estimate_mfbvar()` are of class `mfbvar` and `mfbvar_ss` or `mfbvar_minn`.
+```{r}
+class(mod_minn)
+class(mod_ss)
+```
+
+For forecasts, there is a `predict` method for class `mfbvar` which computes forecasts for selected quantiles. By default, it returns the 10%, 50% and 90% quantiles.
 ```{r}
 predict(mod_minn, pred_quantiles = 0.5)
 ```
@@ -84,6 +97,28 @@ If desired, it can be requested in a tidy format.
 ```{r}
 head(predict(mod_minn, pred_quantiles = 0.5, tidy = TRUE))
 ```
+
+Calling plot on `mfbvar_ss` or `mfbvar_minn` objects produces plots of the forecasts and, by default, `5*n_fcst` of the preceding values.
+
+```{r plot_minn, cache = TRUE}
+plot(mod_minn)
+``` 
+
+The axis tick labels are too long and overlap. The `plot()` method returns a `ggplot`. Hence, modifying the plot simply amounts to adding layers in the usual `ggplot2` way. The method also allows for changing where the plot should begin.
+```{r plot_ss, cache = TRUE}
+library(ggplot2)
+plot(mod_ss, plot_start = 1) +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+There are also some basic `print` and `summary` methods for the two classes implemented.
+```{r}
+mod_minn
+mod_ss
+summary(mod_minn)
+summary(mod_ss)
+```
+### Marginal data density estimation
 To estimate the marginal data density, there is a generic function `mdd()` for which there are methods for classes `mfbvar_ss` and `mfbvar_minn`.
 ```{r, cache = TRUE}
 mdd_minn <- mdd(mod_minn)
@@ -94,4 +129,3 @@ mdd_minn
 mdd_ss_1
 mdd_ss_2
 ```
-The caveat is that the mdd is estimated up to a constant and thus not directly comparable between models based on different prios.
