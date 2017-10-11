@@ -189,6 +189,7 @@ set_prior <- function(Y, d = NULL, d_fcst = NULL, freq = c("m", "q"), prior_Pi_A
 #' Printing method for object of class mfbvar_prior, checking if information
 #' in the prior is sufficient for estimating models.
 #' @param x prior object (class \code{mfbvar_prior})
+#' @param ... additional arguments (currently unused)
 #' @details The print method checks whether the steady-state and Minnesota
 #'   priors can be run with the current specification. This check is minimal in
 #'   the sense that it checks only prior elements with no defaults, and it only
@@ -222,6 +223,7 @@ print.mfbvar_prior <- function(x, ...) {
 #' summary method for object of class mfbvar_prior, showing some basic
 #' information regarding the contents of the prior.
 #' @param object prior object (class \code{mfbvar_prior})
+#' @param ... additional arguments (currently unused)
 #' @seealso \code{\link{set_prior}}, \code{\link{update_prior}}, \code{\link{estimate_mfbvar}}, \code{\link{print.mfbvar_prior}}
 summary.mfbvar_prior <- function(object, ...) {
   cat("PRIOR SUMMARY\n")
@@ -255,7 +257,7 @@ summary.mfbvar_prior <- function(object, ...) {
 }
 #' Update priors for an mfbvar model
 #'
-#' @param object an object of class \code{mfbvar\_prior}
+#' @param prior_obj an object of class \code{mfbvar\_prior}
 #' @param ... named arguments for prior attributes to update
 #' @seealso \code{\link{set_prior}}
 update_prior <- function(prior_obj, ...)

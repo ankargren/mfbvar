@@ -8,6 +8,8 @@
 }
 \arguments{
 \item{x}{prior object (class \code{mfbvar_prior})}
+
+\item{...}{additional arguments (currently unused)}
 }
 \description{
 Printing method for object of class mfbvar_prior, checking if information

@@ -35,7 +35,6 @@ mdd.mfbvar_ss <- function(x, method = 1, ...) {
 #' Estimate the marginal data density for the model with a Minnesota prior.
 #' @details The generic \code{mdd} calls \code{mdd_minn} if \code{mfbvar_obj} is of class \code{mfbvar_minn}.
 #' @param x object of class \code{mfbvar_minn}
-#' @param quarterly_cols numeric vector with positions of quarterly variables
 #' @param type \code{"full"} gives implementation based on the paper by Schorfheide and Song (2015), \code{"diff"} implementation on MATLAB code by Schorfheide and Song (2015)
 #' @param ... additional arguments (currently unused)
 #' @template man_template
@@ -90,11 +89,11 @@ mdd1 <- function(mfbvar_obj) {
   prior_psi_Omega <- mfbvar_obj$prior_psi_Omega
   prior_psi_mean <- mfbvar_obj$prior_psi_mean
 
-  #(mZ,lH,mF,mQ,iT,ip,iq,h0,P0)
-  Pi_comp <- build_companion(post_Pi_mean, n_vars = n_vars, n_lags = n_lags)
-  Q_comp  <- matrix(0, ncol = n_vars*n_lags, nrow = n_vars*n_lags)
-  Q_comp[1:n_vars, 1:n_vars] <- t(chol(post_Sigma))
-  P0      <- matrix(0, n_lags*n_vars, n_lags*n_vars)
+  freq <- mfbvar_obj$mfbvar_prior$freq
+  Lambda <- build_Lambda(freq, n_lags)
+  n_q <- sum(freq == "q")
+  T_b <- max(which(!apply(apply(Y[, freq == "m"], 2, is.na), 1, any)))
+  Lambda_ <- build_Lambda(rep("q", n_q), 3)
 
   ################################################################
   ### Initialize
@@ -121,6 +120,10 @@ mdd1 <- function(mfbvar_obj) {
 
   Z_1 <- Z_red[1:n_lags,, 1]
 
+  mZ <- Y - d %*% t(matrix(post_psi, nrow = n_vars))
+  mZ <- as.matrix(mZ)
+  demeaned_z0 <- Z_1 - d[1:n_lags, ] %*% t(matrix(post_psi, nrow = n_vars))
+  d_post_psi <- d %*% t(matrix(post_psi, nrow = n_vars))
   ################################################################
   ### Reduced Gibbs step
   for (r in 2:n_reps) {
@@ -136,8 +139,11 @@ mdd1 <- function(mfbvar_obj) {
     ################################################################
     ### Smoothing step
     #(Y, d, Pi_r,            Sigma_r,               psi_r,                          Z_1, Lambda, n_vars, n_lags, n_T_, smooth_state)
-    Z_res <- posterior_Z(Y, d, Pi_r = Pi_red[,, r], Sigma_r = Sigma_red[,, r], psi_r = post_psi, Z_1, Lambda, n_vars, n_lags, n_T_, smooth_state = FALSE)
-    Z_red[,, r] <- Z_res$Z_r
+
+    Pi_r <- cbind(Pi_red[,,r], 0)
+    Z_res <- kf_sim_smooth(mZ, Pi_r, Sigma[,,r], Lambda_, demeaned_z0, n_q, T_b)[-c(1:n_lags), ]
+    Z_res <- rbind(demeaned_z0, Z_res) + d_post_psi
+    Z_red[,, r] <- Z_res
   }
 
   ################################################################
@@ -147,6 +153,10 @@ mdd1 <- function(mfbvar_obj) {
   demeaned_z0 <- Z[1:n_lags,, 1] - d[1:n_lags, ] %*% t(matrix(post_psi, nrow = n_vars))
   h0 <- matrix(t(demeaned_z0), ncol = 1)
   h0 <- h0[(n_vars*n_lags):1,, drop = FALSE] # have to reverse the order
+  Pi_comp <- build_companion(post_Pi_mean, n_vars = n_vars, n_lags = n_lags)
+  Q_comp  <- matrix(0, ncol = n_vars*n_lags, nrow = n_vars*n_lags)
+  Q_comp[1:n_vars, 1:n_vars] <- t(chol(post_Sigma))
+  P0 <- matrix(0, n_lags*n_vars, n_lags*n_vars)
 
   ################################################################
   ### Final calculations
@@ -283,6 +293,7 @@ mdd2 <- function(mfbvar_obj, p_trunc) {
 #' @rdname mdd.minn
 #' @templateVar mfbvar_obj TRUE
 #' @template man_template
+#' @param quarterly_cols numeric vector with positions of quarterly variables
 #' @keywords internal
 #' @return The log marginal data density estimate (bar a constant)
 #'
@@ -375,168 +386,4 @@ mdd_minn <- function(mfbvar_obj, quarterly_cols, type = "full", ...) {
     return(log_mdd = mean(mdd))
   }
 }
-
-#' Marginal data density grid search
-#'
-#' Use a grid search to estimate the marginal data density for multiple values, possibly using parallel computation.
-#' @details Only one of \code{mfbvar_obj} and the entire suite of \code{Y}, \code{d}, \code{Lambda}, \code{prior_Pi_AR1}, \code{prior_nu}, \code{prior_psi_mean}, \code{prior_psi_Omega}, \code{n_lags}, \code{n_burnin} and \code{n_reps} must be provided. If \code{mfbvar_obj} is not \code{NULL}, its components are extracted.\cr \cr In order to use \code{n_cores > 1}, the \code{parallel} package must be installed.
-#' @templateVar mfbvar_obj TRUE
-#' @templateVar lambda1_grid TRUE
-#' @templateVar lambda2_grid TRUE
-#' @templateVar method TRUE
-#' @templateVar n_cores TRUE
-#' @templateVar p_trunc TRUE
-#' @param ... Additional parameters. This includes \code{p_trunc} if \code{method == 2} and if \code{mfbvar_obj} is omitted, it must include all the necessary variables to the \code{mfbvar()} call.
-#' @template man_template
-#' @keywords internal
-#' @return mdd_res A matrix with the results.
-mdd_grid <- function(mfbvar_obj = NULL, lambda1_grid, lambda2_grid, method, n_cores = 1, p_trunc = NULL, same_seed = FALSE, seed = NULL, ...) {
-  if (!requireNamespace(c("parallel"), quietly = TRUE) && n_cores > 1) {
-    n_cores <- 1
-    warnings("The parallel package is not available. Setting n_cores to 1. To use parallel processing, please install parallel.")
-  }
-  stopifnot((method == 1) || (method == 2))
-  if (method == 2) {
-    if (is.null(p_trunc)) {
-      stop("When using method 2, p_trunc must be supplied.")
-    }
-  }
-  if (is.null(mfbvar_obj)) {
-    stopifnot(hasArg(Y), hasArg(d), hasArg(Lambda), hasArg(prior_Pi_AR1),
-              hasArg(prior_nu), hasArg(prior_psi_mean), hasArg(prior_psi_Omega),
-              hasArg(n_lags), hasArg(n_burnin), hasArg(n_reps))
-  } else {
-    stopifnot(class(mfbvar_obj) == "mfbvar")
-    Y <- mfbvar_obj$Y
-    d <- mfbvar_obj$d
-    Lambda <- mfbvar_obj$Lambda
-    prior_Pi_AR1 <- mfbvar_obj$prior_Pi_AR1
-    prior_nu <- mfbvar_obj$prior_nu
-    prior_psi_mean <- mfbvar_obj$prior_psi_mean
-    prior_psi_Omega <- mfbvar_obj$prior_psi_Omega
-    n_lags <- mfbvar_obj$n_lags
-    n_burnin <- mfbvar_obj$n_burnin
-    n_reps <- mfbvar_obj$n_reps
-  }
-  if (same_seed && is.null(seed)) {
-    stop("Seed must be provided.")
-  }
-
-  mdd_search <- function(lambda1, lambda2, method, p_trunc, same_seed, seed,
-                         Y, d, Lambda, prior_Pi_AR1, prior_nu, prior_psi_mean,
-                         prior_psi_Omega, n_lags, n_burnin, n_reps) {
-    if (same_seed) {
-      set.seed(seed)
-    }
-    mfbvar_obj <- mfbvar(Y, d, d_fcst = NULL, Lambda, prior_Pi_AR1, lambda1, lambda2,
-                         prior_nu, prior_psi_mean, prior_psi_Omega,
-                         n_lags, n_fcst = NULL, n_burnin, n_reps, verbose = FALSE)
-    if (method == 1) {
-      log_mdd <- mdd1(mfbvar_obj)$log_mdd
-    } else {
-      log_mdd <- mdd2(mfbvar_obj, p_trunc)$log_mdd
-    }
-    return(log_mdd)
-  }
-
-  par_func <- function(j, lambda_mat, method, p_trunc, same_seed, seed,
-                       Y, d, Lambda, prior_Pi_AR1, prior_nu, prior_psi_mean,
-                       prior_psi_Omega, n_lags, n_burnin, n_reps) {
-    lambda1 <- lambda_mat[j, 1]
-    lambda2 <- lambda_mat[j, 2]
-    cat("Combination", j, "using lambda1 =", lambda1, "lambda2 =", lambda2, "\n\n")
-    mdd_res <- mdd_search(lambda1 = lambda1, lambda2 = lambda2, method = method, p_trunc = p_trunc, same_seed = same_seed, seed = seed,
-                          Y = Y, d = d, Lambda = Lambda, prior_Pi_AR1 = prior_Pi_AR1, prior_nu = prior_nu, prior_psi_mean = prior_psi_mean,
-                          prior_psi_Omega = prior_psi_Omega, n_lags = n_lags, n_burnin = n_burnin, n_reps = n_reps)#}, error = function(cond) return(NA), warning = function(cond) return(NA))
-    return(c(mdd_res, lambda1, lambda2))
-  }
-
-  lambda_mat <- expand.grid(lambda1_grid, lambda2_grid)
-  #library(parallel)
-  #library(doParallel)
-  if (n_cores > 1) {
-    cat("Computing log marginal data density\n\nInitiating parallel processing using", n_cores, "cores\n\n")
-    cl <- parallel::makePSOCKcluster(n_cores)
-    #lusterSetRNGStream(cl, iseed = 2983468)
-    parallel::clusterExport(cl = cl, varlist = setdiff(ls(), c("cl", "lambda1", "lambda2")), envir = environment())
-    # Load the package
-    parallel::clusterEvalQ(cl, {
-      library(mfbvar)
-    })
-
-    if (!same_seed && !is.null(seed)) {
-      parallel::clusterSetRNGStream(cl, seed)
-    }
-
-    if (method == 1) {
-      mdd_res <- parallel::parSapply(cl = cl, X = 1:nrow(lambda_mat), FUN = par_func, lambda_mat = lambda_mat, method = method, p_trunc = NULL,    same_seed = same_seed, seed = seed,
-                                     Y = Y, d = d, Lambda = Lambda, prior_Pi_AR1 = prior_Pi_AR1, prior_nu = prior_nu, prior_psi_mean = prior_psi_mean,
-                                     prior_psi_Omega = prior_psi_Omega, n_lags = n_lags, n_burnin = n_burnin, n_reps = n_reps)
-    }
-    if (method == 2) {
-      mdd_res <- parallel::parSapply(cl = cl, X = 1:nrow(lambda_mat), FUN = par_func, lambda_mat = lambda_mat, method = method, p_trunc = p_trunc, same_seed = same_seed, seed = seed,
-                                     Y = Y, d = d, Lambda = Lambda, prior_Pi_AR1 = prior_Pi_AR1, prior_nu = prior_nu, prior_psi_mean = prior_psi_mean,
-                                     prior_psi_Omega = prior_psi_Omega, n_lags = n_lags, n_burnin = n_burnin, n_reps = n_reps)
-    }
-
-    parallel::stopCluster(cl)
-  } else {
-    cat("Computing log marginal data density\n\n")
-    if (method == 1) {
-      mdd_res <- sapply(X = 1:nrow(lambda_mat), FUN = par_func, lambda_mat = lambda_mat, method = method, same_seed = same_seed, seed = seed,
-                        Y = Y, d = d, Lambda = Lambda, prior_Pi_AR1 = prior_Pi_AR1, prior_nu = prior_nu, prior_psi_mean = prior_psi_mean,
-                        prior_psi_Omega = prior_psi_Omega, n_lags = n_lags, n_burnin = n_burnin, n_reps = n_reps)
-    }
-    if (method == 2) {
-      mdd_res <- sapply(X = 1:nrow(lambda_mat), FUN = par_func, lambda_mat = lambda_mat, method = method, p_trunc = p_trunc, same_seed = same_seed, seed = seed,
-                        Y = Y, d = d, Lambda = Lambda, prior_Pi_AR1 = prior_Pi_AR1, prior_nu = prior_nu, prior_psi_mean = prior_psi_mean,
-                        prior_psi_Omega = prior_psi_Omega, n_lags = n_lags, n_burnin = n_burnin, n_reps = n_reps)
-    }
-  }
-
-  rownames(mdd_res) <- c("log_mdd", "lambda1", "lambda2")
-  mdd_ret <- list(mdd_res = mdd_res)
-  class(mdd_ret) <- "mdd"
-  return(mdd_ret)
-}
-
-#' Printing method for class mdd
-#'
-#' Method for printing mdd objects.
-#'
-#' @param x object of class mdd
-#' @param ... Currently not in use.
-print.mdd <- function(x, ...) {
-  print(x[["mdd_res"]])
-}
-
-#' Plotting method for class mdd
-#'
-#' Method for plotting mdd objects.
-#'
-#' @param x object of class mdd
-#' @param ... Currently not in use.
-plot.mdd <- function(x, ...) {
-  plot_df <- data.frame(t(x[["mdd_res"]]))
-  lambda1 <- lambda2 <- log_mdd <- NULL
-  ggplot(plot_df, aes(x = lambda1, y = lambda2, fill = log_mdd)) +
-    geom_tile() +
-    theme_minimal() +
-    scale_fill_gradient(low = "grey20", high = "grey90", name = "log(mdd)") +
-    coord_fixed(ratio = 1/(c(range(unique(plot_df$lambda2)) %*% c(-1, 1))/c(range(unique(plot_df$lambda1)) %*% c(-1, 1)))) +
-    labs(title = "Tile plot of log marginal data density", x = expression(lambda[1]), y = expression(lambda[2]))
-}
-
-#' Summary method for class mdd
-#'
-#' Method for summarizing mdd objects.
-#'
-#' @param object object of class mdd
-#' @param ... Currently not in use.
-summary.mdd <- function(object, ...) {
-  pos <- which.max(object[["mdd_res"]][1,])
-  cat("Highest log marginal data density:", object[["mdd_res"]][1, pos],
-      "\nObtained using lambda1 =", object[["mdd_res"]][2, pos], "and lambda2 =", object[["mdd_res"]][3, pos])
-}
-
 

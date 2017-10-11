@@ -12,8 +12,6 @@
 \item{type}{\code{"full"} gives implementation based on the paper by Schorfheide and Song (2015), \code{"diff"} implementation on MATLAB code by Schorfheide and Song (2015)}
 
 \item{...}{additional arguments (currently unused)}
-
-\item{quarterly_cols}{numeric vector with positions of quarterly variables}
 }
 \description{
 Estimate the marginal data density for the model with a Minnesota prior.

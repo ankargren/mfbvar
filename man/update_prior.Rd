@@ -7,9 +7,9 @@
 update_prior(prior_obj, ...)
 }
 \arguments{
-\item{...}{named arguments for prior attributes to update}
+\item{prior_obj}{an object of class \code{mfbvar\_prior}}
 
-\item{object}{an object of class \code{mfbvar\_prior}}
+\item{...}{named arguments for prior attributes to update}
 }
 \description{
 Update priors for an mfbvar model

@@ -3,11 +3,11 @@ output:
   github_document
 ---
 # mfbvar
-<!-- [![Travis-CI Build Status](https://travis-ci.org/ankargren/mfbvar.svg?branch=0.3.0.9000)](https://travis-ci.com/ankargren/mfbvar)-->
+[![Travis-CI Build Status](https://travis-ci.org/ankargren/mfbvar?branch=master)](https://travis-ci.org/ankargren/mfbvar)
 [![](http://www.r-pkg.org/badges/version/mfbvar)](http://www.r-pkg.org/pkg/mfbvar)
 
 ## Overview 
-The `mfbvar` package implements a steady-state prior and a Minnesota prior for state space-based mixed-frequency VAR models. *Note that the examples require the development version 0.3.0.900 (available in its own branch) to work.*
+The `mfbvar` package implements a steady-state prior and a Minnesota prior for state space-based mixed-frequency VAR models.
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 ```{r, echo = FALSE}

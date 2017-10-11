@@ -8,6 +8,8 @@
 }
 \arguments{
 \item{object}{prior object (class \code{mfbvar_prior})}
+
+\item{...}{additional arguments (currently unused)}
 }
 \description{
 summary method for object of class mfbvar_prior, showing some basic

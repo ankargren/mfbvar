@@ -8,6 +8,8 @@ mdd_minn(mfbvar_obj, quarterly_cols, type = "full", ...)
 }
 \arguments{
 \item{mfbvar_obj}{An object of class \code{mfbvar} containing the results.}
+
+\item{quarterly_cols}{numeric vector with positions of quarterly variables}
 }
 \value{
 The log marginal data density estimate (bar a constant)

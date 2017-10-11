@@ -57,10 +57,29 @@ kf_smoother <- function(y, Z, c, G, T, d, H, a1, P1) {
     .Call(`_mfbvar_kf_smoother`, y, Z, c, G, T, d, H, a1, P1)
 }
 
+#' @title Kalman filter and smoother
+#'
+#' @description Kalman filter and smoother (\code{kf_ragged}) and simulation smoother (\code{kf_sim_smooth}) for mixed-frequency data with ragged edges. This function is more computationally efficient than using a companion form representation.
+#' @param y_ matrix with the data
+#' @param Phi_ matrix with the autoregressive parameters, where the last column is the intercept
+#' @param Sigma_ error covariance matrix
+#' @param Lambda_ aggregation matrix (for quarterly variables only)
+#' @param n_q_ number of quarterly variables
+#' @param T_b_ final time period where all monthly variables are observed
+#' @keywords internal
+#' @return For \code{kf_ragged}, a list with elements:
+#' \item{a}{The one-step predictions (for the compact form)}
+#' \item{a_tt}{The filtered estimates (for the compact form)}
+#' \item{a_tT}{The smoothed estimates (for the compact form)}
+#' \item{Z_tT}{The smoothed estimated (for the original form)}
+#' @details The returned matrices have the same number of rows as \code{y_}, but the first \code{n_lags} rows are zero.
 kf_ragged <- function(y_, Phi_, Sigma_, Lambda_, n_q_, T_b_) {
     .Call(`_mfbvar_kf_ragged`, y_, Phi_, Sigma_, Lambda_, n_q_, T_b_)
 }
 
+#' @describeIn kf_ragged Simulation smoother
+#' @param Z1 initial values, with \code{n_lags} rows and same number of columns as \code{y_}
+#' @return For \code{kf_sim_smooth}, a matrix with the draw from the posterior distribution.
 kf_sim_smooth <- function(y_, Phi_, Sigma_, Lambda_, Z1, n_q_, T_b_) {
     .Call(`_mfbvar_kf_sim_smooth`, y_, Phi_, Sigma_, Lambda_, Z1, n_q_, T_b_)
 }
