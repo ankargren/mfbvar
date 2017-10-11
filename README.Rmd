@@ -3,7 +3,7 @@ output:
   github_document
 ---
 # mfbvar
-[![Travis-CI Build Status](https://travis-ci.org/ankargren/mfbvar?branch=master)](https://travis-ci.org/ankargren/mfbvar)
+[![Build Status](https://travis-ci.org/ankargren/mfbvar.svg?branch=master)](https://travis-ci.org/ankargren/mfbvar)
 [![](http://www.r-pkg.org/badges/version/mfbvar)](http://www.r-pkg.org/pkg/mfbvar)
 
 ## Overview 
