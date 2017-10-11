@@ -3,7 +3,8 @@ output:
   github_document
 ---
 # mfbvar
-[![Travis-CI Build Status](https://travis-ci.org/ankargren/mfbvar.svg?branch=0.3.0.9000)](https://travis-ci.org/ankargren/mfbvar)
+<!-- [![Travis-CI Build Status](https://travis-ci.org/ankargren/mfbvar.svg?branch=0.3.0.9000)](https://travis-ci.com/ankargren/mfbvar)-->
+[![](http://www.r-pkg.org/badges/version/mfbvar)](http://www.r-pkg.org/pkg/mfbvar)
 
 ## Overview 
 The `mfbvar` package implements a steady-state prior and a Minnesota prior for state space-based mixed-frequency VAR models. *Note that the examples require the development version 0.3.0.900 (available in its own branch) to work.*
@@ -23,13 +24,12 @@ First, obtain some data stored in the package.
 ```{r}
 library(mfbvar)
 Y <- mf_list$data[[192]]
-Y <- Y[-1, c(1:4, 6, 5)]
 head(Y)
 tail(Y)
 ```
-Next, we create a minimal prior object. We must specify: 1) data, 2) an aggregation matrix or a vector of strings with aggregation schemes, 3) the number of lags, 4) the length of burn-in and main chains, respectively. This is done by calling the `set_prior()` function and giving named arguments. The resulting object is of class `mfbvar_prior` and has a basic `print` method.
+Next, we create a minimal prior object. We must specify: 1) data, 2) the frequency of the data, 3) the number of lags, 4) the length of burn-in and main chains, respectively. This is done by calling the `set_prior()` function and giving named arguments. The resulting object is of class `mfbvar_prior` and has a basic `print` method.
 ```{r}
-prior_obj <- set_prior(Y = Y, freq = c(rep("m", 5), "q"), 
+prior_obj <- set_prior(Y = Y, freq = c(rep("m", 4), "q"), 
                        n_lags = 4, n_burnin = 1000, n_reps = 1000)
 ```
 Warnings are produced because we haven't specified values for some of the prior elements and instead the function uses default values.
@@ -55,8 +55,7 @@ prior_intervals <- matrix(c( 6,   7,
                              0.1, 0.2,
                              0,   0.5,
                             -0.5, 0.5,
-                             0.4, 0.6,
-                            -0.5, 0.5), ncol = 2, byrow = TRUE)
+                             0.4, 0.6), ncol = 2, byrow = TRUE)
 psi_moments <- interval_to_moments(prior_intervals)
 prior_psi_mean <- psi_moments$prior_psi_mean
 prior_psi_Omega <- psi_moments$prior_psi_Omega
@@ -88,7 +87,7 @@ head(predict(mod_minn, pred_quantiles = 0.5, tidy = TRUE))
 ```
 To estimate the marginal data density, there is a generic function `mdd()` for which there are methods for classes `mfbvar_ss` and `mfbvar_minn`.
 ```{r, cache = TRUE}
-mdd(mod_minn, quarterly_cols = 5)
-mdd(mod_ss) 
+# mdd(mod_minn)
+# mdd(mod_ss) 
 ```
 The caveat is that the mdd is estimated up to a constant and thus not directly comparable between models based on different prios.

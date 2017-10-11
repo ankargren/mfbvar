@@ -139,63 +139,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// smoother
-arma::mat smoother(arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, arma::mat Q_comp, int n_T, int n_vars, int n_comp, arma::mat z0, arma::mat P0);
-RcppExport SEXP _mfbvar_smoother(SEXP YSEXP, SEXP LambdaSEXP, SEXP Pi_compSEXP, SEXP Q_compSEXP, SEXP n_TSEXP, SEXP n_varsSEXP, SEXP n_compSEXP, SEXP z0SEXP, SEXP P0SEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type Y(YSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type Lambda(LambdaSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type Pi_comp(Pi_compSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type Q_comp(Q_compSEXP);
-    Rcpp::traits::input_parameter< int >::type n_T(n_TSEXP);
-    Rcpp::traits::input_parameter< int >::type n_vars(n_varsSEXP);
-    Rcpp::traits::input_parameter< int >::type n_comp(n_compSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type z0(z0SEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type P0(P0SEXP);
-    rcpp_result_gen = Rcpp::wrap(smoother(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0));
-    return rcpp_result_gen;
-END_RCPP
-}
-// generate_mhh
-arma::mat generate_mhh(arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, arma::mat Q_comp, int n_T, int n_vars, int n_comp, arma::mat z0, arma::mat P0);
-RcppExport SEXP _mfbvar_generate_mhh(SEXP YSEXP, SEXP LambdaSEXP, SEXP Pi_compSEXP, SEXP Q_compSEXP, SEXP n_TSEXP, SEXP n_varsSEXP, SEXP n_compSEXP, SEXP z0SEXP, SEXP P0SEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type Y(YSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type Lambda(LambdaSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type Pi_comp(Pi_compSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type Q_comp(Q_compSEXP);
-    Rcpp::traits::input_parameter< int >::type n_T(n_TSEXP);
-    Rcpp::traits::input_parameter< int >::type n_vars(n_varsSEXP);
-    Rcpp::traits::input_parameter< int >::type n_comp(n_compSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type z0(z0SEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type P0(P0SEXP);
-    rcpp_result_gen = Rcpp::wrap(generate_mhh(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0));
-    return rcpp_result_gen;
-END_RCPP
-}
-// simulation_smoother
-arma::mat simulation_smoother(arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, arma::mat Q_comp, int n_T, int n_vars, int n_comp, arma::mat z0, arma::mat P0);
-RcppExport SEXP _mfbvar_simulation_smoother(SEXP YSEXP, SEXP LambdaSEXP, SEXP Pi_compSEXP, SEXP Q_compSEXP, SEXP n_TSEXP, SEXP n_varsSEXP, SEXP n_compSEXP, SEXP z0SEXP, SEXP P0SEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type Y(YSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type Lambda(LambdaSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type Pi_comp(Pi_compSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type Q_comp(Q_compSEXP);
-    Rcpp::traits::input_parameter< int >::type n_T(n_TSEXP);
-    Rcpp::traits::input_parameter< int >::type n_vars(n_varsSEXP);
-    Rcpp::traits::input_parameter< int >::type n_comp(n_compSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type z0(z0SEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type P0(P0SEXP);
-    rcpp_result_gen = Rcpp::wrap(simulation_smoother(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0));
-    return rcpp_result_gen;
-END_RCPP
-}
 // loglike
 arma::mat loglike(arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, arma::mat Q_comp, int n_T, int n_vars, int n_comp, arma::mat z0, arma::mat P0);
 RcppExport SEXP _mfbvar_loglike(SEXP YSEXP, SEXP LambdaSEXP, SEXP Pi_compSEXP, SEXP Q_compSEXP, SEXP n_TSEXP, SEXP n_varsSEXP, SEXP n_compSEXP, SEXP z0SEXP, SEXP P0SEXP) {
@@ -226,9 +169,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mfbvar_rmatn", (DL_FUNC) &_mfbvar_rmatn, 3},
     {"_mfbvar_rinvwish", (DL_FUNC) &_mfbvar_rinvwish, 2},
     {"_mfbvar_rmultn", (DL_FUNC) &_mfbvar_rmultn, 2},
-    {"_mfbvar_smoother", (DL_FUNC) &_mfbvar_smoother, 9},
-    {"_mfbvar_generate_mhh", (DL_FUNC) &_mfbvar_generate_mhh, 9},
-    {"_mfbvar_simulation_smoother", (DL_FUNC) &_mfbvar_simulation_smoother, 9},
     {"_mfbvar_loglike", (DL_FUNC) &_mfbvar_loglike, 9},
     {NULL, NULL, 0}
 };

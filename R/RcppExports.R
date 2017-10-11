@@ -112,30 +112,6 @@ rmultn <- function(m, Sigma) {
 #' @templateVar P0 TRUE
 #' @template man_template
 #' @keywords internal
-#' @return For \code{smoother}:
-#' \item{}{The smoothed states.}
-smoother <- function(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0) {
-    .Call(`_mfbvar_smoother`, Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
-}
-
-#' @describeIn smoother Generate pseudo-state vector
-#' @keywords internal
-#' @return For \code{generate_mhh}:
-#' \item{}{Generated (pseudo-)state vector.}
-generate_mhh <- function(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0) {
-    .Call(`_mfbvar_generate_mhh`, Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
-}
-
-#' @describeIn smoother Simulation smoother
-#' @keywords internal
-#' @return For \code{simulation_smoother}:
-#' \item{}{The draw from the posterior distribution.}
-simulation_smoother <- function(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0) {
-    .Call(`_mfbvar_simulation_smoother`, Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
-}
-
-#' @describeIn smoother Compute log-likelihood
-#' @keywords internal
 #' @return For \code{loglike}:
 #' \item{}{An \code{n_T}-long vector of the log-likelihoods. \code{exp(sum(loglike(...)))} is the likelihood.}
 loglike <- function(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0) {

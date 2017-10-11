@@ -5,7 +5,7 @@
 #' @templateVar Y TRUE
 #' @templateVar d TRUE
 #' @templateVar d_fcst TRUE
-#' @templateVar Lambda TRUE
+#' @templateVar freq TRUE
 #' @templateVar prior_Pi_mean TRUE
 #' @templateVar prior_Pi_Omega TRUE
 #' @templateVar prior_S TRUE
@@ -32,7 +32,7 @@
 #' @return
 #' An object of class mfbvar.
 
-gibbs_sampler <- function(Y, d, d_fcst = NULL, Lambda, prior_Pi_mean, prior_Pi_Omega, prior_S, prior_nu, prior_psi_mean, prior_psi_Omega,
+gibbs_sampler <- function(Y, d, d_fcst = NULL, freq, prior_Pi_mean, prior_Pi_Omega, prior_S, prior_nu, prior_psi_mean, prior_psi_Omega,
                           n_fcst = NULL, n_reps, init_Pi = NULL, init_Sigma = NULL, init_psi = NULL, init_Z = NULL, smooth_state = FALSE, check_roots = TRUE,
                           verbose = TRUE) {
 
@@ -41,14 +41,18 @@ gibbs_sampler <- function(Y, d, d_fcst = NULL, Lambda, prior_Pi_mean, prior_Pi_O
   # n_determ: number of deterministic variables
   # n_T: sample size (full sample)
   # n_T_: sample size (reduced sample)
-
   n_vars <- dim(Y)[2]
   n_lags <- prod(dim(as.matrix(prior_Pi_mean)))/n_vars^2
+  Lambda <- build_Lambda(freq, n_lags)
   n_pseudolags <- dim(Lambda)[2]/n_vars
   n_determ <- dim(d)[2]
   n_T <- dim(Y)[1]# - n_lags
   n_T_ <- n_T - n_pseudolags
 
+
+  n_q <- sum(freq == "q")
+  T_b <- max(which(!apply(apply(Y[, freq == "m"], 2, is.na), 1, any)))
+  Lambda_ <- build_Lambda(rep("q", n_q), 3)
   ################################################################
   ### Preallocation
   # Pi and Sigma store their i-th draws in the third dimension, psi
@@ -190,12 +194,18 @@ gibbs_sampler <- function(Y, d, d_fcst = NULL, Lambda, prior_Pi_mean, prior_Pi_O
 
     ################################################################
     ### Smoothing step
-    #(Y, d, Pi_r,                                                             Sigma_r,               psi_r,                          Z_1, Lambda, n_vars, n_lags,                n_T_, smooth_state)
-    Z_res <- posterior_Z(Y, d, Pi_r = cbind(Pi[,, r], matrix(0, n_vars, n_vars*(n_pseudolags - n_lags))), Sigma_r = Sigma[,, r], psi_r = psi[r, , drop = FALSE], Z_1, Lambda, n_vars, n_lags = n_pseudolags, n_T_, smooth_state)
-    Z[,, r] <- Z_res$Z_r
+
+    Pi_r <- cbind(Pi[,,r], 0)
+    mZ <- Y - d %*% t(matrix(psi[r,], nrow = n_vars))
+    mZ <- as.matrix(mZ)
+    demeaned_z0 <- Z_1 - d[1:n_lags, ] %*% t(matrix(psi[r,], nrow = n_vars))
+    Z_res <- kf_sim_smooth(mZ, Pi_r, Sigma[,,r], Lambda_, demeaned_z0, n_q, T_b)[-c(1:n_lags), ]
+    Z_res <- rbind(demeaned_z0, Z_res) + d %*% t(matrix(psi[r,], nrow = n_vars))
     if (smooth_state == TRUE) {
-      smoothed_Z[,, r] <- Z_res$smoothed_Z_r
+      Z_smooth <- kf_ragged(mZ, Pi_r, Sigma[,,r], Lambda_, n_q, T_b)$Z_tT[-c(1:n_lags), ]
+      smoothed_Z[,, r] <- rbind(demeaned_z0, Z_smooth) + d %*% t(matrix(psi[r, ], nrow = n_vars))
     }
+    Z[,, r] <- Z_res
 
     ################################################################
     ### Forecasting step

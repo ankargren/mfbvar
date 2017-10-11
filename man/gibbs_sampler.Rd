@@ -4,7 +4,7 @@
 \alias{gibbs_sampler}
 \title{Gibbs sampler for Mixed-Frequency BVAR}
 \usage{
-gibbs_sampler(Y, d, d_fcst = NULL, Lambda, prior_Pi_mean, prior_Pi_Omega,
+gibbs_sampler(Y, d, d_fcst = NULL, freq, prior_Pi_mean, prior_Pi_Omega,
   prior_S, prior_nu, prior_psi_mean, prior_psi_Omega, n_fcst = NULL, n_reps,
   init_Pi = NULL, init_Sigma = NULL, init_psi = NULL, init_Z = NULL,
   smooth_state = FALSE, check_roots = TRUE, verbose = TRUE)
@@ -16,7 +16,7 @@ gibbs_sampler(Y, d, d_fcst = NULL, Lambda, prior_Pi_mean, prior_Pi_Omega,
 
 \item{d_fcst}{The deterministic terms for the forecasting period.}
 
-\item{Lambda}{The Lambda matrix (size \code{n_vars* (n_vars*n_lags)}).}
+\item{freq}{Character vector with elements 'm' (monthly) or 'q' (quarterly) for sampling frequency.}
 
 \item{prior_Pi_mean}{Matrix of size \code{n_vars * (n_vars*n_lags)} containing the prior for the mean of the dynamic coefficients.}
 

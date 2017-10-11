@@ -101,52 +101,6 @@ posterior_psi <- function(Pi_r, Sigma_r, Z_r1, prior_psi_mean, prior_psi_Omega, 
   return(psi_r)
 }
 
-#' Draw from posterior of Z
-#'
-#' Function for drawing from the posterior of Z using a simulation smoother, which can be used as a block in a Gibbs sampler.
-#' @inherit posterior_psi
-#' @inherit posterior_Pi_Sigma
-#' @templateVar Y TRUE
-#' @templateVar psi_r TRUE
-#' @templateVar Z_1 TRUE
-#' @templateVar Lambda TRUE
-#' @templateVar n_T_ TRUE
-#' @templateVar smooth_state TRUE
-#' @template man_template
-#' @keywords internal
-#' @return \code{Z_posterior} returns a list with:
-#' \item{Z_r}{The draw of \code{Z}.}
-#' \item{smoothed_Z_r}{(Only if \code{smooth_state == TRUE}) The smoothed state.}
-posterior_Z <- function(Y, d, Pi_r, Sigma_r, psi_r, Z_1, Lambda, n_vars, n_lags, n_T_, smooth_state) {
-  Q_comp     <- matrix(0, ncol = n_vars*n_lags, nrow = n_vars*n_lags)
-  Q_comp[1:n_vars, 1:n_vars] <- t(chol(Sigma_r))
-
-  # Demean before putting into simulation smoother using the most recent draw of psi
-  mZ <- Y - d %*% t(matrix(psi_r, nrow = n_vars))
-  mZ <- as.matrix(mZ[-(1:n_lags), ])
-  demeaned_z0 <- Z_1 - d[1:n_lags, ] %*% t(matrix(psi_r, nrow = n_vars))
-  h0 <- matrix(t(demeaned_z0[n_lags:1,]), ncol = 1)
-  Pi_comp <- build_companion(Pi_r, n_vars = n_vars, n_lags = n_lags)
-
-  simulated_Z <- simulation_smoother(Y = mZ, Lambda = Lambda, Pi_comp = Pi_comp, Q_comp = Q_comp, n_T = n_T_,
-                                     n_vars = n_vars, n_comp  = n_lags * n_vars, z0 = h0, P0 = diag(0, n_lags * n_vars))
-
-  Z_r <- rbind(demeaned_z0, simulated_Z[,1:n_vars]) +
-    d %*% t(matrix(psi_r, nrow = n_vars))
-
-  # Also save the smoothed value of the state
-  if (smooth_state == TRUE) {
-    smoothed_state <- smoother(Y = mZ, Lambda = Lambda, Pi_comp = Pi_comp, Q_comp = Q_comp, n_T = n_T_,
-                               n_vars = n_vars, n_comp  = n_lags * n_vars, z0 = h0, P0 = diag(0, n_lags * n_vars))
-    smoothed_Z_r <- rbind(demeaned_z0, smoothed_state[, 1:n_vars]) +
-      d %*% t(matrix(psi_r, nrow = n_vars))
-    ret <- list(Z_r = Z_r, smoothed_Z_r = smoothed_Z_r)
-  } else {
-    ret <- list(Z_r = Z_r)
-  }
-  return(ret)
-}
-
 #' Compute posterior moments of the steady-state parameters
 #'
 #' Computes the mean and variance of the conditional posterior distribution of the steady-state parameters.

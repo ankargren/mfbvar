@@ -27,7 +27,7 @@
 #' @return
 #' An object of class mfbvar.
 
-gibbs_sampler_schorf <- function(Y, freq, prior_Pi_AR1, lambda1, lambda2, lambda3, n_lags, n_fcst = NULL, n_reps,
+gibbs_sampler_minn <- function(Y, freq, prior_Pi_AR1, lambda1, lambda2, lambda3, n_lags, n_fcst = NULL, n_reps,
                                  init_Pi = NULL, init_Sigma = NULL, init_Z = NULL,
                                  smooth_state = FALSE, check_roots = TRUE, verbose = TRUE){
 
@@ -41,7 +41,6 @@ gibbs_sampler_schorf <- function(Y, freq, prior_Pi_AR1, lambda1, lambda2, lambda
   n_q <- sum(freq == "q")
   T_b <- max(which(!apply(apply(Y[, freq == "m"], 2, is.na), 1, any)))
   Lambda_ <- build_Lambda(rep("q", n_q), 3)
-  kai <- FALSE
 
   n_vars <- dim(Y)[2]
   n_pseudolags <- dim(Lambda)[2]/n_vars
@@ -222,23 +221,6 @@ gibbs_sampler_schorf <- function(Y, freq, prior_Pi_AR1, lambda1, lambda2, lambda
     (n_dummy - n_XX)*0.5*determinant(S0, logarithm = TRUE)$modulus + n_vars * (n_vars - 1) * 0.25*log(pi) + gam0
 
 
-
-  mZ <- as.matrix(Y[-(1:n_lags), ])
-  mX <- matrix(1, nrow = nrow(mZ))
-  lH <- build_M_Lambda(mZ, Lambda, n_vars, n_lags, n_T_)
-
-  iT <- n_T_
-  ip <- n_vars
-  iq <- n_vars * n_lags
-  is <- 1
-  P0 <- NULL
-  X0 <- matrix(1, 1, 1)
-  lH0 <- vector("list", n_T_)
-  for(iter in 1:n_T_) {
-    lH0[[iter]] = matrix(lH[[iter]][!is.na(Y[n_lags + iter,]),], ncol = n_vars * n_lags)
-  }
-  h0 <- matrix(t(Z_1[nrow(Z_1):1, ]), ncol = 1)
-
   if (verbose == TRUE) {
     pb <- timerProgressBar(width = 35, char = "[=-]", style = 5)
   }
@@ -246,23 +228,9 @@ gibbs_sampler_schorf <- function(Y, freq, prior_Pi_AR1, lambda1, lambda2, lambda
   for (r in 2:(n_reps)) {
 
     Pi_r1 <- Pi[,,r-1]
-    const_r1 <- Pi_r1[, ncol(Pi_r1)]
-    Pi_r1 <- Pi_r1[, -ncol(Pi_r1)]
     Sigma_r1 <- Sigma[,,r-1]
 
-    mF <- build_companion(Pi_r1, n_vars, n_lags)
-    mQ <- diag(0, n_vars*n_lags)
-    mQ[1:n_vars, 1:n_vars] <- t(chol(Sigma_r1))
-    mB <- matrix(c(const_r1, rep(0, n_vars*(n_lags - 1))), ncol = 1)
-
-
-    if (kai) {
-      Z_res <- smooth_samp_xx(mZ = mZ, mX = mX, lH = lH, lH0 = lH0, mF = mF, mB = mB, mQ = mQ,
-                              iT = iT, ip = ip, iq = iq, is = is, h0 = h0,
-                              P0 = P0, X0 = X0, Lambda = Lambda)$mh[, 1:n_vars]
-    } else {
-      Z_res <- kf_sim_smooth(Y, Pi[,,r-1], Sigma_r1, Lambda_, Z_1, n_q, T_b)[-c(1:n_lags), ]
-    }
+    Z_res <- kf_sim_smooth(Y, Pi_r1, Sigma_r1, Lambda_, Z_1, n_q, T_b)[-c(1:n_lags), ]
 
     Z[,, r] <- rbind(Z_1, Z_res)
 
@@ -286,8 +254,9 @@ gibbs_sampler_schorf <- function(Y, freq, prior_Pi_AR1, lambda1, lambda2, lambda
     Sigma[,, r]   <- Sigma_r
 
     Pi[,, r] <- rmatn(M = t(post_Pi), Q = post_Pi_Omega, P = Sigma_r)
-    Pi_comp  <- build_companion(Pi[,-ncol(Pi_r1), r], n_vars = n_vars, n_lags = n_lags)
+
     if (check_roots) {
+      Pi_comp  <- build_companion(Pi[,-ncol(Pi_r1), r], n_vars = n_vars, n_lags = n_lags)
       roots[r] <- max_eig_cpp(Pi_comp)
     }
 
