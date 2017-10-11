@@ -2,35 +2,34 @@
 mfbvar
 ======
 
-<!-- [![Travis-CI Build Status](https://travis-ci.org/ankargren/mfbvar.svg?branch=0.3.0.9000)](https://travis-ci.com/ankargren/mfbvar)-->
-[![](http://www.r-pkg.org/badges/version/mfbvar)](http://www.r-pkg.org/pkg/mfbvar)
+[![Travis-CI Build Status](https://travis-ci.org/ankargren/mfbvar?branch=master)](https://travis-ci.org/ankargren/mfbvar) [![](http://www.r-pkg.org/badges/version/mfbvar)](http://www.r-pkg.org/pkg/mfbvar)
 
 Overview
 --------
 
-The `mfbvar` package implements a steady-state prior and a Minnesota prior for state space-based mixed-frequency VAR models. *Note that the examples require the development version 0.3.0.900 (available in its own branch) to work.* <!-- README.md is generated from README.Rmd. Please edit that file -->
+The `mfbvar` package implements a steady-state prior and a Minnesota prior for state space-based mixed-frequency VAR models. <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 First, obtain some data stored in the package.
 
 ``` r
 library(mfbvar)
-Y <- mf_list$data[[192]]
+Y <- mf_list$data[[1]]
 head(Y)
 #>            unemp        infl         ip         eti       gdp
-#> 1996-08-31   9.9 -0.44997116  0.5941788  0.19536978        NA
-#> 1996-09-30   9.8  0.56804886 -1.5522700  0.08309475 0.4704331
-#> 1996-10-31   9.8  0.03539614 -0.4825100  0.26642772        NA
-#> 1996-11-30   9.9 -0.20074400  1.3213405  0.07019829        NA
-#> 1996-12-31  10.1 -0.15378249  2.7076404 -0.06840048 0.7567702
-#> 1997-01-31  10.0 -0.01183922  0.3478264  0.31459737        NA
+#> 1996-08-31  9.87 -0.42912096  0.6845993  0.18944615        NA
+#> 1996-09-30  9.87  0.54854773  0.0000000  0.14983749 0.5798503
+#> 1996-10-31  9.81  0.03977725 -2.1675725  0.35163047        NA
+#> 1996-11-30  9.95 -0.19904465  3.5228692  0.04474605        NA
+#> 1996-12-31 10.26 -0.14954392  4.9705496 -0.08289718 0.3049682
+#> 1997-01-31 10.01  0.00000000 -2.8772286  0.39851929        NA
 tail(Y)
-#>            unemp        infl         ip         eti      gdp
-#> 2015-07-31   7.3  0.02895613 -3.1285137  0.09746577       NA
-#> 2015-08-31   7.0 -0.19319944  3.8446293  0.16136658       NA
-#> 2015-09-30   7.3  0.39565793  0.9132484  0.23165768 0.843138
-#> 2015-10-31   7.2  0.07701935         NA  0.16152144       NA
-#> 2015-11-30    NA          NA         NA -0.17872172       NA
-#> 2015-12-31    NA          NA         NA  0.33933697       NA
+#>            unemp        infl         ip         eti       gdp
+#> 2003-08-31  5.59 -0.03684598 -0.4838719  0.63265222        NA
+#> 2003-09-30  5.63  0.72520628 -0.7302264  0.17059822 0.4787448
+#> 2003-10-31  5.87  0.06400585         NA  0.08881041        NA
+#> 2003-11-30  6.00 -0.21045897         NA -0.23744080        NA
+#> 2003-12-31    NA          NA         NA  0.32696128        NA
+#> 2004-01-31    NA          NA         NA  0.20099976        NA
 ```
 
 Next, we create a minimal prior object. We must specify: 1) data, 2) the frequency of the data, 3) the number of lags, 4) the length of burn-in and main chains, respectively. This is done by calling the `set_prior()` function and giving named arguments. The resulting object is of class `mfbvar_prior` and has a basic `print` method.
@@ -69,7 +68,7 @@ summary(prior_obj)
 #> PRIOR SUMMARY
 #> ----------------------------
 #> Required elements:
-#>   Y: 5 variables, 233 time points
+#>   Y: 5 variables, 90 time points
 #>   freq: m m m m q 
 #>   prior_Pi_AR1: 0 0 0 0 0 
 #>   lambda1: 0.2 
@@ -98,13 +97,12 @@ summary(prior_obj)
 As the print method told us before, we can run the Minnesota prior, but not the steady-state prior with the current prior specification. The model is run by calling `estimate_mfbvar()`.
 
 ``` r
-mod_minn <- estimate_mfbvar(mfbvar_prior = prior_obj, prior_type = "minn")
+mod_minn <- estimate_mfbvar(mfbvar_prior = prior_obj, prior_type = "minn", n_fcst = 8)
 ```
 
 To use the steady-state prior, we need to specify `d`, `prior_psi_mean` and `prior_psi_Omega`. We specify the prior moments for *ψ* using the helper function `interval_to_moments()` which converts 95 % prior probability intervals to prior moments, assuming independence.
 
 ``` r
-d <- matrix(1, nrow = nrow(Y), ncol = 1)
 prior_intervals <- matrix(c( 6,   7,
                              0.1, 0.2,
                              0,   0.5,
@@ -114,7 +112,7 @@ psi_moments <- interval_to_moments(prior_intervals)
 prior_psi_mean <- psi_moments$prior_psi_mean
 prior_psi_Omega <- psi_moments$prior_psi_Omega
 
-prior_obj <- update_prior(prior_obj, d = d, prior_psi_mean = prior_psi_mean, prior_psi_Omega = prior_psi_Omega)
+prior_obj <- update_prior(prior_obj, d = "intercept", prior_psi_mean = prior_psi_mean, prior_psi_Omega = prior_psi_Omega)
 prior_obj
 #> The following elements of the prior have not been set: 
 #>  d_fcst
@@ -142,15 +140,15 @@ The resulting objects contain all of the posterior information. For forecasts, t
 ``` r
 predict(mod_minn, pred_quantiles = 0.5)
 #> $quantile_50
-#>           unemp       infl            ip          eti       gdp
-#> fcst_1 7.071119 0.08834534  0.5578841817  0.029998670 0.9385827
-#> fcst_2 7.062896 0.06673784  0.2188084560  0.004700091 0.7647240
-#> fcst_3 7.051463 0.13796457  0.0476322227  0.018581344 0.8632907
-#> fcst_4 7.056794 0.11723294  0.3901128887 -0.004626959 0.7525615
-#> fcst_5 7.039978 0.10453981 -0.0007572068 -0.010155406 0.7170652
-#> fcst_6 7.014761 0.09585275 -0.0180392315 -0.009863097 0.6346851
-#> fcst_7 6.996548 0.11271068  0.3436848750 -0.003960713 0.7753155
-#> fcst_8 7.019369 0.10543532  0.0808573665  0.005098422 0.6129904
+#>           unemp       infl          ip          eti       gdp
+#> fcst_1 5.918944 0.14000430  0.40004327 -0.036995625 0.7060768
+#> fcst_2 5.890209 0.10161539 -0.00325264  0.048967686 0.6794173
+#> fcst_3 5.877807 0.12866410  0.33827624  0.018699024 0.6509557
+#> fcst_4 5.850725 0.09873088  0.11230247 -0.001434584 0.6415728
+#> fcst_5 5.817078 0.10256428  0.12545324 -0.003209208 0.6335524
+#> fcst_6 5.780893 0.11736101  0.27558887 -0.023960224 0.6325583
+#> fcst_7 5.763444 0.14543822  0.21301525 -0.020060013 0.5930193
+#> fcst_8 5.718661 0.13153682  0.14429415  0.001316312 0.6016410
 ```
 
 If desired, it can be requested in a tidy format.
@@ -158,19 +156,30 @@ If desired, it can be requested in a tidy format.
 ``` r
 head(predict(mod_minn, pred_quantiles = 0.5, tidy = TRUE))
 #>      value fcst_date variable quantile
-#> 1 7.071119    fcst_1    unemp      0.5
-#> 2 7.062896    fcst_2    unemp      0.5
-#> 3 7.051463    fcst_3    unemp      0.5
-#> 4 7.056794    fcst_4    unemp      0.5
-#> 5 7.039978    fcst_5    unemp      0.5
-#> 6 7.014761    fcst_6    unemp      0.5
+#> 1 5.918944    fcst_1    unemp      0.5
+#> 2 5.890209    fcst_2    unemp      0.5
+#> 3 5.877807    fcst_3    unemp      0.5
+#> 4 5.850725    fcst_4    unemp      0.5
+#> 5 5.817078    fcst_5    unemp      0.5
+#> 6 5.780893    fcst_6    unemp      0.5
 ```
 
 To estimate the marginal data density, there is a generic function `mdd()` for which there are methods for classes `mfbvar_ss` and `mfbvar_minn`.
 
 ``` r
-# mdd(mod_minn)
-# mdd(mod_ss) 
+mdd_minn_1 <- mdd(mod_minn)
+mdd_minn_2 <- mdd(mod_minn, type = "diff")
+mdd_ss_1 <- mdd(mod_ss)
+mdd_ss_2 <- mdd(mod_ss, p_trunc = 0.5)
+
+mdd_minn_1
+#> [1] 13.59894
+mdd_minn_2
+#> [1] -147.401
+mdd_ss_1
+#> [1] -337.5115
+mdd_ss_2
+#> [1] -336.7259
 ```
 
 The caveat is that the mdd is estimated up to a constant and thus not directly comparable between models based on different prios.

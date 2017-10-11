@@ -11,50 +11,48 @@ mdd <- function(x, ...) {
   UseMethod("mdd")
 }
 
-#' Marginal data density
+#' Marginal data density method for class \code{mfbvar_ss}
 #'
 #' Estimate the marginal data density for the model with a steady-state prior.
 #' @param x object of class \code{mfbvar_ss}
 #' @param method option for which method to choose for computing the mdd
-#' @param ... additional arguments (currently only \code{p_trunc} available)
-#' @details The generic \code{mdd} calls either \code{mdd1} or \code{mdd2} if \code{mfbvar_obj} is of class \code{mfbvar_ss}.
+#' @param ... additional arguments (currently only \code{p_trunc} for the degree of truncation for method 2 is available)
 #' @seealso \code{\link{mdd}}, \code{\link{mdd.mfbvar_minn}}
 mdd.mfbvar_ss <- function(x, method = 1, ...) {
   if (method == 1) {
-    mdd_est <- mdd1(x)
+    mdd_est <- estimate_mdd_ss_1(x)
   } else if (method == 2) {
-    mdd_est <- mdd2(x, ...)
+    mdd_est <- estimate_mdd_ss_2(x, ...)
   } else {
     stop("method: Must be 1 or 2.")
   }
   return(c(mdd_est$log_mdd))
 }
 
-#' Marginal data density
+#' Marginal data density method for class \code{mfbvar_minn}
 #'
 #' Estimate the marginal data density for the model with a Minnesota prior.
-#' @details The generic \code{mdd} calls \code{mdd_minn} if \code{mfbvar_obj} is of class \code{mfbvar_minn}.
 #' @param x object of class \code{mfbvar_minn}
-#' @param type \code{"full"} gives implementation based on the paper by Schorfheide and Song (2015), \code{"diff"} implementation on MATLAB code by Schorfheide and Song (2015)
 #' @param ... additional arguments (currently unused)
-#' @template man_template
 #' @seealso \code{\link{mdd}}, \code{\link{mdd.mfbvar_ss}}
-mdd.mfbvar_minn <- function(x, type = "full", ...) {
+mdd.mfbvar_minn <- function(x, ...) {
   quarterly_cols <- which(x$mfbvar_prior$freq == "q")
-  mdd_minn(x, quarterly_cols, type)
+  estimate_mdd_minn(x, quarterly_cols)
 }
 
-#' @rdname mdd.mfbvar_ss
+#' Estimate marginal data density in steady-state MF-BVAR
+#'
+#' This function provides the possibility to estimate the log marginal density using the steady-state MF-BVAR.
 #' @keywords internal
 #' @return
-#' \code{mdd1} returns a list with components (all are currently in logarithms):
+#' \code{estimate_mdd_ss_1} returns a list with components (all are currently in logarithms):
 #' \item{lklhd}{The likelihood.}
 #' \item{eval_prior_Pi_Sigma}{The evaluated prior.}
 #' \item{eval_prior_psi}{The evaluated prior of psi.}
 #' \item{eval_RB_Pi_Sigma}{The Rao-Blackwellized estimate of the conditional posterior of Pi and Sigma.}
 #' \item{eval_marg_psi}{The evaluated marginal posterior of psi.}
 #' \item{log_mdd}{The mdd estimate (in log).}
-mdd1 <- function(mfbvar_obj) {
+estimate_mdd_ss_1 <- function(mfbvar_obj) {
   ################################################################
   ### Get things from the MFBVAR object
   n_determ <- mfbvar_obj$n_determ
@@ -141,7 +139,7 @@ mdd1 <- function(mfbvar_obj) {
     #(Y, d, Pi_r,            Sigma_r,               psi_r,                          Z_1, Lambda, n_vars, n_lags, n_T_, smooth_state)
 
     Pi_r <- cbind(Pi_red[,,r], 0)
-    Z_res <- kf_sim_smooth(mZ, Pi_r, Sigma[,,r], Lambda_, demeaned_z0, n_q, T_b)[-c(1:n_lags), ]
+    Z_res <- kf_sim_smooth(mZ, Pi_r, Sigma_red[,,r], Lambda_, demeaned_z0, n_q, T_b)[-c(1:n_lags), ]
     Z_res <- rbind(demeaned_z0, Z_res) + d_post_psi
     Z_red[,, r] <- Z_res
   }
@@ -169,20 +167,20 @@ mdd1 <- function(mfbvar_obj) {
   eval_marg_psi   <- log(mean(eval_psi_MargPost(Pi_array = Pi, Sigma_array = Sigma, Z_array = Z, post_psi_center = post_psi, prior_psi_mean = prior_psi_mean,
                                                 prior_psi_Omega = prior_psi_Omega, D_mat = D, n_determ = n_determ, n_vars = n_vars, n_lags = n_lags, n_reps = n_reps)))
 
-  mdd_estimate <- lklhd + eval_prior_Pi_Sigma + eval_prior_psi - (eval_RB_Pi_Sigma + eval_marg_psi)
+  mdd_estimate <- c(lklhd + eval_prior_Pi_Sigma + eval_prior_psi - (eval_RB_Pi_Sigma + eval_marg_psi))
 
   return(list(lklhd = lklhd, eval_prior_Pi_Sigma = eval_prior_Pi_Sigma, eval_prior_psi = eval_prior_psi, eval_RB_Pi_Sigma = eval_RB_Pi_Sigma, eval_marg_psi = eval_marg_psi, log_mdd = mdd_estimate))
 }
 
 
-#' @rdname mdd.mfbvar_ss
-#' @details \code{mdd1} uses method 1, \code{mdd2} uses method 2.
+#' @rdname estimate_mdd_ss_1
+#' @details \code{estimate_mdd_ss_1} uses method 1, \code{estimate_mdd_ss_2} uses method 2.
 #' @templateVar mfbvar_obj TRUE
 #' @templateVar p_trunc TRUE
 #' @template man_template
 #' @keywords internal
 #' @return
-#' \code{mdd} returns a list with components being \code{n_reps}-long vectors and a scalar (the final estimate).
+#' \code{estimate_mdd_ss_1} returns a list with components being \code{n_reps}-long vectors and a scalar (the final estimate).
 #' \item{eval_posterior_Pi_Sigma}{Posterior of Pi and Sigma.}
 #' \item{data_likelihood}{The likelihood.}
 #' \item{eval_prior_Pi_Sigma}{Prior of Pi and Sigma.}
@@ -190,7 +188,7 @@ mdd1 <- function(mfbvar_obj) {
 #' \item{psi_truncated}{The truncated psi pdf.}
 #' \item{log_mdd}{The mdd estimate (in log).}
 
-mdd2 <- function(mfbvar_obj, p_trunc) {
+estimate_mdd_ss_2 <- function(mfbvar_obj, p_trunc) {
   # Get things from the MFBVAR object
   n_determ <- mfbvar_obj$n_determ
   n_vars <- mfbvar_obj$n_vars
@@ -234,7 +232,7 @@ mdd2 <- function(mfbvar_obj, p_trunc) {
 
   eval_posterior_Pi_Sigma <- vector("numeric", n_reps)
   data_likelihood <- vector("numeric", n_reps)
-  eval_prior_Pi_Sigma <- vector("numeric", n_reps)
+  eval_prior_Pi_Sigma <- vector("numeric", 1)
   eval_prior_psi <- vector("numeric", n_reps)
   psi_truncated <- vector("numeric", n_reps)
 
@@ -272,24 +270,24 @@ mdd2 <- function(mfbvar_obj, p_trunc) {
 
     eval_posterior_Pi_Sigma[r] <- dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = post_Pi_i, P = post_Pi_Omega_i, S = post_s_i, v = post_nu)
     data_likelihood[r] <- exp(sum(c(loglike(Y = as.matrix(mZ), Lambda = Lambda, Pi_comp = Pi_comp, Q_comp = Q_comp, n_T = n_T_, n_vars = n_vars, n_comp = n_lags * n_vars, z0 = h0, P0 = P0)[-1])))
-    eval_prior_Pi_Sigma[r] <- dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = prior_Pi_mean, P = prior_Pi_Omega, S = prior_S, v = prior_nu)
+
     eval_prior_psi[r] <- dmultn(x = psi[r, ], m = prior_psi_mean, Sigma = prior_psi_Omega)
     psi_truncated[r] <- dnorm_trunc(psi[r, ], post_psi, solve(post_psi_Omega), n_determ*n_vars, p_trunc, chisq_val)
 
   }
 
-  mdd_num <- eval_posterior_Pi_Sigma * psi_truncated
-  log_mdd_den <- log(data_likelihood) + log(eval_prior_Pi_Sigma) + log(eval_prior_psi) # pi_sigma_prior constant? likelihood 0?
-  log_mdd <- -log(mean(mdd_num/exp(log_mdd_den)))
+  eval_prior_Pi_Sigma <- dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = prior_Pi_mean, P = prior_Pi_Omega, S = prior_S, v = prior_nu)
+  exp_term <- log(eval_posterior_Pi_Sigma) - (log(data_likelihood) + log(eval_prior_Pi_Sigma) + log(eval_prior_psi))
+  log_mdd <- -mean(exp_term)-log(mean(exp(exp_term-mean(exp_term)) * psi_truncated))
 
   return(list(eval_posterior_Pi_Sigma = eval_posterior_Pi_Sigma, data_likelihood = data_likelihood, eval_prior_Pi_Sigma = eval_prior_Pi_Sigma,
               eval_prior_psi = eval_prior_psi, psi_truncated = psi_truncated, log_mdd = log_mdd))
 }
 
 
-#' Estimate MDD in Schorfheide-Song MFBVAR
+#' Estimate marginal data density in Minnesota MF-BVAR
 #'
-#' This function provides the possibility to estimate the log marginal density (up to a constant) using the Schorfheide-Song MFBVAR.
+#' This function provides the possibility to estimate the log marginal density (up to a constant) using the Minnesota MF-BVAR.
 #' @rdname mdd.minn
 #' @templateVar mfbvar_obj TRUE
 #' @template man_template
@@ -297,7 +295,7 @@ mdd2 <- function(mfbvar_obj, p_trunc) {
 #' @keywords internal
 #' @return The log marginal data density estimate (bar a constant)
 #'
-mdd_minn <- function(mfbvar_obj, quarterly_cols, type = "full", ...) {
+estimate_mdd_minn <- function(mfbvar_obj, quarterly_cols, ...) {
   postsim <- mfbvar_obj$lnpYY[-1]
   Z <- mfbvar_obj$Z[,, -1]
   n_T <- dim(Z)[1]
@@ -308,63 +306,15 @@ mdd_minn <- function(mfbvar_obj, quarterly_cols, type = "full", ...) {
   if (length(temp) == 0) {
     return(log_mdd = mean(postsim))
   } else {
-    if (type == "diff") {
-      n_TT <- (n_T %% 3) + 1
-      lstate0 <- Z[n_TT:n_T, quarterly_cols, , drop = FALSE]
+    n_para <- nrow(temp)
 
-      lstateA <- c()
-      for (i in seq_along(quarterly_cols)) {
-        lstate1 <- t(lstate0[seq(from = 1, to = n_T-n_TT+1, by = 3), i, ])
-        lstate2 <- t(lstate0[seq(from = 2, to = n_T-n_TT+1, by = 3), i, ])
-        lstate3 <- t(lstate0[seq(from = 3, to = n_T-n_TT+1, by = 3), i, ])
+    drawmean <- matrix(rowMeans(temp), ncol = 1)
+    drawsig <- tcrossprod(temp/sqrt(ncol(temp))) - tcrossprod(drawmean)
+    drawsiginv <- chol2inv(chol(drawsig))
+    drawsiglndet <- as.numeric(determinant(drawsiginv, logarithm = TRUE)$modulus)
 
-        # I don't know why we do this!
-        temp <- cbind(lstate3 - lstate2, lstate2 - lstate1)
-        lstateA <- cbind(lstateA, temp)
-      }
-
-      n_para <- ncol(lstateA)
-      n_simul <- nrow(lstateA)
-
-      drawmean <- matrix(colMeans(lstateA), ncol = 1)
-      drawsig <- crossprod(lstateA)/n_simul - tcrossprod(drawmean)
-
-
-      svd_res <- svd(drawsig, nu = ncol(drawsig))
-      up <- svd_res$u
-      sp <- rbind(diag(svd_res$d), matrix(0, nrow = dim(up)[1]- length(svd_res$d), ncol = length(svd_res$d)))
-      vp <- svd_res$v
-
-      sp_inv <- diag(ifelse(diag(sp) > 1e-12, 1/diag(sp), 0))
-      drawsiglndet <- sum(log(ifelse(diag(sp) > 1e-12, diag(sp), 1)))
-
-      drawsiginv <- 0*drawsig
-      drawsigdet <- 0*drawsig
-      for (j in 1:nrow(drawsig)) {
-        if (sp[j, j] > 1e-12) {
-          drawsiginv[j, j] <- 1/sp[j, j]
-          drawsigdet[j, j] <- sp[j, j]
-        } else {
-          drawsigdet[j, j] <- 1
-        }
-      }
-
-
-      drawsiginv <- vp %*% tcrossprod(sp_inv, up)
-
-      paradev  <- lstateA - kronecker(matrix(1, n_simul, 1), matrix(drawmean, nrow = 1))
-      quadpara <- rowSums((paradev %*% drawsiginv) * paradev)
-    } else if (type == "full") {
-      n_para <- nrow(temp)
-
-      drawmean <- matrix(rowMeans(temp), ncol = 1)
-      drawsig <- tcrossprod(temp/sqrt(ncol(temp))) - tcrossprod(drawmean)
-      drawsiginv <- chol2inv(chol(drawsig))
-      drawsiglndet <- as.numeric(determinant(drawsiginv, logarithm = TRUE)$modulus)
-
-      paradev  <- temp - kronecker(matrix(1, 1, n_reps), drawmean)
-      quadpara <- rowSums((t(paradev) %*% drawsiginv) * t(paradev))
-    }
+    paradev  <- temp - kronecker(matrix(1, 1, n_reps), drawmean)
+    quadpara <- rowSums((t(paradev) %*% drawsiginv) * t(paradev))
 
     p <- seq(from = 0.1, to = 0.9, by = 0.1)
     pcrit <- qchisq(p, df = nrow(drawmean))
@@ -381,7 +331,7 @@ mdd_minn <- function(mfbvar_obj, quarterly_cols, type = "full", ...) {
         invlike[j, i] <- exp(lnfpara[j, i] - postsim[j]+densfac) * indpara[j, i]
       }
       meaninvlike <- colMeans(invlike)
-      mdd <- -log(meaninvlike)
+      mdd <- densfac - log(meaninvlike)
     }
     return(log_mdd = mean(mdd))
   }

@@ -39,7 +39,7 @@ gibbs_sampler_minn <- function(Y, freq, prior_Pi_AR1, lambda1, lambda2, lambda3,
 
   Lambda <- build_Lambda(freq, n_lags)
   n_q <- sum(freq == "q")
-  T_b <- max(which(!apply(apply(Y[, freq == "m"], 2, is.na), 1, any)))
+  T_b <- max(which(!apply(apply(Y[, freq == "m", drop = FALSE], 2, is.na), 1, any)))
   Lambda_ <- build_Lambda(rep("q", n_q), 3)
 
   n_vars <- dim(Y)[2]
@@ -326,7 +326,7 @@ gibbs_sampler_minn <- function(Y, freq, prior_Pi_AR1, lambda1, lambda2, lambda3,
                      Z_fcst = NULL, mdd = NULL, smoothed_Z = NULL, n_determ = 1,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = NULL, prior_Pi_mean = NULL,
                      prior_S = NULL, prior_nu = NULL, post_nu = NULL, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
-                     prior_psi_Omega = NULL, prior_psi_mean = NULL, n_reps = n_reps, Lambda = Lambda,
+                     prior_psi_Omega = NULL, prior_psi_mean = NULL, n_reps = n_reps-1, Lambda = Lambda,
                      lnpYY = lnpY1 - lnpY0, freq = freq)
 
   if (check_roots == TRUE) {

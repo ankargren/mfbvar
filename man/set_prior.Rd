@@ -2,13 +2,16 @@
 % Please edit documentation in R/interface.R
 \name{set_prior}
 \alias{set_prior}
+\alias{update_prior}
 \title{Set priors for an mfbvar model}
 \usage{
-set_prior(Y, d = NULL, d_fcst = NULL, freq = c("m", "q"),
-  prior_Pi_AR1 = rep(0, ncol(Y)), lambda1 = 0.2, lambda2 = 1,
-  lambda3 = 10000, prior_nu = ncol(Y) + 2, prior_psi_mean = NULL,
-  prior_psi_Omega = NULL, n_lags, n_fcst = 0, n_burnin, n_reps,
-  verbose = FALSE, smooth_state = FALSE, check_roots = TRUE)
+set_prior(Y, d = NULL, d_fcst = NULL, freq, prior_Pi_AR1 = rep(0,
+  ncol(Y)), lambda1 = 0.2, lambda2 = 1, lambda3 = 10000,
+  prior_nu = ncol(Y) + 2, prior_psi_mean = NULL, prior_psi_Omega = NULL,
+  n_lags, n_fcst = 0, n_burnin, n_reps, verbose = FALSE,
+  smooth_state = FALSE, check_roots = TRUE)
+
+update_prior(prior_obj, ...)
 }
 \arguments{
 \item{Y}{The data matrix of size \code{(n_T + n_lags) * n_vars} with \code{NA} representing missingness. Must correspond well to the specification of \code{M_Lambda}.}
@@ -46,7 +49,17 @@ set_prior(Y, d = NULL, d_fcst = NULL, freq = c("m", "q"),
 \item{smooth_state}{Logical, if \code{TRUE} then the smoothed estimates of the latent states are also returned.}
 
 \item{check_roots}{Logical, if roots of the companion matrix are to be checked to ensure stationarity.}
+
+\item{prior_obj}{an object of class \code{mfbvar_prior}}
+
+\item{...}{named arguments for prior attributes to update}
 }
 \description{
 Create an object storing all information needed for estimation, including data as well as model and prior specifications for both a Minnesota or steady-state prior.
+}
+\examples{
+prior_obj <- set_prior(Y = mf_list$data[[1]], freq = c(rep("m", 4), "q"),
+                       n_lags = 4, n_burnin = 100, n_reps = 100)
+prior_obj <- update_prior(prior_obj, n_fcst = 4)
+
 }

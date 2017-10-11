@@ -22,6 +22,11 @@ The print method checks whether the steady-state and Minnesota
   checks for estimation and not forecasting (for which the steady-state prior
   requires additional information).
 }
+\examples{
+prior_obj <- set_prior(Y = mf_list$data[[1]], freq = c(rep("m", 4), "q"),
+                       n_lags = 4, n_burnin = 100, n_reps = 100)
+print(prior_obj)
+}
 \seealso{
 \code{\link{set_prior}}, \code{\link{update_prior}}, \code{\link{estimate_mfbvar}}, \code{\link{summary.mfbvar_prior}}
 }

@@ -23,7 +23,7 @@ knitr::knit_theme$set(thm)
 First, obtain some data stored in the package.
 ```{r}
 library(mfbvar)
-Y <- mf_list$data[[192]]
+Y <- mf_list$data[[1]]
 head(Y)
 tail(Y)
 ```
@@ -46,11 +46,10 @@ summary(prior_obj)
 ```
 As the print method told us before, we can run the Minnesota prior, but not the steady-state prior with the current prior specification. The model is run by calling `estimate_mfbvar()`.
 ```{r, cache = TRUE}
-mod_minn <- estimate_mfbvar(mfbvar_prior = prior_obj, prior_type = "minn")
+mod_minn <- estimate_mfbvar(mfbvar_prior = prior_obj, prior_type = "minn", n_fcst = 8)
 ```
 To use the steady-state prior, we need to specify `d`, `prior_psi_mean` and `prior_psi_Omega`. We specify the prior moments for $\psi$ using the helper function `interval_to_moments()` which converts 95 % prior probability intervals to prior moments, assuming independence.
 ```{r}
-d <- matrix(1, nrow = nrow(Y), ncol = 1)
 prior_intervals <- matrix(c( 6,   7,
                              0.1, 0.2,
                              0,   0.5,
@@ -60,7 +59,7 @@ psi_moments <- interval_to_moments(prior_intervals)
 prior_psi_mean <- psi_moments$prior_psi_mean
 prior_psi_Omega <- psi_moments$prior_psi_Omega
 
-prior_obj <- update_prior(prior_obj, d = d, prior_psi_mean = prior_psi_mean, prior_psi_Omega = prior_psi_Omega)
+prior_obj <- update_prior(prior_obj, d = "intercept", prior_psi_mean = prior_psi_mean, prior_psi_Omega = prior_psi_Omega)
 prior_obj
 
 ```
@@ -87,7 +86,13 @@ head(predict(mod_minn, pred_quantiles = 0.5, tidy = TRUE))
 ```
 To estimate the marginal data density, there is a generic function `mdd()` for which there are methods for classes `mfbvar_ss` and `mfbvar_minn`.
 ```{r, cache = TRUE}
-# mdd(mod_minn)
-# mdd(mod_ss) 
+mdd_minn <- mdd(mod_minn)
+mdd_ss_1 <- mdd(mod_ss)
+mdd_ss_2 <- mdd(mod_ss, p_trunc = 0.5)
+
+mdd_minn_1
+mdd_minn_2
+mdd_ss_1
+mdd_ss_2
 ```
 The caveat is that the mdd is estimated up to a constant and thus not directly comparable between models based on different prios.

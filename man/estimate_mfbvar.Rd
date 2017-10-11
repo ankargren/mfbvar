@@ -4,15 +4,30 @@
 \alias{estimate_mfbvar}
 \title{Mixed-frequency Bayesian VAR}
 \usage{
-estimate_mfbvar(mfbvar_prior = NULL, prior_type = c("ss", "minn"), ...)
+estimate_mfbvar(mfbvar_prior = NULL, prior_type, ...)
 }
 \arguments{
-\item{mfbvar_prior}{Test}
+\item{mfbvar_prior}{a \code{mfbvar_prior} object}
 
-\item{prior_type}{Test 2}
+\item{prior_type}{either \code{"ss"} (steady-state prior) or \code{"minn"} (Minnesota prior)}
 
-\item{...}{test 3}
+\item{...}{additional arguments to \code{update_prior} (if \code{mfbvar_prior} is \code{NULL}, the arguments are passed on to \code{set_prior})}
+}
+\value{
+an object of class \code{mfbvar} and \code{mfbvar_ss}/\code{mfbvar_minn} containing posterior quantities as well as the prior object
 }
 \description{
 The main function for running the MF-SS-BVAR.
+}
+\details{
+No (other than very primitive) checks are made on the additional arguments. Thus, for more informative error messages and a safer procedure, create the prior first using \code{set_prior}.
+}
+\examples{
+prior_obj <- set_prior(Y = mf_list$data[[1]], freq = c(rep("m", 4), "q"),
+                       n_lags = 4, n_burnin = 20, n_reps = 20)
+mod_minn <- estimate_mfbvar(prior_obj, prior_type = "minn")
+
+}
+\seealso{
+\code{\link{set_prior}}, \code{\link{update_prior}}
 }

@@ -20,44 +20,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// kf_filter
-Rcpp::List kf_filter(arma::mat y, arma::mat Z, arma::mat c, arma::mat G, arma::mat T, arma::mat d, arma::mat H, arma::mat a1, arma::mat P1);
-RcppExport SEXP _mfbvar_kf_filter(SEXP ySEXP, SEXP ZSEXP, SEXP cSEXP, SEXP GSEXP, SEXP TSEXP, SEXP dSEXP, SEXP HSEXP, SEXP a1SEXP, SEXP P1SEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type y(ySEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type Z(ZSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type c(cSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type G(GSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type T(TSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type d(dSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type H(HSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type a1(a1SEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type P1(P1SEXP);
-    rcpp_result_gen = Rcpp::wrap(kf_filter(y, Z, c, G, T, d, H, a1, P1));
-    return rcpp_result_gen;
-END_RCPP
-}
-// kf_smoother
-Rcpp::List kf_smoother(arma::mat y, arma::mat Z, arma::mat c, arma::mat G, arma::mat T, arma::mat d, arma::mat H, arma::mat a1, arma::mat P1);
-RcppExport SEXP _mfbvar_kf_smoother(SEXP ySEXP, SEXP ZSEXP, SEXP cSEXP, SEXP GSEXP, SEXP TSEXP, SEXP dSEXP, SEXP HSEXP, SEXP a1SEXP, SEXP P1SEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type y(ySEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type Z(ZSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type c(cSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type G(GSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type T(TSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type d(dSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type H(HSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type a1(a1SEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type P1(P1SEXP);
-    rcpp_result_gen = Rcpp::wrap(kf_smoother(y, Z, c, G, T, d, H, a1, P1));
-    return rcpp_result_gen;
-END_RCPP
-}
 // kf_ragged
 Rcpp::List kf_ragged(arma::mat y_, arma::mat Phi_, arma::mat Sigma_, arma::mat Lambda_, int n_q_, unsigned int T_b_);
 RcppExport SEXP _mfbvar_kf_ragged(SEXP y_SEXP, SEXP Phi_SEXP, SEXP Sigma_SEXP, SEXP Lambda_SEXP, SEXP n_q_SEXP, SEXP T_b_SEXP) {
@@ -161,8 +123,6 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_mfbvar_build_U_cpp", (DL_FUNC) &_mfbvar_build_U_cpp, 4},
-    {"_mfbvar_kf_filter", (DL_FUNC) &_mfbvar_kf_filter, 9},
-    {"_mfbvar_kf_smoother", (DL_FUNC) &_mfbvar_kf_smoother, 9},
     {"_mfbvar_kf_ragged", (DL_FUNC) &_mfbvar_kf_ragged, 6},
     {"_mfbvar_kf_sim_smooth", (DL_FUNC) &_mfbvar_kf_sim_smooth, 7},
     {"_mfbvar_max_eig_cpp", (DL_FUNC) &_mfbvar_max_eig_cpp, 1},

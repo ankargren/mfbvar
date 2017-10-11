@@ -10,53 +10,6 @@ build_U_cpp <- function(Pi, n_determ, n_vars, n_lags) {
     .Call(`_mfbvar_build_U_cpp`, Pi, n_determ, n_vars, n_lags)
 }
 
-#' Kalman filter with correlated errors
-#'
-#' This function performs Kalman filtering for a state-space model with possibly correlated errors in the measurement and state equations.
-#'
-#' @param y (\code{T x n}) data matrix (\code{NA} is allowed)
-#' @param Z (\code{n x s}) matrix relating state to measurement
-#' @param c (\code{T x n}) matrix of deterministic variable(s) in measurement equation
-#' @param G (\code{n x n}) matrix of (matrix) square root of error covariance matrix in measurement equation
-#' @param T (\code{s x s}) matrix relating state at \eqn{t-1} to state at \eqn{t}
-#' @param d (\code{T x s}) matrix of deterministic variable(s) in state equation
-#' @param H (\code{s x n}) matrix of (matrix) square root of error covariance matrix in state equation
-#' @param a1 (\code{s x 1}) matrix of initial value for the state
-#' @param P1 (\code{s x s}) matrix of initial covariance for the state
-#' @return A list with elements:
-#' \describe{
-#' \item{\code{a}}{one-step predictions (where \code{a[t]} corresponds to \eqn{a_t})}
-#' \item{\code{a_tt}}{filtered estimates (where \code{a_tt[t]} corresponds to \eqn{a_{t|t}})}
-#' }
-#' @seealso \code{\link[smoothr]{kf_smoother}}.
-kf_filter <- function(y, Z, c, G, T, d, H, a1, P1) {
-    .Call(`_mfbvar_kf_filter`, y, Z, c, G, T, d, H, a1, P1)
-}
-
-#' Kalman smoother with correlated errors
-#'
-#' This function performs Kalman smoothing for a state-space model with possibly correlated errors in the measurement and state equations.
-#'
-#' @param y (\code{T x n}) data matrix (\code{NA} is allowed)
-#' @param Z (\code{n x s}) matrix relating state to measurement
-#' @param c (\code{T x n}) matrix of deterministic variable(s) in measurement equation
-#' @param G (\code{n x n}) matrix of (matrix) square root of error covariance matrix in measurement equation
-#' @param T (\code{s x s}) matrix relating state at \eqn{t-1} to state at \eqn{t}
-#' @param d (\code{T x s}) matrix of deterministic variable(s) in state equation
-#' @param H (\code{s x n}) matrix of (matrix) square root of error covariance matrix in state equation
-#' @param a1 (\code{s x 1}) matrix of initial value for the state
-#' @param P1 (\code{s x s}) matrix of initial covariance for the state
-#' @return A list with elements:
-#' \describe{
-#' \item{\code{a}}{one-step predictions (where \code{a[t]} corresponds to \eqn{a_t})}
-#' \item{\code{a_tt}}{filtered estimates (where \code{a_tt[t]} corresponds to \eqn{a_{t|t}})}
-#' \item{\code{a_tT}}{smoothed estimates (where \code{a_tT[t]} corresponds to \eqn{a_{t|T}})}
-#' }
-#' @seealso \code{\link[smoothr]{kf_filter}}.
-kf_smoother <- function(y, Z, c, G, T, d, H, a1, P1) {
-    .Call(`_mfbvar_kf_smoother`, y, Z, c, G, T, d, H, a1, P1)
-}
-
 #' @title Kalman filter and smoother
 #'
 #' @description Kalman filter and smoother (\code{kf_ragged}) and simulation smoother (\code{kf_sim_smooth}) for mixed-frequency data with ragged edges. This function is more computationally efficient than using a companion form representation.

@@ -2,22 +2,17 @@
 % Please edit documentation in R/mdd.R
 \name{mdd.mfbvar_minn}
 \alias{mdd.mfbvar_minn}
-\title{Marginal data density}
+\title{Marginal data density method for class \code{mfbvar_minn}}
 \usage{
-\method{mdd}{mfbvar_minn}(x, type = "full", ...)
+\method{mdd}{mfbvar_minn}(x, ...)
 }
 \arguments{
 \item{x}{object of class \code{mfbvar_minn}}
-
-\item{type}{\code{"full"} gives implementation based on the paper by Schorfheide and Song (2015), \code{"diff"} implementation on MATLAB code by Schorfheide and Song (2015)}
 
 \item{...}{additional arguments (currently unused)}
 }
 \description{
 Estimate the marginal data density for the model with a Minnesota prior.
-}
-\details{
-The generic \code{mdd} calls \code{mdd_minn} if \code{mfbvar_obj} is of class \code{mfbvar_minn}.
 }
 \seealso{
 \code{\link{mdd}}, \code{\link{mdd.mfbvar_ss}}

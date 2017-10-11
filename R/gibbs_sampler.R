@@ -51,7 +51,7 @@ gibbs_sampler <- function(Y, d, d_fcst = NULL, freq, prior_Pi_mean, prior_Pi_Ome
 
 
   n_q <- sum(freq == "q")
-  T_b <- max(which(!apply(apply(Y[, freq == "m"], 2, is.na), 1, any)))
+  T_b <- max(which(!apply(apply(Y[, freq == "m", drop = FALSE], 2, is.na), 1, any)))
   Lambda_ <- build_Lambda(rep("q", n_q), 3)
   ################################################################
   ### Preallocation
@@ -237,7 +237,7 @@ gibbs_sampler <- function(Y, d, d_fcst = NULL, freq, prior_Pi_mean, prior_Pi_Ome
                      Z_fcst = NULL, mdd = NULL, smoothed_Z = NULL, n_determ = n_determ,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      prior_S = prior_S, prior_nu = prior_nu, post_nu = n_T + prior_nu, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
-                     prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, Lambda = Lambda)
+                     prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps - 1, Lambda = Lambda)
 
   if (check_roots == TRUE) {
     return_obj$roots <- roots
