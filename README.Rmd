@@ -90,8 +90,7 @@ mdd_minn <- mdd(mod_minn)
 mdd_ss_1 <- mdd(mod_ss)
 mdd_ss_2 <- mdd(mod_ss, p_trunc = 0.5)
 
-mdd_minn_1
-mdd_minn_2
+mdd_minn
 mdd_ss_1
 mdd_ss_2
 ```

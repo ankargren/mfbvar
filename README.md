@@ -2,7 +2,7 @@
 mfbvar
 ======
 
-[![Travis-CI Build Status](https://travis-ci.org/ankargren/mfbvar?branch=master)](https://travis-ci.org/ankargren/mfbvar) [![](http://www.r-pkg.org/badges/version/mfbvar)](http://www.r-pkg.org/pkg/mfbvar)
+[![Build Status](https://travis-ci.org/ankargren/mfbvar.svg?branch=master)](https://travis-ci.org/ankargren/mfbvar) [![](http://www.r-pkg.org/badges/version/mfbvar)](http://www.r-pkg.org/pkg/mfbvar)
 
 Overview
 --------
@@ -167,15 +167,12 @@ head(predict(mod_minn, pred_quantiles = 0.5, tidy = TRUE))
 To estimate the marginal data density, there is a generic function `mdd()` for which there are methods for classes `mfbvar_ss` and `mfbvar_minn`.
 
 ``` r
-mdd_minn_1 <- mdd(mod_minn)
-mdd_minn_2 <- mdd(mod_minn, type = "diff")
+mdd_minn <- mdd(mod_minn)
 mdd_ss_1 <- mdd(mod_ss)
 mdd_ss_2 <- mdd(mod_ss, p_trunc = 0.5)
 
-mdd_minn_1
+mdd_minn
 #> [1] 13.59894
-mdd_minn_2
-#> [1] -147.401
 mdd_ss_1
 #> [1] -337.5115
 mdd_ss_2
