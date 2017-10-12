@@ -3,6 +3,12 @@
 language: R
 sudo: false
 cache: packages
+os:
+  - linux
+  - osx
+compiler:
+  - clang
+  - gcc
 # safelist
 branches:
   only:
