@@ -5,3 +5,4 @@ man-roxygen
 ^README-.*\.png$
 README_cache
 ^\.travis\.yml$
+^codecov\.yml$

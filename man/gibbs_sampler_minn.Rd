@@ -4,8 +4,8 @@
 \alias{gibbs_sampler_minn}
 \title{Gibbs sampler for Mixed-Frequency BVAR}
 \usage{
-gibbs_sampler_minn(Y, freq, prior_Pi_AR1, lambda1, lambda2, lambda3, n_lags,
-  n_fcst = NULL, n_reps, init_Pi = NULL, init_Sigma = NULL,
+gibbs_sampler_minn(Y, freq, prior_Pi_AR1, prior_nu, lambda1, lambda2, lambda3,
+  n_lags, n_fcst = NULL, n_reps, init_Pi = NULL, init_Sigma = NULL,
   init_Z = NULL, smooth_state = FALSE, check_roots = TRUE,
   verbose = TRUE)
 }

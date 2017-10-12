@@ -23,7 +23,7 @@ Method for predicting \code{mfbvar} objects.
 Note that this requires that forecasts were made in the original \code{mfbvar} call.
 }
 \examples{
-prior_obj <- set_prior(Y = mf_list$data[[1]][1:88, c(2, 5)], freq = c("m", "q"),
+prior_obj <- set_prior(Y = mf_sweden[, 4:5], freq = c("m", "q"),
                        n_lags = 4, n_burnin = 20, n_reps = 20, n_fcst = 4)
 mod_minn <- estimate_mfbvar(prior_obj, prior_type = "minn")
 predict(mod_minn)

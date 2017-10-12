@@ -58,7 +58,7 @@ update_prior(prior_obj, ...)
 Create an object storing all information needed for estimation, including data as well as model and prior specifications for both a Minnesota or steady-state prior.
 }
 \examples{
-prior_obj <- set_prior(Y = mf_list$data[[1]], freq = c(rep("m", 4), "q"),
+prior_obj <- set_prior(Y = mf_sweden, freq = c(rep("m", 4), "q"),
                        n_lags = 4, n_burnin = 100, n_reps = 100)
 prior_obj <- update_prior(prior_obj, n_fcst = 4)
 

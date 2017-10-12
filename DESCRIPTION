@@ -14,10 +14,9 @@ LazyData: TRUE
 URL: https://github.com/ankargren/mfbvar
 BugReports: https://github.com/ankargren/mfbvar/issues
 Imports:
-    Rcpp (>= 0.12.7), RcppArmadillo (>= 0.7.600.1.0), ggplot2 (>= 2.2.1), methods, broom (>= 0.4.2), pbapply
+    Rcpp (>= 0.12.7), RcppArmadillo (>= 0.7.600.1.0), ggplot2 (>= 2.2.1), methods, pbapply, utils
 LinkingTo:
     Rcpp, RcppArmadillo
 Depends: R (>= 2.10)
-Suggests: parallel (>= 3.3.2),
-    testthat
+Suggests: testthat, covr
 RoxygenNote: 6.0.1

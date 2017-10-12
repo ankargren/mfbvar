@@ -27,7 +27,7 @@
 #' @return
 #' An object of class mfbvar.
 
-gibbs_sampler_minn <- function(Y, freq, prior_Pi_AR1, lambda1, lambda2, lambda3, n_lags, n_fcst = NULL, n_reps,
+gibbs_sampler_minn <- function(Y, freq, prior_Pi_AR1, prior_nu, lambda1, lambda2, lambda3, n_lags, n_fcst = NULL, n_reps,
                                  init_Pi = NULL, init_Sigma = NULL, init_Z = NULL,
                                  smooth_state = FALSE, check_roots = TRUE, verbose = TRUE){
 
@@ -142,7 +142,7 @@ gibbs_sampler_minn <- function(Y, freq, prior_Pi_AR1, lambda1, lambda2, lambda3,
   Y_bar <- colMeans(Y, na.rm = TRUE)
   s_bar <- sqrt(diag(prior_Pi_Sigma(0.2, 1, prior_Pi_AR1, Y, n_lags, n_vars + 2)$prior_S))
 
-  dummy_size <- 1 + (n_lags + 2)*n_vars
+  dummy_size <- prior_nu + n_lags*n_vars + 1
   breaks <- numeric(5)
   Y_dum <- matrix(0, nrow = dummy_size, ncol = n_vars)
   X_dum <- matrix(0, nrow = dummy_size, ncol = n_vars*n_lags + 1)

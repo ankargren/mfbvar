@@ -22,7 +22,7 @@
 #' @templateVar check_roots TRUE
 #' @template man_template
 #' @examples
-#' prior_obj <- set_prior(Y = mf_list$data[[1]], freq = c(rep("m", 4), "q"),
+#' prior_obj <- set_prior(Y = mf_sweden, freq = c(rep("m", 4), "q"),
 #'                        n_lags = 4, n_burnin = 100, n_reps = 100)
 #' prior_obj <- update_prior(prior_obj, n_fcst = 4)
 #'
@@ -225,7 +225,7 @@ set_prior <- function(Y, d = NULL, d_fcst = NULL, freq, prior_Pi_AR1 = rep(0, nc
 #'   requires additional information).
 #' @seealso \code{\link{set_prior}}, \code{\link{update_prior}}, \code{\link{estimate_mfbvar}}, \code{\link{summary.mfbvar_prior}}
 #' @examples
-#' prior_obj <- set_prior(Y = mf_list$data[[1]], freq = c(rep("m", 4), "q"),
+#' prior_obj <- set_prior(Y = mf_sweden, freq = c(rep("m", 4), "q"),
 #'                        n_lags = 4, n_burnin = 100, n_reps = 100)
 #' print(prior_obj)
 print.mfbvar_prior <- function(x, ...) {
@@ -258,7 +258,7 @@ print.mfbvar_prior <- function(x, ...) {
 #' @param ... additional arguments (currently unused)
 #' @seealso \code{\link{set_prior}}, \code{\link{update_prior}}, \code{\link{estimate_mfbvar}}, \code{\link{print.mfbvar_prior}}
 #' @examples
-#' prior_obj <- set_prior(Y = mf_list$data[[1]], freq = c(rep("m", 4), "q"),
+#' prior_obj <- set_prior(Y = mf_sweden, freq = c(rep("m", 4), "q"),
 #'                        n_lags = 4, n_burnin = 100, n_reps = 100)
 #' summary(prior_obj)
 summary.mfbvar_prior <- function(object, ...) {
@@ -274,11 +274,11 @@ summary.mfbvar_prior <- function(object, ...) {
   cat("  n_fcst:", object$n_fcst, "\n")
   cat("  n_burnin:", object$n_burnin, "\n")
   cat("  n_reps:", object$n_reps, "\n")
+  cat("  prior_nu:", ifelse(is.null(object$prior_nu), "<missing> (will rely on default)", object$prior_nu), "\n")
   cat("----------------------------\n")
   cat("Steady-state-specific elements:\n")
   cat("  d:", ifelse(is.null(object$d), "<missing>", ifelse(object$intercept_flag, "intercept", paste0(ncol(object$d), "deterministic variables"))),"\n")
   cat("  d_fcst:", ifelse(is.null(object$d_fcst), "<missing>", ifelse(object$intercept_flag, "intercept", paste0(nrow(object$d_fcst), "forecasts, ", ncol(object$d), "deterministic variables"))),"\n")
-  cat("  prior_nu:", ifelse(is.null(object$prior_nu), "<missing> (will rely on default)", object$prior_nu), "\n")
   cat("  prior_psi_mean:", ifelse(is.null(object$prior_psi_mean), "<missing>", "vector of prior steady-state means"), "\n")
   cat("  prior_psi_Omega:", ifelse(is.null(object$prior_psi_Omega), "<missing>", "prior covariance matrix of prior steady states"), "\n")
   cat("----------------------------\n")
@@ -339,7 +339,7 @@ update_prior <- function(prior_obj, ...)
 #' @return an object of class \code{mfbvar} and \code{mfbvar_ss}/\code{mfbvar_minn} containing posterior quantities as well as the prior object
 #' @seealso \code{\link{set_prior}}, \code{\link{update_prior}}
 #' @examples
-#' prior_obj <- set_prior(Y = mf_list$data[[1]], freq = c(rep("m", 4), "q"),
+#' prior_obj <- set_prior(Y = mf_sweden, freq = c(rep("m", 4), "q"),
 #'                        n_lags = 4, n_burnin = 20, n_reps = 20)
 #' mod_minn <- estimate_mfbvar(prior_obj, prior_type = "minn")
 #'
@@ -432,9 +432,10 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type, ...) {
                               n_fcst = 0, n_reps = mfbvar_prior$n_burnin, smooth_state = FALSE, check_roots = mfbvar_prior$check_roots, verbose = mfbvar_prior$verbose)
   } else {
     burn_in <-  gibbs_sampler_minn(Y = mfbvar_prior$Y, freq = mfbvar_prior$freq, prior_Pi_AR1 = mfbvar_prior$prior_Pi_AR1,
-                                   lambda1 = mfbvar_prior$lambda1, lambda2 = mfbvar_prior$lambda2, lambda3 = mfbvar_prior$lambda3,
-                                   n_lags = mfbvar_prior$n_lags, n_fcst = 0, n_reps = mfbvar_prior$n_burnin,
-                                   smooth_state = FALSE, check_roots = FALSE, verbose = mfbvar_prior$verbose)
+                                   prior_nu = mfbvar_prior$prior_nu, lambda1 = mfbvar_prior$lambda1, lambda2 = mfbvar_prior$lambda2,
+                                   lambda3 = mfbvar_prior$lambda3, n_lags = mfbvar_prior$n_lags, n_fcst = 0,
+                                   n_reps = mfbvar_prior$n_burnin, smooth_state = FALSE, check_roots = FALSE,
+                                   verbose = mfbvar_prior$verbose)
   }
 
   if (mfbvar_prior$verbose) {
@@ -454,10 +455,11 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type, ...) {
                               init_psi = burn_in$psi[dim(burn_in$psi)[1],], init_Z = burn_in$Z[,,dim(burn_in$Z)[3]], smooth_state = mfbvar_prior$smooth_state,
                               check_roots = mfbvar_prior$check_roots, verbose = mfbvar_prior$verbose)
   } else {
-    main_run <- gibbs_sampler_minn(Y = mfbvar_prior$Y, freq = mfbvar_prior$freq, prior_Pi_AR1 = mfbvar_prior$prior_Pi_AR1, lambda1 = mfbvar_prior$lambda1,
-                                   lambda2 = mfbvar_prior$lambda2, lambda3 = mfbvar_prior$lambda3, n_lags = mfbvar_prior$n_lags, n_fcst = mfbvar_prior$n_fcst,
-                                   n_reps = mfbvar_prior$n_reps+1, init_Pi  = burn_in$Pi[,,dim(burn_in$Pi)[3]], init_Sigma = burn_in$Sigma[,,dim(burn_in$Sigma)[3]],
-                                   init_Z = burn_in$Z[,,dim(burn_in$Z)[3]], smooth_state = mfbvar_prior$smooth_state, check_roots = mfbvar_prior$check_roots, mfbvar_prior$verbose)
+    main_run <- gibbs_sampler_minn(Y = mfbvar_prior$Y, freq = mfbvar_prior$freq, prior_Pi_AR1 = mfbvar_prior$prior_Pi_AR1, prior_nu = mfbvar_prior$prior_nu,
+                                   lambda1 = mfbvar_prior$lambda1, lambda2 = mfbvar_prior$lambda2, lambda3 = mfbvar_prior$lambda3,
+                                   n_lags = mfbvar_prior$n_lags, n_fcst = mfbvar_prior$n_fcst, n_reps = mfbvar_prior$n_reps+1, init_Pi  = burn_in$Pi[,,dim(burn_in$Pi)[3]],
+                                   init_Sigma = burn_in$Sigma[,,dim(burn_in$Sigma)[3]], init_Z = burn_in$Z[,,dim(burn_in$Z)[3]],
+                                   smooth_state = mfbvar_prior$smooth_state, check_roots = mfbvar_prior$check_roots, mfbvar_prior$verbose)
   }
 
 
@@ -518,9 +520,9 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type, ...) {
 #' @param ... Currently not in use.
 #' @template man_template
 #' @examples
-#' prior_obj <- set_prior(Y = mf_list$data[[1]][1:88, c(2, 5)], d = "intercept",
+#' prior_obj <- set_prior(Y = mf_sweden[, 4:5], d = "intercept",
 #'                        freq = c("m", "q"), n_lags = 4, n_burnin = 20, n_reps = 20)
-#' prior_intervals <- matrix(c(0.1, 0.2,
+#' prior_intervals <- matrix(c(-0.1, 0.1,
 #'                             0.4, 0.6), ncol = 2, byrow = TRUE)
 #' psi_moments <- interval_to_moments(prior_intervals)
 #' prior_psi_mean <- psi_moments$prior_psi_mean
@@ -545,7 +547,7 @@ print.mfbvar_ss <- function(x, ...){
 #' @param ... Currently not in use.
 #' @template man_template
 #' @examples
-#' prior_obj <- set_prior(Y = mf_list$data[[1]][1:88, c(2, 5)], freq = c("m", "q"),
+#' prior_obj <- set_prior(Y = mf_sweden[, 4:5], freq = c("m", "q"),
 #'                        n_lags = 4, n_burnin = 20, n_reps = 20)
 #' mod_minn <- estimate_mfbvar(prior_obj, prior_type = "minn")
 #' print(mod_minn)
@@ -566,11 +568,11 @@ print.mfbvar_minn <- function(x, ...){
 #' @param ... Currently not in use.
 #' @template man_template
 #' @examples
-#' prior_obj <- set_prior(Y = mf_list$data[[1]][1:88, c(2, 5)], d = "intercept",
+#' prior_obj <- set_prior(Y = mf_sweden[, 4:5], d = "intercept",
 #'                        freq = c("m", "q"), n_lags = 4, n_burnin = 20, n_reps = 20,
 #'                        n_fcst = 4)
 #'
-#' prior_intervals <- matrix(c(0.1, 0.2,
+#' prior_intervals <- matrix(c(-0.1, 0.1,
 #'                             0.4, 0.6), ncol = 2, byrow = TRUE)
 #' psi_moments <- interval_to_moments(prior_intervals)
 #' prior_psi_mean <- psi_moments$prior_psi_mean
@@ -670,7 +672,7 @@ plot.mfbvar_ss <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
 #' @param ... Currently not in use.
 #' @template man_template
 #' @examples
-#' prior_obj <- set_prior(Y = mf_list$data[[1]][1:88, c(2, 5)], freq = c("m", "q"),
+#' prior_obj <- set_prior(Y = mf_sweden[, 4:5], freq = c("m", "q"),
 #'                        n_lags = 4, n_burnin = 20, n_reps = 20, n_fcst = 4)
 #' mod_minn <- estimate_mfbvar(prior_obj, prior_type = "minn")
 #' plot(mod_minn)
@@ -745,11 +747,11 @@ plot.mfbvar_minn <- function(x, plot_start = NULL, pred_level = c(0.10, 0.90), .
 #' @param ... Currently not in use.
 #' @template man_template
 #' @examples
-#' prior_obj <- set_prior(Y = mf_list$data[[1]][1:88, c(2, 5)], d = "intercept",
+#' prior_obj <- set_prior(Y = mf_sweden[, 4:5], d = "intercept",
 #'                        freq = c("m", "q"), n_lags = 4, n_burnin = 20, n_reps = 20,
 #'                        n_fcst = 4)
 #'
-#' prior_intervals <- matrix(c(0.1, 0.2,
+#' prior_intervals <- matrix(c(-0.1, 0.1,
 #'                             0.4, 0.6), ncol = 2, byrow = TRUE)
 #' psi_moments <- interval_to_moments(prior_intervals)
 #' prior_psi_mean <- psi_moments$prior_psi_mean
@@ -789,7 +791,7 @@ summary.mfbvar_ss <- function(object, ...) {
 #' @param ... Currently not in use.
 #' @template man_template
 #' @examples
-#' prior_obj <- set_prior(Y = mf_list$data[[1]][1:88, c(2, 5)], freq = c("m", "q"),
+#' prior_obj <- set_prior(Y = mf_sweden[, 4:5], freq = c("m", "q"),
 #'                        n_lags = 4, n_burnin = 20, n_reps = 20, n_fcst = 4)
 #' mod_minn <- estimate_mfbvar(prior_obj, prior_type = "minn")
 #' summary(mod_minn)
@@ -825,7 +827,7 @@ summary.mfbvar_minn <- function(object, ...) {
 #' @template man_template
 #' @details Note that this requires that forecasts were made in the original \code{mfbvar} call.
 #' @examples
-#' prior_obj <- set_prior(Y = mf_list$data[[1]][1:88, c(2, 5)], freq = c("m", "q"),
+#' prior_obj <- set_prior(Y = mf_sweden[, 4:5], freq = c("m", "q"),
 #'                        n_lags = 4, n_burnin = 20, n_reps = 20, n_fcst = 4)
 #' mod_minn <- estimate_mfbvar(prior_obj, prior_type = "minn")
 #' predict(mod_minn)

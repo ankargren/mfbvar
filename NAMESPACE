@@ -1,4 +1,5 @@
 importFrom(Rcpp, evalCpp)
+exportPattern("^[[:alpha:]]+")
 useDynLib(mfbvar, .registration = TRUE)
 import(RcppArmadillo)
 import(stats)

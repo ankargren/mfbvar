@@ -7,6 +7,10 @@
 #' @return A list with two components:
 #' \item{prior_psi_mean}{The prior mean of psi}
 #' \item{prior_psi_Omega}{The prior covariance matrix of psi}
+#' @examples
+#' prior_intervals <- matrix(c(0.1, 0.2,
+#'                             0.4, 0.6), ncol = 2, byrow = TRUE)
+#' psi_moments <- interval_to_moments(prior_intervals)
 
 interval_to_moments <- function(prior_psi_int) {
   stopifnot(is.matrix(prior_psi_int), ncol(prior_psi_int) == 2)

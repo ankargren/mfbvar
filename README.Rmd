@@ -5,6 +5,7 @@ output:
 # mfbvar
 [![Build Status](https://travis-ci.org/ankargren/mfbvar.svg?branch=master)](https://travis-ci.org/ankargren/mfbvar)
 [![](http://www.r-pkg.org/badges/version/mfbvar)](http://www.r-pkg.org/pkg/mfbvar)
+[![Coverage status](https://codecov.io/gh/ankargren/mfbvar/branch/master/graph/badge.svg)](https://codecov.io/github/ankargren/mfbvar?branch=master)
 
 ## Overview 
 The `mfbvar` package implements a steady-state prior and a Minnesota prior for state space-based mixed-frequency VAR models.
@@ -24,7 +25,7 @@ knitr::knit_theme$set(thm)
 First, obtain some data stored in the package.
 ```{r}
 library(mfbvar)
-Y <- mf_list$data[[1]]
+Y <- mf_sweden
 head(Y)
 tail(Y)
 ```

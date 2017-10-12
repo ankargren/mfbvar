@@ -17,4 +17,9 @@ A list with two components:
 \description{
 Convert a matrix of 95 \% prior probability intervals for the steady states to prior moments.
 }
+\examples{
+prior_intervals <- matrix(c(0.1, 0.2,
+                            0.4, 0.6), ncol = 2, byrow = TRUE)
+psi_moments <- interval_to_moments(prior_intervals)
+}
 \keyword{internal}

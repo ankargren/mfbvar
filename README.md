@@ -2,7 +2,7 @@
 mfbvar
 ======
 
-[![Build Status](https://travis-ci.org/ankargren/mfbvar.svg?branch=master)](https://travis-ci.org/ankargren/mfbvar) [![](http://www.r-pkg.org/badges/version/mfbvar)](http://www.r-pkg.org/pkg/mfbvar)
+[![Build Status](https://travis-ci.org/ankargren/mfbvar.svg?branch=master)](https://travis-ci.org/ankargren/mfbvar) [![](http://www.r-pkg.org/badges/version/mfbvar)](http://www.r-pkg.org/pkg/mfbvar) [![Coverage status](https://codecov.io/gh/ankargren/mfbvar/branch/master/graph/badge.svg)](https://codecov.io/github/ankargren/mfbvar?branch=master)
 
 Overview
 --------
@@ -15,23 +15,23 @@ First, obtain some data stored in the package.
 
 ``` r
 library(mfbvar)
-Y <- mf_list$data[[1]]
+Y <- mf_sweden
 head(Y)
 #>            unemp        infl         ip         eti       gdp
-#> 1996-08-31  9.87 -0.42912096  0.6845993  0.18944615        NA
-#> 1996-09-30  9.87  0.54854773  0.0000000  0.14983749 0.5798503
-#> 1996-10-31  9.81  0.03977725 -2.1675725  0.35163047        NA
-#> 1996-11-30  9.95 -0.19904465  3.5228692  0.04474605        NA
-#> 1996-12-31 10.26 -0.14954392  4.9705496 -0.08289718 0.3049682
-#> 1997-01-31 10.01  0.00000000 -2.8772286  0.39851929        NA
+#> 1996-08-31   9.9 -0.44997116  0.5941788  0.19536978        NA
+#> 1996-09-30   9.8  0.56804886 -1.5522700  0.08309475 0.4704331
+#> 1996-10-31   9.8  0.03539614 -0.4825100  0.26642772        NA
+#> 1996-11-30   9.9 -0.20074400  1.3213405  0.07019829        NA
+#> 1996-12-31  10.1 -0.15378249  2.7076404 -0.06840048 0.7567702
+#> 1997-01-31  10.0 -0.01183922  0.3478264  0.31459737        NA
 tail(Y)
-#>            unemp        infl         ip         eti       gdp
-#> 2003-08-31  5.59 -0.03684598 -0.4838719  0.63265222        NA
-#> 2003-09-30  5.63  0.72520628 -0.7302264  0.17059822 0.4787448
-#> 2003-10-31  5.87  0.06400585         NA  0.08881041        NA
-#> 2003-11-30  6.00 -0.21045897         NA -0.23744080        NA
-#> 2003-12-31    NA          NA         NA  0.32696128        NA
-#> 2004-01-31    NA          NA         NA  0.20099976        NA
+#>            unemp        infl         ip         eti      gdp
+#> 2015-07-31   7.3  0.02895613 -3.1285137  0.09746577       NA
+#> 2015-08-31   7.0 -0.19319944  3.8446293  0.16136658       NA
+#> 2015-09-30   7.3  0.39565793  0.9132484  0.23165768 0.843138
+#> 2015-10-31   7.2  0.07701935         NA  0.16152144       NA
+#> 2015-11-30    NA          NA         NA -0.17872172       NA
+#> 2015-12-31    NA          NA         NA  0.33933697       NA
 ```
 
 Next, we create a minimal prior object. We must specify: 1) data, 2) the frequency of the data, 3) the number of lags, 4) the length of burn-in and main chains, respectively. This is done by calling the `set_prior()` function and giving named arguments. The resulting object is of class `mfbvar_prior` and has a basic `print` method.
@@ -70,7 +70,7 @@ summary(prior_obj)
 #> PRIOR SUMMARY
 #> ----------------------------
 #> Required elements:
-#>   Y: 5 variables, 90 time points
+#>   Y: 5 variables, 233 time points
 #>   freq: m m m m q 
 #>   prior_Pi_AR1: 0 0 0 0 0 
 #>   lambda1: 0.2 
@@ -79,11 +79,11 @@ summary(prior_obj)
 #>   n_fcst: 0 
 #>   n_burnin: 1000 
 #>   n_reps: 1000 
+#>   prior_nu: 7 
 #> ----------------------------
 #> Steady-state-specific elements:
 #>   d: <missing> 
 #>   d_fcst: <missing> 
-#>   prior_nu: 7 
 #>   prior_psi_mean: <missing> 
 #>   prior_psi_Omega: <missing> 
 #> ----------------------------

@@ -2,10 +2,13 @@
 #'
 #' A dataset containing real-time data for mixed and quarterly frequencies.
 #'
-#' @format A list with three components of length 192.
+#' @format A mixed-frequency data set of five Swedish macroeconomic variables.
 #' \describe{
-#'   \item{fcst_date}{The date at which this data was available}
-#'   \item{data}{The monthly data set (with missingness)}
+#'   \item{unemp}{harmonized unemployment rate (source: OECD)}
+#'   \item{infl}{inflation rate (source: OECD)}
+#'   \item{ip}{industrial production (source: OECD)}
+#'   \item{eti}{economic tendency indicator (source: National Institute of Economic Research)}
+#'   \item{gdp}{GDP growth (source: Statistics Sweden)}
 #' }
 #'
-"mf_list"
+"mf_sweden"

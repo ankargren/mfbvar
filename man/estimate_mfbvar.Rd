@@ -23,7 +23,7 @@ The main function for running the MF-SS-BVAR.
 No (other than very primitive) checks are made on the additional arguments. Thus, for more informative error messages and a safer procedure, create the prior first using \code{set_prior}.
 }
 \examples{
-prior_obj <- set_prior(Y = mf_list$data[[1]], freq = c(rep("m", 4), "q"),
+prior_obj <- set_prior(Y = mf_sweden, freq = c(rep("m", 4), "q"),
                        n_lags = 4, n_burnin = 20, n_reps = 20)
 mod_minn <- estimate_mfbvar(prior_obj, prior_type = "minn")
 

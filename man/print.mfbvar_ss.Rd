@@ -15,9 +15,9 @@
 Method for printing \code{mfbvar_ss} objects.
 }
 \examples{
-prior_obj <- set_prior(Y = mf_list$data[[1]][1:88, c(2, 5)], d = "intercept",
+prior_obj <- set_prior(Y = mf_sweden[, 4:5], d = "intercept",
                        freq = c("m", "q"), n_lags = 4, n_burnin = 20, n_reps = 20)
-prior_intervals <- matrix(c(0.1, 0.2,
+prior_intervals <- matrix(c(-0.1, 0.1,
                             0.4, 0.6), ncol = 2, byrow = TRUE)
 psi_moments <- interval_to_moments(prior_intervals)
 prior_psi_mean <- psi_moments$prior_psi_mean
