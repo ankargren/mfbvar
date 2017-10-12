@@ -5,9 +5,9 @@
 \alias{kf_sim_smooth}
 \title{Kalman filter and smoother}
 \usage{
-kf_ragged(y_, Phi_, Sigma_, Lambda_, n_q_, T_b_)
+kf_ragged(y_, Phi_, Sigma_, Lambda_, Z1_, n_q_, T_b_)
 
-kf_sim_smooth(y_, Phi_, Sigma_, Lambda_, Z1, n_q_, T_b_)
+kf_sim_smooth(y_, Phi_, Sigma_, Lambda_, Z1_, n_q_, T_b_)
 }
 \arguments{
 \item{y_}{matrix with the data}

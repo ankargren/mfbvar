@@ -230,7 +230,7 @@ gibbs_sampler_minn <- function(Y, freq, prior_Pi_AR1, prior_nu, lambda1, lambda2
     Pi_r1 <- Pi[,,r-1]
     Sigma_r1 <- Sigma[,,r-1]
 
-    Z_res <- kf_sim_smooth(Y, Pi_r1, Sigma_r1, Lambda_, Z_1, n_q, T_b)[-c(1:n_lags), ]
+    Z_res <- kf_sim_smooth(Y, Pi_r1, Sigma_r1, Lambda_, Z_1, n_q, T_b)
 
     Z[,, r] <- rbind(Z_1, Z_res)
 

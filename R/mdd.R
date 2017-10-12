@@ -33,11 +33,11 @@ mdd.mfbvar_ss <- function(x, method = 1, ...) {
 #'
 #' Estimate the marginal data density for the model with a Minnesota prior.
 #' @param x object of class \code{mfbvar_minn}
-#' @param ... additional arguments (currently unused)
+#' @param ... additional arguments (currently only \code{p_trunc} for the degree of truncation is available)
 #' @seealso \code{\link{mdd}}, \code{\link{mdd.mfbvar_ss}}
 mdd.mfbvar_minn <- function(x, ...) {
   quarterly_cols <- which(x$mfbvar_prior$freq == "q")
-  estimate_mdd_minn(x, quarterly_cols)
+  estimate_mdd_minn(x, quarterly_cols, ...)
 }
 
 #' Estimate marginal data density in steady-state MF-BVAR
@@ -139,7 +139,7 @@ estimate_mdd_ss_1 <- function(mfbvar_obj) {
     #(Y, d, Pi_r,            Sigma_r,               psi_r,                          Z_1, Lambda, n_vars, n_lags, n_T_, smooth_state)
 
     Pi_r <- cbind(Pi_red[,,r], 0)
-    Z_res <- kf_sim_smooth(mZ, Pi_r, Sigma_red[,,r], Lambda_, demeaned_z0, n_q, T_b)[-c(1:n_lags), ]
+    Z_res <- kf_sim_smooth(mZ, Pi_r, Sigma_red[,,r], Lambda_, demeaned_z0, n_q, T_b)
     Z_res <- rbind(demeaned_z0, Z_res) + d_post_psi
     Z_red[,, r] <- Z_res
   }
@@ -292,10 +292,11 @@ estimate_mdd_ss_2 <- function(mfbvar_obj, p_trunc) {
 #' @templateVar mfbvar_obj TRUE
 #' @template man_template
 #' @param quarterly_cols numeric vector with positions of quarterly variables
+#' @templateVar p_trunc TRUE
 #' @keywords internal
 #' @return The log marginal data density estimate (bar a constant)
 #'
-estimate_mdd_minn <- function(mfbvar_obj, quarterly_cols, ...) {
+estimate_mdd_minn <- function(mfbvar_obj, quarterly_cols, p_trunc, ...) {
   postsim <- mfbvar_obj$lnpYY[-1]
   Z <- mfbvar_obj$Z[,, -1]
   n_T <- dim(Z)[1]
@@ -316,17 +317,16 @@ estimate_mdd_minn <- function(mfbvar_obj, quarterly_cols, ...) {
     paradev  <- temp - kronecker(matrix(1, 1, n_reps), drawmean)
     quadpara <- rowSums((t(paradev) %*% drawsiginv) * t(paradev))
 
-    p <- seq(from = 0.1, to = 0.9, by = 0.1)
-    pcrit <- qchisq(p, df = nrow(drawmean))
+    pcrit <- qchisq(p_trunc, df = nrow(drawmean))
 
-    invlike <- matrix(NA, n_reps, length(p))
+    invlike <- matrix(NA, n_reps, length(p_trunc))
     indpara <- invlike
     lnfpara <- indpara
-    densfac <- -0.5*n_para*log(2*pi) - 0.5*drawsiglndet - 0.5*quadpara[1] - log(p) - postsim[1]
+    densfac <- -0.5*n_para*log(2*pi) - 0.5*drawsiglndet - 0.5*quadpara[1] - log(p_trunc) - postsim[1]
     densfac <- -mean(densfac)
-    for (i in seq_along(p)) {
+    for (i in seq_along(p_trunc)) {
       for (j in 1:n_reps) {
-        lnfpara[j, i] <- -0.5*n_para*log(2*pi) - 0.5*drawsiglndet - 0.5*quadpara[j] - log(p[i])
+        lnfpara[j, i] <- -0.5*n_para*log(2*pi) - 0.5*drawsiglndet - 0.5*quadpara[j] - log(p_trunc[i])
         indpara[j, i] <- quadpara[j] < pcrit[i]
         invlike[j, i] <- exp(lnfpara[j, i] - postsim[j]+densfac) * indpara[j, i]
       }

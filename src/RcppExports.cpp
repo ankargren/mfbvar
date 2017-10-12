@@ -21,8 +21,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // kf_ragged
-Rcpp::List kf_ragged(arma::mat y_, arma::mat Phi_, arma::mat Sigma_, arma::mat Lambda_, int n_q_, unsigned int T_b_);
-RcppExport SEXP _mfbvar_kf_ragged(SEXP y_SEXP, SEXP Phi_SEXP, SEXP Sigma_SEXP, SEXP Lambda_SEXP, SEXP n_q_SEXP, SEXP T_b_SEXP) {
+Rcpp::List kf_ragged(arma::mat y_, arma::mat Phi_, arma::mat Sigma_, arma::mat Lambda_, arma::mat Z1_, int n_q_, unsigned int T_b_);
+RcppExport SEXP _mfbvar_kf_ragged(SEXP y_SEXP, SEXP Phi_SEXP, SEXP Sigma_SEXP, SEXP Lambda_SEXP, SEXP Z1_SEXP, SEXP n_q_SEXP, SEXP T_b_SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -30,15 +30,16 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::mat >::type Phi_(Phi_SEXP);
     Rcpp::traits::input_parameter< arma::mat >::type Sigma_(Sigma_SEXP);
     Rcpp::traits::input_parameter< arma::mat >::type Lambda_(Lambda_SEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Z1_(Z1_SEXP);
     Rcpp::traits::input_parameter< int >::type n_q_(n_q_SEXP);
     Rcpp::traits::input_parameter< unsigned int >::type T_b_(T_b_SEXP);
-    rcpp_result_gen = Rcpp::wrap(kf_ragged(y_, Phi_, Sigma_, Lambda_, n_q_, T_b_));
+    rcpp_result_gen = Rcpp::wrap(kf_ragged(y_, Phi_, Sigma_, Lambda_, Z1_, n_q_, T_b_));
     return rcpp_result_gen;
 END_RCPP
 }
 // kf_sim_smooth
-arma::mat kf_sim_smooth(arma::mat y_, arma::mat Phi_, arma::mat Sigma_, arma::mat Lambda_, arma::mat Z1, int n_q_, unsigned int T_b_);
-RcppExport SEXP _mfbvar_kf_sim_smooth(SEXP y_SEXP, SEXP Phi_SEXP, SEXP Sigma_SEXP, SEXP Lambda_SEXP, SEXP Z1SEXP, SEXP n_q_SEXP, SEXP T_b_SEXP) {
+arma::mat kf_sim_smooth(arma::mat y_, arma::mat Phi_, arma::mat Sigma_, arma::mat Lambda_, arma::mat Z1_, int n_q_, unsigned int T_b_);
+RcppExport SEXP _mfbvar_kf_sim_smooth(SEXP y_SEXP, SEXP Phi_SEXP, SEXP Sigma_SEXP, SEXP Lambda_SEXP, SEXP Z1_SEXP, SEXP n_q_SEXP, SEXP T_b_SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -46,10 +47,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::mat >::type Phi_(Phi_SEXP);
     Rcpp::traits::input_parameter< arma::mat >::type Sigma_(Sigma_SEXP);
     Rcpp::traits::input_parameter< arma::mat >::type Lambda_(Lambda_SEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type Z1(Z1SEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Z1_(Z1_SEXP);
     Rcpp::traits::input_parameter< int >::type n_q_(n_q_SEXP);
     Rcpp::traits::input_parameter< unsigned int >::type T_b_(T_b_SEXP);
-    rcpp_result_gen = Rcpp::wrap(kf_sim_smooth(y_, Phi_, Sigma_, Lambda_, Z1, n_q_, T_b_));
+    rcpp_result_gen = Rcpp::wrap(kf_sim_smooth(y_, Phi_, Sigma_, Lambda_, Z1_, n_q_, T_b_));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -123,7 +124,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_mfbvar_build_U_cpp", (DL_FUNC) &_mfbvar_build_U_cpp, 4},
-    {"_mfbvar_kf_ragged", (DL_FUNC) &_mfbvar_kf_ragged, 6},
+    {"_mfbvar_kf_ragged", (DL_FUNC) &_mfbvar_kf_ragged, 7},
     {"_mfbvar_kf_sim_smooth", (DL_FUNC) &_mfbvar_kf_sim_smooth, 7},
     {"_mfbvar_max_eig_cpp", (DL_FUNC) &_mfbvar_max_eig_cpp, 1},
     {"_mfbvar_rmatn", (DL_FUNC) &_mfbvar_rmatn, 3},

@@ -26,15 +26,15 @@ build_U_cpp <- function(Pi, n_determ, n_vars, n_lags) {
 #' \item{a_tT}{The smoothed estimates (for the compact form)}
 #' \item{Z_tT}{The smoothed estimated (for the original form)}
 #' @details The returned matrices have the same number of rows as \code{y_}, but the first \code{n_lags} rows are zero.
-kf_ragged <- function(y_, Phi_, Sigma_, Lambda_, n_q_, T_b_) {
-    .Call(`_mfbvar_kf_ragged`, y_, Phi_, Sigma_, Lambda_, n_q_, T_b_)
+kf_ragged <- function(y_, Phi_, Sigma_, Lambda_, Z1_, n_q_, T_b_) {
+    .Call(`_mfbvar_kf_ragged`, y_, Phi_, Sigma_, Lambda_, Z1_, n_q_, T_b_)
 }
 
 #' @describeIn kf_ragged Simulation smoother
 #' @param Z1 initial values, with \code{n_lags} rows and same number of columns as \code{y_}
 #' @return For \code{kf_sim_smooth}, a matrix with the draw from the posterior distribution.
-kf_sim_smooth <- function(y_, Phi_, Sigma_, Lambda_, Z1, n_q_, T_b_) {
-    .Call(`_mfbvar_kf_sim_smooth`, y_, Phi_, Sigma_, Lambda_, Z1, n_q_, T_b_)
+kf_sim_smooth <- function(y_, Phi_, Sigma_, Lambda_, Z1_, n_q_, T_b_) {
+    .Call(`_mfbvar_kf_sim_smooth`, y_, Phi_, Sigma_, Lambda_, Z1_, n_q_, T_b_)
 }
 
 #' @title Find maximum eigenvalue

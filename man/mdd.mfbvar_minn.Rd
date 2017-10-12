@@ -9,7 +9,7 @@
 \arguments{
 \item{x}{object of class \code{mfbvar_minn}}
 
-\item{...}{additional arguments (currently unused)}
+\item{...}{additional arguments (currently only \code{p_trunc} for the degree of truncation is available)}
 }
 \description{
 Estimate the marginal data density for the model with a Minnesota prior.

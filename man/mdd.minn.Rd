@@ -4,12 +4,14 @@
 \alias{estimate_mdd_minn}
 \title{Estimate marginal data density in Minnesota MF-BVAR}
 \usage{
-estimate_mdd_minn(mfbvar_obj, quarterly_cols, ...)
+estimate_mdd_minn(mfbvar_obj, quarterly_cols, p_trunc, ...)
 }
 \arguments{
 \item{mfbvar_obj}{An object of class \code{mfbvar} containing the results.}
 
 \item{quarterly_cols}{numeric vector with positions of quarterly variables}
+
+\item{p_trunc}{\code{1-p_trunc} is the degree of truncation (i.e. \code{p_trunc=1} is no truncation).}
 }
 \value{
 The log marginal data density estimate (bar a constant)

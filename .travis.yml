@@ -1,6 +1,10 @@
 # R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
 
 language: R
+r:
+  - oldrel
+  - release
+  - devel
 sudo: false
 cache: packages
 os:
@@ -9,7 +13,12 @@ os:
 compiler:
   - clang
   - gcc
-# safelist
+
+matrix:
+  exclude:
+  - os: osx
+    compiler: clang
+
 branches:
   only:
   - master
@@ -19,6 +28,14 @@ env:
 
 r_github_packages:
   - jimhester/covr
+r_binary_packages:
+  - rcpp
+  - rcpparmadillo
+  - ggplot2
+  - pbapply
+  - testthat
+  - roxygen2
+  - devtools
 
 after_success:
   - Rscript -e 'covr::codecov()'

@@ -199,7 +199,7 @@ gibbs_sampler <- function(Y, d, d_fcst = NULL, freq, prior_Pi_mean, prior_Pi_Ome
     mZ <- Y - d %*% t(matrix(psi[r,], nrow = n_vars))
     mZ <- as.matrix(mZ)
     demeaned_z0 <- Z_1 - d[1:n_lags, ] %*% t(matrix(psi[r,], nrow = n_vars))
-    Z_res <- kf_sim_smooth(mZ, Pi_r, Sigma[,,r], Lambda_, demeaned_z0, n_q, T_b)[-c(1:n_lags), ]
+    Z_res <- kf_sim_smooth(mZ, Pi_r, Sigma[,,r], Lambda_, demeaned_z0, n_q, T_b)
     Z_res <- rbind(demeaned_z0, Z_res) + d %*% t(matrix(psi[r,], nrow = n_vars))
     if (smooth_state == TRUE) {
       Z_smooth <- kf_ragged(mZ, Pi_r, Sigma[,,r], Lambda_, n_q, T_b)$Z_tT[-c(1:n_lags), ]
