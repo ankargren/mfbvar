@@ -7,17 +7,13 @@ r:
   - devel
 sudo: false
 cache: packages
-os:
-  - linux
-  - osx
-compiler:
-  - clang
-  - gcc
 
 matrix:
-  exclude:
+  include:
   - os: osx
     compiler: clang
+  - os: osx
+    compiler: gcc
 
 branches:
   only:
