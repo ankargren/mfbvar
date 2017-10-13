@@ -57,4 +57,5 @@ fi
 
 AC_SUBST([HAVE_OPENMP], ["${have_openmp}"])
 AC_SUBST([OPENMP_FLAG], ["${openmp_flag}"])
-AC_OUTPUT(src/Makevars)
+AC_CONFIG_FILES([inst/include/mfbvarConfigGenerated.h src/Makevars])
+AC_OUTPUT
