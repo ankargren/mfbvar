@@ -9,8 +9,7 @@ matrix:
   - os: osx
     compiler: clang
     r: release
-    env: SHLIB_OPENMP_CFLAGS=""
-    env: SHLIB_OPENMP_CXXFLAGS=""
+    env: SHLIB_OPENMP_CFLAGS="" SHLIB_OPENMP_CXXFLAGS=""
 branches:
   only:
   - master
