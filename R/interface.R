@@ -10,7 +10,6 @@
 #' @templateVar lambda1 TRUE
 #' @templateVar lambda2 TRUE
 #' @templateVar lambda3 TRUE
-#' @templateVar prior_nu TRUE
 #' @templateVar prior_psi_mean TRUE
 #' @templateVar prior_psi_Omega TRUE
 #' @templateVar n_lags TRUE
@@ -27,7 +26,7 @@
 #' prior_obj <- update_prior(prior_obj, n_fcst = 4)
 #'
 set_prior <- function(Y, d = NULL, d_fcst = NULL, freq, prior_Pi_AR1 = rep(0, ncol(Y)),
-                      lambda1 = 0.2, lambda2 = 1, lambda3 = 10000, prior_nu = ncol(Y) + 2,
+                      lambda1 = 0.2, lambda2 = 1, lambda3 = 10000,
                       prior_psi_mean = NULL, prior_psi_Omega = NULL, n_lags, n_fcst = 0, n_burnin, n_reps,
                       verbose = FALSE, smooth_state = FALSE, check_roots = TRUE) {
   if (!is.matrix(Y)) {
@@ -123,15 +122,6 @@ set_prior <- function(Y, d = NULL, d_fcst = NULL, freq, prior_Pi_AR1 = rep(0, nc
     warning("lambda3: Using the default ", lambda3, " as the constant's prior variance.\n", call. = FALSE)
   }
 
-  if (hasArg(prior_nu)) {
-    if (!is.vector(prior_nu) || length(prior_nu) > 1) {
-      stop("prior_nu must be a vector with a single element.")
-    }
-  } else {
-    warning(paste0("prior_nu: Using the default n_vars + 2 = ", prior_nu, " prior for prior_nu.\n"), call. = FALSE)
-  }
-
-
   if (hasArg(prior_psi_mean)) {
     if (!(is.vector(prior_psi_mean) || is.matrix(prior_psi_mean))) {
       stop("prior_psi_mean must be a vector or matrix with one row or column.")
@@ -205,7 +195,7 @@ set_prior <- function(Y, d = NULL, d_fcst = NULL, freq, prior_Pi_AR1 = rep(0, nc
   }
 
   ret <- list(Y = Y, d = d, d_fcst = d_fcst, freq = freq, prior_Pi_AR1 = prior_Pi_AR1, lambda1 = lambda1, lambda2 = lambda2, lambda3 = lambda3,
-              prior_nu = prior_nu, prior_psi_mean = prior_psi_mean, prior_psi_Omega = prior_psi_Omega, n_lags = n_lags, n_fcst = n_fcst, n_burnin = n_burnin,
+              prior_psi_mean = prior_psi_mean, prior_psi_Omega = prior_psi_Omega, n_lags = n_lags, n_fcst = n_fcst, n_burnin = n_burnin,
               n_reps = n_reps, verbose = verbose, smooth_state = smooth_state, check_roots = check_roots, intercept_flag = intercept_flag)
   class(ret) <- "mfbvar_prior"
 
@@ -274,7 +264,6 @@ summary.mfbvar_prior <- function(object, ...) {
   cat("  n_fcst:", object$n_fcst, "\n")
   cat("  n_burnin:", object$n_burnin, "\n")
   cat("  n_reps:", object$n_reps, "\n")
-  cat("  prior_nu:", ifelse(is.null(object$prior_nu), "<missing> (will rely on default)", object$prior_nu), "\n")
   cat("----------------------------\n")
   cat("Steady-state-specific elements:\n")
   cat("  d:", ifelse(is.null(object$d), "<missing>", ifelse(object$intercept_flag, "intercept", paste0(ncol(object$d), "deterministic variables"))),"\n")
@@ -374,7 +363,7 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type, ...) {
     }
 
     priors <- prior_Pi_Sigma(lambda1 = mfbvar_prior$lambda1, lambda2 = mfbvar_prior$lambda2, prior_Pi_AR1 = mfbvar_prior$prior_Pi_AR1, Y = mfbvar_prior$Y,
-                             n_lags = mfbvar_prior$n_lags, prior_nu = mfbvar_prior$prior_nu)
+                             n_lags = mfbvar_prior$n_lags, prior_nu = n_vars + 2)
     prior_Pi_mean <- priors$prior_Pi_mean
     prior_Pi_Omega <- priors$prior_Pi_Omega
     prior_S <- priors$prior_S
@@ -426,13 +415,13 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type, ...) {
     start_burnin <- Sys.time()
   }
   if (prior_type == "ss") {
-    burn_in <-  gibbs_sampler(Y = mfbvar_prior$Y, d = mfbvar_prior$d, d_fcst = NULL, freq = mfbvar_prior$freq, prior_Pi_mean = prior_Pi_mean,
-                              prior_Pi_Omega = prior_Pi_Omega, prior_S = prior_S, prior_nu = mfbvar_prior$prior_nu,
+    burn_in <-  mfbvar:::gibbs_sampler(Y = mfbvar_prior$Y, d = mfbvar_prior$d, d_fcst = NULL, freq = mfbvar_prior$freq, prior_Pi_mean = prior_Pi_mean,
+                              prior_Pi_Omega = prior_Pi_Omega, prior_S = prior_S,
                               prior_psi_mean = mfbvar_prior$prior_psi_mean, prior_psi_Omega = mfbvar_prior$prior_psi_Omega,
                               n_fcst = 0, n_reps = mfbvar_prior$n_burnin, smooth_state = FALSE, check_roots = mfbvar_prior$check_roots, verbose = mfbvar_prior$verbose)
   } else {
     burn_in <-  gibbs_sampler_minn(Y = mfbvar_prior$Y, freq = mfbvar_prior$freq, prior_Pi_AR1 = mfbvar_prior$prior_Pi_AR1,
-                                   prior_nu = mfbvar_prior$prior_nu, lambda1 = mfbvar_prior$lambda1, lambda2 = mfbvar_prior$lambda2,
+                                   lambda1 = mfbvar_prior$lambda1, lambda2 = mfbvar_prior$lambda2,
                                    lambda3 = mfbvar_prior$lambda3, n_lags = mfbvar_prior$n_lags, n_fcst = 0,
                                    n_reps = mfbvar_prior$n_burnin, smooth_state = FALSE, check_roots = FALSE,
                                    verbose = mfbvar_prior$verbose)
@@ -449,13 +438,13 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type, ...) {
 
   if (prior_type == "ss") {
     main_run <- gibbs_sampler(Y = mfbvar_prior$Y, d = mfbvar_prior$d, d_fcst = mfbvar_prior$d_fcst, freq = mfbvar_prior$freq, prior_Pi_mean = prior_Pi_mean,
-                              prior_Pi_Omega = prior_Pi_Omega, prior_S = prior_S, prior_nu = mfbvar_prior$prior_nu,
+                              prior_Pi_Omega = prior_Pi_Omega, prior_S = prior_S,
                               prior_psi_mean = mfbvar_prior$prior_psi_mean, prior_psi_Omega = mfbvar_prior$prior_psi_Omega, n_fcst = mfbvar_prior$n_fcst,
                               n_reps = mfbvar_prior$n_reps+1, init_Pi  = burn_in$Pi[,,dim(burn_in$Pi)[3]], init_Sigma = burn_in$Sigma[,,dim(burn_in$Sigma)[3]],
                               init_psi = burn_in$psi[dim(burn_in$psi)[1],], init_Z = burn_in$Z[,,dim(burn_in$Z)[3]], smooth_state = mfbvar_prior$smooth_state,
                               check_roots = mfbvar_prior$check_roots, verbose = mfbvar_prior$verbose)
   } else {
-    main_run <- gibbs_sampler_minn(Y = mfbvar_prior$Y, freq = mfbvar_prior$freq, prior_Pi_AR1 = mfbvar_prior$prior_Pi_AR1, prior_nu = mfbvar_prior$prior_nu,
+    main_run <- gibbs_sampler_minn(Y = mfbvar_prior$Y, freq = mfbvar_prior$freq, prior_Pi_AR1 = mfbvar_prior$prior_Pi_AR1,
                                    lambda1 = mfbvar_prior$lambda1, lambda2 = mfbvar_prior$lambda2, lambda3 = mfbvar_prior$lambda3,
                                    n_lags = mfbvar_prior$n_lags, n_fcst = mfbvar_prior$n_fcst, n_reps = mfbvar_prior$n_reps+1, init_Pi  = burn_in$Pi[,,dim(burn_in$Pi)[3]],
                                    init_Sigma = burn_in$Sigma[,,dim(burn_in$Sigma)[3]], init_Z = burn_in$Z[,,dim(burn_in$Z)[3]],

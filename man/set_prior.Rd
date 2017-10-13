@@ -7,9 +7,9 @@
 \usage{
 set_prior(Y, d = NULL, d_fcst = NULL, freq, prior_Pi_AR1 = rep(0,
   ncol(Y)), lambda1 = 0.2, lambda2 = 1, lambda3 = 10000,
-  prior_nu = ncol(Y) + 2, prior_psi_mean = NULL, prior_psi_Omega = NULL,
-  n_lags, n_fcst = 0, n_burnin, n_reps, verbose = FALSE,
-  smooth_state = FALSE, check_roots = TRUE)
+  prior_psi_mean = NULL, prior_psi_Omega = NULL, n_lags, n_fcst = 0,
+  n_burnin, n_reps, verbose = FALSE, smooth_state = FALSE,
+  check_roots = TRUE)
 
 update_prior(prior_obj, ...)
 }
@@ -29,8 +29,6 @@ update_prior(prior_obj, ...)
 \item{lambda2}{The lag decay.}
 
 \item{lambda3}{The tightness of the intercept prior variance.}
-
-\item{prior_nu}{The prior degrees of freedom.}
 
 \item{prior_psi_mean}{Vector of length \code{n_determ*n_vars} with the prior means of the steady-state parameters.}
 

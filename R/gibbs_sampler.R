@@ -9,7 +9,6 @@
 #' @templateVar prior_Pi_mean TRUE
 #' @templateVar prior_Pi_Omega TRUE
 #' @templateVar prior_S TRUE
-#' @templateVar prior_nu TRUE
 #' @templateVar prior_psi_mean TRUE
 #' @templateVar prior_psi_Omega TRUE
 #' @templateVar n_fcst TRUE
@@ -32,7 +31,7 @@
 #' @return
 #' An object of class mfbvar.
 
-gibbs_sampler <- function(Y, d, d_fcst = NULL, freq, prior_Pi_mean, prior_Pi_Omega, prior_S, prior_nu, prior_psi_mean, prior_psi_Omega,
+gibbs_sampler <- function(Y, d, d_fcst = NULL, freq, prior_Pi_mean, prior_Pi_Omega, prior_S, prior_psi_mean, prior_psi_Omega,
                           n_fcst = NULL, n_reps, init_Pi = NULL, init_Sigma = NULL, init_psi = NULL, init_Z = NULL, smooth_state = FALSE, check_roots = TRUE,
                           verbose = TRUE) {
 
@@ -181,7 +180,7 @@ gibbs_sampler <- function(Y, d, d_fcst = NULL, freq, prior_Pi_mean, prior_Pi_Ome
     ################################################################
     ### Pi and Sigma step
     #(Z_r1,             d,     psi_r1,                            prior_Pi_mean, inv_prior_Pi_Omega, Omega_Pi, prior_S, prior_nu, check_roots, n_vars, n_lags, n_T)
-    Pi_Sigma <- posterior_Pi_Sigma(Z_r1 = Z[,, r-1], d = d, psi_r1 = psi[r-1, , drop = FALSE], prior_Pi_mean, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_S, prior_nu, check_roots, n_vars, n_lags, n_T)
+    Pi_Sigma <- posterior_Pi_Sigma(Z_r1 = Z[,, r-1], d = d, psi_r1 = psi[r-1, , drop = FALSE], prior_Pi_mean, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_S, n_vars+2, check_roots, n_vars, n_lags, n_T)
     Pi[,,r]      <- Pi_Sigma$Pi_r
     Sigma[,,r]   <- Pi_Sigma$Sigma_r
     num_tries[r] <- Pi_Sigma$num_try
@@ -236,7 +235,7 @@ gibbs_sampler <- function(Y, d, d_fcst = NULL, freq, prior_Pi_mean, prior_Pi_Ome
   return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z, roots = NULL, num_tries = NULL,
                      Z_fcst = NULL, mdd = NULL, smoothed_Z = NULL, n_determ = n_determ,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
-                     prior_S = prior_S, prior_nu = prior_nu, post_nu = n_T + prior_nu, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
+                     prior_S = prior_S, prior_nu = n_vars+2, post_nu = n_T + n_vars+2, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
                      prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps - 1, Lambda = Lambda)
 
   if (check_roots == TRUE) {

@@ -5,7 +5,7 @@
 \title{Gibbs sampler for Mixed-Frequency BVAR}
 \usage{
 gibbs_sampler(Y, d, d_fcst = NULL, freq, prior_Pi_mean, prior_Pi_Omega,
-  prior_S, prior_nu, prior_psi_mean, prior_psi_Omega, n_fcst = NULL, n_reps,
+  prior_S, prior_psi_mean, prior_psi_Omega, n_fcst = NULL, n_reps,
   init_Pi = NULL, init_Sigma = NULL, init_psi = NULL, init_Z = NULL,
   smooth_state = FALSE, check_roots = TRUE, verbose = TRUE)
 }
@@ -23,8 +23,6 @@ gibbs_sampler(Y, d, d_fcst = NULL, freq, prior_Pi_mean, prior_Pi_Omega,
 \item{prior_Pi_Omega}{Matrix of size \code{(n_vars*n_lags)* (n_vars*n_lags)} containing the prior for (part of) the prior covariance of the dynamic coefficients.}
 
 \item{prior_S}{The prior for \eqn{\Sigma}.}
-
-\item{prior_nu}{The prior degrees of freedom.}
 
 \item{prior_psi_mean}{Vector of length \code{n_determ*n_vars} with the prior means of the steady-state parameters.}
 

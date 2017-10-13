@@ -3,12 +3,11 @@
 language: R
 sudo: false
 cache: packages
+os:
+  - linux
+  - osx
+r: release
 
-matrix:
-  include:
-  - os: osx
-    compiler: clang
-    r: release
 branches:
   only:
   - master

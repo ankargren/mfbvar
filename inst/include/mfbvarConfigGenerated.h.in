@@ -22,7 +22,6 @@
 #ifndef mfbvar__mfbvarConfigGenerated__h
 #define mfbvar__mfbvarConfigGenerated__h
 
-// from configure test for OpenMP
 @HAVE_OPENMP@
 
 #endif
