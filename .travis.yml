@@ -1,10 +1,6 @@
 # R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
 
 language: R
-r:
-  - oldrel
-  - release
-  - devel
 sudo: false
 cache: packages
 
@@ -12,8 +8,22 @@ matrix:
   include:
   - os: osx
     compiler: clang
+    r: oldrel
   - os: osx
     compiler: gcc
+    r: oldrel
+  - os: osx
+    compiler: clang
+    r: release
+  - os: osx
+    compiler: gcc
+    r: release
+  - os: osx
+    compiler: clang
+    r: devel
+  - os: osx
+    compiler: gcc
+    r: devel
 
 branches:
   only:
