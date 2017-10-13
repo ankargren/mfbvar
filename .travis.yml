@@ -8,23 +8,9 @@ matrix:
   include:
   - os: osx
     compiler: clang
-    r: oldrel
-  - os: osx
-    compiler: gcc
-    r: oldrel
-  - os: osx
-    compiler: clang
     r: release
-  - os: osx
-    compiler: gcc
-    r: release
-  - os: osx
-    compiler: clang
-    r: devel
-  - os: osx
-    compiler: gcc
-    r: devel
-
+    env: SHLIB_OPENMP_CFLAGS=""
+    env: SHLIB_OPENMP_CXXFLAGS=""
 branches:
   only:
   - master
