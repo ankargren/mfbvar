@@ -3,6 +3,6 @@
 #if defined(WIN32) || defined(_WIN32)
    #define ARMA_USE_OPENMP
 #else
-   #include <mfbvarConfigGenerated.h>
+   #include "mfbvarConfigGenerated.h"
 #endif
 #endif
