@@ -1,7 +1,7 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 
 #include <RcppArmadillo.h>
-#include "mfbvarConfig.h"
+#include "inst/include/mfbvarConfig.h"
 using namespace Rcpp;
 using namespace arma;
 
