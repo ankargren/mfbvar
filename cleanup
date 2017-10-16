@@ -1,3 +1,0 @@
-#!/bin/sh
-
-rm -f config.* src/Makevars src/config.h inst/include/mfbvarConfigGenerated.h
