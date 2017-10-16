@@ -415,7 +415,7 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type, ...) {
     start_burnin <- Sys.time()
   }
   if (prior_type == "ss") {
-    burn_in <-  mfbvar:::gibbs_sampler(Y = mfbvar_prior$Y, d = mfbvar_prior$d, d_fcst = NULL, freq = mfbvar_prior$freq, prior_Pi_mean = prior_Pi_mean,
+    burn_in <-  gibbs_sampler(Y = mfbvar_prior$Y, d = mfbvar_prior$d, d_fcst = NULL, freq = mfbvar_prior$freq, prior_Pi_mean = prior_Pi_mean,
                               prior_Pi_Omega = prior_Pi_Omega, prior_S = prior_S,
                               prior_psi_mean = mfbvar_prior$prior_psi_mean, prior_psi_Omega = mfbvar_prior$prior_psi_Omega,
                               n_fcst = 0, n_reps = mfbvar_prior$n_burnin, smooth_state = FALSE, check_roots = mfbvar_prior$check_roots, verbose = mfbvar_prior$verbose)

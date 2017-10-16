@@ -6,7 +6,10 @@ cache: packages
 os:
   - linux
   - osx
-r: release
+r:
+  - oldrel
+  - release
+  - devel
 
 branches:
   only:
