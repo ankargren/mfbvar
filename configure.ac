@@ -47,10 +47,10 @@ else
    hasOpenMP=$(echo ${allldflags} | grep -- -fopenmp)
    if test x"${hasOpenMP}" == x""; then
       AC_MSG_RESULT([missing])
-      have_openmp="-DARMA_DONT_USE_OPENMP"
+      have_openmp="#define ARMA_DONT_USE_OPENMP 1"
    else
       AC_MSG_RESULT([found])
-      have_openmp="-DARMA_USE_OPENMP"
+      have_openmp="#define ARMA_USE_OPENMP 1"
       openmp_flag='$(SHLIB_OPENMP_CXXFLAGS)'
    fi
 fi
