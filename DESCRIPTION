@@ -20,3 +20,4 @@ LinkingTo:
 Depends: R (>= 2.10)
 Suggests: testthat, covr
 RoxygenNote: 6.0.1
+SystemRequirements: C++98 
