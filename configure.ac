@@ -4,7 +4,7 @@
 ##
 ##  'Rcpp' Integration for the 'Armadillo' Templated Linear Algebra Library
 ##
-##  Copyright (C) 2016 - 2017  Dirk Eddelbuettel 
+##  Copyright (C) 2016 - 2017  Dirk Eddelbuettel
 ##
 ##  Licensed under GPL-2 or later
 
@@ -14,10 +14,10 @@ AC_PREREQ(2.61)
 ## Process this file with autoconf to produce a configure script.
 AC_INIT([mfbvar], 0.3.0.9000)
 
-## Set R_HOME, respecting an environment variable if one is set 
+## Set R_HOME, respecting an environment variable if one is set
 : ${R_HOME=$(R RHOME)}
 if test -z "${R_HOME}"; then
-    AC_MSG_ERROR([Could not determine R_HOME.])   
+    AC_MSG_ERROR([Could not determine R_HOME.])
 fi
 ## Use R to set CXX and CXXFLAGS
 CXX=$(${R_HOME}/bin/R CMD config CXX)
@@ -48,7 +48,7 @@ else
    if test x"${hasOpenMP}" == x""; then
       AC_MSG_RESULT([missing])
       have_openmp="#define ARMA_DONT_USE_OPENMP 1"
-   else   
+   else
       AC_MSG_RESULT([found])
       have_openmp="#define ARMA_USE_OPENMP 1"
       openmp_flag='$(SHLIB_OPENMP_CXXFLAGS)'
@@ -57,5 +57,5 @@ fi
 
 AC_SUBST([HAVE_OPENMP], ["${have_openmp}"])
 AC_SUBST([OPENMP_FLAG], ["${openmp_flag}"])
-AC_CONFIG_FILES([inst/include/mfbvarConfigGenerated.h src/Makevars])
+AC_CONFIG_FILES([src/mfbvarConfigGenerated.h src/Makevars])
 AC_OUTPUT
