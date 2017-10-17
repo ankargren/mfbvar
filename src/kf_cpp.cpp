@@ -1,8 +1,6 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 
 #include <RcppArmadillo.h>
-using namespace Rcpp;
-using namespace arma;
 
 #define _USE_MATH_DEFINES // for C++
 #include <cmath>
@@ -65,7 +63,7 @@ void KF::filter() {
   P.slice(0) = P_t;
 
 
-  for (uword t = 0; t < n_T; t++) {
+  for (arma::uword t = 0; t < n_T; t++) {
     obs_vars = find_finite(y.row(t));
     t_vec(0) = t;
 
@@ -110,7 +108,7 @@ void KF::smoother(arma::mat r_T) {
   arma::mat FF_inv_t;
   arma::mat r_t = r_T;
   r.row(y.n_rows-1) = r_t;
-  for (uword t = y.n_rows - 1; t >= 1; t--) {
+  for (arma::uword t = y.n_rows - 1; t >= 1; t--) {
     obs_vars = find_finite(y.row(t));
     t_vec(0) = t;
     Zt = Z.rows(obs_vars);
@@ -140,7 +138,7 @@ void KF::simulator() {
   a.row(0) = a1.t();
   P.slice(0) = P1;
 
-  for (uword t = 0; t < n_T; t++) {
+  for (arma::uword t = 0; t < n_T; t++) {
     obs_vars = find_finite(y.row(t));
     t_vec(0) = t;
 
@@ -197,12 +195,12 @@ void KF_ragged::set_ragged_pars(arma::mat Phi_, arma::mat Sigma_, arma::mat Lamb
 }
 
 void KF_ragged::compact_to_companion(arma::mat Lambda_) {
-  F_Phi = arma::mat(n_vars*(n_lags+1), n_vars*(n_lags+1), fill::zeros);
+  F_Phi = arma::mat(n_vars*(n_lags+1), n_vars*(n_lags+1), arma::fill::zeros);
   F_Phi.submat(0, 0, n_vars - 1, n_vars*n_lags-1) = Phi.cols(0, n_vars*n_lags-1);
   F_Phi.submat(n_vars, 0, n_vars*(n_lags+1)-1, n_vars*n_lags - 1) = arma::eye(n_vars*n_lags, n_vars*n_lags);
-  F_Phi_c = arma::mat(n_vars*(n_lags+1), 1, fill::zeros);
+  F_Phi_c = arma::mat(n_vars*(n_lags+1), 1, arma::fill::zeros);
   F_Phi_c.rows(0, n_vars - 1) = Phi.col(n_vars*n_lags);
-  Omega = arma::mat(n_vars*(n_lags+1), n_vars*(n_lags+1), fill::zeros);
+  Omega = arma::mat(n_vars*(n_lags+1), n_vars*(n_lags+1), arma::fill::zeros);
   Omega.submat(0, 0, n_vars-1, n_vars-1) = Sigma_chol;
   arma::mat X_mat = y.submat(T_b - n_lags - 1, 0, T_b - 1, n_vars - n_q - 1);
   X_mat = arma::trans(arma::flipud(X_mat));
@@ -222,11 +220,11 @@ void KF_ragged::compact_to_companion(arma::mat Lambda_) {
   a_Tb1 = F_Phi * a_TbTb + F_Phi_c;
   P_Tb1 = F_Phi * P_TbTb * F_Phi.t() + Omega*Omega.t();
 
-  Lambda_companion = arma::mat(n_vars, (n_vars*(n_lags+1)), fill::zeros);
+  Lambda_companion = arma::mat(n_vars, (n_vars*(n_lags+1)), arma::fill::zeros);
   Lambda_companion.submat(0, 0, n_m-1, n_m-1) = arma::eye(n_m, n_m);
 
-  for (uword i = 0; i < Lambda_.n_cols/n_q; i++) {
-    Lambda_companion(span(n_m, n_vars - 1), span(n_m + i*n_vars, (i+1)*n_vars-1)) = Lambda_.cols(i*n_q, (i+1)*(n_q)-1);
+  for (arma::uword i = 0; i < Lambda_.n_cols/n_q; i++) {
+    Lambda_companion(arma::span(n_m, n_vars - 1), arma::span(n_m + i*n_vars, (i+1)*n_vars-1)) = Lambda_.cols(i*n_q, (i+1)*(n_q)-1);
   }
 }
 
@@ -254,7 +252,7 @@ void KF_ragged::original_to_compact(arma::mat y_Tb_) {
   Tt = arma::mat(n_q*(n_lags + 1), n_q*(n_lags + 1));
   Tt.fill(0);
   Tt.submat(0, 0, n_q - 1, n_q*n_lags - 1) = Phi_qq;
-  Tt.submat(n_q, 0, n_q*(n_lags+1)-1, n_q*n_lags - 1) = eye(n_lags*n_q, n_lags*n_q);
+  Tt.submat(n_q, 0, n_q*(n_lags+1)-1, n_q*n_lags - 1) = arma::eye(n_lags*n_q, n_lags*n_q);
 
   G = arma::mat(n_vars, n_vars);
   G.fill(0);
@@ -268,39 +266,39 @@ void KF_ragged::original_to_compact(arma::mat y_Tb_) {
   X.fill(0);
   X.row(0) = reshape(trans(flipud(Z1.cols(0, n_m-1))), 1, n_lags*n_m);
   for (unsigned int i = 1; i < n_lags; i++) {
-    X.row(i).cols(0, i*n_m - 1) = reshape(trans(flipud(y_Tb(span(0, i-1), span(0, n_m - 1)))), 1, i*n_m);
-    X.row(i).cols(i*n_m, n_lags*n_m - 1) = reshape(trans(flipud(Z1(span(i, n_lags - 1), span(0, n_m - 1)))), 1, (n_lags-i)*n_m);
+    X.row(i).cols(0, i*n_m - 1) = reshape(trans(flipud(y_Tb(arma::span(0, i-1), arma::span(0, n_m - 1)))), 1, i*n_m);
+    X.row(i).cols(i*n_m, n_lags*n_m - 1) = reshape(trans(flipud(Z1(arma::span(i, n_lags - 1), arma::span(0, n_m - 1)))), 1, (n_lags-i)*n_m);
   }
   for (unsigned int i = n_lags; i < T_b - 1; i++) {
-    X.row(i) = reshape(trans(flipud(y_Tb(span(i-n_lags, i-1), span(0, n_m - 1)))), 1, n_lags*n_m);
+    X.row(i) = reshape(trans(flipud(y_Tb(arma::span(i-n_lags, i-1), arma::span(0, n_m - 1)))), 1, n_lags*n_m);
   }
 
-  c = arma::mat(T_b, n_vars, fill::zeros);
+  c = arma::mat(T_b, n_vars, arma::fill::zeros);
   c.cols(0, n_m - 1) = X * trans(Phi_mm);
-  intercept = arma::mat(1, n_vars, fill::zeros);
+  intercept = arma::mat(1, n_vars, arma::fill::zeros);
   intercept.cols(0, n_m - 1) = trans(Phi.submat(0, n_vars*n_lags, n_m - 1, n_vars*n_lags));
 
-  W = arma::mat(T_b, n_m*n_lags + 1, fill::ones);
-  W(span(0, T_b - 2), span(0, n_m*n_lags - 1)) = X.rows(1, T_b - 1);
+  W = arma::mat(T_b, n_m*n_lags + 1, arma::fill::ones);
+  W(arma::span(0, T_b - 2), arma::span(0, n_m*n_lags - 1)) = X.rows(1, T_b - 1);
   W.row(T_b-1).cols(0, n_m*n_lags - 1) = reshape(trans(flipud(y_Tb.submat(T_b-n_lags, 0, T_b-1, n_m - 1))), 1, n_lags*n_m);
-  d = arma::mat(T_b, n_q*(n_lags + 1), fill::zeros);
+  d = arma::mat(T_b, n_q*(n_lags + 1), arma::fill::zeros);
   arma::mat Beta_W = join_rows(Phi_qm, Phi.submat(n_m, n_vars*n_lags, n_vars-1, n_vars*n_lags));
   d.cols(0, n_q - 1) = W * trans(Beta_W);
 
-  arma::mat means = solve(eye(n_vars, n_vars) - Phi.cols(0, n_vars*n_lags - 1) * repmat(eye(n_vars, n_vars), n_lags, 1), Phi.col(n_vars*n_lags));
-  a1 = arma::mat(n_q*(n_lags+1), 1, fill::zeros);
+  arma::mat means = solve(arma::eye(n_vars, n_vars) - Phi.cols(0, n_vars*n_lags - 1) * arma::repmat(arma::eye(n_vars, n_vars), n_lags, 1), Phi.col(n_vars*n_lags));
+  a1 = arma::mat(n_q*(n_lags+1), 1, arma::fill::zeros);
   a1.rows(0, n_q*n_lags - 1) = reshape(trans(flipud(Z1.cols(n_m, n_vars - 1))), 1, n_lags*n_q).t();
-  arma::mat W0 = arma::mat(1, n_m*n_lags + 1, fill::ones);
+  arma::mat W0 = arma::mat(1, n_m*n_lags + 1, arma::fill::ones);
   W0.cols(0, n_m*n_lags - 1) = X.row(0);
-  arma::mat d0 = arma::mat(1, n_q*(n_lags + 1), fill::zeros);
+  arma::mat d0 = arma::mat(1, n_q*(n_lags + 1), arma::fill::zeros);
   d0.cols(0, n_q - 1) = W0 * trans(Beta_W);
   a1 = Tt * a1 + d0.t();
   P1 = H * H.t();
 }
 
 arma::mat KF_ragged::create_d(int T_end_) {
-  arma::mat d = arma::join_rows(trans(Phi.submat(0, n_vars*n_lags, n_vars - 1, n_vars*n_lags)), arma::mat(1, n_vars*n_lags, fill::zeros));
-  d = repmat(d, T_end_, 1);
+  arma::mat d = arma::join_rows(trans(Phi.submat(0, n_vars*n_lags, n_vars - 1, n_vars*n_lags)), arma::mat(1, n_vars*n_lags, arma::fill::zeros));
+  d = arma::repmat(d, T_end_, 1);
   return d;
 }
 
@@ -364,14 +362,14 @@ Rcpp::List kf_ragged(arma::mat y_, arma::mat Phi_, arma::mat Sigma_, arma::mat L
 
     kf_end.set_pars(y,                                                   // y
                     kf_obj.Lambda_companion,                             // Z
-                    arma::mat(size(y), fill::zeros),                     // c
-                    arma::mat(n_vars, n_vars*(n_lags+1), fill::zeros),   // G
+                    arma::mat(size(y), arma::fill::zeros),                     // c
+                    arma::mat(n_vars, n_vars*(n_lags+1), arma::fill::zeros),   // G
                     kf_obj.F_Phi,                                        // T
                     kf_obj.create_d(T_end),                              // d
                     kf_obj.Omega,                                        // H
                     kf_obj.a_Tb1,                                        // a1
                     kf_obj.P_Tb1,                                        // P1
-                    arma::mat(1, n_vars, fill::zeros));                  // intercept
+                    arma::mat(1, n_vars, arma::fill::zeros));                  // intercept
 
     kf_end.filter();
 
@@ -379,7 +377,7 @@ Rcpp::List kf_ragged(arma::mat y_, arma::mat Phi_, arma::mat Sigma_, arma::mat L
     a.rows(T_b, T_full - 1)    = companion_reshaper(kf_end.a,    n_m, n_q, T_end, n_lags);
     a_tt.rows(T_b, T_full - 1) = companion_reshaper(kf_end.a_tt, n_m, n_q, T_end, n_lags);
 
-    kf_end.smoother(arma::mat(1, n_vars*(n_lags + 1), fill::zeros));
+    kf_end.smoother(arma::mat(1, n_vars*(n_lags + 1), arma::fill::zeros));
     alpha_t1 = companion_reshaper(kf_end.a_tT.row(0), n_m, n_q, 1, n_lags);
     r_T = (alpha_t1 - kf_obj.a_t1) * arma::pinv(kf_obj.P_t1);
 
@@ -389,12 +387,12 @@ Rcpp::List kf_ragged(arma::mat y_, arma::mat Phi_, arma::mat Sigma_, arma::mat L
 
 
   } else {
-    kf_obj.smoother(arma::mat(1, n_q*(n_lags + 1), fill::zeros));
+    kf_obj.smoother(arma::mat(1, n_q*(n_lags + 1), arma::fill::zeros));
   }
 
   a_tT.rows(0, T_b - 1) = kf_obj.a_tT;
-  Z_tT(span(0, T_b - 1), span(0, n_m-1)) = y_Tb.cols(0, n_m - 1);
-  Z_tT(span(0, T_b - 1), span(n_m, n_vars - 1)) = kf_obj.a_tT.cols(0, n_q - 1);
+  Z_tT(arma::span(0, T_b - 1), arma::span(0, n_m-1)) = y_Tb.cols(0, n_m - 1);
+  Z_tT(arma::span(0, T_b - 1), arma::span(n_m, n_vars - 1)) = kf_obj.a_tT.cols(0, n_q - 1);
 
   return Rcpp::List::create(Rcpp::Named("a") = a,
                             Rcpp::Named("a_tt") = a_tt,
@@ -427,8 +425,8 @@ arma::mat kf_sim_smooth(arma::mat y_, arma::mat Phi_, arma::mat Sigma_, arma::ma
 
   // Draw errors
   arma::mat epsilon = arma::mat(T_full - n_lags, n_vars);
-  for (uword i = 0; i < n_vars; i++) {
-    epsilon.col(i) = as<arma::vec>(rnorm(T_full - n_lags));
+  for (arma::uword i = 0; i < n_vars; i++) {
+    epsilon.col(i) = Rcpp::as<arma::vec>(Rcpp::rnorm(T_full - n_lags));
   }
 
   epsilon = epsilon * Sigma_chol.t();
@@ -442,10 +440,10 @@ arma::mat kf_sim_smooth(arma::mat y_, arma::mat Phi_, arma::mat Sigma_, arma::ma
   arma::uvec t_vec(1);
   arma::mat Lambda_t = Lambda_.t();
   arma::uword agg_length = Lambda_t.n_rows/Lambda_t.n_cols;
-  arma::mat Z_mean = arma::mat(T_full, n_vars, fill::zeros);
+  arma::mat Z_mean = arma::mat(T_full, n_vars, arma::fill::zeros);
   y_sim.rows(0, n_lags - 1) = y_.rows(0, n_lags - 1);
 
-  for (uword t = n_lags; t < T_full; t++) {
+  for (arma::uword t = n_lags; t < T_full; t++) {
     obs_vars = find_finite(y_.row(t));
     t_vec(0) = t;
     Z_t1 = arma::vectorise(arma::fliplr(Z.rows(t-n_lags, t-1).t())).t();
@@ -457,12 +455,13 @@ arma::mat kf_sim_smooth(arma::mat y_, arma::mat Phi_, arma::mat Sigma_, arma::ma
   }
 
   arma::mat Phi_diff = Phi_;
-  Phi_diff.col(n_vars*n_lags) = arma::mat(n_vars, 1, fill::zeros);
+  Phi_diff.col(n_vars*n_lags) = arma::mat(n_vars, 1, arma::fill::zeros);
   arma::mat y_diff = y_.rows(n_lags, T_full - 1) - y_sim.rows(n_lags, T_full - 1);
-  arma::mat Z1_diff = arma::mat(arma::size(Z1_), fill::zeros);
+  arma::mat Z1_diff = arma::mat(arma::size(Z1_), arma::fill::zeros);
   Rcpp::List smooth_diff = kf_ragged(y_diff, Phi_diff, Sigma_, Lambda_, Z1_diff, n_q_, T_b_ - n_lags);
 
-  arma::mat Z_draw = Z.rows(n_lags, T_full - 1) + as<arma::mat>(smooth_diff["Z_tT"]);
+  Rcpp::NumericMatrix Z_tT = smooth_diff["Z_tT"];
+  arma::mat Z_draw = Z.rows(n_lags, T_full - 1) + Rcpp::as<arma::mat>(Z_tT);
 
   return Z_draw;
 }

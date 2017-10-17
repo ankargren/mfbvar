@@ -9,7 +9,6 @@ os:
 r:
   - oldrel
   - release
-  - devel
 
 branches:
   only:

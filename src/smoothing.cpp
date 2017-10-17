@@ -1,8 +1,6 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 
 #include <RcppArmadillo.h>
-using namespace Rcpp;
-using namespace arma;
 
 #define _USE_MATH_DEFINES // for C++
 #include <cmath>
@@ -40,11 +38,11 @@ arma::mat loglike(            arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, 
   mr.fill(0);
   arma::mat mu(n_T, n_comp);
   mu.fill(0);
-  cube IS(n_vars, n_vars, n_T);
+  arma::cube IS(n_vars, n_vars, n_T);
   IS.fill(NA_REAL);
-  cube aK(n_comp, n_vars, n_T);
+  arma::cube aK(n_comp, n_vars, n_T);
   aK.fill(NA_REAL);
-  arma::mat identity_mat(n_comp, n_comp, fill::eye);
+  arma::mat identity_mat(n_comp, n_comp, arma::fill::eye);
   arma::mat YY(n_T, n_vars);
   YY.fill(NA_REAL);
   arma::mat mhh(n_T, n_comp);
