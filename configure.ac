@@ -1,12 +1,10 @@
 ## -*- mode: autoconf; autoconf-indentation: 4; -*-
 ##
-##  RcppArmadillo configure.ac
-##
-##  'Rcpp' Integration for the 'Armadillo' Templated Linear Algebra Library
-##
-##  Copyright (C) 2016 - 2017  Dirk Eddelbuettel
-##
-##  Licensed under GPL-2 or later
+##  Copyright (C) 2016 - 2017  Dirk Eddelbuettel for
+##  the RcppArmadillo package. Licensed under GPL-2 or later
+##  This file is a subset of the configure.ac used by
+##  RcppArmadillo, adapted to the mfbvar package by
+##  Sebastian Ankargren
 
 ## require at least autoconf 2.61
 AC_PREREQ(2.61)

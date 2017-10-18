@@ -5,7 +5,7 @@
 \title{Plotting method for class \code{mfbvar_ss}}
 \usage{
 \method{plot}{mfbvar_ss}(x, plot_start = NULL, ss_level = c(0.025, 0.975),
-  pred_level = c(0.1, 0.9), ...)
+  pred_level = c(0.1, 0.9), nrow_facet = NULL, ...)
 }
 \arguments{
 \item{x}{object of class \code{mfbvar_ss}}
@@ -15,6 +15,8 @@
 \item{ss_level}{A vector with the lower and upper quantiles for the posterior steady-state intervals.}
 
 \item{pred_level}{A vector with the lower and upper quantiles for the forecast intervals.}
+
+\item{nrow_facet}{an integer giving the number of rows to use in the facet}
 
 \item{...}{Currently not in use.}
 }

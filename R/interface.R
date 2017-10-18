@@ -94,7 +94,7 @@ set_prior <- function(Y, d = NULL, d_fcst = NULL, freq, prior_Pi_AR1 = rep(0, nc
       stop("prior_Pi_AR1 must be a vector, but is now of class ", class(prior_Pi_AR1), ".")
     }
   } else {
-    warning("prior_Pi_AR1: Using 0 as prior mean for AR(1) coefficients for all variables.\n", call. = FALSE)
+    warning("prior_Pi_AR1: 0 used as prior mean for AR(1) coefficients.\n", call. = FALSE)
     prior_Pi_AR1 <- rep(0, ncol(Y))
   }
 
@@ -103,7 +103,7 @@ set_prior <- function(Y, d = NULL, d_fcst = NULL, freq, prior_Pi_AR1 = rep(0, nc
       stop("lambda1 must be a vector with a single element.")
     }
   } else {
-    warning("lambda1: Using the default ", lambda1, " as the value for the overall tightness hyperparameter.\n", call. = FALSE)
+    warning("lambda1: ", lambda1, " used as the value for the overall tightness hyperparameter.\n", call. = FALSE)
   }
 
   if (hasArg(lambda2)) {
@@ -111,7 +111,7 @@ set_prior <- function(Y, d = NULL, d_fcst = NULL, freq, prior_Pi_AR1 = rep(0, nc
       stop("lambda2 must be a vector with a single element.")
     }
   } else {
-    warning("lambda2: Using the default ", lambda2, " as the value for the lag decay hyperparameter.\n", call. = FALSE)
+    warning("lambda2: ", lambda2, " used as the value for the lag decay hyperparameter.\n", call. = FALSE)
   }
 
   if (hasArg(lambda3)) {
@@ -119,7 +119,7 @@ set_prior <- function(Y, d = NULL, d_fcst = NULL, freq, prior_Pi_AR1 = rep(0, nc
       stop("lambda3 must be a vector with a single element.")
     }
   } else {
-    warning("lambda3: Using the default ", lambda3, " as the constant's prior variance.\n", call. = FALSE)
+    warning("lambda3: ", lambda3, " used for the constant's prior variance.\n", call. = FALSE)
   }
 
   if (hasArg(prior_psi_mean)) {
@@ -167,7 +167,7 @@ set_prior <- function(Y, d = NULL, d_fcst = NULL, freq, prior_Pi_AR1 = rep(0, nc
       }
     }
   } else {
-    warning("n_fcst: Using the default ", n_fcst, " for the number of forecasts to compute.\n", call. = FALSE)
+    warning("n_fcst: ", n_fcst, " used for the number of forecasts to compute.\n", call. = FALSE)
   }
 
   if (hasArg(n_burnin)) {
@@ -319,7 +319,7 @@ update_prior <- function(prior_obj, ...)
 
 #' Mixed-frequency Bayesian VAR
 #'
-#' The main function for running the MF-SS-BVAR.
+#' The main function for estimating a mixed-frequency BVAR.
 #'
 #' @param mfbvar_prior a \code{mfbvar_prior} object
 #' @param prior_type either \code{"ss"} (steady-state prior) or \code{"minn"} (Minnesota prior)
@@ -332,6 +332,9 @@ update_prior <- function(prior_obj, ...)
 #'                        n_lags = 4, n_burnin = 20, n_reps = 20)
 #' mod_minn <- estimate_mfbvar(prior_obj, prior_type = "minn")
 #'
+#' @references
+#' Schorfheide, F., & Song, D. (2015) Real-Time Forecasting With a Mixed-Frequency VAR. \emph{Journal of Business & Economic Statistics}, 33(3), 366--380. \url{http://dx.doi.org/10.1080/07350015.2014.954707}\cr
+#' Ankargren, S., Unosson, M., & Yang, Y. (2017) A Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. Unpublished manuscript.
 estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type, ...) {
   if (hasArg(mfbvar_prior)) {
     if (class(mfbvar_prior) != "mfbvar_prior") {
@@ -554,6 +557,7 @@ print.mfbvar_minn <- function(x, ...){
 #' @param plot_start Time period (number) to start plotting from. Default is to to use \code{5*n_fcst} time periods if \code{n_fcst} exists, otherwise the entire sample.
 #' @param ss_level A vector with the lower and upper quantiles for the posterior steady-state intervals.
 #' @param pred_level A vector with the lower and upper quantiles for the forecast intervals.
+#' @param nrow_facet an integer giving the number of rows to use in the facet
 #' @param ... Currently not in use.
 #' @template man_template
 #' @examples
@@ -574,7 +578,7 @@ print.mfbvar_minn <- function(x, ...){
 #' plot(mod_ss)
 
 plot.mfbvar_ss <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
-                        pred_level = c(0.10, 0.90), ...){
+                        pred_level = c(0.10, 0.90), nrow_facet = NULL, ...){
   lower <- upper <- value <- NULL
   if (is.null(plot_start)) {
     if (x$n_fcst > 0) {
@@ -597,24 +601,32 @@ plot.mfbvar_ss <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
   names_row <- if (is.null(x$names_row)) 1:x$n_T else x$names_row
   p <- ggplot(mapping = aes(x = time))
 
+  if (x$n_fcst > 0) {
+    ss_lower  <- rbind(x$d[plot_range, , drop = FALSE], x$mfbvar_prior$d_fcst) %*% t(matrix(apply(x$psi, 2, quantile, prob = ss_level[1]), ncol = x$n_determ))
+    ss_median <- rbind(x$d[plot_range, , drop = FALSE], x$mfbvar_prior$d_fcst) %*% t(matrix(apply(x$psi, 2, quantile, prob = 0.5), ncol = x$n_determ))
+    ss_upper  <- rbind(x$d[plot_range, , drop = FALSE], x$mfbvar_prior$d_fcst) %*% t(matrix(apply(x$psi, 2, quantile, prob = ss_level[2]), ncol = x$n_determ))
+  } else {
+
+    ss_lower  <- x$d[plot_range, , drop = FALSE] %*% t(matrix(apply(x$psi, 2, quantile, prob = ss_level[1]), ncol = x$n_determ))
+    ss_median <- x$d[plot_range, , drop = FALSE] %*% t(matrix(apply(x$psi, 2, quantile, prob = 0.5), ncol = x$n_determ))
+    ss_upper  <- x$d[plot_range, , drop = FALSE] %*% t(matrix(apply(x$psi, 2, quantile, prob = ss_level[2]), ncol = x$n_determ))
+
+  }
+
   if (!is.null(x$psi)) {
-
-    ss_lower  <- x$d[plot_range, ] %*% t(matrix(apply(x$psi, 2, quantile, prob = ss_level[1]), ncol = x$n_determ))
-    ss_median <- x$d[plot_range, ] %*% t(matrix(apply(x$psi, 2, quantile, prob = 0.5), ncol = x$n_determ))
-    ss_upper  <- x$d[plot_range, ] %*% t(matrix(apply(x$psi, 2, quantile, prob = ss_level[2]), ncol = x$n_determ))
-
-    ss <- data.frame(expand.grid(time = plot_range, names_col = names_col), lower = c(ss_lower), median = c(ss_median),
+    ss <- data.frame(expand.grid(time = plot_range[1]:(plot_range[length(plot_range)]+x$n_fcst), names_col = names_col), lower = c(ss_lower), median = c(ss_median),
                      upper = c(ss_upper))
-    ss$value <- c(as.matrix(x$Y[plot_range,]))
-    ss <- na.omit(ss)
+    ss$value <- c(rbind(as.matrix(x$Y[plot_range,]), matrix(NA, nrow = x$n_fcst, ncol = x$n_vars)))
+    ss_excl <- c(rbind(!is.na(as.matrix(x$Y[plot_range,])), matrix(TRUE, nrow = x$n_fcst, ncol = x$n_vars)))
+    #ss <- na.omit(ss)
 
     p <- p +
-      geom_ribbon(data = ss, aes(ymin = lower, ymax = upper, fill = "grey90"), alpha =1) +
-      geom_line(data = ss, aes(y = value))
+      geom_ribbon(data = ss, aes(ymin = lower, ymax = upper, fill = "#bdbdbd"),  alpha =1) +
+      geom_line(data = na.omit(ss), aes(y = value))
   }
-  if (!is.null(x$n_fcst)) {
+  if (x$n_fcst > 0) {
     preds <- predict(x, pred_quantiles = c(pred_level[1], 0.5, pred_level[2]))
-    fcst <- data.frame(expand.grid(time = (x$n_T+1):(x$n_T+x$n_fcst), names_col = names_col),
+    fcst <- data.frame(expand.grid(time = (x$n_T+x$n_fcst-nrow(preds[[1]])+1):(x$n_T+x$n_fcst), names_col = x$names_col),
                        lower = c(preds[[1]]), median = c(preds[[2]]),
                        upper = c(preds[[3]]))
     last_pos <- apply(x$Y, 2, function(yy) max(which(!is.na(yy))))
@@ -625,23 +637,44 @@ plot.mfbvar_ss <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
                                      median = x$Y[last_pos[i], i],
                                      upper  = x$Y[last_pos[i], i]))
     }
+    fcst <- fcst[!duplicated(fcst[, 1:2]), ]
     p <- p + geom_ribbon(data = fcst, aes(ymin = lower, ymax = upper,
-                                          fill = "#bdbdbd"), alpha = 1) +
+                                          fill = "grey90"), linetype = "dotted", color = "black",
+                         alpha = 0.75) +
       geom_line(data = fcst, aes(y = median), linetype = "dashed") +
       labs(caption = "Note: The forecasts are for the underlying variable.")
     names_row <- c(names_row, rownames(x$Z_fcst)[-(1:x$n_lags)])
   }
 
+  if (x$n_fcst > 0) {
+    p <- p + scale_fill_manual(values = c("grey90" = "grey90", "#bdbdbd" = "#bdbdbd"),
+                               label = c("grey90" = paste0("Prediction (", 100*(pred_level[2]-pred_level[1]), "%)"),
+                               "#bdbdbd" = paste0("Steady state (", 100*(ss_level[2]-ss_level[1]), "%)"))) +
+      labs(fill = "Intervals",
+           title = "Forecasts and posterior steady state intervals",
+           y = "Value",
+           x = "Time") +
+      guides(fill = guide_legend(override.aes = list(fill = c("#bdbdbd", "grey90"),
+                                                     linetype = c("blank", "dotted"))))
+  } else {
+    p <- p + scale_fill_manual(values = c("#bdbdbd"),
+                               label = c(paste0("Steady state (", 100*(ss_level[2]-ss_level[1]), "%)"))) +
+      labs(fill = "Intervals",
+           title = "Steady state intervals",
+           y = "Value",
+           x = "Time")+
+      guides(fill = guide_legend(override.aes = list(fill = c("#bdbdbd"),
+                                                     linetype = c("blank"))))
+  }
 
 
-  p <- p + facet_wrap(~names_col, scales = "free_y") +
-    scale_fill_manual(values = c("#bdbdbd", "grey90"),
-                      label = c(paste0("Prediction (", 100*(pred_level[2]-pred_level[1]), "%)"),
-                                paste0("Steady state (", 100*(ss_level[2]-ss_level[1]), "%)"))) +
-    labs(fill = "Intervals",
-         title = "Forecasts and steady state intervals",
-         y = "Value",
-         x = "Time") +
+  if (is.null(nrow_facet)) {
+    p <- p + facet_wrap(~names_col, scales = "free_y")
+  } else {
+    p <- p + facet_wrap(~names_col, scales = "free_y", nrow = nrow_facet)
+  }
+
+  p <- p +
     theme_minimal() +
     theme(legend.position="bottom")
   breaks <- ggplot_build(p)$layout$panel_ranges[[1]]$x.major_source
@@ -658,6 +691,7 @@ plot.mfbvar_ss <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
 #' @param x object of class \code{mfbvar_minn}
 #' @param plot_start Time period (number) to start plotting from. Default is to to use \code{5*n_fcst} time periods if \code{n_fcst} exists, otherwise the entire sample.
 #' @param pred_level A vector with the lower and upper quantiles for the forecast intervals.
+#' @param nrow_facet an integer giving the number of rows to use in the facet
 #' @param ... Currently not in use.
 #' @template man_template
 #' @examples
@@ -666,7 +700,7 @@ plot.mfbvar_ss <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
 #' mod_minn <- estimate_mfbvar(prior_obj, prior_type = "minn")
 #' plot(mod_minn)
 
-plot.mfbvar_minn <- function(x, plot_start = NULL, pred_level = c(0.10, 0.90), ...){
+plot.mfbvar_minn <- function(x, plot_start = NULL, pred_level = c(0.10, 0.90), nrow_facet = NULL, ...){
   lower <- upper <- value <- NULL
   if (is.null(plot_start)) {
     if (x$n_fcst > 0) {
@@ -691,7 +725,7 @@ plot.mfbvar_minn <- function(x, plot_start = NULL, pred_level = c(0.10, 0.90), .
 
   if (x$n_fcst > 0) {
     preds <- predict(x, pred_quantiles = c(pred_level[1], 0.5, pred_level[2]))
-    fcst <- data.frame(expand.grid(time = (x$n_T+1):(x$n_T+x$n_fcst), names_col = names_col),
+    fcst <- data.frame(expand.grid(time = (x$n_T+x$n_fcst-nrow(preds[[1]])+1):(x$n_T+x$n_fcst), names_col = x$names_col),
                        lower = c(preds[[1]]), median = c(preds[[2]]),
                        upper = c(preds[[3]]))
     last_pos <- apply(x$Y, 2, function(yy) max(which(!is.na(yy))))
@@ -702,8 +736,10 @@ plot.mfbvar_minn <- function(x, plot_start = NULL, pred_level = c(0.10, 0.90), .
                                      median = x$Y[last_pos[i], i],
                                      upper  = x$Y[last_pos[i], i]))
     }
-    p <- p + geom_ribbon(data = fcst, aes(ymin = lower, ymax = upper,
-                                          fill = "#bdbdbd"), alpha = 1) +
+    fcst <- fcst[!duplicated(fcst[, 1:2]), ]
+    p <-p + geom_ribbon(data = fcst, aes(ymin = lower, ymax = upper,
+                                           fill = "grey90"), linetype = "dotted", color = "black",
+                          alpha = 0.75) +
       geom_line(data = fcst, aes(y = median), linetype = "dashed") +
       labs(caption = "Note: The forecasts are for the underlying variable.")
     names_row <- c(names_row, rownames(x$Z_fcst)[-(1:x$n_lags)])
@@ -711,8 +747,13 @@ plot.mfbvar_minn <- function(x, plot_start = NULL, pred_level = c(0.10, 0.90), .
 
 
 
-  p <- p + facet_wrap(~names_col, scales = "free_y") +
-    scale_fill_manual(values = c("#bdbdbd", "grey90"),
+  if (is.null(nrow_facet)) {
+    p <- p + facet_wrap(~names_col, scales = "free_y")
+  } else {
+    p <- p + facet_wrap(~names_col, scales = "free_y", nrow = nrow_facet)
+  }
+  p <- p  +
+    scale_fill_manual(values = c("grey90" = "grey90"),
                       label = c(paste0("Prediction (", 100*(pred_level[2]-pred_level[1]), "%)"))) +
     labs(fill = "Intervals",
          title = "Forecast intervals",
@@ -822,19 +863,28 @@ summary.mfbvar_minn <- function(object, ...) {
 #' predict(mod_minn)
 #' predict(mod_minn, pred_quantiles = 0.5, tidy = TRUE)
 predict.mfbvar <- function(object, pred_quantiles = c(0.10, 0.50, 0.90), tidy = FALSE, ...) {
-  if (is.null(object$n_fcst)) {
+  if (object$n_fcst==0) {
     stop("No forecasts exist in the provided object.")
   }
 
+  final_non_na <- min(unlist(apply(object$Y, 2, function(x) Position(is.na, x, nomatch = nrow(object$Y))))[object$mfbvar_prior$freq == "m"])
+  final_fcst <- object$n_lags- (nrow(object$Y)-final_non_na)
+  if (final_fcst >= 1) {
+    incl_fcst <- final_fcst:(object$n_lags + object$n_fcst)
+  } else {
+    incl_fcst <- 1:(object$n_lags + object$n_fcst)
+  }
   if (tidy == FALSE) {
-    ret_list <- lapply(pred_quantiles, function(xx) apply(object$Z_fcst[-(1:object$n_lags),,-1], c(1, 2), quantile, prob = xx))
+    ret_list <- lapply(pred_quantiles, function(xx) apply(object$Z_fcst[incl_fcst,,], c(1, 2), quantile, prob = xx))
     names(ret_list) <- paste0("quantile_", pred_quantiles*100)
     return(ret_list)
   } else if (tidy == TRUE) {
-    ret_list <- lapply(pred_quantiles, function(xx) apply(object$Z_fcst[-(1:object$n_lags),,-1], c(1, 2), quantile, prob = xx))
-    ret_tidy <- cbind(value = unlist(ret_list), expand.grid(fcst_date = rownames(object$Z_fcst[-(1:object$n_lags),,2]),
+    ret_list <- lapply(pred_quantiles, function(xx) apply(object$Z_fcst[incl_fcst,,], c(1, 2), quantile, prob = xx))
+    ret_tidy <- cbind(value = unlist(ret_list), expand.grid(fcst_date = rownames(object$Z_fcst[incl_fcst,,2]),
+                                                            time = NA,
                                                             variable = object$names_col,
                                                             quantile = pred_quantiles))
+    ret_tidy$time <- rep(nrow(object$Y)+object$n_fcst-max(incl_fcst)+incl_fcst, nrow(ret_tidy)/length(incl_fcst))
     return(ret_tidy)
   }
 

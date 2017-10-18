@@ -5,7 +5,7 @@
 \title{Plotting method for class \code{mfbvar_minn}}
 \usage{
 \method{plot}{mfbvar_minn}(x, plot_start = NULL, pred_level = c(0.1, 0.9),
-  ...)
+  nrow_facet = NULL, ...)
 }
 \arguments{
 \item{x}{object of class \code{mfbvar_minn}}
@@ -13,6 +13,8 @@
 \item{plot_start}{Time period (number) to start plotting from. Default is to to use \code{5*n_fcst} time periods if \code{n_fcst} exists, otherwise the entire sample.}
 
 \item{pred_level}{A vector with the lower and upper quantiles for the forecast intervals.}
+
+\item{nrow_facet}{an integer giving the number of rows to use in the facet}
 
 \item{...}{Currently not in use.}
 }

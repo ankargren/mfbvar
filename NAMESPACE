@@ -1,6 +1,5 @@
 importFrom(Rcpp, evalCpp)
 useDynLib(mfbvar, .registration = TRUE)
-import(RcppArmadillo)
 import(stats)
 importFrom("utils", "setTxtProgressBar", "txtProgressBar")
 importFrom("pbapply", "setTimerProgressBar", "timerProgressBar")

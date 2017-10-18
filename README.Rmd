@@ -9,26 +9,34 @@ output:
 
 ## Overview 
 The `mfbvar` package implements a steady-state prior and a Minnesota prior for state space-based mixed-frequency VAR models.
+
+## Installation
+The package can be installed with the help of `devtools`:
+```{r, eval = FALSE}
+devtools::install_github("ankargren/mfbvar")
+```
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 ```{r, echo = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.path = "README-"
+  fig.path = "man/figures/README-"
 )
 thm = knitr::knit_theme$get("edit-xcode")
 knitr::knit_theme$set(thm)
 ```
 
-### Prior specification
-First, obtain some data stored in the package.
+## Usage
+
+To illustrate the functionality of the package, first load some data stored in the package.
 ```{r}
 library(mfbvar)
 Y <- mf_sweden
 head(Y)
 tail(Y)
 ```
+### Prior specification
 Next, we create a minimal prior object. We must specify: 1) data, 2) the frequency of the data, 3) the number of lags, 4) the length of burn-in and main chains, respectively. This is done by calling the `set_prior()` function and giving named arguments. The resulting object is of class `mfbvar_prior` and has a basic `print` method.
 ```{r}
 prior_obj <- set_prior(Y = Y, freq = c(rep("m", 4), "q"), 
@@ -122,7 +130,7 @@ summary(mod_ss)
 ### Marginal data density estimation
 To estimate the marginal data density, there is a generic function `mdd()` for which there are methods for classes `mfbvar_ss` and `mfbvar_minn`.
 ```{r, cache = TRUE}
-mdd_minn <- mdd(mod_minn)
+mdd_minn <- mdd(mod_minn, p_trunc = 0.5)
 mdd_ss_1 <- mdd(mod_ss)
 mdd_ss_2 <- mdd(mod_ss, p_trunc = 0.5)
 

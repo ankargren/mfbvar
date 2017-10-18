@@ -6,3 +6,5 @@ man-roxygen
 README_cache
 ^\.travis\.yml$
 ^codecov\.yml$
+^cran-comments\.md$
+^/\.gitattributes$
