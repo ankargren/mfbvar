@@ -40,7 +40,7 @@ set_prior <- function(Y, d = NULL, d_fcst = NULL, freq, prior_Pi_AR1 = rep(0, nc
 #' @param prior_obj an object of class \code{mfbvar_prior}
 #' @param ... named arguments for prior attributes to update
 update_prior <- function(prior_obj, ...) {
-  if(class(prior_obj) != "mfbvar_prior") {
+  if(!inherits(prior_obj, "mfbvar_prior")) {
     stop("The object to be updated is not of class mfbvar_prior.")
   }
 
@@ -342,7 +342,7 @@ summary.mfbvar_prior <- function(object, ...) {
 #' Ankargren, S., Unosson, M., & Yang, Y. (2017) A Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. Unpublished manuscript.
 estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type, ...) {
   if (hasArg(mfbvar_prior)) {
-    if (class(mfbvar_prior) != "mfbvar_prior") {
+    if (!inherits(mfbvar_prior, "mfbvar_prior")) {
       stop("mfbvar_prior must be of class mfbvar_prior.")
     } else {
       if (length(list(...)) > 0) {
@@ -353,59 +353,38 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type, ...) {
     mfbvar_prior <- set_prior(...)
   }
 
-
   if (!(prior_type %in% c("ss", "minn"))) {
     stop("prior_type must be 'ss' or 'minn'.")
   }
 
-  n_vars <- ncol(mfbvar_prior$Y)
+  class(mfbvar_prior) <- c(class(mfbvar_prior), paste0("mfbvar_", prior_type))
 
-  if (prior_type == "ss") {
-    if (!(!is.null(mfbvar_prior$Y) && !is.null(mfbvar_prior$d) && !is.null(mfbvar_prior$prior_psi_mean) && !is.null(mfbvar_prior$prior_psi_Omega) && !is.null(mfbvar_prior$n_lags) && !is.null(mfbvar_prior$n_burnin) && !is.null(mfbvar_prior$n_reps))) {
-      test_all <- sapply(mfbvar_prior, is.null)
-      test_sub <- test_all[c("Y", "d", "prior_psi_mean", "prior_psi_Omega", "n_lags", "n_burnin", "n_reps")]
-      stop("Missing elements:", names(test_sub)[which(test_sub)])
-    }
-    if (mfbvar_prior$n_fcst > 0 && nrow(mfbvar_prior$d_fcst) != mfbvar_prior$n_fcst) {
-      stop("d_fcst has ", nrow(mfbvar_prior$d_fcst), " rows, but n_fcst is ", mfbvar_prior$n_fcst, ".")
-    }
-
-    priors <- prior_Pi_Sigma(lambda1 = mfbvar_prior$lambda1, lambda2 = mfbvar_prior$lambda2, prior_Pi_AR1 = mfbvar_prior$prior_Pi_AR1, Y = mfbvar_prior$Y,
-                             n_lags = mfbvar_prior$n_lags, prior_nu = n_vars + 2)
-    prior_Pi_mean <- priors$prior_Pi_mean
-    prior_Pi_Omega <- priors$prior_Pi_Omega
-    prior_S <- priors$prior_S
-
-    if (mfbvar_prior$n_fcst > 0) {
-      if (is.null(rownames(mfbvar_prior$d_fcst))) {
-        names_fcst <- paste0("fcst_", 1:mfbvar_prior$n_fcst)
-      } else {
-        names_fcst <- rownames(mfbvar_prior$d_fcst)
-      }
-    } else {
-      names_fcst <- NULL
-    }
-
-    if (is.null(colnames(mfbvar_prior$d))) {
-      names_determ <- paste0("d", 1:ncol(mfbvar_prior$d))
-    } else {
-      names_determ <- colnames(mfbvar_prior$d)
-    }
-
-  } else {
-    if (!(!is.null(mfbvar_prior$Y) && !is.null(mfbvar_prior$n_lags) && !is.null(mfbvar_prior$n_burnin) && !is.null(mfbvar_prior$n_reps))) {
-      test_all <- sapply(mfbvar_prior, is.null)
-      test_sub <- test_all[c("Y", "n_lags", "n_burnin", "n_reps")]
-      stop("Missing elements:", names(test_sub)[which(test_sub)])
-    }
-
-    if (mfbvar_prior$n_fcst > 0) {
-      names_fcst <- paste0("fcst_", 1:mfbvar_prior$n_fcst)
-    } else {
-      names_fcst <- NULL
-    }
+  if (mfbvar_prior$verbose) {
+    cat(paste0("############################################\n   Running the burn-in sampler with ", mfbvar_prior$n_burnin, " draws\n\n"))
+    start_burnin <- Sys.time()
   }
 
+  burn_in <- mcmc_sampler(update_prior(mfbvar_prior, n_fcst = 0, smooth_state = FALSE), n_reps = mfbvar_prior$n_burnin)
+
+  if (mfbvar_prior$verbose) {
+    end_burnin <- Sys.time()
+    time_diff <- end_burnin - start_burnin
+    cat(paste0("\n   Time elapsed for drawing ", mfbvar_prior$n_burnin, " times for burn-in: ", signif(time_diff, digits = 1), " ",
+               attr(time_diff, "units"), "\n"))
+    cat(paste0("\n   Moving on to the main chain with ",
+               mfbvar_prior$n_reps, " draws \n\n", ifelse(mfbvar_prior$n_fcst > 0, paste0("   Making forecasts ", mfbvar_prior$n_fcst, " steps ahead"), ""), "\n\n"))
+  }
+
+  main_run <- mcmc_sampler(mfbvar_prior, n_reps = mfbvar_prior$n_reps+1, init = burn_in$init)
+
+  if (mfbvar_prior$verbose) {
+    time_diff <- Sys.time() - start_burnin
+    cat(paste0("\n   Total time elapsed: ", signif(time_diff, digits = 1), " ",
+               attr(time_diff, "units"), "\n"))
+  }
+
+
+  n_vars <- ncol(mfbvar_prior$Y)
   if (is.null(rownames(mfbvar_prior$Y))) {
     names_row <- 1:nrow(mfbvar_prior$Y)
   } else {
@@ -417,60 +396,14 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type, ...) {
   } else {
     names_col <- colnames(mfbvar_prior$Y)
   }
-
-  if (mfbvar_prior$verbose) {
-    cat(paste0("############################################\n   Running the burn-in sampler with ", mfbvar_prior$n_burnin, " draws\n\n"))
-    start_burnin <- Sys.time()
-  }
-  if (prior_type == "ss") {
-    burn_in <-  gibbs_sampler(Y = mfbvar_prior$Y, d = mfbvar_prior$d, d_fcst = NULL, freq = mfbvar_prior$freq, prior_Pi_mean = prior_Pi_mean,
-                              prior_Pi_Omega = prior_Pi_Omega, prior_S = prior_S,
-                              prior_psi_mean = mfbvar_prior$prior_psi_mean, prior_psi_Omega = mfbvar_prior$prior_psi_Omega,
-                              n_fcst = 0, n_reps = mfbvar_prior$n_burnin, smooth_state = FALSE, check_roots = mfbvar_prior$check_roots, verbose = mfbvar_prior$verbose)
-  } else {
-    burn_in <-  gibbs_sampler_minn(Y = mfbvar_prior$Y, freq = mfbvar_prior$freq, prior_Pi_AR1 = mfbvar_prior$prior_Pi_AR1,
-                                   lambda1 = mfbvar_prior$lambda1, lambda2 = mfbvar_prior$lambda2,
-                                   lambda3 = mfbvar_prior$lambda3, n_lags = mfbvar_prior$n_lags, n_fcst = 0,
-                                   n_reps = mfbvar_prior$n_burnin, smooth_state = FALSE, check_roots = FALSE,
-                                   verbose = mfbvar_prior$verbose)
-  }
-
-  if (mfbvar_prior$verbose) {
-    end_burnin <- Sys.time()
-    time_diff <- end_burnin - start_burnin
-    cat(paste0("\n   Time elapsed for drawing ", mfbvar_prior$n_burnin, " times for burn-in: ", signif(time_diff, digits = 1), " ",
-               attr(time_diff, "units"), "\n"))
-    cat(paste0("\n   Moving on to the main chain with ",
-               mfbvar_prior$n_reps, " draws \n\n", ifelse(mfbvar_prior$n_fcst > 0, paste0("   Making forecasts ", mfbvar_prior$n_fcst, " steps ahead"), ""), "\n\n"))
-  }
-
-  if (prior_type == "ss") {
-    main_run <- gibbs_sampler(Y = mfbvar_prior$Y, d = mfbvar_prior$d, d_fcst = mfbvar_prior$d_fcst, freq = mfbvar_prior$freq, prior_Pi_mean = prior_Pi_mean,
-                              prior_Pi_Omega = prior_Pi_Omega, prior_S = prior_S,
-                              prior_psi_mean = mfbvar_prior$prior_psi_mean, prior_psi_Omega = mfbvar_prior$prior_psi_Omega, n_fcst = mfbvar_prior$n_fcst,
-                              n_reps = mfbvar_prior$n_reps+1, init_Pi  = burn_in$Pi[,,dim(burn_in$Pi)[3]], init_Sigma = burn_in$Sigma[,,dim(burn_in$Sigma)[3]],
-                              init_psi = burn_in$psi[dim(burn_in$psi)[1],], init_Z = burn_in$Z[,,dim(burn_in$Z)[3]], smooth_state = mfbvar_prior$smooth_state,
-                              check_roots = mfbvar_prior$check_roots, verbose = mfbvar_prior$verbose)
-  } else {
-    main_run <- gibbs_sampler_minn(Y = mfbvar_prior$Y, freq = mfbvar_prior$freq, prior_Pi_AR1 = mfbvar_prior$prior_Pi_AR1,
-                                   lambda1 = mfbvar_prior$lambda1, lambda2 = mfbvar_prior$lambda2, lambda3 = mfbvar_prior$lambda3,
-                                   n_lags = mfbvar_prior$n_lags, n_fcst = mfbvar_prior$n_fcst, n_reps = mfbvar_prior$n_reps+1, init_Pi  = burn_in$Pi[,,dim(burn_in$Pi)[3]],
-                                   init_Sigma = burn_in$Sigma[,,dim(burn_in$Sigma)[3]], init_Z = burn_in$Z[,,dim(burn_in$Z)[3]],
-                                   smooth_state = mfbvar_prior$smooth_state, check_roots = mfbvar_prior$check_roots, mfbvar_prior$verbose)
-  }
-
-
-  if (mfbvar_prior$verbose) {
-    time_diff <- Sys.time() - start_burnin
-    cat(paste0("\n   Total time elapsed: ", signif(time_diff, digits = 1), " ",
-               attr(time_diff, "units"), "\n"))
-  }
-
   if (mfbvar_prior$n_fcst > 0) {
+    names_fcst <- paste0("fcst_", 1:mfbvar_prior$n_fcst)
     main_run$Z_fcst <- main_run$Z_fcst[,,-1]
     rownames(main_run$Z_fcst)[1:main_run$n_lags] <- names_row[(main_run$n_T-main_run$n_lags+1):main_run$n_T]
     rownames(main_run$Z_fcst)[(main_run$n_lags+1):(main_run$n_fcst+main_run$n_lags)] <- names_fcst
     colnames(main_run$Z_fcst) <- names_col
+  } else {
+    names_fcst <- NULL
   }
 
 
@@ -490,6 +423,11 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type, ...) {
                                    iteration = 1:mfbvar_prior$n_reps)
 
   if (prior_type == "ss") {
+    if (is.null(colnames(mfbvar_prior$d))) {
+      names_determ <- paste0("d", 1:ncol(mfbvar_prior$d))
+    } else {
+      names_determ <- colnames(mfbvar_prior$d)
+    }
     main_run$names_determ <- names_determ
     n_determ <- dim(mfbvar_prior$d)[2]
     main_run$psi <- main_run$psi[-1, ]
