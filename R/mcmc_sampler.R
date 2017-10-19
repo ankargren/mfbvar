@@ -32,7 +32,7 @@ mcmc_sampler.mfbvar_ss <- function(x, ...) {
   if (!(!is.null(x$Y) && !is.null(x$d) && !is.null(x$prior_psi_mean) && !is.null(x$prior_psi_Omega) && !is.null(x$n_lags) && !is.null(x$n_burnin) && !is.null(x$n_reps))) {
     test_all <- sapply(x, is.null)
     test_sub <- test_all[c("Y", "d", "prior_psi_mean", "prior_psi_Omega", "n_lags", "n_burnin", "n_reps")]
-    stop("Missing elements:", names(test_sub)[which(test_sub)])
+    stop("Missing elements: ", paste(names(test_sub)[which(test_sub)], collapse = " "))
   }
   if (x$n_fcst > 0 && nrow(x$d_fcst) != x$n_fcst) {
     stop("d_fcst has ", nrow(x$d_fcst), " rows, but n_fcst is ", x$n_fcst, ".")
@@ -289,7 +289,7 @@ mcmc_sampler.mfbvar_minn <- function(x, ...){
   if (!(!is.null(x$Y) && !is.null(x$n_lags) && !is.null(x$n_burnin) && !is.null(x$n_reps))) {
     test_all <- sapply(x, is.null)
     test_sub <- test_all[c("Y", "n_lags", "n_burnin", "n_reps")]
-    stop("Missing elements:", names(test_sub)[which(test_sub)])
+    stop("Missing elements: ", paste(names(test_sub)[which(test_sub)], collapse = " "))
   }
 
   Y <- x$Y
@@ -569,7 +569,8 @@ mcmc_sampler.mfbvar_minn <- function(x, ...){
     gam1 <- sum(lgamma(0.5 * (n_tot - n_XX + 1 - 1:n_vars)))
 
     lnpY1[r] <- - n_vars * 0.5 * determinant(XXt.XX, logarithm = TRUE)$modulus -
-      (n_tot - n_XX)*0.5*determinant(S1, logarithm = TRUE)$modulus + n_vars * (n_vars - 1) * 0.25*log(pi) + gam1
+      (n_tot - n_XX)*0.5*determinant(S1, logarithm = TRUE)$modulus + n_vars * (n_vars - 1) * 0.25*log(pi) + gam1 -
+      0.5 * n_vars * n_T * log(pi)
 
     Pi_r <- Pi[,,r]
     const_r <- Pi_r[, ncol(Pi_r)]

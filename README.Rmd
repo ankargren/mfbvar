@@ -25,6 +25,7 @@ knitr::opts_chunk$set(
 )
 thm = knitr::knit_theme$get("edit-xcode")
 knitr::knit_theme$set(thm)
+set.seed(100)
 ```
 
 ## Usage
@@ -130,7 +131,7 @@ summary(mod_ss)
 ### Marginal data density estimation
 To estimate the marginal data density, there is a generic function `mdd()` for which there are methods for classes `mfbvar_ss` and `mfbvar_minn`.
 ```{r, cache = TRUE}
-mdd_minn <- mdd(mod_minn, p_trunc = 0.5)
+mdd_minn <- mdd(mod_minn, p_trunc = 0.5) 
 mdd_ss_1 <- mdd(mod_ss)
 mdd_ss_2 <- mdd(mod_ss, p_trunc = 0.5)
 

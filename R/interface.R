@@ -76,6 +76,8 @@ check_prior <- function(prior_obj) {
     if (is.atomic(prior_obj$d) && length(prior_obj$d) == 1) {
       intercept_flag <- TRUE
       prior_obj$d <- matrix(1, nrow = nrow(prior_obj$Y), 1)
+    } else if (all(prior_obj$d == 1)) {
+      intercept_flag <- TRUE
     }
 
     prior_obj$intercept_flag <- intercept_flag
@@ -754,7 +756,6 @@ summary.mfbvar_ss <- function(object, ...) {
   cat("\n\nPsi:\n")
   print(post_psi)
   ret_list <- list(post_Pi = post_Pi, post_Sigma = post_Sigma, post_Psi = post_psi)
-  return(ret_list)
 }
 
 #' Summary method for class \code{mfbvar_minn}
@@ -788,7 +789,6 @@ summary.mfbvar_minn <- function(object, ...) {
   cat("\n\nIntercept:\n")
   print(post_psi)
   ret_list <- list(post_Pi = post_Pi, post_Sigma = post_Sigma, post_Psi = post_psi)
-  return(ret_list)
 }
 
 #' Predict method for class \code{mfbvar}
