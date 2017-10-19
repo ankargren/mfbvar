@@ -87,6 +87,6 @@ test_that("Prior checks correct", {
   expect_warning(prior_obj <- set_prior(Y = Y, freq = c(rep("m", 4), "q"),
                                         n_lags = 4, n_burnin = 100, n_reps = 1000))
   prior_obj <- update_prior(prior_obj, d = "intercept", Y = Y[1:100, ], n_fcst = 4)
-  expect_that(prior_obj$d_fcst, "matrix")
-  expect_that(prior_obj$d, "matrix")
+  expect_is(prior_obj$d_fcst, "matrix")
+  expect_is(prior_obj$d, "matrix")
 })

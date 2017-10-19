@@ -29,169 +29,217 @@ set_prior <- function(Y, d = NULL, d_fcst = NULL, freq, prior_Pi_AR1 = rep(0, nc
                       lambda1 = 0.2, lambda2 = 1, lambda3 = 10000,
                       prior_psi_mean = NULL, prior_psi_Omega = NULL, n_lags, n_fcst = 0, n_burnin, n_reps,
                       verbose = FALSE, smooth_state = FALSE, check_roots = TRUE) {
-  if (!is.matrix(Y)) {
-    if (!is.data.frame(Y)) {
-      stop(paste0("Y is of class ", class(Y), ", but must be matrix or data frame."))
+  prior_call <- mget(names(formals()),sys.frame(sys.nframe()))
+  prior_call$supplied_args <- names(as.list(match.call()))[-1]
+  ret <- check_prior(prior_call)
+  class(ret) <- "mfbvar_prior"
+  return(ret)
+}
+#' @rdname set_prior
+#'
+#' @param prior_obj an object of class \code{mfbvar_prior}
+#' @param ... named arguments for prior attributes to update
+update_prior <- function(prior_obj, ...) {
+  if(class(prior_obj) != "mfbvar_prior") {
+    stop("The object to be updated is not of class mfbvar_prior.")
+  }
+
+  tmp <- list(...)
+  nam <- names(tmp)
+  for(iter in 1:length(tmp)) {
+    eval(parse(text=paste0("prior_obj$",nam[iter]," = tmp[[iter]]")))
+  }
+  prior_obj$supplied_args <- union(prior_obj$supplied_args, names(as.list(match.call()))[-1])
+  prior_obj <- check_prior(prior_obj)
+
+  return(prior_obj)
+}
+
+
+#' @rdname set_prior
+check_prior <- function(prior_obj) {
+  if (!is.matrix(prior_obj$Y)) {
+    if (!is.data.frame(prior_obj$Y)) {
+      stop(paste0("Y is of class ", class(prior_obj$Y), ", but must be matrix or data frame."))
     } else {
-      Y <- as.matrix(Y)
+      prior_obj$Y <- as.matrix(prior_obj$Y)
     }
+  }
+
+  if (nrow(prior_obj$Y) > max(unlist(apply(prior_obj$Y, 2, function(x) Position(is.na, x, nomatch = nrow(prior_obj$Y)))))) {
+    stop("Y: remove final rows containing only NAs.")
   }
 
   intercept_flag <- FALSE
-  if (hasArg(d)) {
-    if (is.vector(d) && length(d) == 1 && d == "intercept") {
+
+  if ("d" %in% prior_obj$supplied_args) {
+    if (is.atomic(prior_obj$d) && length(prior_obj$d) == 1) {
       intercept_flag <- TRUE
-      d <- matrix(1, nrow = nrow(Y), 1)
-    }
-    if (!is.matrix(d)) {
-      stop("d is of class", class(d), ", but must be a matrix.")
+      prior_obj$d <- matrix(1, nrow = nrow(prior_obj$Y), 1)
     }
 
-    if (nrow(Y) != nrow(d)) {
-      stop("Y has ", nrow(Y), "rows and d ", nrow(d), "rows, but they must be equal.")
-    }
+    prior_obj$intercept_flag <- intercept_flag
 
     if (!intercept_flag) {
-      if (hasArg(d_fcst)) {
-        if (!is.matrix(d_fcst)) {
-          stop("d is of class", class(d), ", but must be a matrix.")
+      if ("d_fcst" %in% prior_obj$supplied_args) {
+        if (!is.matrix(prior_obj$d_fcst)) {
+          stop("d_fcst is of class", class(prior_obj$d_fcst), ", but must be a matrix.")
         }
 
-        if (ncol(d) != ncol(d_fcst)) {
-          stop("d has", ncol(d), " columns and d_fcst", ncol(d_fcst), ".")
+        if (ncol(prior_obj$d) != ncol(prior_obj$d_fcst)) {
+          stop("d has", ncol(prior_obj$d), " columns and d_fcst", ncol(prior_obj$d_fcst), ".")
         }
       }
     }
 
-  }
+    if (nrow(prior_obj$Y) != nrow(prior_obj$d)) {
+      stop("Y has ", nrow(prior_obj$Y), "rows and d ", nrow(prior_obj$d), "rows, but they must be equal.")
+    }
 
-  if (hasArg(freq)) {
-    if (!(is.atomic(freq) && is.character(freq))) {
-      stop("freq is of class ", class(freq), ", but it must be a character vector.")
-    } else if (!all(freq %in% c("m", "q"))) {
-      stop("Elements of freq must be 'm' or 'q'.")
-    } else if (length(freq) != ncol(Y)) {
-      stop("The length of freq is ", length(freq), ", but Y has ", ncol(Y), " columns.")
+    if (!is.matrix(prior_obj$d)) {
+      stop("d is of class", class(prior_obj$d), ", but must be a matrix.")
     }
   }
 
 
-  if (hasArg(prior_Pi_AR1)) {
-    if (is.vector(prior_Pi_AR1)) {
-      if (length(prior_Pi_AR1) == 1) {
-        warning("prior_Pi_AR1: Recycling ", prior_Pi_AR1, " to use as prior mean for AR(1) coefficients for all variables.\n", call. = FALSE)
-        prior_Pi_AR1 <- rep(prior_Pi_AR1, ncol(Y))
+  if ("freq" %in% prior_obj$supplied_args) {
+    if (!(is.atomic(prior_obj$freq) && is.character(prior_obj$freq))) {
+      stop("freq is of class ", class(prior_obj$freq), ", but it must be a character vector.")
+    } else if (!all(prior_obj$freq %in% c("m", "q"))) {
+      stop("Elements of freq must be 'm' or 'q'.")
+    } else if (length(prior_obj$freq) != ncol(prior_obj$Y)) {
+      stop("The length of freq is ", length(prior_obj$freq), ", but Y has ", ncol(prior_obj$Y), " columns.")
+    }
+  } else {
+    stop("freq: must be supplied.")
+  }
+
+  if (min(unlist(apply(prior_obj$Y[, prior_obj$freq == "m", drop = FALSE], 2, function(x) Position(is.na, x, nomatch = 9999999999)))) == 1) {
+    stop("Y: monthly variables are NA at the beginning of the sample.")
+  }
+
+  if ("prior_Pi_AR1" %in% prior_obj$supplied_args) {
+    if (is.atomic(prior_obj$prior_Pi_AR1)) {
+      if (length(prior_obj$prior_Pi_AR1) == 1) {
+        warning("prior_Pi_AR1: Recycling ", prior_obj$prior_Pi_AR1, " to use as prior mean for AR(1) coefficients for all variables.\n", call. = FALSE)
+        prior_obj$prior_Pi_AR1 <- rep(prior_obj$prior_Pi_AR1, ncol(prior_obj$Y))
       }
     } else {
-      stop("prior_Pi_AR1 must be a vector, but is now of class ", class(prior_Pi_AR1), ".")
+      stop("prior_Pi_AR1 must be a vector, but is now of class ", class(prior_obj$prior_Pi_AR1), ".")
     }
   } else {
     warning("prior_Pi_AR1: 0 used as prior mean for AR(1) coefficients.\n", call. = FALSE)
-    prior_Pi_AR1 <- rep(0, ncol(Y))
+    prior_obj$prior_Pi_AR1 <- rep(0, ncol(prior_obj$Y))
+    prior_obj$supplied_args <- c(prior_obj$supplied_args, "prior_Pi_AR1")
   }
 
-  if (hasArg(lambda1)) {
-    if (!is.vector(lambda1) || length(lambda1) > 1) {
+
+  if ("lambda1" %in% prior_obj$supplied_args) {
+    if (!is.atomic(prior_obj$lambda1) || length(prior_obj$lambda1) > 1) {
       stop("lambda1 must be a vector with a single element.")
     }
   } else {
-    warning("lambda1: ", lambda1, " used as the value for the overall tightness hyperparameter.\n", call. = FALSE)
+    warning("lambda1: ", prior_obj$lambda1, " used as the value for the overall tightness hyperparameter.\n", call. = FALSE)
+    prior_obj$supplied_args <- c(prior_obj$supplied_args, "lambda1")
   }
 
-  if (hasArg(lambda2)) {
-    if (!is.vector(lambda2) || length(lambda2) > 1) {
+  if ("lambda2" %in% prior_obj$supplied_args) {
+    if (!is.atomic(prior_obj$lambda2) || length(prior_obj$lambda2) > 1) {
       stop("lambda2 must be a vector with a single element.")
     }
   } else {
-    warning("lambda2: ", lambda2, " used as the value for the lag decay hyperparameter.\n", call. = FALSE)
+    warning("lambda2: ", prior_obj$lambda2, " used as the value for the lag decay hyperparameter.\n", call. = FALSE)
+    prior_obj$supplied_args <- c(prior_obj$supplied_args, "lambda2")
   }
 
-  if (hasArg(lambda3)) {
-    if (!is.vector(lambda3) || length(lambda3) > 1) {
+  if ("lambda3" %in% prior_obj$supplied_args) {
+    if (!is.atomic(prior_obj$lambda3) || length(prior_obj$lambda3) > 1) {
       stop("lambda3 must be a vector with a single element.")
     }
   } else {
-    warning("lambda3: ", lambda3, " used for the constant's prior variance.\n", call. = FALSE)
+    warning("lambda3: ", prior_obj$lambda3, " used for the constant's prior variance.\n", call. = FALSE)
+    prior_obj$supplied_args <- c(prior_obj$supplied_args, "lambda3")
   }
 
-  if (hasArg(prior_psi_mean)) {
-    if (!(is.vector(prior_psi_mean) || is.matrix(prior_psi_mean))) {
+
+  if ("prior_psi_mean" %in% prior_obj$supplied_args) {
+    if (!(is.atomic(prior_obj$prior_psi_mean) || is.matrix(prior_obj$prior_psi_mean))) {
       stop("prior_psi_mean must be a vector or matrix with one row or column.")
     }
-    if (is.vector(prior_psi_mean)) {
-      if (length(prior_psi_mean) != ncol(Y)) {
-        stop("prior_psi_mean has ", length(prior_psi_mean), " elements, but there are ", ncol(Y), " variables in Y.")
+    if (is.atomic(prior_obj$prior_psi_mean)) {
+      if (length(prior_obj$prior_psi_mean) != ncol(prior_obj$Y)) {
+        stop("prior_psi_mean has ", length(prior_obj$prior_psi_mean), " elements, but there are ", ncol(prior_obj$Y), " variables in Y.")
       }
     }
-    if (is.matrix(prior_psi_mean)) {
-      if (!any(dim(prior_psi_mean) == 1)) {
+    if (is.matrix(prior_obj$prior_psi_mean)) {
+      if (!any(dim(prior_obj$prior_psi_mean) == 1)) {
         stop("prior_psi_mean must be a vector or matrix with one row or column.")
       } else {
-        prior_psi_mean <- c(prior_psi_mean)
+        prior_obj$prior_psi_mean <- c(prior_obj$prior_psi_mean)
       }
     }
   }
 
-  if (hasArg(prior_psi_Omega)) {
-    if (!is.matrix(prior_psi_Omega)) {
+
+  if ("prior_psi_Omega" %in% prior_obj$supplied_args) {
+    if (!is.matrix(prior_obj$prior_psi_Omega)) {
       stop("prior_psi_Omega must be a matrix.")
     } else {
-      if (dim(prior_psi_Omega)[1] != dim(prior_psi_Omega)[2]) {
+      if (dim(prior_obj$prior_psi_Omega)[1] != dim(prior_obj$prior_psi_Omega)[2]) {
         stop("prior_psi_Omega must be a positive-definite symmetric matrix.")
       }
     }
   }
 
-  if (hasArg(n_lags)) {
-    if (!is.vector(n_lags) || length(n_lags) > 1) {
+
+  if ("n_lags" %in% prior_obj$supplied_args) {
+    if (!is.atomic(prior_obj$n_lags) || length(prior_obj$n_lags) > 1) {
       stop("n_lags must be a vector with a single element.")
     }
   } else {
     stop("n_lags: No lag length specified.\n")
   }
 
-  if (hasArg(n_fcst)) {
-    if (!is.vector(n_fcst) || length(n_fcst) > 1) {
+  if ("n_fcst" %in% prior_obj$supplied_args) {
+    if (!is.atomic(prior_obj$n_fcst) || length(prior_obj$n_fcst) > 1) {
       stop("n_fcst must be a vector with a single element.")
     } else {
       if (intercept_flag) {
-        d_fcst <- matrix(1, nrow = n_fcst, 1)
+        prior_obj$d_fcst <- matrix(1, nrow = prior_obj$n_fcst, 1)
       }
     }
   } else {
-    warning("n_fcst: ", n_fcst, " used for the number of forecasts to compute.\n", call. = FALSE)
+    warning("n_fcst: ", prior_obj$n_fcst, " used for the number of forecasts to compute.\n", call. = FALSE)
+    prior_obj$supplied_args <- c(prior_obj$supplied_args, "n_fcst")
   }
 
-  if (hasArg(n_burnin)) {
-    if (!is.vector(n_burnin) || length(n_burnin) > 1) {
+
+
+  if ("n_burnin" %in% prior_obj$supplied_args) {
+    if (!is.atomic(prior_obj$n_burnin) || length(prior_obj$n_burnin) > 1) {
       stop("n_burnin must be a vector with a single element.")
     }
   } else {
     stop("n_burnin: Number of burn-in draws to use not specified.\n")
   }
 
-  if (hasArg(n_reps)) {
-    if (!is.vector(n_reps) || length(n_reps) > 1) {
+  if ("n_reps" %in% prior_obj$supplied_args) {
+    if (!is.atomic(prior_obj$n_reps) || length(prior_obj$n_reps) > 1) {
       stop("n_reps must be a vector with a single element.")
     }
   } else {
     stop("n_reps: Number of draws to use in main chain not specified.\n")
   }
 
-  if (!is.logical(smooth_state)) {
+  if (!is.logical(prior_obj$smooth_state)) {
     stop("smooth_state: must be logical.\n")
   }
 
-  if (!is.logical(check_roots)) {
+  if (!is.logical(prior_obj$check_roots)) {
     stop("check_roots: must be logical.\n")
   }
 
-  ret <- list(Y = Y, d = d, d_fcst = d_fcst, freq = freq, prior_Pi_AR1 = prior_Pi_AR1, lambda1 = lambda1, lambda2 = lambda2, lambda3 = lambda3,
-              prior_psi_mean = prior_psi_mean, prior_psi_Omega = prior_psi_Omega, n_lags = n_lags, n_fcst = n_fcst, n_burnin = n_burnin,
-              n_reps = n_reps, verbose = verbose, smooth_state = smooth_state, check_roots = check_roots, intercept_flag = intercept_flag)
-  class(ret) <- "mfbvar_prior"
-
-  return(ret)
+  return(prior_obj)
 }
 
 #' Print method for mfbvar_prior
@@ -273,41 +321,6 @@ summary.mfbvar_prior <- function(object, ...) {
 
 }
 
-#' @rdname set_prior
-#'
-#' @param prior_obj an object of class \code{mfbvar_prior}
-#' @param ... named arguments for prior attributes to update
-update_prior <- function(prior_obj, ...)
-{
-  if(class(prior_obj) != "mfbvar_prior") {
-    stop("The object to be updated is not of class mfbvar_prior.")
-  }
-
-  tmp <- list(...)
-  nam <- names(tmp)
-  for(iter in 1:length(tmp)) eval(parse(text=paste0("prior_obj$",nam[iter]," = tmp[[iter]]")))
-
-  if ("d" %in% nam) {
-    if (!is.vector(tmp$d) || length(tmp$d) > 1 || tmp$d != "intercept") {
-      prior_obj$intercept_flag <- FALSE
-    } else {
-      prior_obj$intercept_flag <- TRUE
-      prior_obj$d <- matrix(1, nrow(prior_obj$Y), 1)
-    }
-  }
-
-  if ("Y" %in% nam) {
-    if (prior_obj$intercept_flag) {
-      prior_obj$d <- matrix(1, nrow(prior_obj$Y), 1)
-    }
-  }
-
-  if (prior_obj$intercept_flag && prior_obj$n_fcst > 0) {
-    prior_obj$d_fcst <- matrix(1, prior_obj$n_fcst, 1)
-  }
-
-  return(prior_obj)
-}
 
 #' Mixed-frequency Bayesian VAR
 #'
@@ -338,14 +351,6 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type, ...) {
     }
   } else {
     mfbvar_prior <- set_prior(...)
-  }
-
-  if (nrow(mfbvar_prior$Y) > max(unlist(apply(mfbvar_prior$Y, 2, function(x) Position(is.na, x, nomatch = nrow(mfbvar_prior$Y)))))) {
-    stop("Y: remove final rows containing only NAs.")
-  }
-
-  if (min(unlist(apply(mfbvar_prior$Y[, mfbvar_prior$freq == "m", drop = FALSE], 2, function(x) Position(is.na, x, nomatch = 9999999999)))) == 1) {
-    stop("Y: monthly variables are NA at the beginning of the sample.")
   }
 
 
@@ -811,6 +816,7 @@ summary.mfbvar_ss <- function(object, ...) {
   cat("\n\nPsi:\n")
   print(post_psi)
   ret_list <- list(post_Pi = post_Pi, post_Sigma = post_Sigma, post_Psi = post_psi)
+  return(ret_list)
 }
 
 #' Summary method for class \code{mfbvar_minn}
@@ -844,6 +850,7 @@ summary.mfbvar_minn <- function(object, ...) {
   cat("\n\nIntercept:\n")
   print(post_psi)
   ret_list <- list(post_Pi = post_Pi, post_Sigma = post_Sigma, post_Psi = post_psi)
+  return(ret_list)
 }
 
 #' Predict method for class \code{mfbvar}

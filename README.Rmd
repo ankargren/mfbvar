@@ -32,7 +32,7 @@ knitr::knit_theme$set(thm)
 To illustrate the functionality of the package, first load some data stored in the package.
 ```{r}
 library(mfbvar)
-Y <- mf_sweden
+Y <- mfbvar::mf_sweden
 head(Y)
 tail(Y)
 ```

@@ -26,7 +26,7 @@ To illustrate the functionality of the package, first load some data stored in t
 
 ``` r
 library(mfbvar)
-Y <- mf_sweden
+Y <- mfbvar::mf_sweden
 head(Y)
 #>            unemp        infl         ip         eti       gdp
 #> 1996-08-31   9.9 -0.44997116  0.5941788  0.19536978        NA

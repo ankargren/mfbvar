@@ -3,6 +3,7 @@
 \name{set_prior}
 \alias{set_prior}
 \alias{update_prior}
+\alias{check_prior}
 \title{Set priors for an mfbvar model}
 \usage{
 set_prior(Y, d = NULL, d_fcst = NULL, freq, prior_Pi_AR1 = rep(0,
@@ -12,6 +13,8 @@ set_prior(Y, d = NULL, d_fcst = NULL, freq, prior_Pi_AR1 = rep(0,
   check_roots = TRUE)
 
 update_prior(prior_obj, ...)
+
+check_prior(prior_obj)
 }
 \arguments{
 \item{Y}{The data matrix of size \code{(n_T + n_lags) * n_vars} with \code{NA} representing missingness. Must correspond well to the specification of \code{M_Lambda}.}
