@@ -37,14 +37,6 @@ set_prior <- function(Y, d = NULL, d_fcst = NULL, freq, prior_Pi_AR1 = rep(0, nc
     }
   }
 
-  if (nrow(Y) > max(unlist(apply(Y, 2, function(x) Position(is.na, x, nomatch = nrow(Y)))))) {
-    stop("Y: remove final rows containing only NAs.")
-  }
-
-  if (min(unlist(apply(Y[, freq == "m", drop = FALSE], 2, function(x) Position(is.na, x, nomatch = 9999999999)))) == 1) {
-    stop("Y: monthly variables are NA at the beginning of the sample.")
-  }
-
   intercept_flag <- FALSE
   if (hasArg(d)) {
     if (is.vector(d) && length(d) == 1 && d == "intercept") {
@@ -74,7 +66,7 @@ set_prior <- function(Y, d = NULL, d_fcst = NULL, freq, prior_Pi_AR1 = rep(0, nc
   }
 
   if (hasArg(freq)) {
-    if (!is.vector(freq)) {
+    if (!(is.atomic(freq) && is.character(freq))) {
       stop("freq is of class ", class(freq), ", but it must be a character vector.")
     } else if (!all(freq %in% c("m", "q"))) {
       stop("Elements of freq must be 'm' or 'q'.")
@@ -346,6 +338,14 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type, ...) {
     }
   } else {
     mfbvar_prior <- set_prior(...)
+  }
+
+  if (nrow(mfbvar_prior$Y) > max(unlist(apply(mfbvar_prior$Y, 2, function(x) Position(is.na, x, nomatch = nrow(mfbvar_prior$Y)))))) {
+    stop("Y: remove final rows containing only NAs.")
+  }
+
+  if (min(unlist(apply(mfbvar_prior$Y[, mfbvar_prior$freq == "m", drop = FALSE], 2, function(x) Position(is.na, x, nomatch = 9999999999)))) == 1) {
+    stop("Y: monthly variables are NA at the beginning of the sample.")
   }
 
 

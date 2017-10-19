@@ -56,3 +56,37 @@ test_that("Output correct", {
   expect_equal_to_reference(mdd_ss1, "mdd_ss1.rds")
   expect_equal_to_reference(mdd_ss2, "mdd_ss2.rds")
 })
+context("Prior checks")
+test_that("Prior checks correct", {
+  set.seed(10237)
+  Y <- mfbvar::mf_sweden
+
+  # If Y is not matrix/df
+  expect_error(prior_obj <- set_prior(Y = "test", freq = c(rep("m", 4), "q"),
+                                        n_lags = 4, n_burnin = 100, n_reps = 1000))
+  # Still a matrix
+  expect_warning(prior_obj <- set_prior(Y = as.ts(Y), freq = c(rep("m", 4), "q"),
+                                      n_lags = 4, n_burnin = 100, n_reps = 1000))
+  # Including d
+  expect_warning(prior_obj <- set_prior(Y = Y, d = "intercept", freq = c(rep("m", 4), "q"),
+                                      n_lags = 4, n_burnin = 100, n_reps = 1000))
+  expect_warning(prior_obj <- set_prior(Y = Y, d = matrix(1, nrow = nrow(Y), 1), freq = c(rep("m", 4), "q"),
+                                        n_lags = 4, n_burnin = 100, n_reps = 1000))
+  expect_warning(prior_obj <- set_prior(Y = Y, d = cbind(1, 1:nrow(Y)), freq = c(rep("m", 4), "q"),
+                                        n_lags = 4, n_burnin = 100, n_reps = 1000))
+
+  # freq
+  expect_error(prior_obj <- set_prior(Y = Y, freq = c(rep("m", 4), "s"),
+                                      n_lags = 4, n_burnin = 100, n_reps = 1000))
+  expect_error(prior_obj <- set_prior(Y = Y, freq = c(rep("m", 4)),
+                                      n_lags = 4, n_burnin = 100, n_reps = 1000))
+  expect_error(prior_obj <- set_prior(Y = Y, freq = list(c(rep("m", 4), "s")),
+                                      n_lags = 4, n_burnin = 100, n_reps = 1000))
+
+  # Using update
+  expect_warning(prior_obj <- set_prior(Y = Y, freq = c(rep("m", 4), "q"),
+                                        n_lags = 4, n_burnin = 100, n_reps = 1000))
+  prior_obj <- update_prior(prior_obj, d = "intercept", Y = Y[1:100, ], n_fcst = 4)
+  expect_that(prior_obj$d_fcst, "matrix")
+  expect_that(prior_obj$d, "matrix")
+})
