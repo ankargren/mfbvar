@@ -14,9 +14,6 @@ branches:
   only:
   - master
 
-env:
-  - NOT_CRAN=true
-
 r_github_packages:
   - jimhester/covr
 r_binary_packages:
