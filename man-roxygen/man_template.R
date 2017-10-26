@@ -6,7 +6,7 @@
 #' <%=ifelse(exists("d"), "@param d The matrix of size \\code{(n_T + n_lags) * n_determ} of deterministic terms.", "") %>
 #' <%=ifelse(exists("D_mat"), "@param D_mat The \\code{D} matrix (from \\code{\\link{build_DD}}).", "") %>
 #' <%=ifelse(exists("d_fcst"), "@param d_fcst The deterministic terms for the forecasting period.", "") %>
-#' <%=ifelse(exists("freq"), "@param freq Character vector with elements 'm' (monthly) or 'q' (quarterly) for sampling frequency.", "") %>
+#' <%=ifelse(exists("freq"), "@param freq Character vector with elements 'm' (monthly) or 'q' (quarterly) for sampling frequency. Monthly variables must precede all quarterly variables.", "") %>
 #' <%=ifelse(exists("h0"), "@param h0 The initial state (\\code{(n_vars*n_lags)*1}).", "") %>
 #' <%=ifelse(exists("Lambda"), "@param Lambda The Lambda matrix (size \\code{n_vars* (n_vars*n_lags)}).", "") %>
 #' <%=ifelse(exists("lambda1"), "@param lambda1 The overall tightness.", "") %>
@@ -79,7 +79,7 @@
 #' <%=ifelse(exists("V_inv"), "@param V_inv The inverse of the covariance matrix of size \\code{d * d}.", "") %>
 #' <%=ifelse(exists("x"), "@param x A vector of size \\code{p}.", "") %>
 #' <%=ifelse(exists("X"), "@param X Matrix of size \\code{p * q}.", "") %>
-#' <%=ifelse(exists("Y"), "@param Y The data matrix of size \\code{(n_T + n_lags) * n_vars} with \\code{NA} representing missingness. Must correspond well to the specification of \\code{M_Lambda}.", "") %>
+#' <%=ifelse(exists("Y"), "@param Y The data matrix of size \\code{(n_T + n_lags) * n_vars} with \\code{NA} representing missingness. All monthly variables must be placed before quarterly variables.", "") %>
 #' <%=ifelse(exists("Y_tilde"), "@param Y_tilde The lag-corrected data matrix (with no missing values) of size \\code{n_T * n_vars}.", "") %>
 #' <%=ifelse(exists("z"), "@param z A matrix of size \\code{(n_T + n_lags) * n_vars} of data.", "") %>
 #' <%=ifelse(exists("Z"), "@param Z The array of draws from the posterior of \\code{Z}.", "") %>

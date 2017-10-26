@@ -3,32 +3,48 @@
 #' Create an object storing all information needed for estimation, including data as well as model and prior specifications for both a Minnesota or steady-state prior.
 #'
 #' @templateVar Y TRUE
-#' @templateVar d TRUE
-#' @templateVar d_fcst TRUE
 #' @templateVar freq TRUE
 #' @templateVar prior_Pi_AR1 TRUE
 #' @templateVar lambda1 TRUE
 #' @templateVar lambda2 TRUE
-#' @templateVar lambda3 TRUE
-#' @templateVar prior_psi_mean TRUE
-#' @templateVar prior_psi_Omega TRUE
 #' @templateVar n_lags TRUE
 #' @templateVar n_fcst TRUE
 #' @templateVar n_burnin TRUE
 #' @templateVar n_reps TRUE
+#' @param d (Steady state only) Either a matrix with same number of rows as \code{Y} and \code{n_determ} number of columns containing the deterministic terms or a string \code{"intercept"} for requesting an intercept as the only deterministic
+#' term.
+#' @param d_fcst (Steady state only) The deterministic terms for the forecasting period (not used if \code{d = "intercept"}).
+#' @param prior_psi_mean (Steady state only) Vector of length \code{n_determ*n_vars} with the prior means of the steady-state parameters.
+#' @param prior_psi_Omega (Steady state only) Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.
+#' @param lambda3 (Minnesota only) Prior variance of the intercept.
 #' @templateVar verbose TRUE
 #' @templateVar smooth_state TRUE
 #' @templateVar check_roots TRUE
 #' @template man_template
+#' @details The first arguments (\code{Y} through \code{n_reps}) must be set for the model to be estimated irrespective of the choice
+#' of prior, but some have default values (which will produce warnings if relied upon).
+#'
+#' For the Minnesota prior, \code{lambda3} must also be set, but it too has a default that it relies on if not specified.
+#'
+#' For the steady-state prior, the deterministic matrix needs to be supplied, or a string indicating that the intercept should be
+#' the only deterministic term. If the latter, also \code{d_fcst} is set to be intercept only. Otherwise, if forecasts are requested
+#' (\code{n_fcst > 0}) also \code{d_fcst} needs to be provided. Finally, the prior moments for the steady-state parameters must also be
+#' provided.
+#'
+#' The steady-state prior involves inverting the lag polynomial. For this reason, draws in which the largest eigenvalue
+#' (in absolute value) of the lag polynomial is greater than 1 are discarded and new draws are made. The maximum number of
+#' attempts is 1,000. The components in the output named \code{roots} and \code{num_tries} contain the largest roots and the
+#' number of attempts, respectively, if \code{check_roots = TRUE} (the default).
 #' @examples
 #' prior_obj <- set_prior(Y = mf_sweden, freq = c(rep("m", 4), "q"),
 #'                        n_lags = 4, n_burnin = 100, n_reps = 100)
 #' prior_obj <- update_prior(prior_obj, n_fcst = 4)
-#'
-set_prior <- function(Y, d = NULL, d_fcst = NULL, freq, prior_Pi_AR1 = rep(0, ncol(Y)),
-                      lambda1 = 0.2, lambda2 = 1, lambda3 = 10000,
-                      prior_psi_mean = NULL, prior_psi_Omega = NULL, n_lags, n_fcst = 0, n_burnin, n_reps,
-                      verbose = FALSE, smooth_state = FALSE, check_roots = TRUE) {
+#' @seealso \code{\link{interval_to_moments}}, \code{\link{print.mfbvar_prior}}, \code{\link{summary.mfbvar_prior}}, \code{\link{estimate_mfbvar}}
+set_prior <- function(Y, freq, prior_Pi_AR1 = rep(0, ncol(Y)), lambda1 = 0.2,
+                      lambda2 = 1, n_lags, n_fcst = 0, n_burnin, n_reps,
+                      d = NULL, d_fcst = NULL, prior_psi_mean = NULL,
+                      prior_psi_Omega = NULL, lambda3 = 10000, verbose = FALSE,
+                      smooth_state = FALSE, check_roots = TRUE) {
   prior_call <- mget(names(formals()),sys.frame(sys.nframe()))
   prior_call$supplied_args <- names(as.list(match.call()))[-1]
   ret <- check_prior(prior_call)
@@ -111,6 +127,8 @@ check_prior <- function(prior_obj) {
       stop("Elements of freq must be 'm' or 'q'.")
     } else if (length(prior_obj$freq) != ncol(prior_obj$Y)) {
       stop("The length of freq is ", length(prior_obj$freq), ", but Y has ", ncol(prior_obj$Y), " columns.")
+    } else if (which.max(prior_obj$freq == "m") > which.max(prior_obj$freq == "q")) {
+      stop("Monthly variables must be placed before quarterly variables.")
     }
   } else {
     stop("freq: must be supplied.")
@@ -331,14 +349,23 @@ summary.mfbvar_prior <- function(object, ...) {
 #' @param mfbvar_prior a \code{mfbvar_prior} object
 #' @param prior_type either \code{"ss"} (steady-state prior) or \code{"minn"} (Minnesota prior)
 #' @param ... additional arguments to \code{update_prior} (if \code{mfbvar_prior} is \code{NULL}, the arguments are passed on to \code{set_prior})
-#' @details No (other than very primitive) checks are made on the additional arguments. Thus, for more informative error messages and a safer procedure, create the prior first using \code{set_prior}.
 #' @return an object of class \code{mfbvar} and \code{mfbvar_ss}/\code{mfbvar_minn} containing posterior quantities as well as the prior object
-#' @seealso \code{\link{set_prior}}, \code{\link{update_prior}}
+#' @seealso \code{\link{set_prior}}, \code{\link{update_prior}}, \code{\link{predict.mfbvar}}, \code{\link{plot.mfbvar_minn}},
+#' \code{\link{plot.mfbvar_ss}}, \code{\link{summary.mfbvar_minn}}, \code{\link{summary.mfbvar_ss}}
 #' @examples
 #' prior_obj <- set_prior(Y = mf_sweden, freq = c(rep("m", 4), "q"),
 #'                        n_lags = 4, n_burnin = 20, n_reps = 20)
 #' mod_minn <- estimate_mfbvar(prior_obj, prior_type = "minn")
-#'
+#' @return The prior values used are carried forward and returned with \code{NULL} if not used/existing. New components are:
+#' \item{Pi}{Array of dynamic coefficient matrices (\eqn{\Pi}) from the main chain; \code{Pi[,, r]} is the \code{r}th draw}
+#' \item{Sigma}{Array of covariance matrices (\eqn{\Sigma}) from the main chain; \code{Sigma[,, r]} is the \code{r}th draw}
+#' \item{psi}{Matrix of steady-state parameter vectors (\eqn{\psi}) from the main chain; \code{psi[r,]} is the \code{r}th draw}
+#' \item{Z}{Array of monthly process (\eqn{Z}) matrices from the main chain; \code{Z[,, r]} is the \code{r}th draw}
+#' \item{roots}{The maximum eigenvalue of the lag polynomial (if \code{check_roots = TRUE})}
+#' \item{num_tries}{The number of attempts for drawing a stationary \eqn{\Pi} (only relevant if \code{prior_type = "ss"})}
+#' \item{Z_fcst}{Array of monthly forecasts from the main chain; \code{Z_fcst[,, r]} is the \code{r}th forecast. The first \code{n_lags}
+#' rows are taken from the data to offer a bridge between observations and forecasts and for computing nowcasts (i.e. with ragged edges).}
+#' \item{smoothed_Z}{The smoothed estimates (if \code{smooth_state = TRUE})}
 #' @references
 #' Schorfheide, F., & Song, D. (2015) Real-Time Forecasting With a Mixed-Frequency VAR. \emph{Journal of Business & Economic Statistics}, 33(3), 366--380. \url{http://dx.doi.org/10.1080/07350015.2014.954707}\cr
 #' Ankargren, S., Unosson, M., & Yang, Y. (2017) A Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. Unpublished manuscript.

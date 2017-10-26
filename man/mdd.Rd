@@ -12,7 +12,7 @@ mdd(x, ...)
 \item{...}{additional named arguments passed on to the methods}
 }
 \description{
-\code{mdd} estimates the marginal data density.
+\code{mdd} estimates the (log) marginal data density.
 }
 \details{
 This is a generic function. See the methods for more information.

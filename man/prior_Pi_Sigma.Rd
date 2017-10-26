@@ -13,7 +13,7 @@ prior_Pi_Sigma(lambda1, lambda2, prior_Pi_AR1, Y, n_lags, prior_nu)
 
 \item{prior_Pi_AR1}{The prior means for the AR(1) coefficients.}
 
-\item{Y}{The data matrix of size \code{(n_T + n_lags) * n_vars} with \code{NA} representing missingness. Must correspond well to the specification of \code{M_Lambda}.}
+\item{Y}{The data matrix of size \code{(n_T + n_lags) * n_vars} with \code{NA} representing missingness. All monthly variables must be placed before quarterly variables.}
 
 \item{n_lags}{The number of lags.}
 

@@ -60,6 +60,8 @@ posterior_Pi_Sigma <- function(Z_r1, d, psi_r1, prior_Pi_mean, prior_Pi_Omega, i
     Pi_comp    <- build_companion(Pi_temp[,, iter], n_vars = n_vars, n_lags = n_lags)
     if (check_roots == TRUE) {
       root <- max_eig_cpp(Pi_comp)
+    } else {
+      root <- 0
     }
     if (root < 1) {
       stationarity_check <- TRUE

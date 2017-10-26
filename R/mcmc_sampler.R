@@ -106,10 +106,8 @@ mcmc_sampler.mfbvar_ss <- function(x, ...) {
                    dimnames = list(c((n_T-n_lags+1):n_T, paste0("fcst_", 1:n_fcst)), NULL, NULL))
     d_fcst_lags <- matrix(rbind(d[(n_T-n_lags+1):n_T, , drop = FALSE], d_fcst), nrow = n_fcst + n_lags)
   }
-  if (check_roots == TRUE) {
-    roots <- vector("numeric", n_reps)
-    num_tries <- roots
-  }
+  roots <- vector("numeric", n_reps)
+  num_tries <- roots
   if (smooth_state == TRUE) {
     smoothed_Z     <- array(NA, dim = c(n_T, n_vars, n_reps))
   }
@@ -261,7 +259,7 @@ mcmc_sampler.mfbvar_ss <- function(x, ...) {
   ################################################################
   ### Prepare the return object
   return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z, roots = NULL, num_tries = NULL,
-                     Z_fcst = NULL, mdd = NULL, smoothed_Z = NULL, n_determ = n_determ,
+                     Z_fcst = NULL, smoothed_Z = NULL, n_determ = n_determ,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      prior_S = prior_S, prior_nu = n_vars+2, post_nu = n_T + n_vars+2, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
                      prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps - 1, Lambda = Lambda,
@@ -604,7 +602,7 @@ mcmc_sampler.mfbvar_minn <- function(x, ...){
   ################################################################
   ### Prepare the return object
   return_obj <- list(Pi = Pi, Sigma = Sigma, psi = NULL, Z = Z, roots = NULL, num_tries = NULL,
-                     Z_fcst = NULL, mdd = NULL, smoothed_Z = NULL, n_determ = 1,
+                     Z_fcst = NULL, smoothed_Z = NULL, n_determ = 1,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = NULL, prior_Pi_mean = NULL,
                      prior_S = NULL, prior_nu = NULL, post_nu = NULL, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
                      prior_psi_Omega = NULL, prior_psi_mean = NULL, n_reps = n_reps-1, Lambda = Lambda,

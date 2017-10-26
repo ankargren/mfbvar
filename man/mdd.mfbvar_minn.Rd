@@ -11,8 +11,18 @@
 
 \item{...}{additional arguments (currently only \code{p_trunc} for the degree of truncation is available)}
 }
+\value{
+The logarithm of the marginal data density.
+}
 \description{
 Estimate the marginal data density for the model with a Minnesota prior.
+}
+\details{
+The method used for estimating the marginal data density is the proposal made by
+Schorfheide and Song (2015).
+}
+\references{
+Schorfheide, F., & Song, D. (2015) Real-Time Forecasting With a Mixed-Frequency VAR. \emph{Journal of Business & Economic Statistics}, 33(3), 366--380. \url{http://dx.doi.org/10.1080/07350015.2014.954707}
 }
 \seealso{
 \code{\link{mdd}}, \code{\link{mdd.mfbvar_ss}}

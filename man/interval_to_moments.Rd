@@ -4,10 +4,12 @@
 \alias{interval_to_moments}
 \title{Interval to moments}
 \usage{
-interval_to_moments(prior_psi_int)
+interval_to_moments(prior_psi_int, alpha = 0.05)
 }
 \arguments{
 \item{prior_psi_int}{Matrix of size \code{(n_determ*n_vars) * 2} with the prior 95 \% prior probability intervals.}
+
+\item{alpha}{\code{100*(1-alpha)} is the prior probability of the interval}
 }
 \value{
 A list with two components:
@@ -15,7 +17,7 @@ A list with two components:
 \item{prior_psi_Omega}{The prior covariance matrix of psi}
 }
 \description{
-Convert a matrix of 95 \% prior probability intervals for the steady states to prior moments.
+Convert a matrix of \code{100*(1-alpha)} \% prior probability intervals for the steady states to prior moments.
 }
 \examples{
 prior_intervals <- matrix(c(0.1, 0.2,

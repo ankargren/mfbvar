@@ -1,6 +1,6 @@
 #' Marginal data density estimation
 #'
-#' \code{mdd} estimates the marginal data density.
+#' \code{mdd} estimates the (log) marginal data density.
 #'
 #' This is a generic function. See the methods for more information.
 #' @seealso \code{\link{mdd.mfbvar_ss}}, \code{\link{mdd.mfbvar_minn}}
@@ -15,8 +15,14 @@ mdd <- function(x, ...) {
 #'
 #' Estimate the marginal data density for the model with a steady-state prior.
 #' @param x object of class \code{mfbvar_ss}
-#' @param method option for which method to choose for computing the mdd
+#' @param method option for which method to choose for computing the mdd (\code{1} or \code{2})
 #' @param ... additional arguments (currently only \code{p_trunc} for the degree of truncation for method 2 is available)
+#' @details Two methods for estimating the marginal data density are implemented. Method 1 and 2 correspond to the two methods proposed by
+#' Fuentes-Albero and Melosi (2013) and Ankargren, Unosson and Yang (2017).
+#' @return The logarithm of the marginal data density.
+#' @references Fuentes-Albero, C. and Melosi, L. (2013) Methods for Computing Marginal Data Densities from the Gibbs Output.
+#' \emph{Journal of Econometrics}, 175(2), 132-141, \url{https://doi.org/10.1016/j.jeconom.2013.03.002}\cr
+#'  Ankargren, S., Unosson, M., & Yang, Y. (2017) A Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. Unpublished manuscript.
 #' @seealso \code{\link{mdd}}, \code{\link{mdd.mfbvar_minn}}
 mdd.mfbvar_ss <- function(x, method = 1, ...) {
   if (method == 1) {
@@ -34,6 +40,11 @@ mdd.mfbvar_ss <- function(x, method = 1, ...) {
 #' Estimate the marginal data density for the model with a Minnesota prior.
 #' @param x object of class \code{mfbvar_minn}
 #' @param ... additional arguments (currently only \code{p_trunc} for the degree of truncation is available)
+#' @return The logarithm of the marginal data density.
+#' @details The method used for estimating the marginal data density is the proposal made by
+#' Schorfheide and Song (2015).
+#' @references
+#' Schorfheide, F., & Song, D. (2015) Real-Time Forecasting With a Mixed-Frequency VAR. \emph{Journal of Business & Economic Statistics}, 33(3), 366--380. \url{http://dx.doi.org/10.1080/07350015.2014.954707}
 #' @seealso \code{\link{mdd}}, \code{\link{mdd.mfbvar_ss}}
 mdd.mfbvar_minn <- function(x, ...) {
   quarterly_cols <- which(x$mfbvar_prior$freq == "q")

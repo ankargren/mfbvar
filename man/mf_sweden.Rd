@@ -18,4 +18,9 @@ mf_sweden
 \description{
 A dataset containing real-time data for mixed and quarterly frequencies.
 }
+\references{
+OECD (2016) MEI Archive: Revisions Analysis Dataset.\cr
+Billstam, M., Fr\''{a}nd\'{e}n, J., Samuelsson, J., \"{O}sterholm, P. (2016) Quasi-Real-Time Data of the Economic Tendency Survey. Working Paper No. 143, National Institute of Economic Research.
+Statistics Sweden (2016) Revisions, expenditure approach and hours worked at each release.
+}
 \keyword{datasets}

@@ -7,7 +7,7 @@
 build_M_Lambda(Y, Lambda, n_vars, n_lags, n_T)
 }
 \arguments{
-\item{Y}{The data matrix of size \code{(n_T + n_lags) * n_vars} with \code{NA} representing missingness. Must correspond well to the specification of \code{M_Lambda}.}
+\item{Y}{The data matrix of size \code{(n_T + n_lags) * n_vars} with \code{NA} representing missingness. All monthly variables must be placed before quarterly variables.}
 
 \item{Lambda}{The Lambda matrix (size \code{n_vars* (n_vars*n_lags)}).}
 
