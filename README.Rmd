@@ -64,11 +64,11 @@ mod_minn <- estimate_mfbvar(mfbvar_prior = prior_obj, prior_type = "minn")
 
 To use the steady-state prior, we need to specify `d`, `prior_psi_mean` and `prior_psi_Omega`. We specify the prior moments for $\psi$ using the helper function `interval_to_moments()` which converts 95 % prior probability intervals to prior moments, assuming independence.
 ```{r}
-prior_intervals <- matrix(c( 6,   7,
-                             0.1, 0.2,
-                             0,   0.5,
-                            -0.5, 0.5,
-                             0.4, 0.6), ncol = 2, byrow = TRUE)
+prior_intervals <- matrix(c( 6.5,   7.5,
+                             0.4/3, 0.5/3,
+                             0,   1,
+                            -0.1, 0.1,
+                             0.5, 0.65), ncol = 2, byrow = TRUE)
 psi_moments <- interval_to_moments(prior_intervals)
 prior_psi_mean <- psi_moments$prior_psi_mean
 prior_psi_Omega <- psi_moments$prior_psi_Omega

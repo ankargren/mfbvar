@@ -45,7 +45,7 @@ posterior_Pi_Sigma <- function(Z_r1, d, psi_r1, prior_Pi_mean, prior_Pi_Omega, i
   s_sample  <- crossprod(YY - XX %*% Pi_sample)
   Pi_diff <- prior_Pi_mean - Pi_sample
   post_s <- prior_S + s_sample + t(Pi_diff) %*% chol2inv(chol(prior_Pi_Omega + XXt.XX.inv)) %*% Pi_diff
-  post_nu <- n_T + prior_nu # Is this the right T? Or should it be T - lags?
+  post_nu <- n_T + prior_nu
   Sigma_r <- rinvwish(v = post_nu, S = post_s)
 
 
