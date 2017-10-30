@@ -41,7 +41,7 @@ tail(Y)
 Next, we create a minimal prior object. We must specify: 1) data, 2) the frequency of the data, 3) the number of lags, 4) the length of burn-in and main chains, respectively. This is done by calling the `set_prior()` function and giving named arguments. The resulting object is of class `mfbvar_prior` and has a basic `print` method.
 ```{r}
 prior_obj <- set_prior(Y = Y, freq = c(rep("m", 4), "q"), 
-                       n_lags = 4, n_burnin = 1000, n_reps = 1000)
+                       n_lags = 4, n_burnin = 5000, n_reps = 10000)
 ```
 Warnings are produced because we haven't specified values for some of the prior elements and instead the function uses default values.
 
@@ -83,7 +83,7 @@ prior_obj
 
 It is now possible to estimate the model using the steady-state prior.
 ```{r, cache = TRUE}
-mod_ss <- estimate_mfbvar(prior_obj, "ss", lambda1 = 4, lambda2 = 0.01, n_reps = 10000, n_burnin = 5000, n_fcst = 30)
+mod_ss <- estimate_mfbvar(prior_obj, "ss")
 ```
 
 It is also allowed to temporarily override elements in the prior object by adding them as separate arguments to the `estimate_mfbvar()` function. Thus, to get forecasts eight steps ahead we would use:
