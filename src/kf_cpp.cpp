@@ -85,7 +85,7 @@ void KF::filter() {
     a_tt.row(t) = a_t + v_t * FF_inv_t * M_t.t();
 
     if (t < n_T - 1) {
-      a_t = a_t * Tt.t() + d.row(t) + v_t * K_t.t();
+      a_t = a_tt.row(t) * Tt.t() + d.row(t);
       a.row(t+1) = a_t;
       P_t = Tt * N.slice(t) + H * H.t();
       P_t = symmatu(P_t);
@@ -269,7 +269,7 @@ void KF_ragged::original_to_compact(arma::mat y_Tb_) {
     X.row(i).cols(0, i*n_m - 1) = reshape(trans(flipud(y_Tb(arma::span(0, i-1), arma::span(0, n_m - 1)))), 1, i*n_m);
     X.row(i).cols(i*n_m, n_lags*n_m - 1) = reshape(trans(flipud(Z1(arma::span(i, n_lags - 1), arma::span(0, n_m - 1)))), 1, (n_lags-i)*n_m);
   }
-  for (unsigned int i = n_lags; i < T_b - 1; i++) {
+  for (unsigned int i = n_lags; i < T_b; i++) {
     X.row(i) = reshape(trans(flipud(y_Tb(arma::span(i-n_lags, i-1), arma::span(0, n_m - 1)))), 1, n_lags*n_m);
   }
 
@@ -465,5 +465,3 @@ arma::mat kf_sim_smooth(arma::mat y_, arma::mat Phi_, arma::mat Sigma_, arma::ma
 
   return Z_draw;
 }
-
-
