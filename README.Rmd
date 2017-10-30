@@ -15,211 +15,43 @@ knitr::opts_chunk$set(
   fig.path = "README-"
 )
 ```
-# Version news
 
-## 0.2.5 (2017-03-24)
-What is new in version 0.2.5:
-
-- A model without a steady-state prior is now implemented using a Minnesota MNIW prior, which is computed using a dummy observations implementation. It is a hybrid of what Banbura et al (2011), Brave et al (2016) and Schorfheide and Song (2015) use. It allows for an overall tightness hyperparameter, a lag decay hyperparameter and a hyperparameter for the intercept. Note that the dummy observations implementation is different in the three listed articles: Banbura et al (2011) have no sample mean included (see their equation (5) and compare it to equation (14) in Brave) and Banbura et al and Brave et al use the full-sample means and error standard deviations in the priors, whereas Schorfheide and Song only make use of a pre-sample. The current implementation in `mfbvar` is to use the full sample for both.
-
-## 0.2.3 (2017-03-14)
-What is new in version 0.2.3:
-
-- `mdd_grid()` to do grid search for hyperparameters, possibly using parallel computing
-- Methods (`print`, `summary`, `plot`) for class `mdd` (return of `mdd_grid()`)
-- Improved `smoother()`, the example now runs in 10 instead of 20 seconds
-- `interval_to_moments()` to convert a matrix of prior probability intervals to prior moments of `psi`
-- Unit testing (using `testthat`) is now incorporated by checking the 100th draw
-
-
-## 0.2.1 (2017-03-11)
-What is new in version 0.2.1:
-
-- Methods (`print`, `summary`, `plot`, `predict`)
-- Better organization of names, argument order. This may make it incompatible with older code
-
-# Example file
-
-This short example illustrates estimation of the model.
-
-## Data generation
-First, we generate some dummy data as a VAR(1) with three variables whose uncondtional means are all zero.
 ```{r}
 library(mfbvar)
-TT <- 200
-n_vars <- 3
-set.seed(100)
-
-Y <- matrix(0, 2*TT, n_vars)
-Phi <- matrix(c(0.3, 0.1, 0.2, 0.3, 0.3, 0.6, 0.2, 0.2, 0.3), 3, 3)
-for (i in 2:(2*TT)) {
-  Y[i, ] <- Phi %*% Y[i-1,] + rnorm(n_vars)
-}
-Y[, n_vars] <- zoo::rollapply(Y[, n_vars], 3, mean, fill = NA, align = "right")
-Y <- Y[-(1:TT),]
-Y[setdiff(1:TT, seq(1, TT, 3)), n_vars] <- NA
-
-dates <- paste(rep(2000:2017, each = 12), "-", 1:12, sep = "")
-Y <- as.data.frame(Y)
-rownames(Y) <- dates[1:nrow(Y)]
-colnames(Y) <- c("GDP", "Infl", "Interest")
-```
-
-The data now looks like this:
-```{r}
-head(Y)
-```
-The names are, of course, made up, but this is to illustrate how the names are used later on.
-
-## Settings and priors
-We next need to make some settings for the estimation:
-```{r}
-n_burnin <- 2000
-n_reps <- 2000
+Y <- mf_list$data[[192]][-1, -6]
+n_burnin <- 5000
+n_reps <- 10000
 n_fcst <- 8
 n_lags <- 4
 n_vars <- ncol(Y)
 n_T <- nrow(Y)
-```
-
-The `n_*` variables are self-explanatory. Next, create the matrix of deterministic terms (also for the forecasting period):
-```{r}
 d <- matrix(1, nrow = n_T, ncol = 1, dimnames = list(1:nrow(Y), "const"))
-d_fcst <- matrix(1, nrow = n_fcst, ncol = 1, 
-                 dimnames = list(dates[(nrow(Y)+1):(nrow(Y)+n_fcst)], "const"))
-d_fcst
-```
-
-For the prior on the dynamic coefficients and the error covariance matrix, we need to set the prior degrees of freedom as well as the prior mean of AR(1) coefficients and the tuning parameters:
-```{r}
+d_fcst <- matrix(1, nrow = n_fcst, ncol = 1)
 prior_nu <- n_vars + 2 
-prior_Pi_AR1 <- c(0, 0, 0) 
-lambda1 <- 0.1
+prior_Pi_AR1 <- rep(0, 5)
+lambda1 <- 0.2
 lambda2 <- 1
-```
-The prior on the steady states also needs to be set:
-```{r}
-prior_psi_int <- matrix(c(-0.25, 0.25), 3, 2, byrow = TRUE)
-prior_psi <- interval_to_moments(prior_psi_int)
-prior_psi_mean <- prior_psi$prior_psi_mean
-prior_psi_Omega <- prior_psi$prior_psi_Omega
-```
+intervals <- matrix(c(6.5, 7.5,
+                      0.4/3, 0.6/3,
+                      0, 1,
+                      -0.1, 0.1,
+                      0.5, 0.65), ncol = 2, byrow = TRUE)
+prior_psi_mean <- interval_to_moments(intervals)$prior_psi_mean
+prior_psi_Omega <- interval_to_moments(intervals)$prior_psi_Omega
 
-Finally, we also need to create the matrix that relates unobservables to observables. In this example, the first two variables are assumed to be observed every period, whereas the third is assumed to be observed every third time period. Moreover, when it is observed, we observe the average over three periods. This can be specified using the `build_Lambda()` function:
-```{r}
-Lambda <- build_Lambda(c("identity", "identity", "average"), n_lags)
-```
-
-## Main call
-After having set these preliminary variables, we can now call the main function `mfbvar()`:
-```{r, cache = TRUE}
+Lambda <- build_Lambda(c("identity", "identity", "identity", "identity", "average"), n_lags)
 set.seed(10237)
 mfbvar_obj <- mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, 
                      prior_nu, prior_psi_mean, prior_psi_Omega, 
                      n_lags, n_fcst, n_burnin, n_reps, verbose = FALSE) 
 ```
 
-
-## Obtaining the results
-Four S3 methods are implemented:
-
-```{r methods, fig.width = 10, fig.asp = 0.5}
-mfbvar_obj
-summary(mfbvar_obj)
-predict(mfbvar_obj, tidy = TRUE)
-plot(mfbvar_obj) 
-```
-
-## Marginal data density
-The package contains functions for estimating the marginal data density. This is most useful when done in parallel, so first we can set up a cluster and then compute the marginal data density for various values of the hyperparameters `lambda1` and `lambda2`.
-
-First, we'll set the grids for `lambda1` and `lambda2`.
 ```{r, cache = TRUE}
-lambda1_grid <- seq(5, 15, length.out = 10)
-lambda2_grid <- seq(0.1, 1, length.out = 10)
-```
-We can also create two wrapper functions to use for the parallel call:
-```{r, cache = TRUE}
-mdd_res <- mdd_grid(mfbvar_obj, lambda1_grid, lambda2_grid, method = 1, n_cores = 7, p_trunc = 0.5, same_seed = TRUE, seed = 1229)
-```
-The return is an object of class `mdd`, for which three methods are implemented.
-```{r mdd}
-mdd_res
-summary(mdd_res)
-plot(mdd_res)
-```
-
-## Profiling
-Profiling of the code shows that `simulation_smoother` is by far the most time-consuming part of the code (this is the main call inside `posterior_Z`). 
-```{r profvis, include = FALSE, cache = TRUE}
-library(profvis)
-profiling <- profvis({mfbvar_obj <- mfbvar(Y, d, d_fcst, Lambda, prior_Pi_AR1, lambda1, lambda2, 
-                     prior_nu, prior_psi_mean, prior_psi_Omega, 
-                     n_lags, n_fcst, n_burnin, n_reps, verbose = FALSE) }, prof_output = "../profiling.Rprof")
-```
-
-```{r profiling, cache = TRUE}
-library(tidyverse)
-profiling <- summaryRprof("../profiling.Rprof")$by.total
-profiling$call <- rownames(profiling)
-profiling %>%
-  as_tibble() %>%
-  filter(total.pct < 99) %>%
-  arrange(-total.pct) %>%
-  filter(row_number() < 20) %>%
-  ggplot(aes(x = reorder(call, total.pct), y = total.pct)) +
-  geom_bar(stat = "identity", width = 0.25) +
-  theme_minimal() +
-  coord_flip() +
-  labs(y = "Percent", x = "Function call", title = "Most expensive functions calls in mfbvar")
-```
-
-## Minnesota prior
-
-To compare the results, we can also run the model without a steady-state prior. The code is slightly different and currently fairly ugly behind the scenes, but in principle it is similar using equivalent functions but with a `_schorf` suffix (although this naming is temporary).
-
-Using the same simulated data as before, the call is made using `mfbvar_schorf`:
-```{r, cache = TRUE}
-lambda3 <- 1e-05
-set.seed(100)
-mfbvar_minn <- mfbvar_schorf(Y, Lambda, prior_Pi_AR1, 
-                             lambda1, lambda2, lambda3, 
-                             n_lags, n_fcst, n_burnin, n_reps, 
-                             verbose = FALSE)
-```
-
-An `mdd` function is also provided, although this is not comparable to the previous calculations because of the omission of the normalizing constant. The details of the method are provided in Schorfheide and Song (2015).
-```{r, cache = TRUE}
-mdd_minn <- mdd_schorf(mfbvar_minn)
-```
-The names are temporary and follow Schorfheide and Song's nomenclature. In the future, this could easily be wrapped into a general `mdd` function.
-
-Comparing the forecasts:
-```{r, fig.width = 10, fig.asp = 0.5}
-fcst_SS <- apply(mfbvar_obj$Z_fcst[,,-1], 1:2, median) %>%
-  as_tibble() %>%
-  rownames_to_column("time") %>% 
-  as_tibble() %>%
-  gather(GDP:Interest, key = "series", value = "value") %>%
-  mutate(time = as.numeric(time), prior = "SS")
-fcst_minn <- apply(mfbvar_minn$Z_fcst[,,-1], 1:2, median) %>%
-  as_tibble() %>%
-  rownames_to_column("time") %>% 
-  as_tibble() %>%
-  gather(GDP:Interest, key = "series", value = "value") %>%
-  mutate(time = as.numeric(time), prior = "Minn")
-
-fcst <- bind_rows(fcst_SS, fcst_minn)
-
-ggplot(fcst, aes(x = time, y = value, linetype = prior)) +
-  geom_line() +
-  facet_wrap(~series) +
-  theme_minimal() +
-  labs(title = "Comparisons of forecasts",
-       x = "Time",
-       y = "Value",
-       linetype = "Prior")
-  
+all(abs(mfbvar_obj$Z_new[,,10]-mfbvar_obj$Z[,,10])<1e-13)
+all(abs(mfbvar_obj$Z_new[,,9999]-mfbvar_obj$Z[,,9999])<1e-13)
+all(abs(mfbvar_obj$Sigma_new[,,10]-mfbvar_obj$Sigma[,,10])<1e-13)
+all(abs(mfbvar_obj$Sigma_new[,,9999]-mfbvar_obj$Sigma[,,9999])<1e-13)
+all(abs(mfbvar_obj$Pi_new[,,10]-mfbvar_obj$Pi[,,10])<1e-13)
+all(abs(mfbvar_obj$Pi_new[,,9999]-mfbvar_obj$Pi[,,9999])<1e-13)
 
 ```
-

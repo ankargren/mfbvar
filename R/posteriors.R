@@ -129,7 +129,7 @@ posterior_Z <- function(Y, d, Pi_r, Sigma_r, psi_r, Z_1, Lambda, n_vars, n_lags,
                                      n_vars = n_vars, n_comp  = n_lags * n_vars, z0 = h0, P0 = diag(0, n_lags * n_vars))
   # For now, I'm just inserting h0 in the beginning of Z. Right now, Z has n_T number of rows,
   # but smooth_samp puts out n_T - n_lags rows.
-  Z_r <- rbind(demeaned_z0, simulated_Z[,1:n_vars]) +
+  Z_r <- rbind(demeaned_z0, simulated_Z$Z_draw[,1:n_vars]) +
     d %*% t(matrix(psi_r, nrow = n_vars))
 
   # Also save the smoothed value of the state
@@ -140,7 +140,7 @@ posterior_Z <- function(Y, d, Pi_r, Sigma_r, psi_r, Z_1, Lambda, n_vars, n_lags,
       d %*% t(matrix(psi_r, nrow = n_vars))
     ret <- list(Z_r = Z_r, smoothed_Z_r = smoothed_Z_r)
   } else {
-    ret <- list(Z_r = Z_r)
+    ret <- list(Z_r = Z_r, Z = simulated_Z$Z, Z_tT = simulated_Z$Z_tT, a_t1 = simulated_Z$a_t1, a_tt = simulated_Z$a_tt)
   }
   return(ret)
 }

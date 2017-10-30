@@ -27,7 +27,11 @@ smooth_samp_xx <- function(mZ,mX,lH,lH0=NULL,mF,mB,mQ,iT,ip,iq,is,h0,P0=NULL,X0)
 {
   # simulation
 
-  mE = matrix(rnorm(iT*iq),iT,iq)
+  mE <- matrix(0, iT, iq)
+
+  for (i in 1:ip) {
+    mE[, i] <- rnorm(iT)
+  }
   mZZ = matrix(0,iT,ip)
   mhh = matrix(0,iT,iq)
   if(is.null(P0)){
@@ -54,14 +58,23 @@ smooth_samp_xx <- function(mZ,mX,lH,lH0=NULL,mF,mB,mQ,iT,ip,iq,is,h0,P0=NULL,X0)
   # from 0 to iT
 
   mH = lH[[1]]
+  mhu3 <- mhh*0
+  mhE <- mhh*0
+  mhu3[1, ] <-  mQ%*%u3[1,]
+  mhE[1, ] <- mF %*% hh0 + mB %*% X0 + mQ%*%mE[1,]
   mhh[1,] = mF %*% hh0 + mB %*% X0 + mQ%*%mU[1,]
   mZZ[1,] = mH %*% mhh[1,]
+  mE[1, ] <- mQ%*%mE[1,]
   for(iter in 2:iT){
     mH = lH[[iter]]
-    mhh[iter,] = mF %*% mhh[iter-1,] + mB %*% mX[iter-1,] + mQ%*%mU[iter,]
-    mZZ[iter,] = mH %*% mhh[iter,]
+
+    mhu3[iter,]  <- mF %*% mhu3[iter-1,] + mB %*% mX[iter-1,] + mQ%*%u3[iter,]
+    mhE[iter,] <- mF %*% mhE[iter-1,] + mB %*% mX[iter-1,] + mQ%*%mE[iter,]
+    mhh[iter,]  = mF %*% mhh[iter-1,] + mB %*% mX[iter-1,] + mQ%*%mU[iter,]
+    mZZ[iter,]  = mH %*% mhh[iter,]
+    mE[iter, ] <- mQ%*%mE[iter,]
   }
 
-  return(list(mh=mhh,mZ=mZZ))
+  return(list(mh=mhh,mZ=mZZ, mhu3 = mhu3, mhE = mhE, epsilon = mE[-nrow(mE), ]))
 }
 

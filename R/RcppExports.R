@@ -6,7 +6,34 @@
 #' @templateVar n_lags TRUE
 #' @template man_template
 build_U_cpp <- function(Pi, n_determ, n_vars, n_lags) {
-    .Call('mfbvar_build_U_cpp', PACKAGE = 'mfbvar', Pi, n_determ, n_vars, n_lags)
+    .Call(`_mfbvar_build_U_cpp`, Pi, n_determ, n_vars, n_lags)
+}
+
+#' @title Kalman filter and smoother
+#'
+#' @description Kalman filter and smoother (\code{kf_ragged}) and simulation smoother (\code{kf_sim_smooth}) for mixed-frequency data with ragged edges. This function is more computationally efficient than using a companion form representation.
+#' @param y_ matrix with the data
+#' @param Phi_ matrix with the autoregressive parameters, where the last column is the intercept
+#' @param Sigma_ error covariance matrix
+#' @param Lambda_ aggregation matrix (for quarterly variables only)
+#' @param n_q_ number of quarterly variables
+#' @param T_b_ final time period where all monthly variables are observed
+#' @keywords internal
+#' @return For \code{kf_ragged}, a list with elements:
+#' \item{a}{The one-step predictions (for the compact form)}
+#' \item{a_tt}{The filtered estimates (for the compact form)}
+#' \item{a_tT}{The smoothed estimates (for the compact form)}
+#' \item{Z_tT}{The smoothed estimated (for the original form)}
+#' @details The returned matrices have the same number of rows as \code{y_}, but the first \code{n_lags} rows are zero.
+kf_ragged <- function(y_, Phi_, Sigma_, Lambda_, Z1_, n_q_, T_b_) {
+    .Call(`_mfbvar_kf_ragged`, y_, Phi_, Sigma_, Lambda_, Z1_, n_q_, T_b_)
+}
+
+#' @describeIn kf_ragged Simulation smoother
+#' @param Z1 initial values, with \code{n_lags} rows and same number of columns as \code{y_}
+#' @return For \code{kf_sim_smooth}, a matrix with the draw from the posterior distribution.
+kf_sim_smooth <- function(y_, Phi_, Sigma_, Lambda_, Z1_, n_q_, T_b_) {
+    .Call(`_mfbvar_kf_sim_smooth`, y_, Phi_, Sigma_, Lambda_, Z1_, n_q_, T_b_)
 }
 
 #' @title Find maximum eigenvalue
@@ -17,30 +44,30 @@ build_U_cpp <- function(Pi, n_determ, n_vars, n_lags) {
 #' @template man_template
 #' @return The maximum eigenvalue.
 max_eig_cpp <- function(A) {
-    .Call('mfbvar_max_eig_cpp', PACKAGE = 'mfbvar', A)
+    .Call(`_mfbvar_max_eig_cpp`, A)
 }
 
 #' @rdname dnorminvwish
 rmatn <- function(M, Q, P) {
-    .Call('mfbvar_rmatn', PACKAGE = 'mfbvar', M, Q, P)
+    .Call(`_mfbvar_rmatn`, M, Q, P)
 }
 
 #' @rdname dnorminvwish
 rinvwish <- function(v, S) {
-    .Call('mfbvar_rinvwish', PACKAGE = 'mfbvar', v, S)
+    .Call(`_mfbvar_rinvwish`, v, S)
 }
 
 #' @rdname dmultn
 rmultn <- function(m, Sigma) {
-    .Call('mfbvar_rmultn', PACKAGE = 'mfbvar', m, Sigma)
+    .Call(`_mfbvar_rmultn`, m, Sigma)
 }
 
 vec_na_rm <- function(vx) {
-    .Call('mfbvar_vec_na_rm', PACKAGE = 'mfbvar', vx)
+    .Call(`_mfbvar_vec_na_rm`, vx)
 }
 
 smooth <- function(mZ, mX, lH, mF, mB, mQ, iT, ip, iq, is, h0, P0, X0) {
-    .Call('mfbvar_smooth', PACKAGE = 'mfbvar', mZ, mX, lH, mF, mB, mQ, iT, ip, iq, is, h0, P0, X0)
+    .Call(`_mfbvar_smooth`, mZ, mX, lH, mF, mB, mQ, iT, ip, iq, is, h0, P0, X0)
 }
 
 #' @title Smooth and sample from the smoothed distribution
@@ -62,27 +89,27 @@ smooth <- function(mZ, mX, lH, mF, mB, mQ, iT, ip, iq, is, h0, P0, X0) {
 #' @return For \code{smoother}:
 #' \item{}{The smoothed states.}
 smoother <- function(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0) {
-    .Call('mfbvar_smoother', PACKAGE = 'mfbvar', Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
+    .Call(`_mfbvar_smoother`, Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
 }
 
 #' @describeIn smoother Generate pseudo-state vector
 #' @return For \code{generate_mhh}:
 #' \item{}{Generated (pseudo-)state vector.}
 generate_mhh <- function(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0) {
-    .Call('mfbvar_generate_mhh', PACKAGE = 'mfbvar', Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
+    .Call(`_mfbvar_generate_mhh`, Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
 }
 
 #' @describeIn smoother Simulation smoother
 #' @return For \code{simulation_smoother}:
 #' \item{}{The draw from the posterior distribution.}
 simulation_smoother <- function(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0) {
-    .Call('mfbvar_simulation_smoother', PACKAGE = 'mfbvar', Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
+    .Call(`_mfbvar_simulation_smoother`, Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
 }
 
 #' @describeIn smoother Compute log-likelihood
 #' @return For \code{loglike}:
 #' \item{}{An \code{n_T}-long vector of the log-likelihoods. \code{exp(sum(loglike(...)))} is the likelihood.}
 loglike <- function(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0) {
-    .Call('mfbvar_loglike', PACKAGE = 'mfbvar', Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
+    .Call(`_mfbvar_loglike`, Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
 }
 

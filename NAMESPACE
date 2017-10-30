@@ -1,6 +1,6 @@
 exportPattern("^[[:alpha:]]+")
 importFrom(Rcpp, evalCpp)
-useDynLib(mfbvar)
+useDynLib(mfbvar, .registration = TRUE)
 import(RcppArmadillo)
 import(stats)
 importFrom("utils", "setTxtProgressBar", "txtProgressBar")

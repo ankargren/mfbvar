@@ -26,7 +26,7 @@ using namespace arma;
 //' @return For \code{smoother}:
 //' \item{}{The smoothed states.}
 // [[Rcpp::export]]
-arma::mat smoother(           arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, arma::mat Q_comp, int n_T, int n_vars, int n_comp, arma::mat z0, arma::mat P0) {
+Rcpp::List smoother(           arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, arma::mat Q_comp, int n_T, int n_vars, int n_comp, arma::mat z0, arma::mat P0) {
   /* This function computes the smoothed state vector */
   /****************************************************/
   /* Initialize matrices and cubes */
@@ -50,6 +50,10 @@ arma::mat smoother(           arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, 
   mhh.fill(NA_REAL);
   arma::mat mz = Y.row(0);
   arma::uvec obs_vars = find_finite(mz);
+  arma::mat a_t1(n_T, n_comp);
+  a_t1.fill(NA_REAL);
+  arma::mat a_tt(n_T, n_comp);
+  a_tt.fill(NA_REAL);
 
   arma::mat mvIS(n_T, n_comp);
   mvIS.fill(NA_REAL);
@@ -76,6 +80,8 @@ arma::mat smoother(           arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, 
   arma::mat h2 = h1 + mK.cols(obs_vars) * trans(vv);
   arma::mat P2 = (identity_mat - mK.cols(obs_vars) * mH) * P1;
 
+  a_t1.rows(0, 0) = h2.t();
+
   /* Filtering */
   for (int i = 1; i < n_T; i++) {
     mz = Y.row(i);
@@ -83,6 +89,7 @@ arma::mat smoother(           arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, 
 
     h1 = Pi_comp * h2;
     P1 = Pi_comp * P2 * Pi_comp.t() + QQ;
+    a_t1.rows(i, i) = h1.t();
 
     mH = Lambda.rows(obs_vars);
     vz = mz.cols(obs_vars);
@@ -101,6 +108,7 @@ arma::mat smoother(           arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, 
     h2 = h1 + mK.cols(obs_vars) * trans(vv);
     P2 = (identity_mat - mK.cols(obs_vars) * mH) * P1;
 
+    a_tt.rows(i, i) = h2.t();
   }
 
   arma::mat ve;
@@ -162,7 +170,9 @@ arma::mat smoother(           arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, 
   }
 
   /* The return is the smoothed state vector */
-  return(mhh);
+  return Rcpp::List::create(Rcpp::Named("mhh") = mhh,
+                            Rcpp::Named("a_t1") = a_t1,
+                            Rcpp::Named("a_tt") = a_tt);
 }
 
 
@@ -202,7 +212,7 @@ arma::mat generate_mhh(       arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, 
 //' @return For \code{simulation_smoother}:
 //' \item{}{The draw from the posterior distribution.}
 // [[Rcpp::export]]
-arma::mat simulation_smoother(arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, arma::mat Q_comp, int n_T, int n_vars, int n_comp, arma::mat z0, arma::mat P0) {
+Rcpp::List simulation_smoother(arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, arma::mat Q_comp, int n_T, int n_vars, int n_comp, arma::mat z0, arma::mat P0) {
   /* This function produces a draw from the posterior distribution */
   /****************************************************/
   arma::mat mhh = generate_mhh(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0);
@@ -222,13 +232,15 @@ arma::mat simulation_smoother(arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, 
     YY.row(i) = mzz;
   }
 
-  arma::mat Z = smoother(Y-YY,  Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0-z0, P0);
-  return(Z+mhh);
-  /*return Rcpp::List::create(Rcpp::Named("Z1")  = Z1,
-   Rcpp::Named("Z2")  = Z2,
-   Rcpp::Named("mhh") = mhh,
-   Rcpp::Named("YY") = YY,
-   Rcpp::Named("res") = Z1-Z2+mhh);*/
+  Rcpp::List Z_tT_list = smoother(Y-YY,  Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0-z0, P0);
+  arma::mat Z_tT = Rcpp::as<arma::mat>(Z_tT_list["mhh"]);
+  arma::mat a_t1 = Rcpp::as<arma::mat>(Z_tT_list["a_t1"]);
+  arma::mat a_tt = Rcpp::as<arma::mat>(Z_tT_list["a_tt"]);
+  return Rcpp::List::create(Rcpp::Named("Z_tT")  = Z_tT,
+                            Rcpp::Named("Z_draw")  = Z_tT+mhh,
+                            Rcpp::Named("Z") = mhh,
+                            Rcpp::Named("a_t1") = a_t1,
+                            Rcpp::Named("a_tt") = a_tt);
 
 }
 
