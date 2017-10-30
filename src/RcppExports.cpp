@@ -38,7 +38,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // kf_sim_smooth
-Rcpp::List kf_sim_smooth(arma::mat y_, arma::mat Phi_, arma::mat Sigma_, arma::mat Lambda_, arma::mat Z1_, int n_q_, unsigned int T_b_);
+arma::mat kf_sim_smooth(arma::mat y_, arma::mat Phi_, arma::mat Sigma_, arma::mat Lambda_, arma::mat Z1_, int n_q_, unsigned int T_b_);
 RcppExport SEXP _mfbvar_kf_sim_smooth(SEXP y_SEXP, SEXP Phi_SEXP, SEXP Sigma_SEXP, SEXP Lambda_SEXP, SEXP Z1_SEXP, SEXP n_q_SEXP, SEXP T_b_SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;

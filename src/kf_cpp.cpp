@@ -397,17 +397,14 @@ Rcpp::List kf_ragged(arma::mat y_, arma::mat Phi_, arma::mat Sigma_, arma::mat L
   return Rcpp::List::create(Rcpp::Named("a") = a,
                             Rcpp::Named("a_tt") = a_tt,
                             Rcpp::Named("a_tT") = a_tT,
-                            Rcpp::Named("Z_tT") = Z_tT,
-                            Rcpp::Named("kf_obj.a_tt") = kf_obj.a_tt,
-                            Rcpp::Named("intercept") = kf_obj.intercept,
-                            Rcpp::Named("c") = kf_obj.c);
+                            Rcpp::Named("Z_tT") = Z_tT);
 }
 
 //' @describeIn kf_ragged Simulation smoother
 //' @param Z1 initial values, with \code{n_lags} rows and same number of columns as \code{y_}
 //' @return For \code{kf_sim_smooth}, a matrix with the draw from the posterior distribution.
 // [[Rcpp::export]]
-Rcpp::List kf_sim_smooth(arma::mat y_, arma::mat Phi_, arma::mat Sigma_, arma::mat Lambda_, arma::mat Z1_, int n_q_, unsigned int T_b_) {
+arma::mat kf_sim_smooth(arma::mat y_, arma::mat Phi_, arma::mat Sigma_, arma::mat Lambda_, arma::mat Z1_, int n_q_, unsigned int T_b_) {
 
   unsigned int n_vars, n_lags, n_m, n_q, T_full;
   n_vars  = y_.n_cols;
@@ -468,11 +465,5 @@ Rcpp::List kf_sim_smooth(arma::mat y_, arma::mat Phi_, arma::mat Sigma_, arma::m
   Rcpp::NumericMatrix a_tt = smooth_diff["a_tt"];
   arma::mat Z_draw = Z.rows(n_lags, T_full - 1) + Rcpp::as<arma::mat>(Z_tT);
 
-  return Rcpp::List::create(Rcpp::Named("Z_draw") = Z_draw,
-                            Rcpp::Named("Z") = Z.rows(n_lags, T_full - 1),
-                            Rcpp::Named("Z_tT") = Rcpp::as<arma::mat>(Z_tT),
-                            Rcpp::Named("a_t1") = Rcpp::as<arma::mat>(a_t1),
-                            Rcpp::Named("y_diff") = y_diff,
-                            Rcpp::Named("epsilon") = epsilon,
-                            Rcpp::Named("a_tt") = Rcpp::as<arma::mat>(a_tt));
+  return Z_draw;
 }

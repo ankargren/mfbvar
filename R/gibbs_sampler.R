@@ -219,7 +219,7 @@ gibbs_sampler <- function(Y, d, d_fcst = NULL, Lambda, prior_Pi_mean, prior_Pi_O
 
     set.seed(r)
     Z_res_new <- kf_sim_smooth(mZ, cbind(Pi[,,r], 0), Sigma[,,r], Lambda_, demeaned_z0, n_q, T_b)
-    Z_new_draw <- rbind(demeaned_z0, Z_res_new$Z_draw) + d %*% t(matrix(psi[r,], nrow = n_vars))
+    Z_new_draw <- rbind(demeaned_z0, Z_res_new) + d %*% t(matrix(psi[r,], nrow = n_vars))
     Z_new[,, r] <- Z_new_draw
 
     ################################################################
