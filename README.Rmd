@@ -83,7 +83,7 @@ prior_obj
 
 It is now possible to estimate the model using the steady-state prior.
 ```{r, cache = TRUE}
-mod_ss <- estimate_mfbvar(prior_obj, "ss")
+mod_ss <- estimate_mfbvar(prior_obj, "ss", lambda1 = 4, lambda2 = 0.01, n_reps = 10000, n_burnin = 5000, n_fcst = 30)
 ```
 
 It is also allowed to temporarily override elements in the prior object by adding them as separate arguments to the `estimate_mfbvar()` function. Thus, to get forecasts eight steps ahead we would use:
