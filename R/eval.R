@@ -47,7 +47,7 @@ eval_Pi_Sigma_RaoBlack <- function(Z_array, d, post_psi_center, post_Pi_center, 
     post_s_i <- prior_S + s_sample + t(Pi_diff) %*% chol2inv(chol(prior_Pi_Omega + XXt.XX.inv)) %*% Pi_diff
 
     # Evaluate
-    evals[i] <- dnorminvwish(X = t(post_Pi_center), Sigma = post_Sigma_center, M = post_Pi_i, P = post_Pi_Omega_i, S = post_s_i, v = post_nu)
+    evals[i] <- exp(dnorminvwish(X = t(post_Pi_center), Sigma = post_Sigma_center, M = post_Pi_i, P = post_Pi_Omega_i, S = post_s_i, v = post_nu))
   }
 
   return(evals)
@@ -91,7 +91,7 @@ eval_psi_MargPost <- function(Pi_array, Sigma_array, Z_array, post_psi_center, p
     post_psi_center <- posterior_psi_mean(U = U, D_mat = D_mat, Sigma = Sigma_array[,, r], prior_psi_Omega = prior_psi_Omega,
                                           post_psi_Omega = post_psi_Omega, Y_tilde = Y_tilde, prior_psi_mean = prior_psi_mean)
 
-    evals[r] <- dmultn(x = post_psi_center, m = post_psi_center, Sigma = post_psi_Omega)
+    evals[r] <- exp(dmultn(x = post_psi_center, m = post_psi_center, Sigma = post_psi_Omega))
   }
 
   return(evals)

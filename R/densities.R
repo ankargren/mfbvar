@@ -21,7 +21,7 @@ dnorminvwish <- function(X, Sigma, M, P, S, v) {
   dmultnorm <- (-p*q/2) * log(2 * pi) + (-p/2) * log(det_Sigma) + (-q/2)*log(det(P)) + (-1/2 * sum(diag(inv_Sigma %*% t(X - M) %*% chol2inv(chol(P)) %*% (X - M))))
   cc <- (v * q/2)*log(2) + (q*(q-1)/4)*log(pi) + sum(lgamma((v+1-1:q)/2))
   dinvwish <- -cc + (v/2) * log(det(S)) -(v+q+1)/2*log(det_Sigma) -1/2 * sum(diag(inv_Sigma %*% S))
-  return(exp(dmultnorm + dinvwish))
+  return(dmultnorm + dinvwish)
 }
 
 #' Multivariate normal density function

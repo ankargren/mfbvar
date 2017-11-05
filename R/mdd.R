@@ -169,8 +169,8 @@ estimate_mdd_ss_1 <- function(mfbvar_obj) {
   ################################################################
   ### Final calculations
   lklhd          <- sum(c(loglike(Y = as.matrix(mZ), Lambda = Lambda, Pi_comp = Pi_comp, Q_comp = Q_comp, n_T = n_T_, n_vars = n_vars, n_comp = n_lags * n_vars, z0 = h0, P0 = P0)[-1]))
-  eval_prior_Pi_Sigma <- log(dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = prior_Pi_mean, P = prior_Pi_Omega, S = prior_S, v = n_vars+2))
-  eval_prior_psi      <- log(dmultn(x = post_psi, m = prior_psi_mean, Sigma = prior_psi_Omega))
+  eval_prior_Pi_Sigma <- dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = prior_Pi_mean, P = prior_Pi_Omega, S = prior_S, v = n_vars+2)
+  eval_prior_psi      <- dmultn(x = post_psi, m = prior_psi_mean, Sigma = prior_psi_Omega)
   eval_RB_Pi_Sigma    <- log(mean(eval_Pi_Sigma_RaoBlack(Z_array = Z_red, d = d, post_psi_center = post_psi, post_Pi_center = post_Pi_mean, post_Sigma_center = post_Sigma,
                                                          post_nu = post_nu, prior_Pi_mean = prior_Pi_mean, prior_Pi_Omega = prior_Pi_Omega, prior_S = prior_S,
                                                          n_vars = n_vars, n_lags = n_lags, n_reps = n_reps)))
@@ -278,7 +278,7 @@ estimate_mdd_ss_2 <- function(mfbvar_obj, p_trunc) {
 
 
     eval_posterior_Pi_Sigma[r] <- dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = post_Pi_i, P = post_Pi_Omega_i, S = post_s_i, v = post_nu)
-    data_likelihood[r] <- exp(sum(c(loglike(Y = as.matrix(mZ), Lambda = Lambda, Pi_comp = Pi_comp, Q_comp = Q_comp, n_T = n_T_, n_vars = n_vars, n_comp = n_lags * n_vars, z0 = h0, P0 = P0)[-1])))
+    data_likelihood[r] <- sum(c(loglike(Y = as.matrix(mZ), Lambda = Lambda, Pi_comp = Pi_comp, Q_comp = Q_comp, n_T = n_T_, n_vars = n_vars, n_comp = n_lags * n_vars, z0 = h0, P0 = P0)[-1]))
 
     eval_prior_psi[r] <- dmultn(x = psi[r, ], m = prior_psi_mean, Sigma = prior_psi_Omega)
     psi_truncated[r] <- dnorm_trunc(psi[r, ], post_psi, solve(post_psi_Omega), n_determ*n_vars, p_trunc, chisq_val)
@@ -286,7 +286,7 @@ estimate_mdd_ss_2 <- function(mfbvar_obj, p_trunc) {
   }
 
   eval_prior_Pi_Sigma <- dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = prior_Pi_mean, P = prior_Pi_Omega, S = prior_S, v = n_vars+2)
-  exp_term <- log(eval_posterior_Pi_Sigma) - (log(data_likelihood) + log(eval_prior_Pi_Sigma) + log(eval_prior_psi))
+  exp_term <- eval_posterior_Pi_Sigma - (data_likelihood + eval_prior_Pi_Sigma + eval_prior_psi)
   log_mdd <- -mean(exp_term)-log(mean(exp(exp_term-mean(exp_term)) * psi_truncated))
 
   return(list(eval_posterior_Pi_Sigma = eval_posterior_Pi_Sigma, data_likelihood = data_likelihood, eval_prior_Pi_Sigma = eval_prior_Pi_Sigma,
