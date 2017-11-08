@@ -37,7 +37,7 @@ dnorminvwish <- function(X, Sigma, M, P, S, v) {
 #' For \code{rmultn}: \eqn{p} random numbers.
 dmultn <- function(x, m, Sigma) {
   log_d <- (-1/2)* log(det(2*pi*Sigma)) -1/2 * t(x-m) %*% chol2inv(chol(Sigma)) %*% (x-m)
-  return(exp(log_d))
+  return(log_d)
 }
 
 #' Truncated multivariate normal density function
