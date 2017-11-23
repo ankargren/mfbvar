@@ -603,11 +603,12 @@ mcmc_sampler.mfbvar_minn <- function(x, ...){
   ### Prepare the return object
   return_obj <- list(Pi = Pi, Sigma = Sigma, psi = NULL, Z = Z, roots = NULL, num_tries = NULL,
                      Z_fcst = NULL, smoothed_Z = NULL, n_determ = 1,
-                     n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = NULL, prior_Pi_mean = NULL,
-                     prior_S = NULL, prior_nu = NULL, post_nu = NULL, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
+                     n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = solve(crossprod(X_dum)), prior_Pi_mean = solve(crossprod(X_dum)) %*% crossprod(X_dum, Y_dum),
+                     prior_S = crossprod(Y_dum - X_dum %*% solve(crossprod(X_dum)) %*% crossprod(X_dum, Y_dum)), prior_nu = n_vars + 2, post_nu = n_vars + n_T_ + 2, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
                      prior_psi_Omega = NULL, prior_psi_mean = NULL, n_reps = n_reps-1, Lambda = Lambda,
                      lnpYY = lnpY1 - lnpY0, freq = freq,
-                     init = list(init_Pi = Pi[,, n_reps], init_Sigma = Sigma[,, n_reps], init_Z = Z[,, n_reps]))
+                     init = list(init_Pi = Pi[,, n_reps], init_Sigma = Sigma[,, n_reps], init_Z = Z[,, n_reps]),
+                     X_dum = X_dum, Y_dum = Y_dum)
 
   if (check_roots == TRUE) {
     return_obj$roots <- roots

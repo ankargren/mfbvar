@@ -20,6 +20,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// kf_loglike
+arma::vec kf_loglike(arma::mat y_, arma::mat Phi_, arma::mat Sigma_, arma::mat Lambda_, arma::mat a00, arma::mat P00);
+RcppExport SEXP _mfbvar_kf_loglike(SEXP y_SEXP, SEXP Phi_SEXP, SEXP Sigma_SEXP, SEXP Lambda_SEXP, SEXP a00SEXP, SEXP P00SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type y_(y_SEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Phi_(Phi_SEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Sigma_(Sigma_SEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Lambda_(Lambda_SEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type a00(a00SEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type P00(P00SEXP);
+    rcpp_result_gen = Rcpp::wrap(kf_loglike(y_, Phi_, Sigma_, Lambda_, a00, P00));
+    return rcpp_result_gen;
+END_RCPP
+}
 // kf_ragged
 Rcpp::List kf_ragged(arma::mat y_, arma::mat Phi_, arma::mat Sigma_, arma::mat Lambda_, arma::mat Z1_, int n_q_, unsigned int T_b_);
 RcppExport SEXP _mfbvar_kf_ragged(SEXP y_SEXP, SEXP Phi_SEXP, SEXP Sigma_SEXP, SEXP Lambda_SEXP, SEXP Z1_SEXP, SEXP n_q_SEXP, SEXP T_b_SEXP) {
@@ -124,6 +140,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_mfbvar_build_U_cpp", (DL_FUNC) &_mfbvar_build_U_cpp, 4},
+    {"_mfbvar_kf_loglike", (DL_FUNC) &_mfbvar_kf_loglike, 6},
     {"_mfbvar_kf_ragged", (DL_FUNC) &_mfbvar_kf_ragged, 7},
     {"_mfbvar_kf_sim_smooth", (DL_FUNC) &_mfbvar_kf_sim_smooth, 7},
     {"_mfbvar_max_eig_cpp", (DL_FUNC) &_mfbvar_max_eig_cpp, 1},

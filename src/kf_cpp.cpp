@@ -17,6 +17,7 @@ public:
   void filter();
   void smoother(arma::mat r_T);
   void simulator();
+  arma::vec loglike();
 };
 
 void KF::set_pars(arma::mat y_, arma::mat Z_, arma::mat c_, arma::mat G_, arma::mat Tt_, arma::mat d_, arma::mat H_, arma::mat a1_, arma::mat P1_, arma::mat intercept_) {
@@ -88,16 +89,15 @@ void KF::filter() {
       a_t = a_tt.row(t) * Tt.t() + d.row(t);
       a.row(t+1) = a_t;
       P_t = Tt * N.slice(t) + H * H.t();
-      P_t = symmatu(P_t);
+      P_t = arma::symmatu(P_t);
       P.slice(t+1) = P_t;
     } else {
       a_t1 = a_t * Tt.t() + d.row(t) + v_t * K_t.t();
       P_t1 = Tt * N.slice(t) + H * H.t();
-      P_t1 = symmatu(P_t1);
+      P_t1 = arma::symmatu(P_t1);
       P_TT = P_t - M_t * FF_inv_t * M_t.t();
     }
   }
-
 
 }
 
@@ -122,34 +122,113 @@ void KF::smoother(arma::mat r_T) {
   a_tT.row(0) = a_tt.row(0) + r_t * trans(N.slice(0));
 }
 
-void KF::simulator() {
-  arma::uvec obs_vars;
-  arma::mat y_sim = arma::mat(size(y)).fill(NA_REAL);
+arma::vec KF::loglike() {
+  arma::uvec obs_vars(n_vars);
   arma::mat Zt;
   arma::mat Gt;
   arma::uvec t_vec(1);
-  arma::mat M_t = arma::mat(n_state, n_vars).fill(NA_REAL);
-  arma::mat FF_inv_t = arma::mat(n_vars, n_vars).fill(NA_REAL);
-  arma::mat K_t = arma::mat(n_state, n_vars).fill(NA_REAL);
+  arma::mat M_t;
+  arma::mat FF_t;
+  arma::mat FF_inv_t;
+  arma::mat K_t;
+  arma::mat v_t;
+  arma::mat L_t;
+  arma::mat N_t;
+  arma::mat a_t = a1.t();
+  arma::mat P_t = P1;
+  arma::vec logl(n_T);
 
-  c = arma::mat(size(y)).fill(NA_REAL);
-  d = arma::mat(n_T, n_state);
+  a.row(0) = a_t;
+  P.slice(0) = P_t;
 
-  a.row(0) = a1.t();
-  P.slice(0) = P1;
+  double val;
+  double sign;
 
   for (arma::uword t = 0; t < n_T; t++) {
     obs_vars = find_finite(y.row(t));
     t_vec(0) = t;
-
     Zt = Z.rows(obs_vars);
     Gt = G.rows(obs_vars);
-    // obtain c_t and d
-    // generate alpha_t
-    // generate y_t
+
+    v_t = y.submat(t_vec, obs_vars) - a_t * Zt.t() - c.submat(t_vec, obs_vars) - intercept.cols(obs_vars);
+    M_t = P_t * Zt.t() + H * Gt.t();
+    FF_t = arma::symmatu(Zt * M_t + Gt * trans(Gt + Zt * H));
+    FF_inv_t = arma::inv_sympd(FF_t);
+
+    K_t = Tt * M_t * FF_inv_t;
+
+    L_t = Tt - K_t * Zt;
+    N_t = P_t * L_t.t() - H * Gt.t() * K_t.t();
+    a_tt.row(t) = a_t + v_t * FF_inv_t * M_t.t();
+
+    arma::log_det(val, sign, FF_t);
+    logl(t) = -0.5 * obs_vars.n_elem * log(2 * M_PI) - 0.5 * (val + as_scalar(v_t * FF_inv_t * v_t.t()));
+
+    if (t < n_T - 1) {
+      a_t = a_tt.row(t) * Tt.t() + d.row(t);
+      a.row(t+1) = a_t;
+      P_t = Tt * N_t + H * H.t();
+      P_t = arma::symmatu(P_t);
+      P.slice(t+1) = P_t;
+    }
   }
+  return logl;
 }
 
+//' @title Kalman filter and smoother
+//'
+//' @description Kalman filter and smoother (\code{kf_ragged}) and simulation smoother (\code{kf_sim_smooth}) for mixed-frequency data with ragged edges. This function is more computationally efficient than using a companion form representation.
+//' @param y_ matrix with the data
+//' @param Phi_ matrix with the autoregressive parameters, where the last column is the intercept
+//' @param Sigma_ error covariance matrix
+//' @param Lambda_ aggregation matrix (for quarterly variables only)
+//' @param n_q_ number of quarterly variables
+//' @param T_b_ final time period where all monthly variables are observed
+//' @keywords internal
+//' @return For \code{kf_ragged}, a list with elements:
+//' \item{a}{The one-step predictions (for the compact form)}
+//' \item{a_tt}{The filtered estimates (for the compact form)}
+//' \item{a_tT}{The smoothed estimates (for the compact form)}
+//' \item{Z_tT}{The smoothed estimated (for the original form)}
+//' @details The returned matrices have the same number of rows as \code{y_}, but the first \code{n_lags} rows are zero.
+// [[Rcpp::export]]
+arma::vec kf_loglike(arma::mat y_, arma::mat Phi_, arma::mat Sigma_, arma::mat Lambda_, arma::mat a00, arma::mat P00) {
+  // y     =     Z * alpha + c + intercept + G * epsilon
+  // alpha = F_Phi * alpha + d + H * epsilon
+  int n_vars = Phi_.n_rows;
+  int n_lags = (Phi_.n_cols-1)/n_vars;
+  arma::vec logl;
+  arma::mat c = arma::mat(size(y_), arma::fill::zeros);
+  arma::mat G = arma::mat(size(Sigma_), arma::fill::zeros);
+  arma::mat F_Phi = arma::mat(n_vars*n_lags, n_vars*n_lags, arma::fill::zeros);
+
+  F_Phi.rows(0, n_vars-1) = Phi_.cols(0, n_vars*n_lags-1);
+  F_Phi(arma::span(n_vars, n_vars*n_lags-1), arma::span(0, (n_lags-1)*n_vars - 1)) = arma::mat(n_vars*(n_lags-1), n_vars*(n_lags-1), arma::fill::eye);
+
+  arma::mat d = arma::mat(y_.n_rows, n_vars*n_lags, arma::fill::zeros);
+  d.cols(0, n_vars-1) = arma::repmat(Phi_.col(n_vars*n_lags).t(), y_.n_rows, 1);
+  arma::mat H = arma::mat(n_vars*n_lags, n_vars, arma::fill::zeros);
+  H.rows(0, n_vars-1) = arma::trans(arma::chol(Sigma_));
+  arma::mat a1 = F_Phi * a00 + d.row(0).t();
+  arma::mat P1 = F_Phi * P00 * F_Phi.t() + H * H.t();
+  arma::mat intercept = arma::mat(1, n_vars, arma::fill::zeros);
+
+  KF kf_end;
+  kf_end.set_pars(y_,                // y
+                  Lambda_,           // Z
+                  c,                 // c
+                  G,                 // G
+                  F_Phi,             // T
+                  d,                 // d
+                  H,                 // H
+                  a1,                // a1
+                  P1,                // P1
+                  intercept);        // intercept
+
+  logl = kf_end.loglike();
+
+  return logl;
+}
 
 class KF_ragged: public KF {
 
