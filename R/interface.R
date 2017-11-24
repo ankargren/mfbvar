@@ -421,7 +421,7 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type, ...) {
   }
 
   if (is.null(colnames(mfbvar_prior$Y))) {
-    names_col <- 1:col(mfbvar_prior$Y)
+    names_col <- 1:ncol(mfbvar_prior$Y)
   } else {
     names_col <- colnames(mfbvar_prior$Y)
   }

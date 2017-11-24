@@ -206,7 +206,7 @@ mcmc_sampler.mfbvar_ss <- function(x, ...) {
     ################################################################
     ### Pi and Sigma step
     #(Z_r1,             d,     psi_r1,                            prior_Pi_mean, inv_prior_Pi_Omega, Omega_Pi, prior_S, prior_nu, check_roots, n_vars, n_lags, n_T)
-    Pi_Sigma <- posterior_Pi_Sigma(Z_r1 = Z[,, r-1], d = d, psi_r1 = psi[r-1, , drop = FALSE], prior_Pi_mean, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_S, n_vars+2, check_roots, n_vars, n_lags, n_T)
+    Pi_Sigma <- posterior_Pi_Sigma(Z_r1 = Z[,, r-1], d = d, psi_r1 = psi[r-1, , drop = FALSE], prior_Pi_mean, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_S, n_vars+2, check_roots, n_vars, n_lags, n_T_)
     Pi[,,r]      <- Pi_Sigma$Pi_r
     Sigma[,,r]   <- Pi_Sigma$Sigma_r
     num_tries[r] <- Pi_Sigma$num_try
@@ -284,23 +284,32 @@ mcmc_sampler.mfbvar_ss <- function(x, ...) {
 
 mcmc_sampler.mfbvar_minn <- function(x, ...){
 
+  n_vars <- ncol(x$Y)
   if (!(!is.null(x$Y) && !is.null(x$n_lags) && !is.null(x$n_burnin) && !is.null(x$n_reps))) {
     test_all <- sapply(x, is.null)
     test_sub <- test_all[c("Y", "n_lags", "n_burnin", "n_reps")]
     stop("Missing elements: ", paste(names(test_sub)[which(test_sub)], collapse = " "))
   }
 
+  prior_nu <- n_vars + 2
+  priors <- prior_Pi_Sigma(lambda1 = x$lambda1, lambda2 = x$lambda2, prior_Pi_AR1 = x$prior_Pi_AR1, Y = x$Y,
+                           n_lags = x$n_lags, prior_nu = prior_nu)
+  prior_Pi_mean <- priors$prior_Pi_mean
+  prior_Pi_Omega <- priors$prior_Pi_Omega
+  prior_S <- priors$prior_S
+
   Y <- x$Y
   freq <- x$freq
-  prior_Pi_AR1 <- x$prior_Pi_AR1
   n_fcst <- x$n_fcst
   smooth_state <- x$smooth_state
   check_roots <- x$check_roots
   verbose <- x$verbose
   n_lags <- x$n_lags
-  lambda1 <- x$lambda1
-  lambda2 <- x$lambda2
   lambda3 <- x$lambda3
+
+  # Add terms for constant
+  prior_Pi_Omega <- diag(c(diag(prior_Pi_Omega), x$lambda1^2*lambda3^2))
+  prior_Pi_mean <- rbind(prior_Pi_mean, 0)
 
   add_args <- list(...)
   n_reps <- add_args$n_reps
@@ -320,12 +329,11 @@ mcmc_sampler.mfbvar_minn <- function(x, ...){
   T_b <- max(which(!apply(apply(Y[, freq == "m", drop = FALSE], 2, is.na), 1, any)))
   Lambda_ <- build_Lambda(rep("q", n_q), 3)
 
-  n_vars <- dim(Y)[2]
   n_pseudolags <- dim(Lambda)[2]/n_vars
   n_T <- dim(Y)[1]# - n_lags
   n_T_ <- n_T - n_pseudolags
   d <- matrix(1, nrow = nrow(Y), ncol = 1)
-  lnpY1 <- rep(NA, n_reps)
+  post_nu <- n_T_ + prior_nu
 
   ################################################################
   ### Preallocation
@@ -416,95 +424,15 @@ mcmc_sampler.mfbvar_minn <- function(x, ...){
 
   Z_1 <- Z[1:n_pseudolags,, 1]
 
-  ####################################################
-  Y_bar <- colMeans(Y, na.rm = TRUE)
-  s_bar <- sqrt(diag(prior_Pi_Sigma(0.2, 1, prior_Pi_AR1, Y, n_lags, n_vars + 2)$prior_S))
-
-  dummy_size <- (n_lags + 1)*n_vars + 3
-  breaks <- numeric(5)
-  Y_dum <- matrix(0, nrow = dummy_size, ncol = n_vars)
-  X_dum <- matrix(0, nrow = dummy_size, ncol = n_vars*n_lags + 1)
-  n_XX <- ncol(X_dum)
-  ## 1: AR(1) coefficients
-  Y_dum[1:n_vars, ] <- diag(s_bar * prior_Pi_AR1)/lambda1
-  breaks[1] <- n_vars
-
-  ## 2: AR(2), ..., AR(p) coefficients
-  X_dum[1:(n_vars*n_lags), 1:(n_vars*n_lags)] <- kronecker(diag((1:n_lags)^lambda2), diag(s_bar))/lambda1
-  if (n_lags > 1) {
-    breaks[2] <- breaks[1] + (n_lags - 1)*n_vars
-  } else {
-    breaks[2] <- breaks[1]
-  }
-
-  ## 3: Sigma
-  Y_dum[(breaks[2]+1):(breaks[2]+n_vars), ] <- diag(s_bar)
-  breaks[3] <- breaks[2] + n_vars
-
-  ## 4: Intercept
-  X_dum[breaks[3] + 1, n_XX] <- 1/lambda3
-
-  #
-  #   ## 3
-  #   Y_dum[(breaks[2]+1):(breaks[2]+lambda3*n_vars), ] <- kronecker(matrix(1, nrow = lambda3, ncol = 1), pre_Sigma)
-  #   breaks[3] <- breaks[2] + lambda3 * n_vars
-  #
-  #   ##
-  #   lambda_mean <- lambda4 * Y_bar
-  #   Y_dum[breaks[3] + 1, ] <- lambda_mean
-  #   X_dum[breaks[3] + 1, ] <- cbind(kronecker(matrix(1, nrow = 1, ncol = n_lags), lambda_mean), lambda4)
-  #   breaks[4] <- breaks[3] + 1
-  #
-  #   ##
-  #   mu_mean <- diag(lambda5 * Y_bar)
-  #   Y_dum[(breaks[4] + 1):(breaks[4] + n_vars), ] <- mu_mean
-  #   X_dum[(breaks[5] + 1):(breaks[4] + n_vars), 1:(n_lags * n_vars)] <- kronecker(matrix(1, nrow = 1, ncol = n_lags), mu_mean)
-  #   breaks[5] <- breaks[4] + n_vars
-
-
-  Pi_r1 <- Pi[,,1]
-  const_r1 <- Pi_r1[, ncol(Pi_r1)]
-  Pi_r1 <- Pi_r1[, -ncol(Pi_r1)]
-
-
-  ####################################################
-
-  # MDD
-  # svd_res <- svd(crossprod(X_dum), nu = n_XX)
-  # ux <- svd_res$u
-  # sx <- rbind(diag(svd_res$d), matrix(0, nrow = dim(ux)[1]- length(svd_res$d), ncol = length(svd_res$d)))
-  # vx <- svd_res$v
-  # sv_XX <- ux %*% sqrt(sx) %*% t(vx)
-  #
-  # upx <- ux
-  # spx <- sx
-  # vpx <- vx
-  # inv_spx <- matrix(0, ncol = nrow(spx), nrow = nrow(spx))
-  #
-  # for (rr in 1:nrow(spx)) {
-  #   if (spx[rr, rr] > 1e-12) {
-  #     inv_spx[rr, rr] <- 1/spx[rr, rr]
-  #   }
-  # }
-  #
-  # inv_sv_XX <- t(upx %*% inv_spx %*% t(vpx))
-
-
-  n_dummy <- nrow(X_dum)
-  Phi <- tcrossprod(chol2inv(chol(crossprod(X_dum))), crossprod(Y_dum, X_dum))
-  S0 <- crossprod(Y_dum - X_dum %*% Phi)
-  gam0 <- sum(lgamma(0.5 * (n_dummy - n_XX + 1 - 1:n_vars)))
-
-  lnpY0 <- - n_vars * 0.5 * determinant(crossprod(X_dum), logarithm = TRUE)$modulus -
-    (n_dummy - n_XX)*0.5*determinant(S0, logarithm = TRUE)$modulus + n_vars * (n_vars - 1) * 0.25*log(pi) + gam0
-
+  # For the posterior of Pi
+  inv_prior_Pi_Omega <- chol2inv(chol(prior_Pi_Omega))
+  Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi_mean
 
   if (verbose == TRUE) {
     pb <- timerProgressBar(width = 35, char = "[=-]", style = 5)
   }
 
   for (r in 2:(n_reps)) {
-
     Pi_r1 <- Pi[,,r-1]
     Sigma_r1 <- Sigma[,,r-1]
 
@@ -513,64 +441,27 @@ mcmc_sampler.mfbvar_minn <- function(x, ...){
     Z[,, r] <- rbind(Z_1, Z_res)
 
     Z_comp <- build_Z(z = Z[,, r], n_lags = n_lags)
-    XX_act <- Z_comp[-nrow(Z_comp), ]
-    XX_act <- cbind(XX_act, 1)
-    YY_act <- Z_comp[-1, 1:n_vars]
-    YY <- rbind(Y_dum, YY_act)
-    XX <- rbind(X_dum, XX_act)
+    XX <- Z_comp[-nrow(Z_comp), ]
+    XX <- cbind(XX, 1)
+    YY <- Z_comp[-1, 1:n_vars]
 
     XXt.XX <- crossprod(XX)
     XXt.XX.inv <- chol2inv(chol(XXt.XX))
     Pi_sample <- XXt.XX.inv %*% crossprod(XX, YY)
-    post_Pi <- Pi_sample
-    post_Pi_Omega <- XXt.XX.inv
+
+    # Posterior moments of Pi
+    post_Pi_Omega <- chol2inv(chol(inv_prior_Pi_Omega + XXt.XX))
+    post_Pi       <- post_Pi_Omega %*% (Omega_Pi + crossprod(XX, YY))
     S <- crossprod(YY - XX %*% Pi_sample)
+    Pi_diff <- prior_Pi_mean - Pi_sample
+    post_S <- prior_S + S + t(Pi_diff) %*% chol2inv(chol(prior_Pi_Omega + XXt.XX.inv)) %*% Pi_diff
 
-    post_nu <- nrow(YY) - ncol(YY)*n_vars - 1
 
-    Sigma_r <- rinvwish(v = post_nu, S = S)
+    Sigma_r <- rinvwish(v = post_nu, S = post_S)
     Sigma[,, r]   <- Sigma_r
 
-    Pi[,, r] <- rmatn(M = t(post_Pi), Q = post_Pi_Omega, P = Sigma_r)
-
-    if (check_roots) {
-      Pi_comp  <- build_companion(Pi[,-ncol(Pi_r1), r], n_vars = n_vars, n_lags = n_lags)
-      roots[r] <- max_eig_cpp(Pi_comp)
-    }
-
-
-    # # MDD
-    # svd_res <- svd(crossprod(XX), nu = ncol(XX))
-    # ux <- svd_res$u
-    # sx <- rbind(diag(svd_res$d), matrix(0, nrow = dim(ux)[1]- length(svd_res$d), ncol = length(svd_res$d)))
-    # vx <- svd_res$v
-    # sv_XX <- ux %*% sqrt(sx) %*% t(vx)
-    #
-    # upx <- ux
-    # spx <- sx
-    # vpx <- vx
-    # inv_spx <- matrix(0, ncol = nrow(spx), nrow = nrow(spx))
-    #
-    # for (rr in 1:nrow(spx)) {
-    #   if (spx[rr, rr] > 1e-12) {
-    #     inv_spx[rr, rr] <- 1/spx[rr, rr]
-    #   }
-    # }
-    #
-    # inv_sv_XX <- t(upx %*% inv_spx %*% t(vpx))
-
-
-
-    n_tot <- nrow(XX)
-    Phi <- tcrossprod(chol2inv(chol(crossprod(XX))), crossprod(YY, XX))
-    S1 <- crossprod(YY - XX %*% Phi)
-    gam1 <- sum(lgamma(0.5 * (n_tot - n_XX + 1 - 1:n_vars)))
-
-    lnpY1[r] <- - n_vars * 0.5 * determinant(XXt.XX, logarithm = TRUE)$modulus -
-      (n_tot - n_XX)*0.5*determinant(S1, logarithm = TRUE)$modulus + n_vars * (n_vars - 1) * 0.25*log(pi) + gam1 -
-      0.5 * n_vars * n_T * log(pi)
-
-    Pi_r <- Pi[,,r]
+    Pi_r <- rmatn(M = t(post_Pi), Q = post_Pi_Omega, P = Sigma_r)
+    Pi[,, r] <- Pi_r
     const_r <- Pi_r[, ncol(Pi_r)]
     Pi_r <- Pi_r[, -ncol(Pi_r)]
 
@@ -587,8 +478,7 @@ mcmc_sampler.mfbvar_minn <- function(x, ...){
       }
 
     }
-    #########################################
-    # Add the likelihood here
+
     if (verbose == TRUE) {
       setTimerProgressBar(pb, r/n_reps)
     }
@@ -603,12 +493,10 @@ mcmc_sampler.mfbvar_minn <- function(x, ...){
   ### Prepare the return object
   return_obj <- list(Pi = Pi, Sigma = Sigma, psi = NULL, Z = Z, roots = NULL, num_tries = NULL,
                      Z_fcst = NULL, smoothed_Z = NULL, n_determ = 1,
-                     n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = solve(crossprod(X_dum)), prior_Pi_mean = solve(crossprod(X_dum)) %*% crossprod(X_dum, Y_dum),
-                     prior_S = crossprod(Y_dum - X_dum %*% solve(crossprod(X_dum)) %*% crossprod(X_dum, Y_dum)), prior_nu = n_vars + 2, post_nu = n_vars + n_T_ + 2, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
-                     prior_psi_Omega = NULL, prior_psi_mean = NULL, n_reps = n_reps-1, Lambda = Lambda,
-                     lnpYY = lnpY1 - lnpY0, freq = freq,
-                     init = list(init_Pi = Pi[,, n_reps], init_Sigma = Sigma[,, n_reps], init_Z = Z[,, n_reps]),
-                     X_dum = X_dum, Y_dum = Y_dum)
+                     n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
+                     prior_S = prior_S, prior_nu = prior_nu, post_nu = prior_nu + n_T_, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
+                     prior_psi_Omega = NULL, prior_psi_mean = NULL, n_reps = n_reps-1, Lambda = Lambda, freq = freq,
+                     init = list(init_Pi = Pi[,, n_reps], init_Sigma = Sigma[,, n_reps], init_Z = Z[,, n_reps]))
 
   if (check_roots == TRUE) {
     return_obj$roots <- roots

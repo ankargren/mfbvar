@@ -55,3 +55,9 @@ dnorm_trunc <- function(x, m, V_inv, d, p_trunc, chisq_val) {
   return((1/p_trunc) * (1/sqrt((2*pi)^d/det(V_inv))) * exp(-0.5 * qf) * (qf < chisq_val))
 }
 
+dmatt <- function(X, M, P, Q, v) {
+  q <- ncol(X)
+  p <- nrow(X)
+  k <- p*q/2*log(pi)-q/2*log(det(P))-v/2*log(det(Q))+sum(lgamma((v+1-(1:q))/2)-lgamma((v+p+1-(1:q))/2))
+  return(-k -(v+p)/2*log(det(Q+t(X-M) %*% P %*% (X-M))))
+}
