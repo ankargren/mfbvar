@@ -306,7 +306,7 @@ estimate_mdd_ss_2 <- function(mfbvar_obj, p_trunc) {
 #' @return The log marginal data density estimate (bar a constant)
 #'
 estimate_mdd_minn <- function(mfbvar_obj, p_trunc, ...) {
-  Z <- mfbvar_obj$Z[,, -1]
+  Z <- mfbvar_obj$Z
   Y <- mfbvar_obj$Y
   n_T <- dim(Z)[1]
   n_reps <- dim(Z)[3]
@@ -348,17 +348,17 @@ estimate_mdd_minn <- function(mfbvar_obj, p_trunc, ...) {
     drawsig <- cov(t(temp))
     drawsiginv <- chol2inv(chol(drawsig))
     drawsiglndet <- as.numeric(determinant(drawsiginv, logarithm = TRUE)$modulus)
-    paradev <- temp - kronecker(matrix(1, 1, n_reps-1), drawmean)
+    paradev <- temp - kronecker(matrix(1, 1, n_reps), drawmean)
     quadpara <- rowSums((t(paradev) %*% drawsiginv) * t(paradev))
     pcrit <- qchisq(p_trunc, df = nrow(drawmean))
-    invlike <- matrix(NA, n_reps-1, length(p_trunc))
+    invlike <- matrix(NA, n_reps, length(p_trunc))
     indpara <- invlike
     lnfpara <- indpara
     densfac <- -0.5 * n_para * log(2 * pi) + 0.5 * drawsiglndet -
       0.5 * quadpara[1] - log(p_trunc) - postsim[1]
     densfac <- -mean(densfac)
     for (i in seq_along(p_trunc)) {
-      for (j in 1:(n_reps-1)) {
+      for (j in 1:n_reps) {
         lnfpara[j, i] <- -0.5 * n_para * log(2 * pi) +
           0.5 * drawsiglndet - 0.5 * quadpara[j] - log(p_trunc[i])
         indpara[j, i] <- quadpara[j] < pcrit[i]
