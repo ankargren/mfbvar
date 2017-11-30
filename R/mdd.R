@@ -344,27 +344,26 @@ estimate_mdd_minn <- function(mfbvar_obj, p_trunc, ...) {
     return(log_mdd = mean(postsim))
   } else {
     n_para <- nrow(temp)
-
     drawmean <- matrix(rowMeans(temp), ncol = 1)
-    drawsig <- tcrossprod(temp/sqrt(ncol(temp))) - tcrossprod(drawmean)
+    drawsig <- cov(t(temp))
     drawsiginv <- chol2inv(chol(drawsig))
     drawsiglndet <- as.numeric(determinant(drawsiginv, logarithm = TRUE)$modulus)
-
-    paradev  <- temp - kronecker(matrix(1, 1, n_reps), drawmean)
+    paradev <- temp - kronecker(matrix(1, 1, n_reps-1), drawmean)
     quadpara <- rowSums((t(paradev) %*% drawsiginv) * t(paradev))
-
     pcrit <- qchisq(p_trunc, df = nrow(drawmean))
-
-    invlike <- matrix(NA, n_reps, length(p_trunc))
+    invlike <- matrix(NA, n_reps-1, length(p_trunc))
     indpara <- invlike
     lnfpara <- indpara
-    densfac <- -0.5*n_para*log(2*pi) - 0.5*drawsiglndet - 0.5*quadpara[1] - log(p_trunc) - postsim[1]
+    densfac <- -0.5 * n_para * log(2 * pi) + 0.5 * drawsiglndet -
+      0.5 * quadpara[1] - log(p_trunc) - postsim[1]
     densfac <- -mean(densfac)
     for (i in seq_along(p_trunc)) {
-      for (j in 1:n_reps) {
-        lnfpara[j, i] <- -0.5*n_para*log(2*pi) - 0.5*drawsiglndet - 0.5*quadpara[j] - log(p_trunc[i])
+      for (j in 1:(n_reps-1)) {
+        lnfpara[j, i] <- -0.5 * n_para * log(2 * pi) +
+          0.5 * drawsiglndet - 0.5 * quadpara[j] - log(p_trunc[i])
         indpara[j, i] <- quadpara[j] < pcrit[i]
-        invlike[j, i] <- exp(lnfpara[j, i] - postsim[j]+densfac) * indpara[j, i]
+        invlike[j, i] <- exp(lnfpara[j, i] - postsim[j] +
+                               densfac) * indpara[j, i]
       }
       meaninvlike <- colMeans(invlike)
       mdd <- densfac - log(meaninvlike)
