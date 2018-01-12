@@ -227,7 +227,7 @@ mcmc_sampler.mfbvar_ss <- function(x, ...) {
     Z_res <- kf_sim_smooth(mZ, Pi_r, Sigma[,,r], Lambda_, demeaned_z0, n_q, T_b)
     Z_res <- rbind(demeaned_z0, Z_res) + d %*% t(matrix(psi[r,], nrow = n_vars))
     if (smooth_state == TRUE) {
-      Z_smooth <- kf_ragged(mZ, Pi_r, Sigma[,,r], Lambda_, n_q, T_b)$Z_tT[-c(1:n_lags), ]
+      Z_smooth <- kf_ragged(mZ, Pi_r, Sigma[,,r], Lambda_, demeaned_z0, n_q, T_b)$Z_tT[-c(1:n_lags), ]
       smoothed_Z[,, r] <- rbind(demeaned_z0, Z_smooth) + d %*% t(matrix(psi[r, ], nrow = n_vars))
     }
     Z[,, r] <- Z_res
@@ -477,6 +477,11 @@ mcmc_sampler.mfbvar_minn <- function(x, ...){
           rmultn(m = matrix(0, nrow = n_vars), Sigma = Sigma[,,r])
       }
 
+    }
+
+    if (smooth_state == TRUE) {
+      Z_smooth <- kf_ragged(Y, Pi_r, Sigma_r, Lambda_, Z_1, n_q, T_b)$Z_tT[-c(1:n_lags), ]
+      smoothed_Z[,, r] <- rbind(Z_1, Z_smooth)
     }
 
     if (verbose == TRUE) {

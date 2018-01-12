@@ -55,6 +55,19 @@ dnorm_trunc <- function(x, m, V_inv, d, p_trunc, chisq_val) {
   return((1/p_trunc) * (1/sqrt((2*pi)^d/det(V_inv))) * exp(-0.5 * qf) * (qf < chisq_val))
 }
 
+#' Matrix t distribution
+#'
+#' Density function for the truncated multivariate normal distribution
+#' @param X \code{p * q} matrix at which the density is to be evaluated
+#' @param M \code{p * q} matrix of means
+#' @param P \code{p * p} scale matrix
+#' @param Q \code{q * q} scale matrix
+#' @param v degrees of freedom
+#' @keywords internal
+#' @inherit dmultn
+#' @references Karlsson, S. (2013) Forecasting with Bayesian Vector Autoregression.
+#' In Elliott, G. and Timmermann, A., editors, \emph{Handbook of Economic Forecasting},
+#' volume 2, chapter 15, pp. 791-897. Elsevier B.V.
 dmatt <- function(X, M, P, Q, v) {
   q <- ncol(X)
   p <- nrow(X)

@@ -20,8 +20,8 @@ test_that("Output correct", {
   expect_true(!is.null(prior_obj2$d_fcst))
 
   testthat::skip_on_cran()
-  mod_minn <- estimate_mfbvar(mfbvar_prior = prior_obj, prior_type = "minn", n_fcst = 4)
-  mod_ss <- estimate_mfbvar(prior_obj2, "ss")
+  mod_minn <- estimate_mfbvar(mfbvar_prior = prior_obj, prior_type = "minn", n_fcst = 4, smooth_state = TRUE)
+  mod_ss <- estimate_mfbvar(prior_obj2, "ss", smooth_state = TRUE)
 
   mdd_minn <- mdd(mod_minn, p_trunc = 0.5)
   mdd_ss1 <- mdd(mod_ss, method = 1)

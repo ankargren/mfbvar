@@ -368,38 +368,7 @@ estimate_mdd_minn <- function(mfbvar_obj, p_trunc, ...) {
       meaninvlike <- colMeans(invlike)
       mdd <- densfac - log(meaninvlike)
     }
-    return(log_mdd = mean(mdd))
+    return(log_mdd = mean(mdd) + sum(!is.na(Y[-(1:n_lags), mfbvar_obj$freq == "q"]))*log(3))
   }
 }
 
-estimate_mdd_minn2 <- function(mfbvar_obj) {
-  Pi_mean <- apply(mfbvar_obj$Pi, c(1, 2), mean)
-  Sigma_mean <- apply(mfbvar_obj$Sigma, c(1, 2), mean)
-  Sigma_mean <- 0.5*(Sigma_mean + t(Sigma_mean))
-  loglike <- kf_loglike()
-
-  prior_Pi_mean <- mfbvar_obj$prior_Pi_mean
-  prior_Pi_Omega <- mfbvar_obj$prior_Pi_Omega
-  prior_S <- mfbvar_obj$prior_S
-  prior_nu <- mfbvar_obj$prior_nu
-  prior <- dnorminvwish(Pi_mean, Sigma_mean, prior_Pi_mean, prior_Pi_Omega, prior_S, prior_nu)
-  post_nu <- prior_nu + nrow()
-  cond_post <- sapply(1:n_reps, function(x) {
-    Z_comp <- build_Z(z = Z[,, x], n_lags = n_lags)
-    XX <- Z_comp[-nrow(Z_comp), ]
-    XX <- cbind(XX, 1)
-    YY <- Z_comp[-1, 1:n_vars]
-
-    XXt.XX <- crossprod(XX)
-    XXt.XX.inv <- chol2inv(chol(XXt.XX))
-    Pi_sample <- XXt.XX.inv %*% crossprod(XX, YY)
-
-    # Posterior moments of Pi
-    post_Pi_Omega <- chol2inv(chol(inv_prior_Pi_Omega + XXt.XX))
-    post_Pi       <- post_Pi_Omega %*% (Omega_Pi + crossprod(XX, YY))
-    S <- crossprod(YY - XX %*% Pi_sample)
-    Pi_diff <- prior_Pi_mean - Pi_sample
-    post_S <- prior_S + S + t(Pi_diff) %*% chol2inv(chol(prior_Pi_Omega + XXt.XX.inv)) %*% Pi_diff
-    return(dnorminvwish(Pi_mean, Sigma_mean, post_Pi, post_Pi_Omega, post_S, post_nu))
-  })
-}
