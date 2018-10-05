@@ -5,8 +5,8 @@
 \alias{posterior_psi_Omega}
 \title{Compute posterior moments of the steady-state parameters}
 \usage{
-posterior_psi_mean(U, D_mat, Sigma, prior_psi_Omega, post_psi_Omega, Y_tilde,
-  prior_psi_mean)
+posterior_psi_mean(U, D_mat, Sigma, prior_psi_Omega, post_psi_Omega,
+  Y_tilde, prior_psi_mean)
 
 posterior_psi_Omega(U, D_mat, Sigma, prior_psi_Omega)
 }

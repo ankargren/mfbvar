@@ -21,12 +21,12 @@ Estimate the marginal data density for the model with a steady-state prior.
 }
 \details{
 Two methods for estimating the marginal data density are implemented. Method 1 and 2 correspond to the two methods proposed by
-Fuentes-Albero and Melosi (2013) and Ankargren, Unosson and Yang (2017).
+Fuentes-Albero and Melosi (2013) and Ankargren, Unosson and Yang (2018).
 }
 \references{
 Fuentes-Albero, C. and Melosi, L. (2013) Methods for Computing Marginal Data Densities from the Gibbs Output.
 \emph{Journal of Econometrics}, 175(2), 132-141, \url{https://doi.org/10.1016/j.jeconom.2013.03.002}\cr
- Ankargren, S., Unosson, M., & Yang, Y. (2017) A Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. Unpublished manuscript.
+ Ankargren, S., Unosson, M., & Yang, Y. (2018) A Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. Unpublished manuscript.
 }
 \seealso{
 \code{\link{mdd}}, \code{\link{mdd.mfbvar_minn}}

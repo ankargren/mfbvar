@@ -5,8 +5,8 @@
 \title{Draw from posterior of Pi and Sigma}
 \usage{
 posterior_Pi_Sigma(Z_r1, d, psi_r1, prior_Pi_mean, prior_Pi_Omega,
-  inv_prior_Pi_Omega, Omega_Pi, prior_S, prior_nu, check_roots, n_vars, n_lags,
-  n_T)
+  inv_prior_Pi_Omega, Omega_Pi, prior_S, prior_nu, check_roots, n_vars,
+  n_lags, n_T)
 }
 \arguments{
 \item{Z_r1}{The previous draw of \code{Z} (i.e. \code{Z[,, r-1]}).}

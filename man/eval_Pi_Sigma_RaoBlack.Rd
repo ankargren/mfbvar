@@ -5,8 +5,8 @@
 \title{Evaluate the conditional posterior of Pi and Sigma using Rao-Blackwellization}
 \usage{
 eval_Pi_Sigma_RaoBlack(Z_array, d, post_psi_center, post_Pi_center,
-  post_Sigma_center, post_nu, prior_Pi_mean, prior_Pi_Omega, prior_S, n_vars,
-  n_lags, n_reps)
+  post_Sigma_center, post_nu, prior_Pi_mean, prior_Pi_Omega, prior_S,
+  n_vars, n_lags, n_reps)
 }
 \arguments{
 \item{Z_array}{The array of draws of Z from the Gibbs sampler.}

@@ -4,8 +4,8 @@
 \alias{plot.mfbvar_minn}
 \title{Plotting method for class \code{mfbvar_minn}}
 \usage{
-\method{plot}{mfbvar_minn}(x, plot_start = NULL, pred_level = c(0.1, 0.9),
-  nrow_facet = NULL, ...)
+\method{plot}{mfbvar_minn}(x, plot_start = NULL, pred_level = c(0.1,
+  0.9), nrow_facet = NULL, ...)
 }
 \arguments{
 \item{x}{object of class \code{mfbvar_minn}}

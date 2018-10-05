@@ -4,8 +4,8 @@
 \alias{plot.mfbvar_ss}
 \title{Plotting method for class \code{mfbvar_ss}}
 \usage{
-\method{plot}{mfbvar_ss}(x, plot_start = NULL, ss_level = c(0.025, 0.975),
-  pred_level = c(0.1, 0.9), nrow_facet = NULL, ...)
+\method{plot}{mfbvar_ss}(x, plot_start = NULL, ss_level = c(0.025,
+  0.975), pred_level = c(0.1, 0.9), nrow_facet = NULL, ...)
 }
 \arguments{
 \item{x}{object of class \code{mfbvar_ss}}
