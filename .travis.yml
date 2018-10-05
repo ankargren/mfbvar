@@ -1,0 +1,30 @@
+# R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
+
+language: R
+sudo: false
+cache: packages
+os:
+  - linux
+  - osx
+r:
+  - oldrel
+  - release
+
+branches:
+  only:
+  - master
+
+r_github_packages:
+  - jimhester/covr
+r_binary_packages:
+  - Rcpp
+  - RcppArmadillo
+  - ggplot2
+  - pbapply
+  - testthat
+  - roxygen2
+  - devtools
+
+after_success:
+  - tar -C .. -xf $PKG_TARBALL
+  - Rscript -e 'covr::codecov()'

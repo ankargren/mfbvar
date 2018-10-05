@@ -6,3 +6,4 @@ codecov.yml
 README.md
 cran-comments.md
 man-roxygen
+\.travis.yml
