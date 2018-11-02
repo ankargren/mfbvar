@@ -368,7 +368,7 @@ summary.mfbvar_prior <- function(object, ...) {
 #' \item{smoothed_Z}{The smoothed estimates (if \code{smooth_state = TRUE})}
 #' @references
 #' Schorfheide, F., & Song, D. (2015) Real-Time Forecasting With a Mixed-Frequency VAR. \emph{Journal of Business & Economic Statistics}, 33(3), 366--380. \url{http://dx.doi.org/10.1080/07350015.2014.954707}\cr
-#' Ankargren, S., Unosson, M., & Yang, Y. (2018) A Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. Working Paper, Department of Statistics, Uppsala University No. 2018:2.
+#' Ankargren, S., Unosson, M., & Yang, Y. (2018) A Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. Working Paper, Department of Statistics, Uppsala University No. 2018:3.
 estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type, ...) {
   if (hasArg(mfbvar_prior)) {
     if (!inherits(mfbvar_prior, "mfbvar_prior")) {
