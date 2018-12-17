@@ -1,3 +1,10 @@
+## Resubmission
+This is a resubmission. In this version I have:
+
+* Explained the acronym in the Description.
+
+* Added links/references in the Description to the methods used in the package.
+
 ## Test environments
 * Local OS X Mojave 10.14.1 install, R 3.5.1
 * win-builder (R 3.5.1, devel)
