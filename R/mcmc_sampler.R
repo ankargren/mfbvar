@@ -51,7 +51,6 @@ mcmc_sampler.mfbvar_ss <- function(x, ...) {
   prior_psi_mean <- x$prior_psi_mean
   prior_psi_Omega <- x$prior_psi_Omega
   n_fcst <- x$n_fcst
-  smooth_state <- x$smooth_state
   check_roots <- x$check_roots
   verbose <- x$verbose
 
@@ -108,9 +107,6 @@ mcmc_sampler.mfbvar_ss <- function(x, ...) {
   }
   roots <- vector("numeric", n_reps)
   num_tries <- roots
-  if (smooth_state == TRUE) {
-    smoothed_Z     <- array(NA, dim = c(n_T, n_vars, n_reps))
-  }
 
 
 
@@ -226,10 +222,6 @@ mcmc_sampler.mfbvar_ss <- function(x, ...) {
     demeaned_z0 <- Z_1 - d[1:n_lags, ] %*% t(matrix(psi[r,], nrow = n_vars))
     Z_res <- kf_sim_smooth(mZ, Pi_r, Sigma[,,r], Lambda_, demeaned_z0, n_q, T_b)
     Z_res <- rbind(demeaned_z0, Z_res) + d %*% t(matrix(psi[r,], nrow = n_vars))
-    if (smooth_state == TRUE) {
-      Z_smooth <- kf_ragged(mZ, Pi_r, Sigma[,,r], Lambda_, demeaned_z0, n_q, T_b)$Z_tT[-c(1:n_lags), ]
-      smoothed_Z[,, r] <- rbind(demeaned_z0, Z_smooth) + d %*% t(matrix(psi[r, ], nrow = n_vars))
-    }
     Z[,, r] <- Z_res
 
     ################################################################
@@ -272,9 +264,6 @@ mcmc_sampler.mfbvar_ss <- function(x, ...) {
   if (n_fcst > 0) {
     return_obj$Z_fcst <- Z_fcst
   }
-  if (smooth_state == TRUE) {
-    return_obj$smoothed_Z <- smoothed_Z
-  }
 
   return(return_obj)
 
@@ -301,7 +290,6 @@ mcmc_sampler.mfbvar_minn <- function(x, ...){
   Y <- x$Y
   freq <- x$freq
   n_fcst <- x$n_fcst
-  smooth_state <- x$smooth_state
   check_roots <- x$check_roots
   verbose <- x$verbose
   n_lags <- x$n_lags
@@ -363,9 +351,7 @@ mcmc_sampler.mfbvar_minn <- function(x, ...){
     roots <- vector("numeric", n_reps)
     num_tries <- roots
   }
-  if (smooth_state == TRUE) {
-    smoothed_Z     <- array(NA, dim = c(n_T, n_vars, n_reps))
-  }
+
 
 
 
@@ -479,11 +465,6 @@ mcmc_sampler.mfbvar_minn <- function(x, ...){
 
     }
 
-    if (smooth_state == TRUE) {
-      Z_smooth <- kf_ragged(Y, Pi_r, Sigma_r, Lambda_, Z_1, n_q, T_b)$Z_tT[-c(1:n_lags), ]
-      smoothed_Z[,, r] <- rbind(Z_1, Z_smooth)
-    }
-
     if (verbose == TRUE) {
       setTimerProgressBar(pb, r/n_reps)
     }
@@ -509,9 +490,6 @@ mcmc_sampler.mfbvar_minn <- function(x, ...){
   }
   if (n_fcst>0) {
     return_obj$Z_fcst <- Z_fcst
-  }
-  if (smooth_state == TRUE) {
-    return_obj$smoothed_Z <- smoothed_Z
   }
 
   return(return_obj)

@@ -17,10 +17,9 @@
 #' @param prior_psi_mean (Steady state only) Vector of length \code{n_determ*n_vars} with the prior means of the steady-state parameters.
 #' @param prior_psi_Omega (Steady state only) Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.
 #' @param lambda3 (Minnesota only) Prior variance of the intercept.
-#' @param volatility String giving the type of volatility: \code{"constant"} sets the error covariance matrix to be constant, \code{"factorstochvol"} uses the factor stochastic volatility model.
-#' @param n_fac (Only used if \code{volatility = "factorstochvol"}) Number of factors to use for the factor stochastic volatility model
-#' @param cl (Only used if \code{volatility = "factorstochvol"}) Cluster object to use for drawing regression parameters in parallel
-#' @param ... (Only used if \code{volatility = "factorstochvol"}) Arguments to pass along to \code{\link[factorstochvol]{fsvsample}}. See details.
+#' @param n_fac (Only used with factor stochastic volatility) Number of factors to use for the factor stochastic volatility model
+#' @param cl (Only used with factor stochastic volatility) Cluster object to use for drawing regression parameters in parallel
+#' @param ... (Only used with factor stochastic volatility) Arguments to pass along to \code{\link[factorstochvol]{fsvsample}}. See details.
 #' @templateVar verbose TRUE
 #' @templateVar check_roots TRUE
 #' @template man_template
@@ -34,7 +33,7 @@
 #' (\code{n_fcst > 0}) also \code{d_fcst} needs to be provided. Finally, the prior moments for the steady-state parameters must also be
 #' provided.
 #'
-#' For modeling stochastic volatility by the factor stochastic volatility model, a named list with arguments shipped to \code{\link[factorstochvol]{fsvsample}} must be supplied. It should at least include the component \code{factors} setting the number of factors. Note that arguments \code{y}, \code{draws} and \code{burnin} are set inside the MCMC and hence not relevant to provide. If any of the starting value arguments are supplied, these are used as starting values when initiating the MCMC algorithm. If arguments are not given, the defaults used are as follows (see \code{\link[factorstochvol]{fsvsample}} for descriptions):
+#' For modeling stochastic volatility by the factor stochastic volatility model, the number of factors to use must be supplied. Further arguments can be passed along to \code{\link[factorstochvol]{fsvsample}}. If arguments are not given, the defaults used are as follows (see \code{\link[factorstochvol]{fsvsample}} for descriptions):
 #' \itemize{
 #'   \item{\code{priormu}}{\code{ = c(0, 10)}}
 #'   \item{\code{priorphiidi}}{\code{ = c(10, 3)}}
@@ -61,8 +60,8 @@
 set_prior <- function(Y, freq, prior_Pi_AR1 = rep(0, ncol(Y)), lambda1 = 0.2,
                       lambda2 = 1, n_lags, n_fcst = 0, n_burnin, n_reps,
                       d = NULL, d_fcst = NULL, prior_psi_mean = NULL,
-                      prior_psi_Omega = NULL, lambda3 = 10000, volatility = "constant",
-                      n_fac, cl = NULL, verbose = FALSE, check_roots = FALSE, ...) {
+                      prior_psi_Omega = NULL, lambda3 = 10000,
+                      n_fac = NULL, cl = NULL, verbose = FALSE, check_roots = FALSE, ...) {
   prior_call <- mget(names(formals())[names(formals()) != "..."], sys.frame(sys.nframe()))
   prior_call$supplied_args <- names(as.list(match.call()))[-1]
   ellipsis <- list(...)
@@ -282,7 +281,8 @@ check_prior <- function(prior_obj) {
 
 
 
-  if (prior_obj$volatility == "factorstochvol") {
+
+  if (!is.null(prior_obj$n_fac)) {
     if (!is.numeric(prior_obj$n_fac) | !is.atomic(prior_obj$n_fac)) {
       stop("The number of factors is not a numeric scalar value.")
     }
@@ -380,7 +380,11 @@ check_prior <- function(prior_obj) {
         prior_obj$priorhomoskedastic <- NA
       }
     }
+  } else if (is.null(prior_obj$n_fac) && any(prior_obj$supplied_args %in% c("priormu", "priorphiidi", "priorphifac", "priorsigmaidi", "priorsigmafac",
+                   "priorfacload", "priorng", "columnwise", "restrict", "heteroskedastic", "priorhomoskedastic"))) {
+    stop("Please set the number of factors before attempting to pass additional arguments along to fsvsim.")
   }
+
 
   return(prior_obj)
 }
@@ -446,15 +450,23 @@ summary.mfbvar_prior <- function(object, ...) {
   cat("----------------------------\n")
   cat("Required elements:\n")
   cat("  Y:", ncol(object$Y), "variables,", nrow(object$Y), "time points\n")
-  cat("  freq:", object$freq, "\n")
-  cat("  prior_Pi_AR1:", object$prior_Pi_AR1, "\n")
+  cat(sprintf("  freq: %d monthly and %d quarterly variables\n", sum(object$freq == "m"), sum(object$freq == "q")))
+  if (length(object$prior_Pi_AR1)<=5) {
+    disp_prior_Pi_AR1 <- object$prior_Pi_AR1
+  } else {
+    if (length(unique(object$prior_Pi_AR1)) == 1) {
+      disp_prior_Pi_AR1 <- object$prior_Pi_AR1[1]
+    } else {
+      disp_prior_Pi_AR1 <- sprintf("vector with %d elements", length(object$prior_Pi_AR1))
+    }
+  }
+  cat("  prior_Pi_AR1:", disp_prior_Pi_AR1, "\n")
   cat("  lambda1:", object$lambda1, "\n")
   cat("  lambda2:", object$lambda2, "\n")
   cat("  n_lags:", object$n_lags, "\n")
   cat("  n_fcst:", object$n_fcst, "\n")
   cat("  n_burnin:", object$n_burnin, "\n")
   cat("  n_reps:", object$n_reps, "\n")
-  cat("  ")
   cat("----------------------------\n")
   cat("Steady-state-specific elements:\n")
   cat("  d:", ifelse(is.null(object$d), "<missing>", ifelse(object$intercept_flag, "intercept", paste0(ncol(object$d), "deterministic variables"))),"\n")
@@ -466,7 +478,7 @@ summary.mfbvar_prior <- function(object, ...) {
   cat("  lambda3:", ifelse(is.null(object$lambda3), "<missing> (will rely on default)", object$lambda3), "\n")
   cat("----------------------------\n")
   cat("Factor stochastic volatility-specific elements:\n")
-  cat("  n_fac:", object$n_fac, "\n")
+  cat("  n_fac:", ifelse(is.null(object$n_fac), "<missing>", object$n_fac), "\n")
   cat("  cl:", ifelse(is.null(object$cl), "<missing> (will draw regression parameters in serial)", sprintf("%s with %d workers", class(object$cl)[1], length(cl))), "\n")
   if ("priormu" %in% object$supplied_args) {
     cat("  priormu:", object$priormu, "\n")
@@ -531,6 +543,7 @@ summary.mfbvar_prior <- function(object, ...) {
 #'
 #' @param mfbvar_prior a \code{mfbvar_prior} object
 #' @param prior_type either \code{"ss"} (steady-state prior) or \code{"minn"} (Minnesota prior)
+#' @param volatility either \code{"constant"} for constant volatility, or \code{"factorstochvol"} for factor stochastic volatility
 #' @param ... additional arguments to \code{update_prior} (if \code{mfbvar_prior} is \code{NULL}, the arguments are passed on to \code{set_prior})
 #' @return an object of class \code{mfbvar} and \code{mfbvar_ss}/\code{mfbvar_minn} containing posterior quantities as well as the prior object
 #' @seealso \code{\link{set_prior}}, \code{\link{update_prior}}, \code{\link{predict.mfbvar}}, \code{\link{plot.mfbvar_minn}},
@@ -551,7 +564,7 @@ summary.mfbvar_prior <- function(object, ...) {
 #' @references
 #' Schorfheide, F., & Song, D. (2015) Real-Time Forecasting With a Mixed-Frequency VAR. \emph{Journal of Business & Economic Statistics}, 33(3), 366--380. \url{http://dx.doi.org/10.1080/07350015.2014.954707}\cr
 #' Ankargren, S., Unosson, M., & Yang, Y. (2018) A Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. Working Paper, Department of Statistics, Uppsala University No. 2018:3.
-estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type, ...) {
+estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type, volatility = "constant", ...) {
   if (hasArg(mfbvar_prior)) {
     if (!inherits(mfbvar_prior, "mfbvar_prior")) {
       stop("mfbvar_prior must be of class mfbvar_prior.")
@@ -567,8 +580,11 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type, ...) {
   if (!(prior_type %in% c("ss", "minn"))) {
     stop("prior_type must be 'ss' or 'minn'.")
   }
+  if (!(volatility %in% c("constant", "factorstochvol"))) {
+    stop("volatility must be 'constant' or 'factorstochvol'.")
+  }
 
-  class(mfbvar_prior) <- c(class(mfbvar_prior), paste0("mfbvar_", prior_type))
+  class(mfbvar_prior) <- c(class(mfbvar_prior), paste0("mfbvar_", prior_type), paste0("mfbvar_volatility"))
 
   if (mfbvar_prior$verbose) {
     cat(paste0("############################################\n   Running the burn-in sampler with ", mfbvar_prior$n_burnin, " draws\n\n"))

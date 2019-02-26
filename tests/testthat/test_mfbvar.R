@@ -94,4 +94,24 @@ test_that("Prior checks correct", {
   prior_obj2 <- update_prior(prior_obj2, n_fcst = 4)
   expect_is(prior_obj2$d_fcst, "matrix")
   expect_true(all(dim(prior_obj2$d_fcst) == c(4, 1)))
+
+
+  expect_warning({
+  prior_obj <- set_prior(Y = mf_sweden, freq = c(rep("m", 4), "q"),
+                         n_lags = 4, n_burnin = 100, n_reps = 100,
+                         prior_Pi_AR1 = 0)
+  summary(prior_obj)
+  })
+  expect_warning({
+  prior_obj <- set_prior(Y = mf_sweden, freq = c(rep("m", 4), "q"),
+                         n_lags = 4, n_burnin = 100, n_reps = 100,
+                         prior_Pi_AR1 = 1:5)
+  summary(prior_obj)
+  })
+  expect_warning({
+  prior_obj <- set_prior(Y = cbind(mf_sweden[,1:4], mf_sweden), freq = c(rep("m", 8), "q"),
+                         n_lags = 4, n_burnin = 100, n_reps = 100,
+                         prior_Pi_AR1 = 1:9)
+  summary(prior_obj)
+  })
 })
