@@ -1,8 +1,8 @@
 Package: mfbvar
 Type: Package
 Title: Mixed-Frequency Bayesian VAR Models 
-Version: 0.4.0
-Date: 2018-12-17
+Version: 0.5.0.9000
+Date: 2019-02-26
 Authors@R: c(
     person("Sebastian", "Ankargren", email = "sebastian.ankargren@statistics.uu.se", role = c("cre", "aut"), comment = c(ORCID = "0000-0003-4415-8734")),
     person("Yukai", "Yang", email = "yukai.yang@statistics.uu.se", role = c("aut"), comment=c(ORCID="0000-0002-2623-8549")))
@@ -12,7 +12,7 @@ LazyData: TRUE
 URL: https://github.com/ankargren/mfbvar
 BugReports: https://github.com/ankargren/mfbvar/issues
 Imports:
-    Rcpp (>= 0.12.7), ggplot2 (>= 2.2.1), methods, pbapply, utils
+    Rcpp (>= 0.12.7), ggplot2 (>= 2.2.1), methods, pbapply, utils, factorstochvol
 LinkingTo:
     Rcpp, RcppArmadillo
 Depends: R (>= 2.10)

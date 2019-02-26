@@ -9,8 +9,8 @@
 set_prior(Y, freq, prior_Pi_AR1 = rep(0, ncol(Y)), lambda1 = 0.2,
   lambda2 = 1, n_lags, n_fcst = 0, n_burnin, n_reps, d = NULL,
   d_fcst = NULL, prior_psi_mean = NULL, prior_psi_Omega = NULL,
-  lambda3 = 10000, verbose = FALSE, smooth_state = FALSE,
-  check_roots = TRUE)
+  lambda3 = 10000, volatility = "constant", verbose = FALSE,
+  smooth_state = FALSE, check_roots = TRUE)
 
 update_prior(prior_obj, ...)
 
@@ -46,6 +46,8 @@ term.}
 
 \item{lambda3}{(Minnesota only) Prior variance of the intercept.}
 
+\item{volatility}{String giving the type of volatility: \code{"constant"} sets the error covariance matrix to be constant, \code{"factorstochvol"} uses the factor stochastic volatility model}
+
 \item{verbose}{Logical, if progress should be printed to the console.}
 
 \item{smooth_state}{Logical, if \code{TRUE} then the smoothed estimates of the latent states are also returned.}
@@ -55,6 +57,8 @@ term.}
 \item{prior_obj}{an object of class \code{mfbvar_prior}}
 
 \item{...}{named arguments for prior attributes to update}
+
+\item{settings_factorstochvol}{(Only if \code{volatility = "factorstochvol"}) A list with named components which are handed over to \code{\link[factorstochvol]{fsvsample}}; names should correspond to arguments of \code{\link[factorstochvol]{fsvsample}}. At the very least, the list must include \code{factors} giving the number of factors to use. See details.}
 }
 \description{
 Create an object storing all information needed for estimation, including data as well as model and prior specifications for both a Minnesota or steady-state prior.
@@ -69,6 +73,22 @@ For the steady-state prior, the deterministic matrix needs to be supplied, or a 
 the only deterministic term. If the latter, also \code{d_fcst} is set to be intercept only. Otherwise, if forecasts are requested
 (\code{n_fcst > 0}) also \code{d_fcst} needs to be provided. Finally, the prior moments for the steady-state parameters must also be
 provided.
+
+For modeling stochastic volatility by the factor stochastic volatility model, a named list with arguments shipped to \code{\link[factorstochvol]{fsvsample}} must be supplied. It should at least include the component \code{factors} setting the number of factors. Note that arguments \code{y}, \code{draws}, \code{burnin} and arguments with are set inside the MCMC. If any of the starting value arguments are supplied, these are used as starting values when initiating the MCMC algorithm. If arguments are not given, the defaults used are as follows (see \code{\link[factorstochvol]{fsvsample}} for descriptions):
+\itemize{
+  \item{\code{priormu}}{\code{c(0, 10)}}
+  \item{\code{priorphiidi}}{\code{c(10, 3)}}
+  \item{\code{priorphifac}}{\code{c(10, 3)}}
+  \item{\code{priorsigmaidi}}{\code{1}}
+  \item{\code{priorsigmafac}}{\code{1}}
+  \item{\code{priorfacload}}{\code{1}}
+  \item{\code{priorng}}{\code{c(1, 1)}}
+  \item{\code{columnwise}}{\code{FALSE}}
+  \item{\code{priormu}}{\code{c(0, 10)}}
+  \item{\code{restrict}}{\code{"none"}}
+  \item{\code{heteroskedastic}}{\code{TRUE}}
+  \item{\code{priorhomoskedastic}}{\code{NA}}
+}
 
 The steady-state prior involves inverting the lag polynomial. For this reason, draws in which the largest eigenvalue
 (in absolute value) of the lag polynomial is greater than 1 are discarded and new draws are made. The maximum number of

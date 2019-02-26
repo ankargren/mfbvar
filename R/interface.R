@@ -17,8 +17,11 @@
 #' @param prior_psi_mean (Steady state only) Vector of length \code{n_determ*n_vars} with the prior means of the steady-state parameters.
 #' @param prior_psi_Omega (Steady state only) Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.
 #' @param lambda3 (Minnesota only) Prior variance of the intercept.
+#' @param volatility String giving the type of volatility: \code{"constant"} sets the error covariance matrix to be constant, \code{"factorstochvol"} uses the factor stochastic volatility model.
+#' @param n_fac (Only used if \code{volatility = "factorstochvol"}) Number of factors to use for the factor stochastic volatility model
+#' @param cl (Only used if \code{volatility = "factorstochvol"}) Cluster object to use for drawing regression parameters in parallel
+#' @param ... (Only used if \code{volatility = "factorstochvol"}) Arguments to pass along to \code{\link[factorstochvol]{fsvsample}}. See details.
 #' @templateVar verbose TRUE
-#' @templateVar smooth_state TRUE
 #' @templateVar check_roots TRUE
 #' @template man_template
 #' @details The first arguments (\code{Y} through \code{n_reps}) must be set for the model to be estimated irrespective of the choice
@@ -31,6 +34,21 @@
 #' (\code{n_fcst > 0}) also \code{d_fcst} needs to be provided. Finally, the prior moments for the steady-state parameters must also be
 #' provided.
 #'
+#' For modeling stochastic volatility by the factor stochastic volatility model, a named list with arguments shipped to \code{\link[factorstochvol]{fsvsample}} must be supplied. It should at least include the component \code{factors} setting the number of factors. Note that arguments \code{y}, \code{draws} and \code{burnin} are set inside the MCMC and hence not relevant to provide. If any of the starting value arguments are supplied, these are used as starting values when initiating the MCMC algorithm. If arguments are not given, the defaults used are as follows (see \code{\link[factorstochvol]{fsvsample}} for descriptions):
+#' \itemize{
+#'   \item{\code{priormu}}{\code{ = c(0, 10)}}
+#'   \item{\code{priorphiidi}}{\code{ = c(10, 3)}}
+#'   \item{\code{priorphifac}}{\code{ = c(10, 3)}}
+#'   \item{\code{priorsigmaidi}}{\code{ = 1}}
+#'   \item{\code{priorsigmafac}}{\code{ = 1}}
+#'   \item{\code{priorfacload}}{\code{ = 1}}
+#'   \item{\code{priorng}}{\code{ = c(1, 1)}}
+#'   \item{\code{columnwise}}{\code{ = FALSE}}
+#'   \item{\code{restrict}}{\code{ = "none"}}
+#'   \item{\code{heteroskedastic}}{\code{ = TRUE}}
+#'   \item{\code{priorhomoskedastic}}{\code{ = NA}}
+#' }
+#'
 #' The steady-state prior involves inverting the lag polynomial. For this reason, draws in which the largest eigenvalue
 #' (in absolute value) of the lag polynomial is greater than 1 are discarded and new draws are made. The maximum number of
 #' attempts is 1,000. The components in the output named \code{roots} and \code{num_tries} contain the largest roots and the
@@ -39,14 +57,21 @@
 #' prior_obj <- set_prior(Y = mf_sweden, freq = c(rep("m", 4), "q"),
 #'                        n_lags = 4, n_burnin = 100, n_reps = 100)
 #' prior_obj <- update_prior(prior_obj, n_fcst = 4)
-#' @seealso \code{\link{interval_to_moments}}, \code{\link{print.mfbvar_prior}}, \code{\link{summary.mfbvar_prior}}, \code{\link{estimate_mfbvar}}
+#' @seealso \code{\link{interval_to_moments}}, \code{\link{print.mfbvar_prior}}, \code{\link{summary.mfbvar_prior}}, \code{\link{estimate_mfbvar}}, \code{\link[factorstochvol]{fsvsample}}
 set_prior <- function(Y, freq, prior_Pi_AR1 = rep(0, ncol(Y)), lambda1 = 0.2,
                       lambda2 = 1, n_lags, n_fcst = 0, n_burnin, n_reps,
                       d = NULL, d_fcst = NULL, prior_psi_mean = NULL,
-                      prior_psi_Omega = NULL, lambda3 = 10000, verbose = FALSE,
-                      smooth_state = FALSE, check_roots = TRUE) {
-  prior_call <- mget(names(formals()),sys.frame(sys.nframe()))
+                      prior_psi_Omega = NULL, lambda3 = 10000, volatility = "constant",
+                      n_fac, cl = NULL, verbose = FALSE, check_roots = FALSE, ...) {
+  prior_call <- mget(names(formals())[names(formals()) != "..."], sys.frame(sys.nframe()))
   prior_call$supplied_args <- names(as.list(match.call()))[-1]
+  ellipsis <- list(...)
+  fsv_names <- names(ellipsis)
+  fsv_arguments <- c("priormu", "priorphiidi", "priorphifac", "priorsigmaidi", "priorsigmafac", "priorfacload", "priorng", "columnwise", "restrict", "heteroskedastic", "priorhomoskedastic")
+  if (!all(fsv_names %in% fsv_arguments)) {
+    unused_names <- setdiff(fsv_names, fsv_arguments)
+    warning(sprintf("The following arguments passed along to fsvsample are unused: %s", ifelse(unused_names == "", "[unnamed component]", unused_names)))
+  }
   ret <- check_prior(prior_call)
   class(ret) <- "mfbvar_prior"
   return(ret)
@@ -251,12 +276,110 @@ check_prior <- function(prior_obj) {
     stop("n_reps: Number of draws to use in main chain not specified.\n")
   }
 
-  if (!is.logical(prior_obj$smooth_state)) {
-    stop("smooth_state: must be logical.\n")
-  }
-
   if (!is.logical(prior_obj$check_roots)) {
     stop("check_roots: must be logical.\n")
+  }
+
+
+
+  if (prior_obj$volatility == "factorstochvol") {
+    if (!is.numeric(prior_obj$n_fac) | !is.atomic(prior_obj$n_fac)) {
+      stop("The number of factors is not a numeric scalar value.")
+    }
+
+    if (!inherits(cl, "cluster")) {
+      stop(sprintf("cl should be a cluster object, but is %s", class(cl)))
+    }
+
+    if ("priormu" %in% prior_obj$supplied_args) {
+      if (!(is.numeric(prior_obj$priormu) && length(prior_obj$priormu) == 2)) {
+        stop(sprintf("priormu should be a numeric vector of length 2, but is %s of length %d", class(prior_obj$priormu), length(prior_obj$priormu)))
+      }
+    } else {
+      prior_obj$priormu <- c(0, 10)
+    }
+
+    if ("priorphiidi" %in% prior_obj$supplied_args) {
+      if (!(is.numeric(prior_obj$priorphiidi) && length(prior_obj$priorphiidi) == 2)) {
+        stop(sprintf("priorphiidi should be a numeric vector of length 2, but is %s of length %d", class(prior_obj$priorphiidi), length(prior_obj$priorphiidi)))
+      }
+    } else {
+      prior_obj$priorphiidi <- c(10, 3)
+    }
+
+    if ("priorphifac" %in% prior_obj$supplied_args) {
+      if (!(is.numeric(prior_obj$priorphifac) && length(prior_obj$priorphifac) == 2)) {
+        stop(sprintf("priorphifac should be a numeric vector of length 2, but is %s of length %d", class(prior_obj$priorphifac), length(prior_obj$priorphifac)))
+      }
+    } else {
+      prior_obj$priorphifac <- c(10, 3)
+    }
+
+    if ("priorsigmaidi" %in% prior_obj$supplied_args) {
+      if (!(is.numeric(prior_obj$priorsigmaidi) && is.atomic(prior_obj$priorsigmaidi) && length(prior_obj$priorsigmaidi) %in% c(1, ncol(prior_obj$Y)))) {
+        stop(sprintf("priorsigmaidi should be a numeric vector with 1 or n_vars elements, but is %s with %d elements", class(prior_obj$priorsigmaidi), length(prior_obj$priorsigmaidi)))
+      }
+    } else {
+      prior_obj$priorsigmaidi <- 1
+    }
+
+    if ("priorsigmafac" %in% prior_obj$supplied_args) {
+      if (!(is.numeric(prior_obj$priorsigmafac) && is.atomic(prior_obj$priorsigmafac) && length(prior_obj$priorsigmafac) %in% c(1, ncol(prior_obj$n_fac)))) {
+        stop(sprintf("priorsigmafac should be a numeric vector with 1 or n_vars elements, but is %s with %d elements", class(prior_obj$priorsigmafac), length(prior_obj$priorsigmaidi)))
+      }
+    } else {
+      prior_obj$priorsigmafac <- 1
+    }
+
+    if ("priorfacload" %in% prior_obj$supplied_args) {
+      if (!(is.numeric(tmp$priorfacload) && (length(tmp$priorfacload) == 1 || dim(tmp$priorfacload) == c(ncol(prior_obj$Y), prior_obj$factors)))) {
+        stop(sprintf("priorfacload should be a scalar value or an n_vars x n_fac matrix, but is %s with %d elements", class(prior_obj$priorfacload), length(prior_obj$priorfacload)))
+      }
+    } else {
+      prior_obj$priorfacload <- 1
+    }
+
+    if ("priorng" %in% prior_obj$supplied_args) {
+      if (!(is.numeric(prior_obj$priorng) && length(prior_obj$priorng) == 2)) {
+        stop(sprintf("priorng should be a numeric vector of length 2, but is %s of length %d", class(prior_obj$priorng), length(prior_obj$priorng)))
+      }
+    } else {
+      prior_obj$priorng <- c(1, 1)
+    }
+
+    if ("columnwise" %in% prior_obj$supplied_args) {
+      if (!(is.logical(prior_obj$columnwise) && length(prior_obj$priorng) == 1)) {
+        stop(sprintf("columnwise should be a single logical value, but is %s of length %d", class(prior_obj$columnwise), length(prior_obj$columnwise)))
+      }
+    } else {
+      prior_obj$columnwise <- FALSE
+    }
+
+    if ("restrict" %in% prior_obj$supplied_args) {
+      if (!(is.character(prior_obj$restrict) && length(prior_obj$priorng) == 1)) {
+        stop(sprintf("restrict should be a single string, but is %s of length %d", class(prior_obj$restrict), length(prior_obj$restrict)))
+      }
+    } else {
+      prior_obj$restrict <- "none"
+    }
+
+    if ("heteroskedastic" %in% prior_obj$supplied_args) {
+      if (!(is.logical(prior_obj$heteroskedastic) && length(prior_obj$priorng) %in% c(1, 2, ncol(prior_obj$Y)+prior_obj$n_fac))) {
+        stop(sprintf("heteroskedastic should be a vector of 1, 2, or n_vars + n_fac logical values, but is %s of length %d", class(prior_obj$heteroskedastic), length(prior_obj$heteroskedastic)))
+      }
+    } else {
+      prior_obj$heteroskedastic <- TRUE
+    }
+
+    if (!prior_obj$priorhomoskedastic) {
+      if ("priorhomoskedastic" %in% prior_obj$supplied_args) {
+        if (!(is.numeric(prior_obj$priorhomoskedastic) && is.matrix(prior_obj$priorhomoskedastic) && dim(prior_obj$priorhomoskedastic) == c(ncol(prior_obj$Y)+prior_obj$n_fac, 2))) {
+          stop(sprintf("priorhomoskedastic should be a matrix of dimensions (n_vars + n_fac) x 2, but is %s of length %d", class(prior_obj$priorhomoskedastic), length(prior_obj$priorhomoskedastic)))
+        }
+      } else {
+        prior_obj$priorhomoskedastic <- NA
+      }
+    }
   }
 
   return(prior_obj)
@@ -298,6 +421,13 @@ print.mfbvar_prior <- function(x, ...) {
     test_sub <- test_all[c("Y", "n_lags", "n_burnin", "n_reps")]
     cat("FALSE\n Missing elements:", names(test_sub)[which(test_sub)], "\n\n")
   }
+
+  cat("Checking if factor stochastic volatility can be used... ")
+  if (!is.null(x$n_fac)) {
+    cat("TRUE\n\n")
+  } else {
+    cat("FALSE\n Missing element: n_fac \n\n")
+  }
 }
 
 #' Summary method for mfbvar_prior
@@ -324,6 +454,7 @@ summary.mfbvar_prior <- function(object, ...) {
   cat("  n_fcst:", object$n_fcst, "\n")
   cat("  n_burnin:", object$n_burnin, "\n")
   cat("  n_reps:", object$n_reps, "\n")
+  cat("  ")
   cat("----------------------------\n")
   cat("Steady-state-specific elements:\n")
   cat("  d:", ifelse(is.null(object$d), "<missing>", ifelse(object$intercept_flag, "intercept", paste0(ncol(object$d), "deterministic variables"))),"\n")
@@ -334,9 +465,61 @@ summary.mfbvar_prior <- function(object, ...) {
   cat("Minnesota-specific elements:\n")
   cat("  lambda3:", ifelse(is.null(object$lambda3), "<missing> (will rely on default)", object$lambda3), "\n")
   cat("----------------------------\n")
+  cat("Factor stochastic volatility-specific elements:\n")
+  cat("  n_fac:", object$n_fac, "\n")
+  cat("  cl:", ifelse(is.null(object$cl), "<missing> (will draw regression parameters in serial)", sprintf("%s with %d workers", class(object$cl)[1], length(cl))), "\n")
+  if ("priormu" %in% object$supplied_args) {
+    cat("  priormu:", object$priormu, "\n")
+  }
+  if ("priorphiidi" %in% object$supplied_args) {
+    cat("  priorphiidi:", object$priorphiidi, "\n")
+  }
+  if ("priorphifac" %in% object$supplied_args) {
+    cat("  priorphifac:", object$priorphifac, "\n")
+  }
+  if ("priorsigmaidi" %in% object$supplied_args) {
+    if (length(object$priorsigmaidi) == 1) {
+      cat("  priorsigmaidi:", object$priorsigmaidi, "\n")
+    } else {
+      cat("  priorsigmaidi: vector with", length(object$priorsigmaidi), "elements \n")
+    }
+  }
+  if ("priorsigmafac" %in% object$supplied_args) {
+    if (length(object$priorsigmafac) == 1) {
+      cat("  priorsigmafac:", object$priorsigmafac, "\n")
+    } else {
+      cat("  priorsigmafac: vector with", length(object$priorsigmafac), "elements \n")
+    }
+  }
+  if ("priorfacload" %in% object$supplied_args) {
+    if (length(object$priorfacload) == 1) {
+      cat("  priorfacload:", object$priorfacload, "\n")
+    } else {
+      cat("  priorfacload:", paste(dim(object$priorfacload), collapse = " x "), "matrix\n")
+    }
+  }
+  if ("priorng" %in% object$supplied_args) {
+    cat("  priorng:", object$priorng, "\n")
+  }
+  if ("columnwise" %in% object$supplied_args) {
+    cat("  columnwise:", object$columnwise, "\n")
+  }
+  if ("restrict" %in% object$supplied_args) {
+    cat("  restrict:", object$restrict, "\n")
+  }
+  if ("heteroskedastic" %in% object$supplied_args) {
+    if (length(object$heteroskedastic) <= 2) {
+      cat("  heteroskedastic:", object$heteroskedastic, "\n")
+    } else {
+      cat("  heteroskedastic: vector with", ncol(object$Y)+object$n_fac, "logical values\n")
+    }
+  }
+  if ("priorhomoskedastic" %in% object$supplied_args) {
+    cat("  priorhomoskedastic:", paste(dim(object$priorhomoskedastic), collapse = " x "), "matrix\n")
+  }
+  cat("----------------------------\n")
   cat("Other:\n")
   cat("  verbose:", object$verbose, "\n")
-  cat("  smooth_state:", object$smooth_state, "\n")
   cat("  check_roots:", object$check_roots, "\n")
 
 }
@@ -365,7 +548,6 @@ summary.mfbvar_prior <- function(object, ...) {
 #' \item{num_tries}{The number of attempts for drawing a stationary \eqn{\Pi} (only relevant if \code{prior_type = "ss"})}
 #' \item{Z_fcst}{Array of monthly forecasts from the main chain; \code{Z_fcst[,, r]} is the \code{r}th forecast. The first \code{n_lags}
 #' rows are taken from the data to offer a bridge between observations and forecasts and for computing nowcasts (i.e. with ragged edges).}
-#' \item{smoothed_Z}{The smoothed estimates (if \code{smooth_state = TRUE})}
 #' @references
 #' Schorfheide, F., & Song, D. (2015) Real-Time Forecasting With a Mixed-Frequency VAR. \emph{Journal of Business & Economic Statistics}, 33(3), 366--380. \url{http://dx.doi.org/10.1080/07350015.2014.954707}\cr
 #' Ankargren, S., Unosson, M., & Yang, Y. (2018) A Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. Working Paper, Department of Statistics, Uppsala University No. 2018:3.
@@ -393,7 +575,7 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior_type, ...) {
     start_burnin <- Sys.time()
   }
 
-  burn_in <- mcmc_sampler(update_prior(mfbvar_prior, n_fcst = 0, smooth_state = FALSE), n_reps = mfbvar_prior$n_burnin)
+  burn_in <- mcmc_sampler(update_prior(mfbvar_prior, n_fcst = 0), n_reps = mfbvar_prior$n_burnin)
 
   if (mfbvar_prior$verbose) {
     end_burnin <- Sys.time()
