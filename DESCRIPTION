@@ -17,4 +17,4 @@ LinkingTo:
     Rcpp, RcppArmadillo
 Depends: R (>= 2.10)
 Suggests: testthat, covr
-RoxygenNote: 6.1.0
+RoxygenNote: 6.1.1

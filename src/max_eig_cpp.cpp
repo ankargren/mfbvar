@@ -1,4 +1,4 @@
-#include <RcppArmadillo.h>
+#include "mfbvar.h"
 
 // [[Rcpp::depends(RcppArmadillo)]]
 

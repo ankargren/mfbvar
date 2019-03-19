@@ -11,6 +11,10 @@ mdd <- function(x, ...) {
   UseMethod("mdd")
 }
 
+mdd.default <- function(x, ...) {
+  stop("The marginal data density can currently only be estimated when inverse Wishart is used for the error covariance matrix.")
+}
+
 #' Marginal data density method for class \code{mfbvar_ss}
 #'
 #' Estimate the marginal data density for the model with a steady-state prior.
@@ -24,7 +28,7 @@ mdd <- function(x, ...) {
 #' \emph{Journal of Econometrics}, 175(2), 132-141, \url{https://doi.org/10.1016/j.jeconom.2013.03.002}\cr
 #'  Ankargren, S., Unosson, M., & Yang, Y. (2018) A Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. Working Paper, Department of Statistics, Uppsala University No. 2018:3.
 #' @seealso \code{\link{mdd}}, \code{\link{mdd.mfbvar_minn}}
-mdd.mfbvar_ss <- function(x, method = 1, ...) {
+mdd.mfbvar_ss_iw <- function(x, method = 1, ...) {
   if (method == 1) {
     mdd_est <- estimate_mdd_ss_1(x)
   } else if (method == 2) {
@@ -46,7 +50,7 @@ mdd.mfbvar_ss <- function(x, method = 1, ...) {
 #' @references
 #' Schorfheide, F., & Song, D. (2015) Real-Time Forecasting With a Mixed-Frequency VAR. \emph{Journal of Business & Economic Statistics}, 33(3), 366--380. \url{http://dx.doi.org/10.1080/07350015.2014.954707}
 #' @seealso \code{\link{mdd}}, \code{\link{mdd.mfbvar_ss}}
-mdd.mfbvar_minn <- function(x, ...) {
+mdd.mfbvar_minn_iw <- function(x, ...) {
   quarterly_cols <- which(x$mfbvar_prior$freq == "q")
   estimate_mdd_minn(x, ...)
 }

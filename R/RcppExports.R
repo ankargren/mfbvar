@@ -10,6 +10,10 @@ build_U_cpp <- function(Pi, n_determ, n_vars, n_lags) {
     .Call(`_mfbvar_build_U_cpp`, Pi, n_determ, n_vars, n_lags)
 }
 
+create_X <- function(y, k) {
+    .Call(`_mfbvar_create_X`, y, k)
+}
+
 #' @title Kalman filter and smoother
 #'
 #' @description Kalman filter and smoother (\code{kf_ragged}) and simulation smoother (\code{kf_sim_smooth}) for mixed-frequency data with ragged edges. This function is more computationally efficient than using a companion form representation.
@@ -69,6 +73,14 @@ max_eig_cpp <- function(A) {
     .Call(`_mfbvar_max_eig_cpp`, A)
 }
 
+rmvn <- function(Phi, d, alpha) {
+    .Call(`_mfbvar_rmvn`, Phi, d, alpha)
+}
+
+rmvn_ccm <- function(Phi, d, alpha, c, j) {
+    .Call(`_mfbvar_rmvn_ccm`, Phi, d, alpha, c, j)
+}
+
 #' @rdname dnorminvwish
 #' @keywords internal
 rmatn <- function(M, Q, P) {
@@ -85,6 +97,10 @@ rinvwish <- function(v, S) {
 #' @keywords internal
 rmultn <- function(m, Sigma) {
     .Call(`_mfbvar_rmultn`, m, Sigma)
+}
+
+rsimsm_adaptive_univariate <- function(y_, Phi, Sigma, Lambda, Z1, n_q_, T_b, f) {
+    .Call(`_mfbvar_rsimsm_adaptive_univariate`, y_, Phi, Sigma, Lambda, Z1, n_q_, T_b, f)
 }
 
 #' @title Smooth and sample from the smoothed distribution

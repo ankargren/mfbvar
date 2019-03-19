@@ -26,7 +26,7 @@ mcmc_sampler <- function(x, ...) {
 #' @return
 #' An object of class \code{mfbvar} and \code{mfbvar_ss} or \code{mfbvar_minn}.
 
-mcmc_sampler.mfbvar_ss <- function(x, ...) {
+mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
 
   n_vars <- ncol(x$Y)
   if (!(!is.null(x$Y) && !is.null(x$d) && !is.null(x$prior_psi_mean) && !is.null(x$prior_psi_Omega) && !is.null(x$n_lags) && !is.null(x$n_burnin) && !is.null(x$n_reps))) {
@@ -38,7 +38,7 @@ mcmc_sampler.mfbvar_ss <- function(x, ...) {
     stop("d_fcst has ", nrow(x$d_fcst), " rows, but n_fcst is ", x$n_fcst, ".")
   }
 
-  priors <- prior_Pi_Sigma(lambda1 = x$lambda1, lambda2 = x$lambda2, prior_Pi_AR1 = x$prior_Pi_AR1, Y = x$Y,
+  priors <- prior_Pi_Sigma(lambda1 = x$lambda1, lambda2 = x$lambda3, prior_Pi_AR1 = x$prior_Pi_AR1, Y = x$Y,
                            n_lags = x$n_lags, prior_nu = n_vars + 2)
   prior_Pi_mean <- priors$prior_Pi_mean
   prior_Pi_Omega <- priors$prior_Pi_Omega
@@ -271,7 +271,7 @@ mcmc_sampler.mfbvar_ss <- function(x, ...) {
 
 #' @rdname mcmc_sampler.mfbvar_ss
 
-mcmc_sampler.mfbvar_minn <- function(x, ...){
+mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
 
   n_vars <- ncol(x$Y)
   if (!(!is.null(x$Y) && !is.null(x$n_lags) && !is.null(x$n_burnin) && !is.null(x$n_reps))) {
@@ -281,7 +281,7 @@ mcmc_sampler.mfbvar_minn <- function(x, ...){
   }
 
   prior_nu <- n_vars + 2
-  priors <- prior_Pi_Sigma(lambda1 = x$lambda1, lambda2 = x$lambda2, prior_Pi_AR1 = x$prior_Pi_AR1, Y = x$Y,
+  priors <- prior_Pi_Sigma(lambda1 = x$lambda1, lambda2 = x$lambda3, prior_Pi_AR1 = x$prior_Pi_AR1, Y = x$Y,
                            n_lags = x$n_lags, prior_nu = prior_nu)
   prior_Pi_mean <- priors$prior_Pi_mean
   prior_Pi_Omega <- priors$prior_Pi_Omega
@@ -293,10 +293,10 @@ mcmc_sampler.mfbvar_minn <- function(x, ...){
   check_roots <- x$check_roots
   verbose <- x$verbose
   n_lags <- x$n_lags
-  lambda3 <- x$lambda3
+  lambda4 <- x$lambda4
 
   # Add terms for constant
-  prior_Pi_Omega <- diag(c(diag(prior_Pi_Omega), x$lambda1^2*lambda3^2))
+  prior_Pi_Omega <- diag(c(diag(prior_Pi_Omega), x$lambda1^2*lambda4^2))
   prior_Pi_mean <- rbind(prior_Pi_mean, 0)
 
   add_args <- list(...)

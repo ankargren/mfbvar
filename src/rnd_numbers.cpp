@@ -1,6 +1,4 @@
-// [[Rcpp::depends(RcppArmadillo)]]
-
-#include <RcppArmadillo.h>
+#include "mfbvar.h"
 
 //' @rdname dnorminvwish
 //' @keywords internal
