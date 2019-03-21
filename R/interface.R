@@ -11,6 +11,7 @@
 #' @param lambda4 (Minnesota only) Prior variance of the intercept.
 #' @templateVar n_lags TRUE
 #' @templateVar n_fcst TRUE
+#' @param thin Store every \code{thin}th draw
 #' @templateVar n_burnin TRUE
 #' @templateVar n_reps TRUE
 #' @param d (Steady state only) Either a matrix with same number of rows as \code{Y} and \code{n_determ} number of columns containing the deterministic terms or a string \code{"intercept"} for requesting an intercept as the only deterministic
@@ -60,7 +61,7 @@
 #' @seealso \code{\link{interval_to_moments}}, \code{\link{print.mfbvar_prior}}, \code{\link{summary.mfbvar_prior}}, \code{\link{estimate_mfbvar}}, \code{\link[factorstochvol]{fsvsample}}
 set_prior <- function(Y, freq, prior_Pi_AR1 = rep(0, ncol(Y)), lambda1 = 0.2,
                       lambda2 = 0.5, lambda3 = 1, lambda4 = 10000, n_lags,
-                      n_fcst = 0, n_burnin, n_reps, d = NULL, d_fcst = NULL,
+                      n_fcst = 0, thin = 1, n_burnin, n_reps, d = NULL, d_fcst = NULL,
                       prior_psi_mean = NULL, prior_psi_Omega = NULL, n_fac = NULL,
                       cl = NULL, verbose = FALSE, check_roots = FALSE, ...) {
   prior_call <- mget(names(formals())[names(formals()) != "..."], sys.frame(sys.nframe()))
@@ -261,6 +262,11 @@ check_prior <- function(prior_obj) {
     prior_obj$supplied_args <- c(prior_obj$supplied_args, "n_fcst")
   }
 
+  if ("thin" %in% prior_obj$supplied_args) {
+    if (!is.atomic(prior_obj$thin) || length(prior_obj$thin) > 1) {
+      stop("thin must be a vector with a single element.")
+    }
+  }
 
 
   if ("n_burnin" %in% prior_obj$supplied_args) {
@@ -291,8 +297,8 @@ check_prior <- function(prior_obj) {
       stop("The number of factors is not a numeric scalar value.")
     }
 
-    if (!inherits(cl, "cluster")) {
-      stop(sprintf("cl should be a cluster object, but is %s", class(cl)))
+    if (!inherits(prior_obj$cl, "cluster") && !is.null(prior_obj$cl)) {
+      stop(sprintf("cl should be a cluster object, but is %s", class(prior_obj$cl)))
     }
 
     if ("priormu" %in% prior_obj$supplied_args) {
@@ -336,7 +342,7 @@ check_prior <- function(prior_obj) {
     }
 
     if ("priorfacload" %in% prior_obj$supplied_args) {
-      if (!(is.numeric(tmp$priorfacload) && (length(tmp$priorfacload) == 1 || dim(tmp$priorfacload) == c(ncol(prior_obj$Y), prior_obj$factors)))) {
+      if (!(is.numeric(prior_obj$supplied_args$priorfacload) && (length(prior_obj$supplied_args$priorfacload) == 1 || dim(prior_obj$supplied_args$priorfacload) == c(ncol(prior_obj$Y), prior_obj$factors)))) {
         stop(sprintf("priorfacload should be a scalar value or an n_vars x n_fac matrix, but is %s with %d elements", class(prior_obj$priorfacload), length(prior_obj$priorfacload)))
       }
     } else {
@@ -482,7 +488,7 @@ summary.mfbvar_prior <- function(object, ...) {
   cat("----------------------------\n")
   cat("Factor stochastic volatility-specific elements:\n")
   cat("  n_fac:", ifelse(is.null(object$n_fac), "<missing>", object$n_fac), "\n")
-  cat("  cl:", ifelse(is.null(object$cl), "<missing>", sprintf("%s with %d workers", class(object$cl)[1], length(cl))), "\n")
+  cat("  cl:", ifelse(is.null(object$cl), "<missing>", sprintf("%s with %d workers", class(object$cl)[1], length(object$cl))), "\n")
   if ("priormu" %in% object$supplied_args) {
     cat("  priormu:", object$priormu, "\n")
   }
@@ -568,11 +574,13 @@ summary.mfbvar_prior <- function(object, ...) {
 #' Schorfheide, F., & Song, D. (2015) Real-Time Forecasting With a Mixed-Frequency VAR. \emph{Journal of Business & Economic Statistics}, 33(3), 366--380. \url{http://dx.doi.org/10.1080/07350015.2014.954707}\cr
 #' Ankargren, S., Unosson, M., & Yang, Y. (2018) A Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. Working Paper, Department of Statistics, Uppsala University No. 2018:3.
 estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
+  time_out <- Sys.time()
+  args <- list(...)
   if (hasArg(mfbvar_prior)) {
     if (!inherits(mfbvar_prior, "mfbvar_prior")) {
       stop("mfbvar_prior must be of class mfbvar_prior.")
     } else {
-      if (length(list(...)) > 0) {
+      if (length(args) > 0) {
         mfbvar_prior <- update_prior(mfbvar_prior, ...)
       }
     }
@@ -582,7 +590,7 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
 
   if (hasArg(prior_type)) {
     warning("The argument 'prior_type' is deprecated (starting in 0.5.0). Use 'prior' instead.", call. = FALSE)
-    prior <- prior_type
+    prior <- args$prior_type
   }
 
   if (!(prior %in% c("ss", "minn"))) {
@@ -592,13 +600,14 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
     stop("volatility must be 'iw' or 'fsv'.")
   }
 
-  class(mfbvar_prior) <- c(class(mfbvar_prior), sprintf("mfbvar_%s_%s", prior, iw), sprintf("mfbvar_%s", prior))
+  class(mfbvar_prior) <- c(class(mfbvar_prior), sprintf("mfbvar_%s_%s", prior, variance), sprintf("mfbvar_%s", prior))
 
   if (mfbvar_prior$verbose) {
     cat(paste0("############################################\n   Running the burn-in sampler with ", mfbvar_prior$n_burnin, " draws\n\n"))
     start_burnin <- Sys.time()
   }
 
+  time_out <- c(time_out, Sys.time())
   burn_in <- mcmc_sampler(update_prior(mfbvar_prior, n_fcst = 0), n_reps = mfbvar_prior$n_burnin)
 
   if (mfbvar_prior$verbose) {
@@ -610,8 +619,9 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
                mfbvar_prior$n_reps, " draws \n\n", ifelse(mfbvar_prior$n_fcst > 0, paste0("   Making forecasts ", mfbvar_prior$n_fcst, " steps ahead"), ""), "\n\n"))
   }
 
+  time_out <- c(time_out, Sys.time())
   main_run <- mcmc_sampler(mfbvar_prior, n_reps = mfbvar_prior$n_reps+1, init = burn_in$init)
-
+  time_out <- c(time_out, Sys.time())
   if (mfbvar_prior$verbose) {
     time_diff <- Sys.time() - start_burnin
     cat(paste0("\n   Total time elapsed: ", signif(time_diff, digits = 1), " ",
@@ -650,12 +660,16 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
   main_run$Sigma <- main_run$Sigma[,,-1]
   main_run$Z <- main_run$Z[,,-1]
 
-  dimnames(main_run$Z) <- list(time = names_row,
+  dimnames(main_run$Z) <- list(time = names_row[(nrow(mfbvar_prior$Y)-nrow(main_run$Z)+1):nrow(mfbvar_prior$Y)],
                                variable = names_col,
                                iteration = 1:mfbvar_prior$n_reps)
-  dimnames(main_run$Sigma) <- list(names_col,
-                                   names_col,
-                                   iteration = 1:mfbvar_prior$n_reps)
+
+  if (variance == "iw") {
+    dimnames(main_run$Sigma) <- list(names_col,
+                                     names_col,
+                                     iteration = 1:mfbvar_prior$n_reps)
+  }
+
 
   if (prior == "ss") {
     if (is.null(colnames(mfbvar_prior$d))) {
@@ -678,6 +692,8 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
   }
 
   class(main_run) <- c("mfbvar", paste0("mfbvar_", prior))
+  time_out <- c(time_out, Sys.time())
+  main_run$time_out <- time_out
   return(main_run)
 }
 
@@ -755,7 +771,7 @@ print.mfbvar_minn_iw <- function(x, ...){
 #' mod_ss <- estimate_mfbvar(prior_obj, prior = "ss")
 #' plot(mod_ss)
 
-plot.mfbvar_ss_iw <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
+plot.mfbvar_ss <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
                         pred_level = c(0.10, 0.90), nrow_facet = NULL, ...){
   lower <- upper <- value <- NULL
   if (is.null(plot_start)) {
@@ -878,7 +894,7 @@ plot.mfbvar_ss_iw <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
 #' mod_minn <- estimate_mfbvar(prior_obj, prior = "minn")
 #' plot(mod_minn)
 
-plot.mfbvar_minn_iw <- function(x, plot_start = NULL, pred_level = c(0.10, 0.90), nrow_facet = NULL, ...){
+plot.mfbvar_minn <- function(x, plot_start = NULL, pred_level = c(0.10, 0.90), nrow_facet = NULL, ...){
   lower <- upper <- value <- NULL
   if (is.null(plot_start)) {
     if (x$n_fcst > 0) {

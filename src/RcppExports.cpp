@@ -33,6 +33,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// create_X_t
+arma::mat create_X_t(const arma::mat& y);
+RcppExport SEXP _mfbvar_create_X_t(SEXP ySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type y(ySEXP);
+    rcpp_result_gen = Rcpp::wrap(create_X_t(y));
+    return rcpp_result_gen;
+END_RCPP
+}
 // kf_loglike
 arma::vec kf_loglike(arma::mat y_, arma::mat Phi_, arma::mat Sigma_, arma::mat Lambda_, arma::mat a00, arma::mat P00);
 RcppExport SEXP _mfbvar_kf_loglike(SEXP y_SEXP, SEXP Phi_SEXP, SEXP Sigma_SEXP, SEXP Lambda_SEXP, SEXP a00SEXP, SEXP P00SEXP) {
@@ -200,6 +211,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_mfbvar_build_U_cpp", (DL_FUNC) &_mfbvar_build_U_cpp, 4},
     {"_mfbvar_create_X", (DL_FUNC) &_mfbvar_create_X, 2},
+    {"_mfbvar_create_X_t", (DL_FUNC) &_mfbvar_create_X_t, 1},
     {"_mfbvar_kf_loglike", (DL_FUNC) &_mfbvar_kf_loglike, 6},
     {"_mfbvar_kf_ragged", (DL_FUNC) &_mfbvar_kf_ragged, 7},
     {"_mfbvar_kf_sim_smooth", (DL_FUNC) &_mfbvar_kf_sim_smooth, 7},

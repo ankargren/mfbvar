@@ -131,3 +131,25 @@ posterior_psi_Omega <- function(U, D_mat, Sigma, prior_psi_Omega) {
   return(psi_Omega)
 }
 
+posterior_psi_mean_fsv <- function(U, D_mat, idivar, prior_psi_Omega, post_psi_Omega, Y_tilde, prior_psi_mean) {
+  SigmaYD <- matrix(0, nrow = ncol(idivar) * ncol(D_mat), 1)
+  n_T <- nrow(D_mat)
+  for (i in 1:n_T) {
+    SigmaYD <- SigmaYD + matrix(c(crossprod(Y_tilde[i, ,drop = FALSE]/idivar[i, ], D_mat[i, , drop = FALSE])), ncol = 1)
+  }
+  psi <- post_psi_Omega %*% (crossprod(U, SigmaYD) + chol2inv(chol(prior_psi_Omega)) %*% prior_psi_mean)
+  return(psi)
+}
+
+#' @rdname posterior_psi_mean
+#' @keywords internal
+#' @return \item{psi_Omega}{The posterior variance (from \code{\link{posterior_psi_Omega}})}
+posterior_psi_Omega_fsv <- function(U, D_mat, idivar, prior_psi_Omega) {
+  mid_mat <- matrix(0, ncol(D_mat)*ncol(idivar), ncol(D_mat)*ncol(idivar))
+  n_T <- nrow(D_mat)
+  for (i in 1:n_T) {
+    mid_mat <- mid_mat + kronecker(crossprod(D_mat[i,,drop=FALSE]), diag(1/idivar[i, ]))
+  }
+  psi_Omega <- chol2inv(chol(crossprod(U, mid_mat) %*% U + chol2inv(chol(prior_psi_Omega))))
+  return(psi_Omega)
+}

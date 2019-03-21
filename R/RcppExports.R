@@ -14,6 +14,10 @@ create_X <- function(y, k) {
     .Call(`_mfbvar_create_X`, y, k)
 }
 
+create_X_t <- function(y) {
+    .Call(`_mfbvar_create_X_t`, y)
+}
+
 #' @title Kalman filter and smoother
 #'
 #' @description Kalman filter and smoother (\code{kf_ragged}) and simulation smoother (\code{kf_sim_smooth}) for mixed-frequency data with ragged edges. This function is more computationally efficient than using a companion form representation.
