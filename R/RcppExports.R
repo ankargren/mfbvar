@@ -14,8 +14,16 @@ create_X <- function(y, k) {
     .Call(`_mfbvar_create_X`, y, k)
 }
 
+create_X_noint <- function(y, k) {
+    .Call(`_mfbvar_create_X_noint`, y, k)
+}
+
 create_X_t <- function(y) {
     .Call(`_mfbvar_create_X_t`, y)
+}
+
+create_X_t_noint <- function(y) {
+    .Call(`_mfbvar_create_X_t_noint`, y)
 }
 
 #' @title Kalman filter and smoother

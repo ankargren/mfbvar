@@ -105,7 +105,31 @@ check_prior <- function(prior_obj) {
     if (!is.data.frame(prior_obj$Y)) {
       stop(paste0("Y is of class ", class(prior_obj$Y), ", but must be matrix or data frame."))
     } else {
-      prior_obj$Y <- as.matrix(prior_obj$Y)
+      col_class <- sapply(prior_obj$Y, class)
+      if (all(col_class == "numeric")) {
+        prior_obj$Y <- as.matrix(prior_obj$Y)
+        if (inherits(prior_obj$Y, "tbl")) {
+          rownames(prior_obj$Y) <- 1:nrow(prior_obj$Y)
+        } else {
+          if (is.null(rownames(prior_obj$Y))) {
+            rownames(prior_obj$Y) <- 1:nrow(prior_obj$Y)
+          }
+        }
+      } else if (sum(!(col_class == "numeric")) == 1) {
+          date_tmp <- prior_obj$Y[[which(col_class != "numeric")]]
+          date_tmp <- as.character(as.Date(date_tmp))
+          prior_obj$Y <- as.matrix(prior_obj$Y[, which(col_class == "numeric")])
+          if (!any(is.na(date_tmp))) {
+            rownames(prior_obj$Y) <- date_tmp
+          }
+      }
+      else {
+        stop(sprintf("The data frame contains %d non-numeric columns. Please include at most one non-numeric column that can be coerced to dates.", sum(!(col_class == "numeric"))))
+      }
+    }
+  } else {
+    if (is.null(rownames(prior_obj$Y))) {
+      rownames(prior_obj$Y) <- 1:nrow(prior_obj$Y)
     }
   }
 
@@ -387,8 +411,10 @@ check_prior <- function(prior_obj) {
           stop(sprintf("priorhomoskedastic should be a matrix of dimensions (n_vars + n_fac) x 2, but is %s of length %d", class(prior_obj$priorhomoskedastic), length(prior_obj$priorhomoskedastic)))
         }
       } else {
-        prior_obj$priorhomoskedastic <- NA
+        prior_obj$priorhomoskedastic <- c(1.1, 1.1)
       }
+    } else {
+      prior_obj$priorhomoskedastic <- c(1.1, 1.1)
     }
   } else if (is.null(prior_obj$n_fac) && any(prior_obj$supplied_args %in% c("priormu", "priorphiidi", "priorphifac", "priorsigmaidi", "priorsigmafac",
                    "priorfacload", "priorng", "columnwise", "restrict", "heteroskedastic", "priorhomoskedastic"))) {
@@ -406,7 +432,7 @@ check_prior <- function(prior_obj) {
 #' @param x prior object (class \code{mfbvar_prior})
 #' @param ... additional arguments (currently unused)
 #' @details The print method checks whether the steady-state and Minnesota
-#'   priors can be run with the current specification. This check is minimal in
+#'   priors can be used with the current specification. This check is minimal in
 #'   the sense that it checks only prior elements with no defaults, and it only
 #'   checks for estimation and not forecasting (for which the steady-state prior
 #'   requires additional information).
@@ -418,7 +444,7 @@ check_prior <- function(prior_obj) {
 print.mfbvar_prior <- function(x, ...) {
   cat("The following elements of the prior have not been set: \n", names(sapply(x, is.null))[sapply(x, is.null)])
   cat("\n\n")
-  cat("Checking if steady-state prior can be run... ")
+  cat("Checking if steady-state prior can be used... ")
   if (!is.null(x$Y) && !is.null(x$d) && !is.null(x$prior_psi_mean) && !is.null(x$prior_psi_Omega) && !is.null(x$n_lags) && !is.null(x$n_burnin) && !is.null(x$n_reps)) {
     cat("TRUE\n\n")
   } else {
@@ -427,7 +453,7 @@ print.mfbvar_prior <- function(x, ...) {
     cat("FALSE\n Missing elements:", names(test_sub)[which(test_sub)], "\n")
   }
 
-  cat("Checking if Minnesota prior can be run... ")
+  cat("Checking if Minnesota prior can be used... ")
   if (!is.null(x$Y) && !is.null(x$n_lags) && !is.null(x$n_burnin) && !is.null(x$n_reps)) {
     cat("TRUE\n\n")
   } else {
@@ -483,8 +509,8 @@ summary.mfbvar_prior <- function(object, ...) {
   cat("Steady-state-specific elements:\n")
   cat("  d:", ifelse(is.null(object$d), "<missing>", ifelse(object$intercept_flag, "intercept", paste0(ncol(object$d), "deterministic variables"))),"\n")
   cat("  d_fcst:", ifelse(is.null(object$d_fcst), "<missing>", ifelse(object$intercept_flag, "intercept", paste0(nrow(object$d_fcst), "forecasts, ", ncol(object$d), "deterministic variables"))),"\n")
-  cat("  prior_psi_mean:", ifelse(is.null(object$prior_psi_mean), "<missing>", "vector of prior steady-state means"), "\n")
-  cat("  prior_psi_Omega:", ifelse(is.null(object$prior_psi_Omega), "<missing>", "prior covariance matrix of prior steady states"), "\n")
+  cat("  prior_psi_mean:", ifelse(is.null(object$prior_psi_mean), "<missing>", "prior mean vector of steady states"), "\n")
+  cat("  prior_psi_Omega:", ifelse(is.null(object$prior_psi_Omega), "<missing>", "prior covariance matrix of steady states"), "\n")
   cat("----------------------------\n")
   cat("Factor stochastic volatility-specific elements:\n")
   cat("  n_fac:", ifelse(is.null(object$n_fac), "<missing>", object$n_fac), "\n")
@@ -603,24 +629,24 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
   class(mfbvar_prior) <- c(class(mfbvar_prior), sprintf("mfbvar_%s_%s", prior, variance), sprintf("mfbvar_%s", prior))
 
   if (mfbvar_prior$verbose) {
-    cat(paste0("############################################\n   Running the burn-in sampler with ", mfbvar_prior$n_burnin, " draws\n\n"))
+    cat(paste0("##############################################\nRunning the burn-in sampler with ", mfbvar_prior$n_burnin, " draws\n\n"))
     start_burnin <- Sys.time()
   }
 
   time_out <- c(time_out, Sys.time())
-  burn_in <- mcmc_sampler(update_prior(mfbvar_prior, n_fcst = 0), n_reps = mfbvar_prior$n_burnin)
+  burn_in <- mcmc_sampler(update_prior(mfbvar_prior, n_fcst = 0), n_reps = mfbvar_prior$n_burnin, thin = mfbvar_prior$n_burnin)
 
   if (mfbvar_prior$verbose) {
     end_burnin <- Sys.time()
     time_diff <- end_burnin - start_burnin
     cat(paste0("\n   Time elapsed for drawing ", mfbvar_prior$n_burnin, " times for burn-in: ", signif(time_diff, digits = 1), " ",
                attr(time_diff, "units"), "\n"))
-    cat(paste0("\n   Moving on to the main chain with ",
+    cat(paste0("\nMoving on to the main chain with ",
                mfbvar_prior$n_reps, " draws \n\n", ifelse(mfbvar_prior$n_fcst > 0, paste0("   Making forecasts ", mfbvar_prior$n_fcst, " steps ahead"), ""), "\n\n"))
   }
 
   time_out <- c(time_out, Sys.time())
-  main_run <- mcmc_sampler(mfbvar_prior, n_reps = mfbvar_prior$n_reps+1, init = burn_in$init)
+  main_run <-  mcmc_sampler(mfbvar_prior, n_reps = mfbvar_prior$n_reps+1, init = burn_in$init)
   time_out <- c(time_out, Sys.time())
   if (mfbvar_prior$verbose) {
     time_diff <- Sys.time() - start_burnin
@@ -677,6 +703,7 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
     } else {
       names_determ <- colnames(mfbvar_prior$d)
     }
+    rownames(mfbvar_prior$d) <- rownames(mfbvar_prior$Y)
     main_run$names_determ <- names_determ
     n_determ <- dim(mfbvar_prior$d)[2]
     main_run$psi <- main_run$psi[-1, ]
@@ -771,8 +798,51 @@ print.mfbvar_minn_iw <- function(x, ...){
 #' mod_ss <- estimate_mfbvar(prior_obj, prior = "ss")
 #' plot(mod_ss)
 
-plot.mfbvar_ss <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
-                        pred_level = c(0.10, 0.90), nrow_facet = NULL, ...){
+varplot <- function(x, variables = colnames(x$Y), var_bands = 0.95, ...) {
+  n_reps <- dim(x$latent)[3]
+  n_T <- nrow(x$latent)
+  n_vars <- ncol(x$Y)
+  n_plotvars <- length(variables)
+  n_lags <- x$n_lags
+  variances <- array(0, dim = c(n_T, n_plotvars, n_reps))
+  n_fac <- x$mfbvar_prior$n_fac
+  if (is.character(variables)) {
+    variables_num <- which(variables == colnames(x$Y))
+  } else {
+    variables_num <- variables
+  }
+  for (i in 1:n_reps) {
+    for (tt in 1:n_T) {
+      variances[tt,,i] <- sqrt(diag(matrix(x$facload[variables_num,,i], n_plotvars, n_fac) %*% diag(exp(x$latent[tt, (n_vars+1):(n_vars+n_fac), i]), n_fac) %*% t(matrix(x$facload[variables_num,,i], n_plotvars, n_fac)))+exp(x$latent[tt, variables_num, i]))
+    }
+  }
+  date <- tryCatch(as.Date(rownames(x$Y)), error = function(cond) cond)
+  if (inherits(date, "error")) {
+    if (is.null(rownames(x$Y))) {
+      date <- 1:nrow(x$Y)
+    } else {
+      date <- rownames(x$Y)
+    }
+  }
+  tibble(date = rep(date[(n_lags+1):(n_lags+n_T)], n_plotvars),
+         lower = c(apply(variances, 1:2, quantile, prob = (1-var_bands)/2)),
+         mean = c(apply(variances, 1:2, mean)),
+         upper = c(apply(variances, 1:2, quantile, prob = 1-(1-var_bands)/2)),
+         variable = rep(variables, each = n_T)) %>%
+    ggplot(aes(x = date, y = mean)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper), fill = "grey90", linetype = "dotted",
+                color = "black", alpha = 0.75) +
+    geom_line() +
+    facet_wrap(~variable, scales = "free_y") +
+    theme_minimal() +
+    labs(y = "Error standard deviation",
+         x = "Time")
+}
+
+plot.mfbvar_ss <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_start = NULL, ss_bands = 0.95,
+                        pred_bands = 0.8, nrow_facet = NULL, ...){
+
+
   lower <- upper <- value <- NULL
   if (is.null(plot_start)) {
     if (x$n_fcst > 0) {
@@ -781,14 +851,31 @@ plot.mfbvar_ss <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
       plot_range <- 1:x$n_T
     }
   } else {
-    plot_range <- plot_start:x$n_T
+    if (inherits(as.Date(plot_start), "Date")) {
+      if (!(plot_start %in% rownames(x$Y))) {
+        stop(sprintf("The start date, %s, does not match rownames in the data matrix Y.", plot_start))
+      }
+      plot_range <- (which(rownames(x$Y) == plot_start)):x$n_T
+    } else {
+      plot_range <- plot_start:x$n_T
+    }
   }
 
-  if (is.null(ss_level)) {
-    ss_level <- c(0.025, 0.975)
+  if (!is.null(rownames(x$Y))) {
+    plot_range_names <- rownames(x$Y)[1:x$n_T]
+  } else {
+    plot_range_names <- 1:x$n_T
   }
-  if (is.null(pred_level)) {
+
+  if (is.null(ss_bands)) {
+    ss_level <- c(0.025, 0.975)
+  } else {
+    ss_level <- c(0.5-ss_bands/2, 0.5+ss_bands/2)
+  }
+  if (is.null(pred_bands)) {
     pred_level <- c(0.10, 0.90)
+  } else {
+    pred_level <- c(0.5-pred_bands/2, 0.5+pred_bands/2)
   }
 
   names_col <- if (is.null(x$names_col)) paste0("x", 1:x$n_vars) else x$names_col
@@ -808,7 +895,7 @@ plot.mfbvar_ss <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
   }
 
   if (!is.null(x$psi)) {
-    ss <- data.frame(expand.grid(time = plot_range[1]:(plot_range[length(plot_range)]+x$n_fcst), names_col = names_col), lower = c(ss_lower), median = c(ss_median),
+    ss <- data.frame(expand.grid(time = plot_range[1]:(plot_range[length(plot_range)]+x$n_fcst), variable = names_col), lower = c(ss_lower), median = c(ss_median),
                      upper = c(ss_upper))
     ss$value <- c(rbind(as.matrix(x$Y[plot_range,]), matrix(NA, nrow = x$n_fcst, ncol = x$n_vars)))
     ss_excl <- c(rbind(!is.na(as.matrix(x$Y[plot_range,])), matrix(TRUE, nrow = x$n_fcst, ncol = x$n_vars)))
@@ -819,14 +906,13 @@ plot.mfbvar_ss <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
       geom_line(data = na.omit(ss), aes(y = value))
   }
   if (x$n_fcst > 0) {
-    preds <- predict(x, pred_quantiles = c(pred_level[1], 0.5, pred_level[2]))
-    fcst <- data.frame(expand.grid(time = (x$n_T+x$n_fcst-nrow(preds[[1]])+1):(x$n_T+x$n_fcst), names_col = x$names_col),
-                       lower = c(preds[[1]]), median = c(preds[[2]]),
-                       upper = c(preds[[3]]))
+    preds <- predict(x, aggregate_fcst = aggregate_fcst, fcst_start = fcst_start, pred_bands = pred_bands)
+    fcst <- preds
     last_pos <- apply(x$Y, 2, function(yy) max(which(!is.na(yy))))
     for (i in seq_along(last_pos)) {
-      fcst <- rbind(fcst, data.frame(time = (1:nrow(x$Y))[last_pos[i]],
-                                     names_col = names_col[i],
+      fcst <- rbind(fcst, data.frame(variable = names_col[i],
+                                     time = (1:nrow(x$Y))[last_pos[i]],
+                                     fcst_date = preds$fcst_date[1] %m-% months(preds$time[1] - last_pos[i]),
                                      lower = x$Y[last_pos[i], i],
                                      median = x$Y[last_pos[i], i],
                                      upper  = x$Y[last_pos[i], i]))
@@ -836,7 +922,9 @@ plot.mfbvar_ss <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
                                           fill = "grey90"), linetype = "dotted", color = "black",
                          alpha = 0.75) +
       geom_line(data = fcst, aes(y = median), linetype = "dashed") +
-      labs(caption = "Note: The forecasts are for the underlying variable.")
+      labs(caption = ifelse(aggregate_fcst,
+                            "Note: The forecasts for the quarterly variables have been aggregated to the quarterly frequency.",
+                            "Note: The forecasts are for the underlying variable."))
     names_row <- c(names_row, rownames(x$Z_fcst)[-(1:x$n_lags)])
   }
 
@@ -863,20 +951,24 @@ plot.mfbvar_ss <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
 
 
   if (is.null(nrow_facet)) {
-    p <- p + facet_wrap(~names_col, scales = "free_y")
+    p <- p + facet_wrap(~variable, scales = "free_y")
   } else {
-    p <- p + facet_wrap(~names_col, scales = "free_y", nrow = nrow_facet)
+    p <- p + facet_wrap(~variable, scales = "free_y", nrow = nrow_facet)
   }
 
   p <- p +
     theme_minimal() +
     theme(legend.position="bottom")
-  breaks <- ggplot_build(p)$layout$panel_ranges[[1]]$x.major_source
-  if (length(which(!(breaks %in% 1:x$n_T))) > 0) {
-    breaks <- breaks[-which(!(breaks %in% 1:x$n_T))]
+  breaks <- ggplot_build(p)$layout$coord$labels(ggplot_build(p)$layout$panel_params)[[1]]$x.labels
+  if (any(as.numeric(breaks)>plot_range[length(plot_range)])) {
+    break_labels <- c(plot_range_names[as.numeric(breaks)[as.numeric(breaks)<=plot_range[length(plot_range)]]],
+                      as.character(preds$fcst_date[min(which(preds$time == breaks[as.numeric(breaks)>plot_range[length(plot_range)]]))]))
+  } else {
+    break_labels <- plot_range_names[as.numeric(breaks)]
   }
-  p + scale_x_continuous(breaks = breaks,
-                         labels = names_row[breaks])
+  p + scale_x_continuous(breaks = as.numeric(breaks),
+                         labels = break_labels) +
+    theme(axis.text.x=element_text(angle=45, hjust=1))
 }
 
 #' Plotting method for class \code{mfbvar_minn}
@@ -1056,9 +1148,20 @@ summary.mfbvar_minn_iw <- function(object, ...) {
 #' mod_minn <- estimate_mfbvar(prior_obj, prior = "minn")
 #' predict(mod_minn)
 #' predict(mod_minn, pred_quantiles = 0.5, tidy = TRUE)
-predict.mfbvar <- function(object, pred_quantiles = c(0.10, 0.50, 0.90), tidy = FALSE, ...) {
+predict.mfbvar <- function(object, fcst_start = NULL, aggregate_fcst = TRUE, pred_bands = 0.8, ...) {
+
   if (object$n_fcst==0) {
     stop("No forecasts exist in the provided object.")
+  }
+  if (object$n_fcst > 0) {
+    if (!inherits(fcst_start, "Date")) {
+      tmp <- tryCatch(lubridate::ymd(rownames(object$Y)[nrow(object$Y)]), error = function(cond) cond)
+      if (inherits(tmp, "error")) {
+        stop("To summarize the forecasts, either fcst_start must be supplied or the rownames of Y be dates (YYYY-MM-DD).")
+      } else {
+        fcst_start <- ((lubridate::ymd(rownames(object$Y)[nrow(object$Y)])+lubridate::days(1))+months(1))-lubridate::days(1)
+      }
+    }
   }
 
   final_non_na <- min(unlist(apply(object$Y, 2, function(x) Position(is.na, x, nomatch = nrow(object$Y))))[object$mfbvar_prior$freq == "m"])
@@ -1068,18 +1171,107 @@ predict.mfbvar <- function(object, pred_quantiles = c(0.10, 0.50, 0.90), tidy = 
   } else {
     incl_fcst <- 1:(object$n_lags + object$n_fcst)
   }
-  if (tidy == FALSE) {
-    ret_list <- lapply(pred_quantiles, function(xx) apply(object$Z_fcst[incl_fcst,,], c(1, 2), quantile, prob = xx))
-    names(ret_list) <- paste0("quantile_", pred_quantiles*100)
-    return(ret_list)
-  } else if (tidy == TRUE) {
-    ret_list <- lapply(pred_quantiles, function(xx) apply(object$Z_fcst[incl_fcst,,], c(1, 2), quantile, prob = xx))
-    ret_tidy <- cbind(value = unlist(ret_list), expand.grid(fcst_date = rownames(object$Z_fcst[incl_fcst,,2]),
-                                                            time = NA,
-                                                            variable = object$names_col,
-                                                            quantile = pred_quantiles))
-    ret_tidy$time <- rep(nrow(object$Y)+object$n_fcst-max(incl_fcst)+incl_fcst, nrow(ret_tidy)/length(incl_fcst))
-    return(ret_tidy)
+
+
+  ret_names <- fcst_start %m+% months((-(length(incl_fcst)-object$n_fcst)):(object$n_fcst-1))
+  fcst_collapsed <- tibble(variable = rep(rep(object$names_col, each = length(incl_fcst)), object$n_reps),
+                           iter = rep(1:object$n_reps, each = object$n_vars*length(incl_fcst)),
+                           fcst = c(object$Z_fcst[incl_fcst,,]),
+                           fcst_date = rep(as.Date(as.character(ret_names)), object$n_vars*object$n_reps),
+                           freq = rep(rep(object$mfbvar_prior$freq, each = length(incl_fcst)), object$n_reps),
+                           time = rep(nrow(object$Y)+object$n_fcst-max(incl_fcst)+incl_fcst, object$n_vars*object$n_reps)
+                           ) %>%
+    transmute(variable = variable,
+              iter = iter,
+              year = year(fcst_date),
+              quarter = quarter(fcst_date),
+              fcst_date = fcst_date,
+              fcst = fcst,
+              freq = freq,
+              time = time)
+  if (aggregate_fcst) {
+    fcst_collapsed <- dplyr::filter(fcst_collapsed, freq == "q") %>%
+      group_by(variable, iter, year, quarter) %>%
+      summarize(fcst_date = max(fcst_date), fcst = mean(fcst), freq = unique(freq), time = max(time)) %>%
+      bind_rows(dplyr::filter(fcst_collapsed, freq == "m")) %>%
+      ungroup()
   }
 
+  if (!is.null(pred_bands) && !is.na(pred_bands)) {
+    pred_quantiles <- c(0.5-pred_bands/2, 0.5, 0.5+pred_bands/2)
+    fcst_collapsed <- group_by(fcst_collapsed, variable, time, fcst_date) %>%
+      summarize(lower = quantile(fcst, prob = pred_quantiles[1]),
+                median = quantile(fcst, prob = pred_quantiles[2]),
+                upper = quantile(fcst, prob = pred_quantiles[3])) %>%
+      ungroup()
+  }
+
+
+  return(fcst_collapsed)
 }
+
+
+plot.mfbvar_prior <- function(x, nrow_facet = NULL, ...){
+
+
+  ss_level <- c(0.025, 0.975)
+
+  names_col <- if (is.null(colnames(x$Y))) paste0("x", 1:x$n_vars) else colnames(x$Y)
+  names_row <- if (is.null(rownames(x$Y))) 1:x$n_T else rownames(x$Y)
+
+  if (!is.null(x$d)& !is.null(x$prior_psi_mean) & !is.null(x$prior_psi_Omega)) {
+    ss_flag <- TRUE
+  } else {
+    ss_flag <- FALSE
+  }
+
+  if (ss_flag) {
+    n_determ <- ncol(x$d)
+    ss_lower  <- x$d %*% t(matrix(qnorm(ss_level[1], x$prior_psi_mean, diag(x$prior_psi_Omega)), ncol = n_determ))
+    ss_median <- x$d %*% t(matrix(qnorm(0.5, x$prior_psi_mean, diag(x$prior_psi_Omega)), ncol = n_determ))
+    ss_upper  <- x$d %*% t(matrix(qnorm(ss_level[2], x$prior_psi_mean, diag(x$prior_psi_Omega)), ncol = n_determ))
+
+    ss <- data.frame(expand.grid(time = as.Date(rownames(x$Y)), variable = names_col), lower = c(ss_lower), median = c(ss_median),
+                     upper = c(ss_upper))
+  }
+
+  plot_df <- data.frame(expand.grid(time = as.Date(rownames(x$Y)), variable = names_col))
+  plot_df$value <- c(as.matrix(x$Y))
+  plot_df <- na.omit(plot_df)
+
+  p <-  ggplot(mapping = aes(x = time))
+
+  if (ss_flag) {
+    p <- p +
+      geom_ribbon(data = ss, aes(ymin = lower, ymax = upper, fill = "#bdbdbd"),  alpha = 1) +
+      scale_fill_manual(values = c("#bdbdbd"),
+                        label = c(paste0("Steady state (", 100*(ss_level[2]-ss_level[1]), "%)"))) +
+      labs(fill = "Intervals",
+           title = "Prior steady-state intervals")+
+      guides(fill = guide_legend(override.aes = list(fill = c("#bdbdbd"),
+                                                     linetype = c("blank"))))
+  }
+
+  p <- p +
+    geom_line(data=plot_df,aes(y=value), alpha = 0.75) +
+    labs(y = "Value",
+         x = "Time")
+
+  if (!ss_flag) {
+    p <- p +
+      labs(title = "Data")
+  }
+
+  if (is.null(nrow_facet)) {
+    p <- p + facet_wrap(~variable, scales = "free_y")
+  } else {
+    p <- p + facet_wrap(~variable, scales = "free_y", nrow = nrow_facet)
+  }
+
+  p <- p +
+    theme_minimal() +
+    theme(legend.position="bottom")
+
+  return(p)
+}
+

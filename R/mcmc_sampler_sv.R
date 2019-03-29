@@ -118,9 +118,9 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
 
   if (prior_zero_mean) {
     if (n_vars*n_lags > 1.05 * TT) {
-      par_fun <- par_fun_top(rmvn_bcm)
+      par_fun <- mfbvar:::par_fun_top(mfbvar:::rmvn_bcm)
     } else {
-      par_fun <- par_fun_top(rmvn_rue)
+      par_fun <- mfbvar:::par_fun_top(mfbvar:::rmvn_rue)
     }
   }
 
@@ -159,7 +159,9 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
   startfac <- matrix(init_fac, n_fac, TT)
 
   if (verbose) {
-    pb <- timerProgressBar(width = 35, char = "[=-]", style = 5)
+    pb <- pb <- progress_bar$new(
+      format = "[:bar] :percent eta: :eta",
+      clear = FALSE, total = n_reps, width = 60)
   }
 
   error <- NULL
@@ -269,21 +271,21 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
     }
 
     if (verbose) {
-      setTimerProgressBar(pb, i/n_reps)
+      pb$tick()
     }
-  }
-  if (verbose) {
-    close(pb)
   }
 
   ################################################################
   ### Prepare the return object
   return_obj <- list(Pi = Pi, Z = Z, Z_fcst = NULL, n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst,
                      prior_Pi_Omega = prior_Pi_Omega, Y = x$Y, n_T = n_T, n_T_ = TT, n_reps = n_reps-1,
-                     init = list(init_Pi = Pi[,, n_reps], init_Z = Z[,, n_reps], init_mu = mu_storage[, n_reps/thin],
-                                 init_phi = phi_storage[, n_reps/thin], init_sigma = sigma_storage[, n_reps/thin],
-                                 init_facload = matrix(facload_storage[,, n_reps/thin], n_vars, n_fac),
-                                 init_fac = matrix(fac_storage[,, n_reps/thin], TT, n_fac)),
+                     facload = facload_storage, latent = latent,
+                     init = list(init_Pi = Pi_i, init_Z = Z_i, init_mu = startpara$mu,
+                                 init_phi = startpara$phi, init_sigma = startpara$sigma,
+                                 init_facload = startfacload,
+                                 init_fac = startfac,
+                                 init_latent = startlatent,
+                                 init_latent0 = startlatent0),
                      error = error)
 
   if (n_fcst>0) {
@@ -296,6 +298,9 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
 
 
 mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
+
+  add_args <- list(...)
+  n_reps <- add_args$n_reps
 
   if (is.null(x$n_fac)) {
     stop("The number of factors (n_fac) must be provided.")
@@ -310,6 +315,13 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
   d_fcst <- x$d_fcst
   prior_psi_mean <- x$prior_psi_mean
   prior_psi_Omega <- x$prior_psi_Omega
+  check_roots <- x$check_roots
+  if (check_roots == TRUE) {
+    roots <- vector("numeric", n_reps)
+    num_tries <- roots
+  } else {
+    num_tries <- NULL
+  }
 
   n_vars <- ncol(x$Y)
   n_lags <- x$n_lags
@@ -321,15 +333,15 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
 
   y_in_p <- x$Y[-(1:n_lags), ]
 
-  T_b <- min(apply(y_in_p[,1:n_m], 2, function(x) ifelse(any(is.na(x)), min(which(is.na(x))), Inf))-1, nrow(y_in_p))
+  T_b <- min(apply(y_in_p[,1:n_m,drop=FALSE], 2, function(x) ifelse(any(is.na(x)), min(which(is.na(x))), Inf))-1, nrow(y_in_p))
   TT <- nrow(x$Y) - n_lags
   n_T <- nrow(x$Y)
 
 
 
-  add_args <- list(...)
 
-  n_reps <- add_args$n_reps
+
+
   if (!is.null(x$thin)) {
     thin <- x$thin
   } else {
@@ -353,7 +365,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
 
   ### Regression parameters
   if (is.null(init$init_Pi)) {
-    init_Pi <- matrix(0, nrow = n_vars, ncol = n_vars*n_vars*n_lags)
+    init_Pi <- matrix(0, nrow = n_vars, ncol = n_vars*n_lags)
   } else {
     init_Pi <- init$init_Pi
   }
@@ -379,12 +391,12 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
     init_mu <- init$init_mu
   }
   if (is.null(init$init_sigma)) {
-    init_sigma <- rep(0.75, n_vars + n_fac)
+    init_sigma <- rep(0.2, n_vars + n_fac)
   } else {
     init_sigma <- init$init_sigma
   }
   if (is.null(init$init_phi)) {
-    init_phi <- rep(0.2, n_vars + n_fac)
+    init_phi <- rep(0.75, n_vars + n_fac)
   } else {
     init_phi <- init$init_phi
   }
@@ -433,9 +445,9 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
 
   if (prior_zero_mean) {
     if (n_vars*n_lags > 1.05 * TT) {
-      par_fun <- par_fun_top(rmvn_bcm)
+      par_fun <- mfbvar:::par_fun_top(rmvn_bcm)
     } else {
-      par_fun <- par_fun_top(rmvn_rue)
+      par_fun <- mfbvar:::par_fun_top(rmvn_rue)
     }
   }
 
@@ -448,7 +460,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
 
   Pi <- array(init_Pi, dim = c(n_vars, n_vars*n_lags, n_reps/thin))
   Z <- array(init_Z, dim = c(TT, n_vars, n_reps/thin))
-  psi   <- array(NA, dim = c(n_reps, n_vars * n_determ))
+  psi   <- matrix(init_psi, n_reps, n_vars * n_determ, byrow = TRUE)
   if (n_fcst > 0) {
     Z_fcst <- array(NA, dim = c(n_fcst+n_lags, n_vars, n_reps),
                     dimnames = list(c((n_T-n_lags+1):n_T, paste0("fcst_", 1:n_fcst)), NULL, NULL))
@@ -465,7 +477,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
                   dimnames = list(rownames(init_latent), colnames(init_latent), NULL))
 
   Pi_i <- init_Pi
-  Pi_i0 <- cbind(Pi_i, 0)
+  Pi_i0 <- cbind(0, Pi_i)
   Z_i <- init_Z
   psi_i <- init_psi
   startpara <- list(mu = init_mu,
@@ -476,10 +488,15 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
   startfacload <- matrix(init_facload, nrow = n_vars, ncol = n_fac)
   startfac <- matrix(init_fac, n_fac, TT)
 
-  D_mat <- build_DD(d = d, n_lags = n_lags)
+  D_mat <- mfbvar:::build_DD(d = d, n_lags = n_lags)
+  dt <- d[-(1:n_lags), , drop = FALSE]
+  d1 <- d[1:n_lags, , drop = FALSE]
+  mu_mat <- dt %*% t(matrix(psi[1,], nrow = n_vars))
 
   if (verbose) {
-    pb <- timerProgressBar(width = 35, char = "[=-]", style = 5)
+    pb <- progress_bar$new(
+      format = "[:bar] :percent eta: :eta",
+      clear = FALSE, total = n_reps, width = 60)
   }
 
   error <- NULL
@@ -489,18 +506,19 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
 
     ## Mixed-frequency block: sample latent monthly series
     if (mf) {
-      mZ <- y_in_p - d %*% t(matrix(psi[i,], nrow = n_vars))
+      mZ <- y_in_p - mu_mat
       mZ <- as.matrix(mZ)
-      mZ1 <- Z1 - d[1:n_lags, ] %*% t(matrix(psi[i,], nrow = n_vars))
-      Z_i <- tryCatch(mfbvar:::rsimsm_adaptive_univariate(mZ, Pi_i0, Sig, Lambda_comp, mZ1, n_q, T_b, t(startfac) %*% t(startfacload)), error = function(cond) cond)
+      mZ1 <- Z1 - d1 %*% t(matrix(psi[i,], nrow = n_vars))
+      Z_i_demean <- tryCatch(mfbvar:::rsimsm_adaptive_univariate(mZ, Pi_i0, Sig, Lambda_comp, mZ1, n_q, T_b, t(startfac) %*% t(startfacload)), error = function(cond) cond)
       if (inherits(Z_i, "error")) {
         warning("MCMC halted because of an error in the mixed-frequency step. See $error for more information.")
-        error <- list(error = Z_i, iter = i, block = "z")
+        error <- list(error = Z_i_demean, iter = i, block = "z")
         break
       }
-      Z_i <- rbind(Z1, Z_i + d %*% t(matrix(psi[i,], nrow = n_vars)))
-      X <- mfbvar:::create_X_noint(Z_i, n_lags)
-      Z_i <- Z_i[-(1:n_lags), ]
+      Z_i <- Z_i_demean + mu_mat
+      X <- mfbvar:::create_X_noint(rbind(Z1, Z_i), n_lags)
+      #Z_i_demean <- Z_i
+      X_demean <- mfbvar:::create_X_noint(rbind(mZ1, Z_i_demean), n_lags)
     }
 
     ## Produce forecasts
@@ -516,14 +534,14 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
         volatility_pred <- startlatent[TT, ]
 
         Z_pred <- matrix(0, n_fcst+n_lags, n_vars)
-        Z_pred[1:n_lags, ] <- Z_i[(TT-n_lags+1):TT,] - d[(TT-n_lags+1):TT,] %*% t(matrix(psi[i,], nrow = n_vars))
+        Z_pred[1:n_lags, ] <- Z_i_demean[(TT-n_lags+1):TT,]
         for (j in 1:n_fcst) {
           volatility_pred <- mu + phi * (volatility_pred - mu) + rnorm(n_vars+n_fac, sd = sigma)
           error_pred <- rnorm(n_vars+n_fac, sd = exp(volatility_pred * 0.5))
           X_t <- mfbvar:::create_X_t_noint(Z_pred[j:(n_lags+j-1), ])
           Z_pred[j+n_lags, ] <- Pi_i %*% X_t + startfacload %*% error_pred[(n_vars+1):(n_vars+n_fac)] + error_pred[1:n_vars]
         }
-        Z_fcst[,,i/thin] <- Z_pred + d_fcst %*% t(matrix(psi[i,], nrow = n_vars))
+        Z_fcst[,,i/thin] <- Z_pred + rbind(d[(TT+1):(TT+n_lags), ,drop = FALSE], d_fcst[,,drop=FALSE]) %*% t(matrix(psi[i,,drop=FALSE], nrow = n_vars))
       }
 
       Pi[,,i/thin] <- Pi_i
@@ -541,7 +559,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
     }
 
     ## Stochastic volatility block: sample latent factors, latent volatilities and factor loadings
-    y_hat <- Z_i - X %*% t(Pi_i)
+    y_hat <- Z_i_demean - X_demean %*% t(Pi_i)
     fsample <- tryCatch(factorstochvol::fsvsample(y_hat, factors = n_fac, draws = 1, burnin = 0, priorh0idi = "stationary",
                                                   priorh0fac = "stationary", thin = 1, keeptime = "all",
                                                   runningstore = 0, runningstorethin = 10, runningstoremoments = 1,
@@ -567,58 +585,90 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
     startfac <- matrix(fsample$f[,,1], nrow = n_fac)
 
     ## Regression parameters block: sample Pi (possibly in parallel)
-    latent_nofac <- Z_i - t(startfac) %*% t(startfacload)
+    latent_nofac <- Z_i_demean - t(startfac) %*% t(startfacload)
 
-    if (!parallelize) {
-      if (prior_zero_mean) {
-        for (j in 1:n_vars) {
-          Pi_i[j,-1] <- tryCatch(mfbvar:::rmvn(X/exp(startlatent[,j]*0.5), prior_Pi_Omega[,j], latent_nofac[,j]/exp(startlatent[,j]*0.5)), error = function(cond) cond)
+    stationarity_check <- FALSE
+    iter <- 0
+    while(stationarity_check == FALSE) {
+      iter <- iter + 1
+
+      if (!parallelize) {
+        if (prior_zero_mean) {
+          for (j in 1:n_vars) {
+            Pi_i[j,] <- tryCatch(mfbvar:::rmvn(X_demean/exp(startlatent[,j]*0.5), prior_Pi_Omega[,j], latent_nofac[,j]/exp(startlatent[,j]*0.5)), error = function(cond) cond)
+          }
+        } else {
+          for (j in 1:n_vars) {
+            Pi_i[j,] <- tryCatch(mfbvar:::rmvn_ccm(X_demean/exp(startlatent[,j]*0.5), prior_Pi_Omega[,j], latent_nofac[,j]/exp(startlatent[,j]*0.5), prior_Pi_AR1[j], j), error = function(cond) cond)
+          }
         }
       } else {
-        for (j in 1:n_vars) {
-          Pi_i[j,-1] <- tryCatch(mfbvar:::rmvn_ccm(X/exp(startlatent[,j]*0.5), prior_Pi_Omega[,j], latent_nofac[,j]/exp(startlatent[,j]*0.5), prior_Pi_AR1[j], j), error = function(cond) cond)
+        if (prior_zero_mean) {
+          Pi_i <- tryCatch(t(parallel::parSapply(cl, 1:n_vars, FUN = par_fun, XX = X_demean, startlatent = startlatent, D = prior_Pi_Omega, latent_nofac = latent_nofac)), error = function(cond) cond)
+        } else {
+          Pi_i <- tryCatch(t(parallel::parSapply(cl, 1:n_vars, FUN = par_fun_AR1, XX = X_demean, startlatent = startlatent, D = prior_Pi_Omega, latent_nofac = latent_nofac, prior_Pi_AR1 = prior_Pi_AR1)), error = function(cond) cond)
         }
       }
-    } else {
-      if (prior_zero_mean) {
-        Pi_i <- tryCatch(t(parallel::parSapply(cl, 1:n_vars, FUN = par_fun, XX = X, startlatent = startlatent, D = prior_Pi_Omega, latent_nofac = latent_nofac)), error = function(cond) cond)
-      } else {
-        Pi_i <- tryCatch(t(parallel::parSapply(cl, 1:n_vars, FUN = par_fun_AR1, XX = X, startlatent = startlatent, D = prior_Pi_Omega, latent_nofac = latent_nofac, prior_Pi_AR1 = prior_Pi_AR1)), error = function(cond) cond)
+
+      if (inherits(Pi_i, "error")) {
+        warning("MCMC halted because of an error in the regression parameters step. See $error for more information.")
+        error <- list(error = Pi_i, iter = i, block = "Pi_i")
+        break
       }
-    }
-    if (inherits(Pi_i, "error")) {
-      warning("MCMC halted because of an error in the regression parameters step. See $error for more information.")
-      error <- list(error = Pi_i, iter = i, block = "Pi_i")
-      break
-    } else {
-      Pi_i0[, -1] <- Pi_i
+
+      Pi_comp    <- mfbvar:::build_companion(Pi_i, n_vars = n_vars, n_lags = n_lags)
+      if (check_roots == TRUE) {
+        root <- mfbvar:::max_eig_cpp(Pi_comp)
+      } else {
+        root <- 0
+      }
+      if (root < 1) {
+        stationarity_check <- TRUE
+        if (check_roots == TRUE) {
+          num_tries[i] <- iter
+        }
+      }
+      if (iter == 1000) {
+        warning("Attempted to draw stationary Pi 1,000 times.")
+        error <- list(error = Pi_i, iter = i, block = "Pi_i")
+        if (check_roots == TRUE) {
+          num_tries[i] <- iter
+        }
+        break
+      }
+
     }
 
-    U <- build_U_cpp(Pi = Pi_i, n_determ = n_determ, n_vars = n_vars, n_lags = n_lags)
-    post_psi_Omega <- posterior_psi_Omega_fsv(U = U, D_mat = D_mat, idivar = startlatent[, 1:n_vars],
+    Pi_i0[, -1] <- Pi_i
+
+    U <- mfbvar:::build_U_cpp(Pi = Pi_i, n_determ = n_determ, n_vars = n_vars, n_lags = n_lags)
+    post_psi_Omega <- mfbvar:::posterior_psi_Omega_fsv(U = U, D_mat = D_mat, idivar = exp(startlatent[, 1:n_vars]),
                                           prior_psi_Omega = prior_psi_Omega)
-    Y_tilde <- Z_i - tcrossprod(X, Pi_i)
+    Y_tilde <- Z_i - tcrossprod(X, Pi_i) - t(startfac) %*% t(startfacload)
 
-    post_psi <- posterior_psi_mean_fsv(U = U, D_mat = D_mat, idivar = startlatent[, 1:n_vars], prior_psi_Omega = prior_psi_Omega,
+    post_psi <- mfbvar:::posterior_psi_mean_fsv(U = U, D_mat = D_mat, idivar = exp(startlatent[, 1:n_vars]), prior_psi_Omega = prior_psi_Omega,
                                    post_psi_Omega = post_psi_Omega, Y_tilde = Y_tilde, prior_psi_mean = prior_psi_mean)
-    psi_i <- t(rmultn(m = post_psi, Sigma = post_psi_Omega))
+    psi_i <- t(mfbvar:::rmultn(m = post_psi, Sigma = post_psi_Omega))
+
+    mu_mat <- dt %*% t(matrix(psi[i,], nrow = n_vars))
 
     if (verbose) {
-      setTimerProgressBar(pb, i/n_reps)
+      pb$tick()
     }
-  }
-  if (verbose) {
-    close(pb)
   }
 
   ################################################################
   ### Prepare the return object
   return_obj <- list(Pi = Pi, Z = Z, psi = psi, Z_fcst = NULL, n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst,
-                     prior_Pi_Omega = prior_Pi_Omega, Y = x$Y, n_T = n_T, n_T_ = TT, n_reps = n_reps-1,
-                     init = list(init_Pi = Pi[,, n_reps], init_Z = Z[,, n_reps], init_mu = mu_storage[, n_reps/thin],
-                                 init_phi = phi_storage[, n_reps/thin], init_sigma = sigma_storage[, n_reps/thin],
-                                 init_facload = matrix(facload_storage[,, n_reps/thin], n_vars, n_fac),
-                                 init_fac = matrix(fac_storage[,, n_reps/thin], TT, n_fac)),
+                     prior_Pi_Omega = prior_Pi_Omega, d = d, Y = x$Y, n_T = n_T, n_T_ = TT, n_reps = n_reps-1,
+                     n_determ = n_determ, facload = facload_storage, latent = latent,
+                     init = list(init_Pi = Pi_i, init_Z = Z_i, init_psi = psi_i, init_mu = startpara$mu,
+                                 init_phi = startpara$phi, init_sigma = startpara$sigma,
+                                 init_facload = startfacload,
+                                 init_fac = startfac,
+                                 init_latent = startlatent,
+                                 init_latent0 = startlatent0),
+                     num_tries = num_tries,
                      error = error)
 
   if (n_fcst>0) {

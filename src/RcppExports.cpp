@@ -33,6 +33,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// create_X_noint
+arma::mat create_X_noint(arma::mat y, arma::uword k);
+RcppExport SEXP _mfbvar_create_X_noint(SEXP ySEXP, SEXP kSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type y(ySEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type k(kSEXP);
+    rcpp_result_gen = Rcpp::wrap(create_X_noint(y, k));
+    return rcpp_result_gen;
+END_RCPP
+}
 // create_X_t
 arma::mat create_X_t(const arma::mat& y);
 RcppExport SEXP _mfbvar_create_X_t(SEXP ySEXP) {
@@ -41,6 +53,17 @@ BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type y(ySEXP);
     rcpp_result_gen = Rcpp::wrap(create_X_t(y));
+    return rcpp_result_gen;
+END_RCPP
+}
+// create_X_t_noint
+arma::mat create_X_t_noint(const arma::mat& y);
+RcppExport SEXP _mfbvar_create_X_t_noint(SEXP ySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type y(ySEXP);
+    rcpp_result_gen = Rcpp::wrap(create_X_t_noint(y));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -211,7 +234,9 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_mfbvar_build_U_cpp", (DL_FUNC) &_mfbvar_build_U_cpp, 4},
     {"_mfbvar_create_X", (DL_FUNC) &_mfbvar_create_X, 2},
+    {"_mfbvar_create_X_noint", (DL_FUNC) &_mfbvar_create_X_noint, 2},
     {"_mfbvar_create_X_t", (DL_FUNC) &_mfbvar_create_X_t, 1},
+    {"_mfbvar_create_X_t_noint", (DL_FUNC) &_mfbvar_create_X_t_noint, 1},
     {"_mfbvar_kf_loglike", (DL_FUNC) &_mfbvar_kf_loglike, 6},
     {"_mfbvar_kf_ragged", (DL_FUNC) &_mfbvar_kf_ragged, 7},
     {"_mfbvar_kf_sim_smooth", (DL_FUNC) &_mfbvar_kf_sim_smooth, 7},
