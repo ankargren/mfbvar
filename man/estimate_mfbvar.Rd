@@ -4,28 +4,40 @@
 \alias{estimate_mfbvar}
 \title{Mixed-frequency Bayesian VAR}
 \usage{
-estimate_mfbvar(mfbvar_prior = NULL, prior_type, ...)
+estimate_mfbvar(mfbvar_prior = NULL, prior, variance = "iw", ...)
 }
 \arguments{
 \item{mfbvar_prior}{a \code{mfbvar_prior} object}
 
-\item{prior_type}{either \code{"ss"} (steady-state prior) or \code{"minn"} (Minnesota prior)}
+\item{prior}{either \code{"ss"} (steady-state prior) or \code{"minn"} (Minnesota prior)}
+
+\item{variance}{form of the error variance-covariance matrix: either \code{"iw"} for the inverse Wishart prior, or \code{"fsv"} for a time-varying matrix modeled using a factor stochastic volatility model}
 
 \item{...}{additional arguments to \code{update_prior} (if \code{mfbvar_prior} is \code{NULL}, the arguments are passed on to \code{set_prior})}
 }
 \value{
-an object of class \code{mfbvar} and \code{mfbvar_ss}/\code{mfbvar_minn} containing posterior quantities as well as the prior object
+an object of class \code{mfbvar}, \code{mfbvar_<prior>} and \code{mfbvar_<prior>_<variance>} containing posterior quantities as well as the prior object
 
-The prior values used are carried forward and returned with \code{NULL} if not used/existing. New components are:
-\item{Pi}{Array of dynamic coefficient matrices (\eqn{\Pi}) from the main chain; \code{Pi[,, r]} is the \code{r}th draw}
-\item{Sigma}{Array of covariance matrices (\eqn{\Sigma}) from the main chain; \code{Sigma[,, r]} is the \code{r}th draw}
-\item{psi}{Matrix of steady-state parameter vectors (\eqn{\psi}) from the main chain; \code{psi[r,]} is the \code{r}th draw}
-\item{Z}{Array of monthly process (\eqn{Z}) matrices from the main chain; \code{Z[,, r]} is the \code{r}th draw}
-\item{roots}{The maximum eigenvalue of the lag polynomial (if \code{check_roots = TRUE})}
-\item{num_tries}{The number of attempts for drawing a stationary \eqn{\Pi} (only relevant if \code{prior_type = "ss"})}
-\item{Z_fcst}{Array of monthly forecasts from the main chain; \code{Z_fcst[,, r]} is the \code{r}th forecast. The first \code{n_lags}
+For all choices of \code{prior} and \code{variance}, the returned object contains:
+\item{Pi}{Array of dynamic coefficient matrices; \code{Pi[,, r]} is the \code{r}th draw}
+\item{Z}{Array of monthly processes; \code{Z[,, r]} is the \code{r}th draw}
+\item{Z_fcst}{Array of monthly forecasts; \code{Z_fcst[,, r]} is the \code{r}th forecast. The first \code{n_lags}
 rows are taken from the data to offer a bridge between observations and forecasts and for computing nowcasts (i.e. with ragged edges).}
-\item{smoothed_Z}{The smoothed estimates (if \code{smooth_state = TRUE})}
+
+If \code{prior = "ss"}, it also includes:
+\item{psi}{Matrix of steady-state parameter vectors; \code{psi[r,]} is the \code{r}th draw}
+\item{roots}{The maximum eigenvalue of the lag polynomial (if \code{check_roots = TRUE})}
+\item{num_tries}{The number of attempts for drawing a stationary \eqn{\Pi} (only relevant if \code{prior = "ss"})}
+
+If \code{variance = "iw"}, it also includes:
+\item{Sigma}{Array of error covariance matrices; \code{Sigma[,, r]} is the \code{r}th draw}
+
+If \code{variance = "fsv"}, it also includes:
+\item{facload}{Array of factor loadings; \code{facload[,, r]} is the \code{r}th draw}
+\item{latent}{Array of latent log-volatilities; \code{latent[,, r]} is the \code{r}th draw}
+\item{mu}{Matrix of means of the log-volatilities; \code{mu[, r]} is the \code{r}th draw}
+\item{phi}{Matrix of AR(1) parameters for the log-volatilities; \code{phi[, r]} is the \code{r}th draw}
+\item{sigma}{Matrix of innovation variances for the log-volatilities; \code{sigma[, r]} is the \code{r}th draw}
 }
 \description{
 The main function for estimating a mixed-frequency BVAR.
@@ -33,7 +45,7 @@ The main function for estimating a mixed-frequency BVAR.
 \examples{
 prior_obj <- set_prior(Y = mf_sweden, freq = c(rep("m", 4), "q"),
                        n_lags = 4, n_burnin = 20, n_reps = 20)
-mod_minn <- estimate_mfbvar(prior_obj, prior_type = "minn")
+mod_minn <- estimate_mfbvar(prior_obj, prior = "minn")
 }
 \references{
 Schorfheide, F., & Song, D. (2015) Real-Time Forecasting With a Mixed-Frequency VAR. \emph{Journal of Business & Economic Statistics}, 33(3), 366--380. \url{http://dx.doi.org/10.1080/07350015.2014.954707}\cr
@@ -41,5 +53,5 @@ Ankargren, S., Unosson, M., & Yang, Y. (2018) A Mixed-Frequency Bayesian Vector 
 }
 \seealso{
 \code{\link{set_prior}}, \code{\link{update_prior}}, \code{\link{predict.mfbvar}}, \code{\link{plot.mfbvar_minn}},
-\code{\link{plot.mfbvar_ss}}, \code{\link{summary.mfbvar_minn}}, \code{\link{summary.mfbvar_ss}}
+\code{\link{plot.mfbvar_ss}}, \code{\link{varplot}}, \code{\link{summary.mfbvar_minn}}, \code{\link{summary.mfbvar_ss}}
 }

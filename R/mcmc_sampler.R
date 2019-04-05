@@ -1,31 +1,16 @@
 #' MCMC sampler
 #'
 #' \code{mcmc_sampler} is a generic function for deciding which specific MCMC
-#' algorithm to dispatch to. See the methods for more information.
-#' @seealso \code{\link{mcmc_sampler.mfbvar_ss}}, \code{\link{mcmc_sampler.mfbvar_minn}}
-#' @param x argument to dispatch on (of class \code{prior_obj} or \code{prior_obj})
+#' algorithm to dispatch to. It is called internally.
+#'
+#' @param x argument to dispatch on (of class \code{prior_obj})
 #' @param ... additional named arguments passed on to the methods
 
 mcmc_sampler <- function(x, ...) {
   UseMethod("mcmc_sampler")
 }
 
-#' MCMC sampler for mixed-frequency BVAR
-#'
-#' MCMC sampler to approximate the posterior distribution of the VAR model
-#' parameters.
-#'
-#' @details
-#' \code{mcmc_sampler.mfbvar_ss} is used for a steady-state prior and
-#' \code{mcmc_sampler.mfbvar_minn} for a Minnesota prior
-#'
-#' @param x a prior object (inhereting from \code{mfbvar_prior})
-#' @param ... additional arguments (\code{n_reps} and \code{init})
-#' @keywords internal
-#'
-#' @return
-#' An object of class \code{mfbvar} and \code{mfbvar_ss} or \code{mfbvar_minn}.
-
+#' @rdname mcmc_sampler
 mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
 
   n_vars <- ncol(x$Y)
@@ -194,8 +179,10 @@ mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
 
   Z_1 <- Z[1:n_pseudolags,, 1]
 
-  if (verbose == TRUE) {
-    pb <- timerProgressBar(width = 35, char = "[=-]", style = 5)
+  if (verbose) {
+    pb <- progress_bar$new(
+      format = "[:bar] :percent eta: :eta",
+      clear = FALSE, total = n_reps, width = 60)
   }
 
   for (r in 2:(n_reps)) {
@@ -239,12 +226,9 @@ mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
       Z_fcst[, , r] <- Z_fcst[, , r] + d_fcst_lags %*% t(matrix(psi[r, ], nrow = n_vars))
     }
 
-    if (verbose == TRUE) {
-      setTimerProgressBar(pb, r/n_reps)
+    if (verbose) {
+      pb$tick()
     }
-  }
-  if (verbose == TRUE) {
-    close(pb)
   }
 
 
@@ -269,8 +253,7 @@ mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
 
 }
 
-#' @rdname mcmc_sampler.mfbvar_ss
-
+#' @rdname mcmc_sampler
 mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
 
   n_vars <- ncol(x$Y)
@@ -290,7 +273,6 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
   Y <- x$Y
   freq <- x$freq
   n_fcst <- x$n_fcst
-  check_roots <- x$check_roots
   verbose <- x$verbose
   n_lags <- x$n_lags
   lambda4 <- x$lambda4
@@ -347,10 +329,6 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
     Z_fcst<- array(NA, dim = c(n_fcst+n_lags, n_vars, n_reps),
                    dimnames = list(c((n_T-n_lags+1):n_T, paste0("fcst_", 1:n_fcst)), NULL, NULL))
   }
-  if (check_roots == TRUE) {
-    roots <- vector("numeric", n_reps)
-    num_tries <- roots
-  }
 
 
 
@@ -390,10 +368,6 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
   }
 
   # Compute the maximum eigenvalue of the initial Pi
-  if (check_roots == TRUE) {
-    Pi_comp    <- build_companion(Pi = Pi[,-ncol(Pi[,,1]), 1], n_vars = n_vars, n_lags = n_lags)
-    roots[1]   <- max_eig_cpp(Pi_comp)
-  }
 
   if (is.null(init_Sigma)) {
     Sigma[,, 1] <- ols_results$S
@@ -414,8 +388,10 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
   inv_prior_Pi_Omega <- chol2inv(chol(prior_Pi_Omega))
   Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi_mean
 
-  if (verbose == TRUE) {
-    pb <- timerProgressBar(width = 35, char = "[=-]", style = 5)
+  if (verbose) {
+    pb <- progress_bar$new(
+      format = "[:bar] :percent eta: :eta",
+      clear = FALSE, total = n_reps, width = min(c(60, getOption("width"))))
   }
 
   for (r in 2:(n_reps)) {
@@ -465,13 +441,9 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
 
     }
 
-    if (verbose == TRUE) {
-      setTimerProgressBar(pb, r/n_reps)
+    if (verbose) {
+      pb$tick()
     }
-  }
-
-  if (verbose == TRUE) {
-    close(pb)
   }
 
 
@@ -484,10 +456,6 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
                      prior_psi_Omega = NULL, prior_psi_mean = NULL, n_reps = n_reps-1, Lambda = Lambda, freq = freq,
                      init = list(init_Pi = Pi[,, n_reps], init_Sigma = Sigma[,, n_reps], init_Z = Z[,, n_reps]))
 
-  if (check_roots == TRUE) {
-    return_obj$roots <- roots
-    return_obj$num_tries <- num_tries
-  }
   if (n_fcst>0) {
     return_obj$Z_fcst <- Z_fcst
   }

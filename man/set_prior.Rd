@@ -7,10 +7,10 @@
 \title{Set priors for an mfbvar model}
 \usage{
 set_prior(Y, freq, prior_Pi_AR1 = rep(0, ncol(Y)), lambda1 = 0.2,
-  lambda2 = 1, n_lags, n_fcst = 0, n_burnin, n_reps, d = NULL,
-  d_fcst = NULL, prior_psi_mean = NULL, prior_psi_Omega = NULL,
-  lambda3 = 10000, volatility = "constant", verbose = FALSE,
-  smooth_state = FALSE, check_roots = TRUE)
+  lambda2 = 0.5, lambda3 = 1, lambda4 = 10000, n_lags, n_fcst = 0,
+  thin = 1, n_burnin, n_reps, d = NULL, d_fcst = NULL,
+  prior_psi_mean = NULL, prior_psi_Omega = NULL, n_fac = NULL,
+  cl = NULL, verbose = FALSE, check_roots = FALSE, ...)
 
 update_prior(prior_obj, ...)
 
@@ -25,11 +25,15 @@ check_prior(prior_obj)
 
 \item{lambda1}{The overall tightness.}
 
-\item{lambda2}{The lag decay.}
+\item{lambda3}{The tightness of the intercept prior variance.}
+
+\item{lambda4}{(Minnesota only) Prior variance of the intercept.}
 
 \item{n_lags}{The number of lags.}
 
 \item{n_fcst}{The number of periods to forecast.}
+
+\item{thin}{Store every \code{thin}th draw}
 
 \item{n_burnin}{The number of burn-in replications.}
 
@@ -44,50 +48,49 @@ term.}
 
 \item{prior_psi_Omega}{(Steady state only) Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.}
 
-\item{lambda3}{(Minnesota only) Prior variance of the intercept.}
+\item{n_fac}{(Only used with factor stochastic volatility) Number of factors to use for the factor stochastic volatility model}
 
-\item{volatility}{String giving the type of volatility: \code{"constant"} sets the error covariance matrix to be constant, \code{"factorstochvol"} uses the factor stochastic volatility model}
+\item{cl}{(Only used with factor stochastic volatility) Cluster object to use for drawing regression parameters in parallel}
 
 \item{verbose}{Logical, if progress should be printed to the console.}
 
-\item{smooth_state}{Logical, if \code{TRUE} then the smoothed estimates of the latent states are also returned.}
-
 \item{check_roots}{Logical, if roots of the companion matrix are to be checked to ensure stationarity.}
+
+\item{...}{(Only used with factor stochastic volatility) Arguments to pass along to \code{\link[factorstochvol]{fsvsample}}. See details.}
 
 \item{prior_obj}{an object of class \code{mfbvar_prior}}
 
-\item{...}{named arguments for prior attributes to update}
+\item{(Only}{if \code{variance != "iw"}) The cross-variable tightness}
 
-\item{settings_factorstochvol}{(Only if \code{volatility = "factorstochvol"}) A list with named components which are handed over to \code{\link[factorstochvol]{fsvsample}}; names should correspond to arguments of \code{\link[factorstochvol]{fsvsample}}. At the very least, the list must include \code{factors} giving the number of factors to use. See details.}
+\item{...}{named arguments for prior attributes to update}
 }
 \description{
 Create an object storing all information needed for estimation, including data as well as model and prior specifications for both a Minnesota or steady-state prior.
 }
 \details{
 The first arguments (\code{Y} through \code{n_reps}) must be set for the model to be estimated irrespective of the choice
-of prior, but some have default values (which will produce warnings if relied upon).
+of prior, but some have default values.
 
-For the Minnesota prior, \code{lambda3} must also be set, but it too has a default that it relies on if not specified.
+For the Minnesota prior, \code{lambda4} must also be set, but it too has a default that it relies on if not specified.
 
 For the steady-state prior, the deterministic matrix needs to be supplied, or a string indicating that the intercept should be
 the only deterministic term. If the latter, also \code{d_fcst} is set to be intercept only. Otherwise, if forecasts are requested
 (\code{n_fcst > 0}) also \code{d_fcst} needs to be provided. Finally, the prior moments for the steady-state parameters must also be
 provided.
 
-For modeling stochastic volatility by the factor stochastic volatility model, a named list with arguments shipped to \code{\link[factorstochvol]{fsvsample}} must be supplied. It should at least include the component \code{factors} setting the number of factors. Note that arguments \code{y}, \code{draws}, \code{burnin} and arguments with are set inside the MCMC. If any of the starting value arguments are supplied, these are used as starting values when initiating the MCMC algorithm. If arguments are not given, the defaults used are as follows (see \code{\link[factorstochvol]{fsvsample}} for descriptions):
+For modeling stochastic volatility by the factor stochastic volatility model, the number of factors to use must be supplied. Further arguments can be passed along to \code{\link[factorstochvol]{fsvsample}}. If arguments are not given, the defaults used are as follows (see \code{\link[factorstochvol]{fsvsample}} for descriptions):
 \itemize{
-  \item{\code{priormu}}{\code{c(0, 10)}}
-  \item{\code{priorphiidi}}{\code{c(10, 3)}}
-  \item{\code{priorphifac}}{\code{c(10, 3)}}
-  \item{\code{priorsigmaidi}}{\code{1}}
-  \item{\code{priorsigmafac}}{\code{1}}
-  \item{\code{priorfacload}}{\code{1}}
-  \item{\code{priorng}}{\code{c(1, 1)}}
-  \item{\code{columnwise}}{\code{FALSE}}
-  \item{\code{priormu}}{\code{c(0, 10)}}
-  \item{\code{restrict}}{\code{"none"}}
-  \item{\code{heteroskedastic}}{\code{TRUE}}
-  \item{\code{priorhomoskedastic}}{\code{NA}}
+  \item{\code{priormu}}{\code{ = c(0, 10)}}
+  \item{\code{priorphiidi}}{\code{ = c(10, 3)}}
+  \item{\code{priorphifac}}{\code{ = c(10, 3)}}
+  \item{\code{priorsigmaidi}}{\code{ = 1}}
+  \item{\code{priorsigmafac}}{\code{ = 1}}
+  \item{\code{priorfacload}}{\code{ = 1}}
+  \item{\code{priorng}}{\code{ = c(1, 1)}}
+  \item{\code{columnwise}}{\code{ = FALSE}}
+  \item{\code{restrict}}{\code{ = "none"}}
+  \item{\code{heteroskedastic}}{\code{ = TRUE}}
+  \item{\code{priorhomoskedastic}}{\code{ = NA}}
 }
 
 The steady-state prior involves inverting the lag polynomial. For this reason, draws in which the largest eigenvalue
@@ -101,5 +104,5 @@ prior_obj <- set_prior(Y = mf_sweden, freq = c(rep("m", 4), "q"),
 prior_obj <- update_prior(prior_obj, n_fcst = 4)
 }
 \seealso{
-\code{\link{interval_to_moments}}, \code{\link{print.mfbvar_prior}}, \code{\link{summary.mfbvar_prior}}, \code{\link{estimate_mfbvar}}
+\code{\link{interval_to_moments}}, \code{\link{print.mfbvar_prior}}, \code{\link{summary.mfbvar_prior}}, \code{\link{estimate_mfbvar}}, \code{\link[factorstochvol]{fsvsample}}
 }

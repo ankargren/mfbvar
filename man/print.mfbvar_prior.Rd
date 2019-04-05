@@ -17,7 +17,7 @@ in the prior is sufficient for estimating models.
 }
 \details{
 The print method checks whether the steady-state and Minnesota
-  priors can be run with the current specification. This check is minimal in
+  priors can be used with the current specification. This check is minimal in
   the sense that it checks only prior elements with no defaults, and it only
   checks for estimation and not forecasting (for which the steady-state prior
   requires additional information).
