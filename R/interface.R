@@ -580,9 +580,9 @@ summary.mfbvar_prior <- function(object, ...) {
 #' @param prior either \code{"ss"} (steady-state prior) or \code{"minn"} (Minnesota prior)
 #' @param variance form of the error variance-covariance matrix: either \code{"iw"} for the inverse Wishart prior, or \code{"fsv"} for a time-varying matrix modeled using a factor stochastic volatility model
 #' @param ... additional arguments to \code{update_prior} (if \code{mfbvar_prior} is \code{NULL}, the arguments are passed on to \code{set_prior})
-#' @return an object of class \code{mfbvar}, \code{mfbvar_<prior>} and \code{mfbvar_<prior>_<variance>} containing posterior quantities as well as the prior object
+#' @return An object of class \code{mfbvar}, \code{mfbvar_<prior>} and \code{mfbvar_<prior>_<variance>} containing posterior quantities as well as the prior object
 #' @seealso \code{\link{set_prior}}, \code{\link{update_prior}}, \code{\link{predict.mfbvar}}, \code{\link{plot.mfbvar_minn}},
-#' \code{\link{plot.mfbvar_ss}}, \code{\link{varplot}}, \code{\link{summary.mfbvar_minn}}, \code{\link{summary.mfbvar_ss}}
+#' \code{\link{plot.mfbvar_ss}}, \code{\link{varplot}}, \code{\link{summary.mfbvar}}
 #' @examples
 #' prior_obj <- set_prior(Y = mf_sweden, freq = c(rep("m", 4), "q"),
 #'                        n_lags = 4, n_burnin = 20, n_reps = 20)
@@ -596,7 +596,7 @@ summary.mfbvar_prior <- function(object, ...) {
 #' If \code{prior = "ss"}, it also includes:
 #' \item{psi}{Matrix of steady-state parameter vectors; \code{psi[r,]} is the \code{r}th draw}
 #' \item{roots}{The maximum eigenvalue of the lag polynomial (if \code{check_roots = TRUE})}
-#' \item{num_tries}{The number of attempts for drawing a stationary \eqn{\Pi} (only relevant if \code{prior = "ss"})}
+#' \item{num_tries}{The number of attempts for drawing a stationary \eqn{\Pi} (if \code{check_roots = TRUE})}
 #'
 #' If \code{variance = "iw"}, it also includes:
 #' \item{Sigma}{Array of error covariance matrices; \code{Sigma[,, r]} is the \code{r}th draw}
@@ -732,56 +732,55 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
   class(main_run) <- c("mfbvar", sprintf("mfbvar_%s_%s", prior, variance), sprintf("mfbvar_%s", prior))
   time_out <- c(time_out, Sys.time())
   main_run$time_out <- time_out
+  main_run$variance <- variance
+  main_run$prior <- prior
   return(main_run)
 }
 
 
-#' Printing method for class mfbvar_ss
+#' Printing method for class mfbvar
 #'
-#' Method for printing \code{mfbvar_ss} objects.
+#' Method for printing \code{mfbvar} objects.
 #'
-#' @param x object of class \code{mfbvar_ss}
+#' @param x object of class \code{mfbvar}
 #' @param ... Currently not in use.
 #' @template man_template
 #' @examples
 #' prior_obj <- set_prior(Y = mf_sweden[, 4:5], d = "intercept",
 #'                        freq = c("m", "q"), n_lags = 4, n_burnin = 20, n_reps = 20)
-#' prior_intervals <- matrix(c(-0.1, 0.1,
-#'                             0.4, 0.6), ncol = 2, byrow = TRUE)
-#' psi_moments <- interval_to_moments(prior_intervals)
-#' prior_psi_mean <- psi_moments$prior_psi_mean
-#' prior_psi_Omega <- psi_moments$prior_psi_Omega
-#' prior_obj <- update_prior(prior_obj,
-#'                           prior_psi_mean = prior_psi_mean,
-#'                           prior_psi_Omega = prior_psi_Omega)
-#' mod_ss <- estimate_mfbvar(prior_obj, prior = "ss")
-#' print(mod_ss)
+#' mod_minn <- estimate_mfbvar(prior_obj, prior = "minn")
+#' mod_minn
 
-print.mfbvar_ss_iw <- function(x, ...){
-  cat(paste0("Mixed-frequency steady-state BVAR with:\n", ncol(x$Y), " variables", ifelse(!is.null(x$names_col), paste0(" (", paste(x$names_col, collapse = ", "), ")"), " "), "\n", x$n_lags, " lags\n",
+print.mfbvar <- function(x, ...){
+  ss <- ifelse(x$prior == "ss", "steady-state ", "")
+  fsv <- ifelse(x$variance == "fsv", sprintf("Factor stochastic volatility (%d factors)", x$mfbvar_prior$n_fac), "Inverse Wishart")
+  cat(paste0(sprintf("Mixed-frequency %sBVAR with:\n", ss), ncol(x$Y), " variables", ifelse(!is.null(x$names_col), paste0(" (", paste(x$names_col, collapse = ", "), ")"), " "), "\nError covariance matrix: ", fsv, "\n",
+             x$n_lags, " lags\n",
              nrow(x$Y), " time periods", ifelse(!is.null(x$names_row), paste0(" (", x$names_row[1], " - ", x$names_row[length(x$names_row)], ")"), " "), "\n", ifelse(is.null(x$n_fcst), "0", x$n_fcst), " periods forecasted\n",
              x$n_reps, " draws used in main chain"))
 }
 
-#' Printing method for class mfbvar_minn
+#' Summary method for class mfbvar
 #'
-#' Method for printing \code{mfbvar_minn} objects.
+#' Method for summarizing \code{mfbvar} objects.
 #'
-#' @param x object of class \code{mfbvar_minn}
+#' @param x object of class \code{mfbvar}
 #' @param ... Currently not in use.
 #' @template man_template
 #' @examples
-#' prior_obj <- set_prior(Y = mf_sweden[, 4:5], freq = c("m", "q"),
-#'                        n_lags = 4, n_burnin = 20, n_reps = 20)
+#' prior_obj <- set_prior(Y = mf_sweden[, 4:5], d = "intercept",
+#'                        freq = c("m", "q"), n_lags = 4, n_burnin = 20, n_reps = 20)
 #' mod_minn <- estimate_mfbvar(prior_obj, prior = "minn")
-#' print(mod_minn)
+#' summary(mod_minn)
 
-print.mfbvar_minn_iw <- function(x, ...){
-  cat(paste0("Mixed-frequency Minnesota BVAR with:\n", ncol(x$Y), " variables", ifelse(!is.null(x$names_col), paste0(" (", paste(x$names_col, collapse = ", "), ")"), " "), "\n", x$n_lags, " lags\n",
+summary.mfbvar <- function(x, ...){
+  ss <- ifelse(x$prior == "ss", "steady-state ", "")
+  fsv <- ifelse(x$variance == "fsv", sprintf("Factor stochastic volatility (%d factors)", x$mfbvar_prior$n_fac), "Inverse Wishart")
+  cat(paste0(sprintf("Mixed-frequency %sBVAR with:\n", ss), ncol(x$Y), " variables", ifelse(!is.null(x$names_col), paste0(" (", paste(x$names_col, collapse = ", "), ")"), " "), "\nError covariance matrix: ", fsv, "\n",
+             x$n_lags, " lags\n",
              nrow(x$Y), " time periods", ifelse(!is.null(x$names_row), paste0(" (", x$names_row[1], " - ", x$names_row[length(x$names_row)], ")"), " "), "\n", ifelse(is.null(x$n_fcst), "0", x$n_fcst), " periods forecasted\n",
              x$n_reps, " draws used in main chain"))
 }
-
 
 #' Plotting methods for posterior mfbvar objects
 #'
@@ -1103,87 +1102,6 @@ varplot <- function(x, variables = colnames(x$Y), var_bands = 0.95, nrow_facet =
 
 
 
-#' Summary method for class \code{mfbvar_ss}
-#'
-#' Method for summarizing \code{mfbvar_ss} objects.
-#'
-#' @param object object of class \code{mfbvar_ss}
-#' @param ... Currently not in use.
-#' @template man_template
-#' @examples
-#' prior_obj <- set_prior(Y = mf_sweden[, 4:5], d = "intercept",
-#'                        freq = c("m", "q"), n_lags = 4, n_burnin = 20, n_reps = 20,
-#'                        n_fcst = 4)
-#'
-#' prior_intervals <- matrix(c(-0.1, 0.1,
-#'                             0.4, 0.6), ncol = 2, byrow = TRUE)
-#' psi_moments <- interval_to_moments(prior_intervals)
-#' prior_psi_mean <- psi_moments$prior_psi_mean
-#' prior_psi_Omega <- psi_moments$prior_psi_Omega
-#' prior_obj <- update_prior(prior_obj,
-#'                           prior_psi_mean = prior_psi_mean,
-#'                           prior_psi_Omega = prior_psi_Omega)
-#'
-#' mod_ss <- estimate_mfbvar(prior_obj, prior = "ss")
-#' summary(mod_ss)
-#'
-#'
-#'
-summary.mfbvar_ss_iw <- function(object, ...) {
-  post_Pi <- apply(object$Pi, c(1, 2), mean)
-  rownames(post_Pi) <- object$names_col
-  colnames(post_Pi) <- paste0(rep(object$names_col, object$n_lags), ".", rep(1:object$n_lags, each = object$n_vars))
-  post_Sigma <- apply(object$Sigma, c(1, 2), mean)
-  rownames(post_Sigma) <- object$names_col
-  colnames(post_Sigma) <- object$names_col
-  post_psi <- matrix(colMeans(object$psi), ncol = object$n_determ)
-  rownames(post_psi) <- object$names_col
-  colnames(post_psi) <- object$names_determ
-  print(object, ...)
-  cat("\n\n#########################\nPosterior means computed\n\nPi:\n")
-  print(post_Pi)
-  cat("\n\nSigma:\n")
-  print(post_Sigma)
-  cat("\n\nPsi:\n")
-  print(post_psi)
-  ret_list <- list(post_Pi = post_Pi, post_Sigma = post_Sigma, post_Psi = post_psi)
-}
-
-
-
-
-#' Summary method for class \code{mfbvar_minn}
-#'
-#' Method for summarizing \code{mfbvar_minn} objects.
-#'
-#' @param object object of class \code{mfbvar_minn}
-#' @param ... Currently not in use.
-#' @template man_template
-#' @examples
-#' prior_obj <- set_prior(Y = mf_sweden[, 4:5], freq = c("m", "q"),
-#'                        n_lags = 4, n_burnin = 20, n_reps = 20, n_fcst = 4)
-#' mod_minn <- estimate_mfbvar(prior_obj, prior = "minn")
-#' summary(mod_minn)
-#'
-summary.mfbvar_minn_iw <- function(object, ...) {
-  post_Pi <- apply(object$Pi[,-ncol(object$Pi[,,1]),], c(1, 2), mean)
-  rownames(post_Pi) <- object$names_col
-  colnames(post_Pi) <- paste0(rep(object$names_col, object$n_lags), ".", rep(1:object$n_lags, each = object$n_vars))
-  post_Sigma <- apply(object$Sigma, c(1, 2), mean)
-  rownames(post_Sigma) <- object$names_col
-  colnames(post_Sigma) <- object$names_col
-  post_psi <- matrix(rowMeans(object$Pi[,ncol(object$Pi[,,1]),]), ncol = 1)
-  rownames(post_psi) <- object$names_col
-  colnames(post_psi) <- "const"
-  print(object, ...)
-  cat("\n\n#########################\nPosterior means computed\n\nPi:\n")
-  print(post_Pi)
-  cat("\n\nSigma:\n")
-  print(post_Sigma)
-  cat("\n\nIntercept:\n")
-  print(post_psi)
-  ret_list <- list(post_Pi = post_Pi, post_Sigma = post_Sigma, post_Psi = post_psi)
-}
 
 #' Predict method for class \code{mfbvar}
 #'

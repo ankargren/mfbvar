@@ -16,7 +16,7 @@ estimate_mfbvar(mfbvar_prior = NULL, prior, variance = "iw", ...)
 \item{...}{additional arguments to \code{update_prior} (if \code{mfbvar_prior} is \code{NULL}, the arguments are passed on to \code{set_prior})}
 }
 \value{
-an object of class \code{mfbvar}, \code{mfbvar_<prior>} and \code{mfbvar_<prior>_<variance>} containing posterior quantities as well as the prior object
+An object of class \code{mfbvar}, \code{mfbvar_<prior>} and \code{mfbvar_<prior>_<variance>} containing posterior quantities as well as the prior object
 
 For all choices of \code{prior} and \code{variance}, the returned object contains:
 \item{Pi}{Array of dynamic coefficient matrices; \code{Pi[,, r]} is the \code{r}th draw}
@@ -27,7 +27,7 @@ rows are taken from the data to offer a bridge between observations and forecast
 If \code{prior = "ss"}, it also includes:
 \item{psi}{Matrix of steady-state parameter vectors; \code{psi[r,]} is the \code{r}th draw}
 \item{roots}{The maximum eigenvalue of the lag polynomial (if \code{check_roots = TRUE})}
-\item{num_tries}{The number of attempts for drawing a stationary \eqn{\Pi} (only relevant if \code{prior = "ss"})}
+\item{num_tries}{The number of attempts for drawing a stationary \eqn{\Pi} (if \code{check_roots = TRUE})}
 
 If \code{variance = "iw"}, it also includes:
 \item{Sigma}{Array of error covariance matrices; \code{Sigma[,, r]} is the \code{r}th draw}
@@ -53,5 +53,5 @@ Ankargren, S., Unosson, M., & Yang, Y. (2018) A Mixed-Frequency Bayesian Vector 
 }
 \seealso{
 \code{\link{set_prior}}, \code{\link{update_prior}}, \code{\link{predict.mfbvar}}, \code{\link{plot.mfbvar_minn}},
-\code{\link{plot.mfbvar_ss}}, \code{\link{varplot}}, \code{\link{summary.mfbvar_minn}}, \code{\link{summary.mfbvar_ss}}
+\code{\link{plot.mfbvar_ss}}, \code{\link{varplot}}, \code{\link{summary.mfbvar}}
 }

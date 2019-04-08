@@ -29,5 +29,5 @@ Fuentes-Albero, C. and Melosi, L. (2013) Methods for Computing Marginal Data Den
  Ankargren, S., Unosson, M., & Yang, Y. (2018) A Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. Working Paper, Department of Statistics, Uppsala University No. 2018:3.
 }
 \seealso{
-\code{\link{mdd}}, \code{\link{mdd.mfbvar_minn}}
+\code{\link{mdd}}, \code{\link{mdd.mfbvar_minn_iw}}
 }
