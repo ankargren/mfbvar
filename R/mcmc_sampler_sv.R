@@ -160,7 +160,7 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
   startfac <- matrix(init_fac, n_fac, TT)
 
   if (verbose) {
-    pb <- pb <- progress_bar$new(
+    pb <- progress_bar$new(
       format = "[:bar] :percent eta: :eta",
       clear = FALSE, total = n_reps, width = 60)
   }
