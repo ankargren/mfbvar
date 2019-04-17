@@ -603,11 +603,12 @@ plot.mfbvar_ss <- function(x, plot_start = NULL, ss_level = c(0.025, 0.975),
                        upper = c(preds[[3]]))
     last_pos <- apply(x$Y, 2, function(yy) max(which(!is.na(yy))))
     for (i in seq_along(last_pos)) {
-      fcst <- rbind(fcst, data.frame(time = (1:nrow(x$Y))[last_pos[i]],
+      fcst <- rbind(data.frame(time = (1:nrow(x$Y))[last_pos[i]],
                                      names_col = names_col[i],
                                      lower = x$Y[last_pos[i], i],
                                      median = x$Y[last_pos[i], i],
-                                     upper  = x$Y[last_pos[i], i]))
+                                     upper  = x$Y[last_pos[i], i]),
+                    fcst)
     }
     fcst <- fcst[!duplicated(fcst[, 1:2]), ]
     p <- p + geom_ribbon(data = fcst, aes(ymin = lower, ymax = upper,
@@ -702,11 +703,12 @@ plot.mfbvar_minn <- function(x, plot_start = NULL, pred_level = c(0.10, 0.90), n
                        upper = c(preds[[3]]))
     last_pos <- apply(x$Y, 2, function(yy) max(which(!is.na(yy))))
     for (i in seq_along(last_pos)) {
-      fcst <- rbind(fcst, data.frame(time = (1:nrow(x$Y))[last_pos[i]],
+      fcst <- rbind(data.frame(time = (1:nrow(x$Y))[last_pos[i]],
                                      names_col = names_col[i],
                                      lower = x$Y[last_pos[i], i],
                                      median = x$Y[last_pos[i], i],
-                                     upper  = x$Y[last_pos[i], i]))
+                                     upper  = x$Y[last_pos[i], i]),
+                    fcst)
     }
     fcst <- fcst[!duplicated(fcst[, 1:2]), ]
     p <-p + geom_ribbon(data = fcst, aes(ymin = lower, ymax = upper,
