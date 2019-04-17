@@ -416,7 +416,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
 
   ### Latent volatilities
   if (is.null(init$init_latent)) {
-    init_latent <-  t(cbind(matrix(c(log(error_variance), rep(1, n_fac)), nrow = TT, ncol = n_vars+n_fac, byrow = TRUE)))
+    init_latent <-  cbind(matrix(c(log(error_variance), rep(1, n_fac)), nrow = TT, ncol = n_vars+n_fac, byrow = TRUE))
   } else {
     init_latent <- init$init_latent
   }
@@ -501,6 +501,8 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
   }
 
   error <- NULL
+  inv_prior_psi_Omega <- solve(prior_psi_Omega)
+  inv_prior_psi_Omega_mean <- inv_prior_psi_Omega %*% prior_psi_mean
   for (i in 1:n_reps) {
     ## Square root of idiosyncratic variances (in dense form)
     Sig <- exp(0.5 * startlatent[, 1:n_vars])
@@ -641,17 +643,10 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
     }
 
     Pi_i0[, -1] <- Pi_i
-
-    U <- mfbvar:::build_U_cpp(Pi = Pi_i, n_determ = n_determ, n_vars = n_vars, n_lags = n_lags)
-    post_psi_Omega <- mfbvar:::posterior_psi_Omega_fsv(U = U, D_mat = D_mat, idivar = exp(startlatent[, 1:n_vars]),
-                                          prior_psi_Omega = prior_psi_Omega)
-    Y_tilde <- Z_i - tcrossprod(X, Pi_i) - t(startfac) %*% t(startfacload)
-
-    post_psi <- mfbvar:::posterior_psi_mean_fsv(U = U, D_mat = D_mat, idivar = exp(startlatent[, 1:n_vars]), prior_psi_Omega = prior_psi_Omega,
-                                   post_psi_Omega = post_psi_Omega, Y_tilde = Y_tilde, prior_psi_mean = prior_psi_mean)
-    psi_i <- t(mfbvar:::rmultn(m = post_psi, Sigma = post_psi_Omega))
-
-    mu_mat <- dt %*% t(matrix(psi_i, nrow = n_vars))
+    idivar <- exp(startlatent[, 1:n_vars])
+    posterior_psi_fsv(psi_i, mu_mat, Pi_i, D_mat, idivar, inv_prior_psi_Omega,
+                  Z_i, X, startfacload, startfac, inv_prior_psi_Omega_mean, dt,
+                  n_determ, n_vars, n_lags)
 
     if (verbose) {
       pb$tick()

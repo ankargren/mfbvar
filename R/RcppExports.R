@@ -85,6 +85,30 @@ max_eig_cpp <- function(A) {
     .Call(`_mfbvar_max_eig_cpp`, A)
 }
 
+posterior_psi_Omega_fsv <- function(U, D_mat, idivar, inv_prior_psi_Omega) {
+    .Call(`_mfbvar_posterior_psi_Omega_fsv`, U, D_mat, idivar, inv_prior_psi_Omega)
+}
+
+posterior_psi_mean_fsv <- function(U, D_mat, idivar, inv_prior_psi_Omega_mean, post_psi_Omega, Y_tilde) {
+    .Call(`_mfbvar_posterior_psi_mean_fsv`, U, D_mat, idivar, inv_prior_psi_Omega_mean, post_psi_Omega, Y_tilde)
+}
+
+posterior_psi_fsv <- function(psi_i, mu_mat, Pi_i, D_mat, idivar, inv_prior_psi_Omega, Z_i, X, startfacload, startfac, inv_prior_psi_Omega_mean, dt, n_determ, n_vars, n_lags) {
+    invisible(.Call(`_mfbvar_posterior_psi_fsv`, psi_i, mu_mat, Pi_i, D_mat, idivar, inv_prior_psi_Omega, Z_i, X, startfacload, startfac, inv_prior_psi_Omega_mean, dt, n_determ, n_vars, n_lags))
+}
+
+posterior_psi_mean_iw <- function(U, D_mat, Sigma_i, inv_prior_psi_Omega_mean, post_psi_Omega, Y_tilde) {
+    .Call(`_mfbvar_posterior_psi_mean_iw`, U, D_mat, Sigma_i, inv_prior_psi_Omega_mean, post_psi_Omega, Y_tilde)
+}
+
+posterior_psi_Omega_iw <- function(U, D_mat, Sigma_i, inv_prior_psi_Omega) {
+    .Call(`_mfbvar_posterior_psi_Omega_iw`, U, D_mat, Sigma_i, inv_prior_psi_Omega)
+}
+
+posterior_psi_iw <- function(psi_i, mu_mat, Pi_i, D_mat, Sigma_i, inv_prior_psi_Omega, Z_i, X, inv_prior_psi_Omega_mean, dt, n_determ, n_vars, n_lags) {
+    invisible(.Call(`_mfbvar_posterior_psi_iw`, psi_i, mu_mat, Pi_i, D_mat, Sigma_i, inv_prior_psi_Omega, Z_i, X, inv_prior_psi_Omega_mean, dt, n_determ, n_vars, n_lags))
+}
+
 rmvn <- function(Phi, d, alpha) {
     .Call(`_mfbvar_rmvn`, Phi, d, alpha)
 }
@@ -109,6 +133,10 @@ rinvwish <- function(v, S) {
 #' @keywords internal
 rmultn <- function(m, Sigma) {
     .Call(`_mfbvar_rmultn`, m, Sigma)
+}
+
+rsimsm_adaptive_cv <- function(y_, Phi, Sigma_chol, Lambda, Z1, n_q_, T_b) {
+    .Call(`_mfbvar_rsimsm_adaptive_cv`, y_, Phi, Sigma_chol, Lambda, Z1, n_q_, T_b)
 }
 
 rsimsm_adaptive_univariate <- function(y_, Phi, Sigma, Lambda, Z1, n_q_, T_b, f) {
