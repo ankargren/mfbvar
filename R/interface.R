@@ -817,6 +817,21 @@ plot.mfbvar_ss <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_sta
                            pred_bands = 0.8, nrow_facet = NULL, ss_bands = 0.95, ...){
 
 
+  if (is.null(fcst_start)) {
+    row_names <- tryCatch(as.Date(rownames(x$Y)), error = function(cond) cond)
+    if (inherits(row_names, "error")) {
+      stop("To plot the forecasts, either fcst_start must be supplied or the rownames of Y be dates (YYYY-MM-DD).")
+    }
+    fcst_start <- as_date(rownames(x$Y)[nrow(x$Y)]) %m+% months(1)
+  } else {
+    fcst_start <- tryCatch(as.Date(fcst_start), error = function(cond) cond)
+    if (inherits(fcst_start, "error")) {
+      stop("Unable to convert fcst_start to a date.")
+    }
+  }
+
+  plot_range_names <- fcst_start %m+% months(-x$n_T:(-1))
+
   lower <- upper <- value <- NULL
   if (is.null(plot_start)) {
     if (x$n_fcst > 0) {
@@ -825,21 +840,17 @@ plot.mfbvar_ss <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_sta
       plot_range <- 1:x$n_T
     }
   } else {
-    if (inherits(as.Date(plot_start), "Date")) {
-      if (!(plot_start %in% rownames(x$Y))) {
+    plot_start <- tryCatch(as_date(plot_start), error = function(cond) cond)
+    if (!inherits(plot_start, "error")) {
+      if (!(plot_start %in% plot_range_names)) {
         stop(sprintf("The start date, %s, does not match rownames in the data matrix Y.", plot_start))
       }
-      plot_range <- (which(rownames(x$Y) == plot_start)):x$n_T
+      plot_range <- (which(plot_range_names == plot_start)):x$n_T
     } else {
-      plot_range <- plot_start:x$n_T
+      stop("Unable to convert plot_start to a date.")
     }
   }
 
-  if (!is.null(rownames(x$Y))) {
-    plot_range_names <- rownames(x$Y)[1:x$n_T]
-  } else {
-    plot_range_names <- 1:x$n_T
-  }
 
   if (is.null(ss_bands)) {
     ss_level <- c(0.025, 0.975)
@@ -936,7 +947,7 @@ plot.mfbvar_ss <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_sta
     theme(legend.position="bottom")
   breaks <- ggplot_build(p)$layout$coord$labels(ggplot_build(p)$layout$panel_params)[[1]]$x.labels
   if (any(as.numeric(breaks)>plot_range[length(plot_range)])) {
-    break_labels <- c(plot_range_names[as.numeric(breaks)[as.numeric(breaks)<=plot_range[length(plot_range)]]],
+    break_labels <- c(as.character(plot_range_names[as.numeric(breaks)[as.numeric(breaks)<=plot_range[length(plot_range)]]]),
                       as.character(preds$fcst_date[min(which(preds$time == breaks[as.numeric(breaks)>plot_range[length(plot_range)]]))]))
   } else {
     break_labels <- plot_range_names[as.numeric(breaks)]
@@ -949,6 +960,21 @@ plot.mfbvar_ss <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_sta
 #' @rdname plot-mfbvar
 plot.mfbvar_minn <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_start = NULL,
                              pred_bands = 0.8, nrow_facet = NULL, ...){
+  if (is.null(fcst_start)) {
+    row_names <- tryCatch(as.Date(rownames(x$Y)), error = function(cond) cond)
+    if (inherits(row_names, "error")) {
+      stop("To plot the forecasts, either fcst_start must be supplied or the rownames of Y be dates (YYYY-MM-DD).")
+    }
+    fcst_start <- as_date(rownames(x$Y)[nrow(x$Y)]) %m+% months(1)
+  } else {
+    fcst_start <- tryCatch(as.Date(fcst_start), error = function(cond) cond)
+    if (inherits(fcst_start, "error")) {
+      stop("Unable to convert fcst_start to a date.")
+    }
+  }
+
+  plot_range_names <- fcst_start %m+% months(-x$n_T:(-1))
+
   lower <- upper <- value <- NULL
   if (is.null(plot_start)) {
     if (x$n_fcst > 0) {
@@ -957,21 +983,18 @@ plot.mfbvar_minn <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_s
       plot_range <- 1:x$n_T
     }
   } else {
-    if (inherits(as.Date(plot_start), "Date")) {
-      if (!(plot_start %in% rownames(x$Y))) {
+    plot_start <- tryCatch(as_date(plot_start), error = function(cond) cond)
+    if (!inherits(plot_start, "error")) {
+      if (!(plot_start %in% plot_range_names)) {
         stop(sprintf("The start date, %s, does not match rownames in the data matrix Y.", plot_start))
       }
-      plot_range <- (which(rownames(x$Y) == plot_start)):x$n_T
+      plot_range <- (which(plot_range_names == plot_start)):x$n_T
     } else {
-      plot_range <- plot_start:x$n_T
+      stop("Unable to convert plot_start to a date.")
     }
   }
 
-  if (!is.null(rownames(x$Y))) {
-    plot_range_names <- rownames(x$Y)[1:x$n_T]
-  } else {
-    plot_range_names <- 1:x$n_T
-  }
+
 
 
   if (is.null(pred_bands)) {
@@ -981,7 +1004,6 @@ plot.mfbvar_minn <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_s
   }
 
   names_col <- if (is.null(x$names_col)) paste0("x", 1:x$n_vars) else x$names_col
-  names_row <- if (is.null(x$names_row)) 1:x$n_T else x$names_row
   p <- ggplot(mapping = aes(x = time))
 
 
@@ -1014,7 +1036,6 @@ plot.mfbvar_minn <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_s
       labs(caption = ifelse(aggregate_fcst,
                             "Note: The forecasts for the quarterly variables have been aggregated to the quarterly frequency.",
                             "Note: The forecasts are for the underlying variable."))
-    names_row <- c(names_row, rownames(x$Z_fcst)[-(1:x$n_lags)])
   }
 
   if (x$n_fcst > 0) {
@@ -1044,7 +1065,7 @@ plot.mfbvar_minn <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_s
     theme(legend.position="bottom")
   breaks <- ggplot_build(p)$layout$coord$labels(ggplot_build(p)$layout$panel_params)[[1]]$x.labels
   if (any(as.numeric(breaks)>plot_range[length(plot_range)])) {
-    break_labels <- c(plot_range_names[as.numeric(breaks)[as.numeric(breaks)<=plot_range[length(plot_range)]]],
+    break_labels <- c(as.character(plot_range_names[as.numeric(breaks)[as.numeric(breaks)<=plot_range[length(plot_range)]]]),
                       as.character(preds$fcst_date[min(which(preds$time == breaks[as.numeric(breaks)>plot_range[length(plot_range)]]))]))
   } else {
     break_labels <- plot_range_names[as.numeric(breaks)]
@@ -1078,7 +1099,7 @@ varplot <- function(x, variables = colnames(x$Y), var_bands = 0.95, nrow_facet =
     if (is.null(rownames(x$Y))) {
       date <- 1:nrow(x$Y)
     } else {
-      date <- rownames(x$Y)
+      date <- as.numeric(rownames(x$Y))
     }
   }
   p <- tibble(date = rep(date[(n_lags+1):(n_lags+n_T)], n_plotvars),
@@ -1098,6 +1119,7 @@ varplot <- function(x, variables = colnames(x$Y), var_bands = 0.95, nrow_facet =
   } else {
     p <- p + facet_wrap(~variable, scales = "free_y", nrow = nrow_facet)
   }
+  p
 }
 
 
@@ -1124,13 +1146,16 @@ predict.mfbvar <- function(object, fcst_start = NULL, aggregate_fcst = TRUE, pre
   if (object$n_fcst==0) {
     stop("No forecasts exist in the provided object.")
   }
+  if (!is.null(fcst_start)) {
+    fcst_start <- as.Date(fcst_start)
+  }
   if (object$n_fcst > 0) {
     if (!inherits(fcst_start, "Date")) {
-      tmp <- tryCatch(lubridate::ymd(rownames(object$Y)[nrow(object$Y)]), error = function(cond) cond)
-      if (inherits(tmp, "error")) {
+      tmp <- tryCatch(lubridate::ymd(rownames(object$Y)[nrow(object$Y)]), warning = function(cond) cond)
+      if (inherits(tmp, "warning")) {
         stop("To summarize the forecasts, either fcst_start must be supplied or the rownames of Y be dates (YYYY-MM-DD).")
       } else {
-        fcst_start <- ((lubridate::ymd(rownames(object$Y)[nrow(object$Y)])+lubridate::days(1))+months(1))-lubridate::days(1)
+        fcst_start <- lubridate::ymd(rownames(object$Y)[nrow(object$Y)]) %m+% months(1)
       }
     }
   }
@@ -1163,6 +1188,8 @@ predict.mfbvar <- function(object, fcst_start = NULL, aggregate_fcst = TRUE, pre
   if (aggregate_fcst) {
     fcst_collapsed <- dplyr::filter(fcst_collapsed, freq == "q") %>%
       group_by(variable, iter, year, quarter) %>%
+      mutate(quarter_size = n()) %>%
+      dplyr::filter(quarter_size == 3) %>%
       summarize(fcst_date = max(fcst_date), fcst = mean(fcst), freq = unique(freq), time = max(time)) %>%
       bind_rows(dplyr::filter(fcst_collapsed, freq == "m")) %>%
       ungroup()
@@ -1199,7 +1226,6 @@ plot.mfbvar_prior <- function(x, nrow_facet = NULL, ...){
   ss_level <- c(0.025, 0.975)
 
   names_col <- if (is.null(colnames(x$Y))) paste0("x", 1:x$n_vars) else colnames(x$Y)
-  names_row <- if (is.null(rownames(x$Y))) 1:x$n_T else rownames(x$Y)
 
   if (!is.null(x$d)& !is.null(x$prior_psi_mean) & !is.null(x$prior_psi_Omega)) {
     ss_flag <- TRUE
@@ -1217,7 +1243,11 @@ plot.mfbvar_prior <- function(x, nrow_facet = NULL, ...){
                      upper = c(ss_upper))
   }
 
-  plot_df <- data.frame(expand.grid(time = as.Date(rownames(x$Y)), variable = names_col))
+  row_names <- tryCatch(as.Date(rownames(x$Y)), error = function(cond) cond)
+  if (inherits(row_names, "error")) {
+    row_names <- 1:nrow(x$Y)
+  }
+  plot_df <- data.frame(expand.grid(time = row_names, variable = names_col))
   plot_df$value <- c(as.matrix(x$Y))
   plot_df <- na.omit(plot_df)
 
