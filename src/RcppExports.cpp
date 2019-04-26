@@ -22,24 +22,24 @@ BEGIN_RCPP
 END_RCPP
 }
 // create_X
-arma::mat create_X(arma::mat y, arma::uword k);
+arma::mat create_X(const arma::mat& y, arma::uword k);
 RcppExport SEXP _mfbvar_create_X(SEXP ySEXP, SEXP kSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type y(ySEXP);
     Rcpp::traits::input_parameter< arma::uword >::type k(kSEXP);
     rcpp_result_gen = Rcpp::wrap(create_X(y, k));
     return rcpp_result_gen;
 END_RCPP
 }
 // create_X_noint
-arma::mat create_X_noint(arma::mat y, arma::uword k);
+arma::mat create_X_noint(const arma::mat& y, arma::uword k);
 RcppExport SEXP _mfbvar_create_X_noint(SEXP ySEXP, SEXP kSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type y(ySEXP);
     Rcpp::traits::input_parameter< arma::uword >::type k(kSEXP);
     rcpp_result_gen = Rcpp::wrap(create_X_noint(y, k));
     return rcpp_result_gen;
@@ -118,14 +118,79 @@ BEGIN_RCPP
 END_RCPP
 }
 // max_eig_cpp
-double max_eig_cpp(arma::mat A);
+double max_eig_cpp(const arma::mat& A);
 RcppExport SEXP _mfbvar_max_eig_cpp(SEXP ASEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type A(ASEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type A(ASEXP);
     rcpp_result_gen = Rcpp::wrap(max_eig_cpp(A));
     return rcpp_result_gen;
+END_RCPP
+}
+// mcmc_minn_iw
+void mcmc_minn_iw(const arma::mat& y_in_p, arma::cube& Pi, arma::cube& Sigma, arma::cube& Z, arma::cube& Z_fcst, const arma::mat& Lambda_comp, const arma::mat& prior_Pi_Omega, const arma::mat& inv_prior_Pi_Omega, const arma::mat& Omega_Pi, const arma::mat& prior_Pi_mean, const arma::mat& prior_S, const arma::mat& Z_1, arma::uword n_reps, arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars, arma::uword n_T, arma::uword n_fcst);
+RcppExport SEXP _mfbvar_mcmc_minn_iw(SEXP y_in_pSEXP, SEXP PiSEXP, SEXP SigmaSEXP, SEXP ZSEXP, SEXP Z_fcstSEXP, SEXP Lambda_compSEXP, SEXP prior_Pi_OmegaSEXP, SEXP inv_prior_Pi_OmegaSEXP, SEXP Omega_PiSEXP, SEXP prior_Pi_meanSEXP, SEXP prior_SSEXP, SEXP Z_1SEXP, SEXP n_repsSEXP, SEXP n_qSEXP, SEXP T_bSEXP, SEXP n_lagsSEXP, SEXP n_varsSEXP, SEXP n_TSEXP, SEXP n_fcstSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type y_in_p(y_in_pSEXP);
+    Rcpp::traits::input_parameter< arma::cube& >::type Pi(PiSEXP);
+    Rcpp::traits::input_parameter< arma::cube& >::type Sigma(SigmaSEXP);
+    Rcpp::traits::input_parameter< arma::cube& >::type Z(ZSEXP);
+    Rcpp::traits::input_parameter< arma::cube& >::type Z_fcst(Z_fcstSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type Lambda_comp(Lambda_compSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type prior_Pi_Omega(prior_Pi_OmegaSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type inv_prior_Pi_Omega(inv_prior_Pi_OmegaSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type Omega_Pi(Omega_PiSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type prior_Pi_mean(prior_Pi_meanSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type prior_S(prior_SSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type Z_1(Z_1SEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_reps(n_repsSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_q(n_qSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type T_b(T_bSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_lags(n_lagsSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_vars(n_varsSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_T(n_TSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_fcst(n_fcstSEXP);
+    mcmc_minn_iw(y_in_p, Pi, Sigma, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst);
+    return R_NilValue;
+END_RCPP
+}
+// mcmc_ss_iw
+void mcmc_ss_iw(const arma::mat& y_in_p, arma::cube& Pi, arma::cube& Sigma, arma::mat& psi, arma::cube& Z, arma::cube& Z_fcst, const arma::mat& Lambda_comp, const arma::mat& prior_Pi_Omega, const arma::mat& inv_prior_Pi_Omega, const arma::mat& Omega_Pi, const arma::mat& prior_Pi_mean, const arma::mat& prior_S, const arma::mat& D_mat, const arma::mat& dt, const arma::mat& d1, const arma::mat& d_fcst_lags, const arma::mat& inv_prior_psi_Omega, const arma::mat& inv_prior_psi_Omega_mean, bool check_roots, const arma::mat& Z_1, arma::uword n_reps, arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars, arma::uword n_T, arma::uword n_fcst, arma::uword n_determ);
+RcppExport SEXP _mfbvar_mcmc_ss_iw(SEXP y_in_pSEXP, SEXP PiSEXP, SEXP SigmaSEXP, SEXP psiSEXP, SEXP ZSEXP, SEXP Z_fcstSEXP, SEXP Lambda_compSEXP, SEXP prior_Pi_OmegaSEXP, SEXP inv_prior_Pi_OmegaSEXP, SEXP Omega_PiSEXP, SEXP prior_Pi_meanSEXP, SEXP prior_SSEXP, SEXP D_matSEXP, SEXP dtSEXP, SEXP d1SEXP, SEXP d_fcst_lagsSEXP, SEXP inv_prior_psi_OmegaSEXP, SEXP inv_prior_psi_Omega_meanSEXP, SEXP check_rootsSEXP, SEXP Z_1SEXP, SEXP n_repsSEXP, SEXP n_qSEXP, SEXP T_bSEXP, SEXP n_lagsSEXP, SEXP n_varsSEXP, SEXP n_TSEXP, SEXP n_fcstSEXP, SEXP n_determSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type y_in_p(y_in_pSEXP);
+    Rcpp::traits::input_parameter< arma::cube& >::type Pi(PiSEXP);
+    Rcpp::traits::input_parameter< arma::cube& >::type Sigma(SigmaSEXP);
+    Rcpp::traits::input_parameter< arma::mat& >::type psi(psiSEXP);
+    Rcpp::traits::input_parameter< arma::cube& >::type Z(ZSEXP);
+    Rcpp::traits::input_parameter< arma::cube& >::type Z_fcst(Z_fcstSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type Lambda_comp(Lambda_compSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type prior_Pi_Omega(prior_Pi_OmegaSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type inv_prior_Pi_Omega(inv_prior_Pi_OmegaSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type Omega_Pi(Omega_PiSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type prior_Pi_mean(prior_Pi_meanSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type prior_S(prior_SSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type D_mat(D_matSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type dt(dtSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type d1(d1SEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type d_fcst_lags(d_fcst_lagsSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type inv_prior_psi_Omega(inv_prior_psi_OmegaSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type inv_prior_psi_Omega_mean(inv_prior_psi_Omega_meanSEXP);
+    Rcpp::traits::input_parameter< bool >::type check_roots(check_rootsSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type Z_1(Z_1SEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_reps(n_repsSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_q(n_qSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type T_b(T_bSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_lags(n_lagsSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_vars(n_varsSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_T(n_TSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_fcst(n_fcstSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_determ(n_determSEXP);
+    mcmc_ss_iw(y_in_p, Pi, Sigma, psi, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, inv_prior_psi_Omega, inv_prior_psi_Omega_mean, check_roots, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ);
+    return R_NilValue;
 END_RCPP
 }
 // posterior_psi_Omega_fsv
@@ -263,38 +328,38 @@ BEGIN_RCPP
 END_RCPP
 }
 // rmatn
-arma::mat rmatn(arma::mat M, arma::mat Q, arma::mat P);
+arma::mat rmatn(const arma::mat& M, const arma::mat& Q, const arma::mat& P);
 RcppExport SEXP _mfbvar_rmatn(SEXP MSEXP, SEXP QSEXP, SEXP PSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type M(MSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type Q(QSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type P(PSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type M(MSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type Q(QSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type P(PSEXP);
     rcpp_result_gen = Rcpp::wrap(rmatn(M, Q, P));
     return rcpp_result_gen;
 END_RCPP
 }
 // rinvwish
-arma::mat rinvwish(int v, arma::mat S);
+arma::mat rinvwish(int v, const arma::mat& S);
 RcppExport SEXP _mfbvar_rinvwish(SEXP vSEXP, SEXP SSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type v(vSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type S(SSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type S(SSEXP);
     rcpp_result_gen = Rcpp::wrap(rinvwish(v, S));
     return rcpp_result_gen;
 END_RCPP
 }
 // rmultn
-arma::vec rmultn(arma::vec m, arma::mat Sigma);
+arma::vec rmultn(const arma::vec& m, const arma::mat& Sigma);
 RcppExport SEXP _mfbvar_rmultn(SEXP mSEXP, SEXP SigmaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::vec >::type m(mSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type Sigma(SigmaSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type m(mSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type Sigma(SigmaSEXP);
     rcpp_result_gen = Rcpp::wrap(rmultn(m, Sigma));
     return rcpp_result_gen;
 END_RCPP
@@ -364,6 +429,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mfbvar_kf_ragged", (DL_FUNC) &_mfbvar_kf_ragged, 7},
     {"_mfbvar_kf_sim_smooth", (DL_FUNC) &_mfbvar_kf_sim_smooth, 7},
     {"_mfbvar_max_eig_cpp", (DL_FUNC) &_mfbvar_max_eig_cpp, 1},
+    {"_mfbvar_mcmc_minn_iw", (DL_FUNC) &_mfbvar_mcmc_minn_iw, 19},
+    {"_mfbvar_mcmc_ss_iw", (DL_FUNC) &_mfbvar_mcmc_ss_iw, 28},
     {"_mfbvar_posterior_psi_Omega_fsv", (DL_FUNC) &_mfbvar_posterior_psi_Omega_fsv, 4},
     {"_mfbvar_posterior_psi_mean_fsv", (DL_FUNC) &_mfbvar_posterior_psi_mean_fsv, 6},
     {"_mfbvar_posterior_psi_fsv", (DL_FUNC) &_mfbvar_posterior_psi_fsv, 15},

@@ -3,7 +3,7 @@
 //' @rdname dnorminvwish
 //' @keywords internal
 // [[Rcpp::export]]
-arma::mat rmatn(arma::mat M, arma::mat Q, arma::mat P){
+arma::mat rmatn(const arma::mat & M, const arma::mat & Q, const arma::mat & P){
 /*-------------------------------------------------------
 # Generate draws from a matricvariate normal distribution
 #-------------------------------------------------------*/
@@ -20,7 +20,7 @@ arma::mat rmatn(arma::mat M, arma::mat Q, arma::mat P){
 //' @rdname dnorminvwish
 //' @keywords internal
 // [[Rcpp::export]]
-arma::mat rinvwish(int v, arma::mat S){
+arma::mat rinvwish(int v, const arma::mat & S){
   int p = S.n_rows;
   arma::mat L = arma::chol(arma::inv_sympd(S), "lower");
   arma::mat A(p,p, arma::fill::zeros);
@@ -43,7 +43,7 @@ arma::mat rinvwish(int v, arma::mat S){
 //' @rdname dmultn
 //' @keywords internal
 // [[Rcpp::export]]
-arma::vec rmultn(arma::vec m, arma::mat Sigma){
+arma::vec rmultn(const arma::vec & m, const arma::mat & Sigma){
   /*-------------------------------------------------------
 # Generate draws from a matricvariate normal distribution
 #-------------------------------------------------------*/

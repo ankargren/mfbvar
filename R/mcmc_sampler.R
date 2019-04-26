@@ -55,6 +55,7 @@ mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
   n_vars <- dim(Y)[2]
   n_lags <- prod(dim(as.matrix(prior_Pi_mean)))/n_vars^2
   Lambda <- mfbvar:::build_Lambda(freq, n_lags)
+
   n_pseudolags <- dim(Lambda)[2]/n_vars
   n_determ <- dim(d)[2]
   n_T <- dim(Y)[1]# - n_lags
@@ -68,6 +69,8 @@ mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
   Lambda_companion <- mfbvar:::build_Lambda(c(rep("m", n_vars-n_q), rep("q", n_q)), n_lags)
   Lambda_comp <- matrix(Lambda_companion[(n_m+1):n_vars, c(t(sapply((n_m+1):n_vars, function(x) seq(from = x, to = n_vars*n_lags, by = n_vars))))],
                         nrow = n_q)
+
+  Lambda_ <- mfbvar:::build_Lambda(rep("q", n_q), 3)
   ################################################################
   ### Preallocation
   # Pi and Sigma store their i-th draws in the third dimension, psi
@@ -92,6 +95,7 @@ mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
   if (n_fcst > 0) {
     Z_fcst<- array(NA, dim = c(n_fcst+n_lags, n_vars, n_reps),
                    dimnames = list(c((n_T-n_lags+1):n_T, paste0("fcst_", 1:n_fcst)), NULL, NULL))
+    Z_fcst[,,1] <- 0
     d_fcst_lags <- matrix(rbind(d[(n_T-n_lags+1):n_T, , drop = FALSE], d_fcst), nrow = n_fcst + n_lags)
   }
   roots <- vector("numeric", n_reps)
@@ -194,66 +198,9 @@ mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
   inv_prior_psi_Omega_mean <- inv_prior_psi_Omega %*% prior_psi_mean
   Z_1 <- Z[1:n_pseudolags,, 1]
 
-  if (verbose) {
-    pb <- progress_bar$new(
-      format = "[:bar] :percent eta: :eta",
-      clear = FALSE, total = n_reps, width = 60)
-  }
-
-  for (r in 2:(n_reps)) {
-    ################################################################
-    ### Pi and Sigma step
-    #(Z_r1,             d,     psi_r1,                            prior_Pi_mean, inv_prior_Pi_Omega, Omega_Pi, prior_S, prior_nu, check_roots, n_vars, n_lags, n_T)
-    Pi_Sigma <- mfbvar:::posterior_Pi_Sigma(Z_r1 = Z[,, r-1], d = d, psi_r1 = psi_i, prior_Pi_mean, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_S, n_vars+2, check_roots, n_vars, n_lags, n_T_)
-    Pi_i <- Pi_Sigma$Pi_r
-    Sigma_i <- Pi_Sigma$Sigma_r
-    Pi[,,r]      <- Pi_i
-    Sigma[,,r]   <- Sigma_i
-    num_tries[r] <- Pi_Sigma$num_try
-    roots[r]     <- Pi_Sigma$root
-
-    ################################################################
-    ### Steady-state step
-    #(Pi_r,            Sigma_r,               Z_r1,             prior_psi_mean, prior_psi_Omega, D, n_vars, n_lags, n_determ)
-
-    X <- mfbvar:::create_X_noint(rbind(Z_1, Z_i), n_lags)
-    mfbvar:::posterior_psi_iw(psi_i, mu_mat, Pi_i = Pi_i, D_mat = D_mat, Sigma_i = Sigma_i, inv_prior_psi_Omega = inv_prior_psi_Omega,
-                              Z_i = Z_i, X = X, inv_prior_psi_Omega_mean = inv_prior_psi_Omega_mean, dt = dt, n_determ = n_determ,
-                              n_vars = n_vars, n_lags = n_lags)
-    psi[r, ] <- psi_i
-    #psi[r, ] <- posterior_psi(Pi_r = Pi[,, r], Sigma_r = Sigma[,, r], Z_r1 = Z[,, r-1], prior_psi_mean, prior_psi_Omega, D_mat, n_vars, n_lags, n_determ)
-
-    ################################################################
-    ### Smoothing step
-
-    mZ <- y_in_p - mu_mat
-    mZ <- as.matrix(mZ)
-    mZ1 <- Z_1 - d1 %*% t(matrix(psi_i, nrow = n_vars))
-    Pi_i0 <- cbind(0, Pi[,,r])
-    Z_i_demean <- tryCatch(mfbvar:::rsimsm_adaptive_cv(mZ, Pi_i0, t(chol(Sigma_i)), Lambda_comp, mZ1, n_q, T_b), error = function(cond) cond)
-    Z_i <- Z_i_demean + mu_mat
-    Z[,, r] <- rbind(Z_1, Z_i)
-
-    ################################################################
-    ### Forecasting step
-    if (n_fcst > 0) {
-
-      # Forecast the process with mean subtracted
-      Z_fcst[1:n_lags, , r] <- Z[(n_T - n_lags+1):n_T,, r] - d[(n_T - n_lags+1):n_T, ] %*% t(matrix(psi[r, ], nrow = n_vars))
-      for (h in 1:n_fcst) {
-        Z_fcst[n_lags + h, , r] <- Pi[,, r] %*% matrix(c(t(Z_fcst[(n_lags+h-1):h,, r])), ncol = 1) +
-          rmultn(m = matrix(0, nrow = n_vars), Sigma = Sigma[,,r])
-      }
-
-      # Add the mean
-      Z_fcst[, , r] <- Z_fcst[, , r] + d_fcst_lags %*% t(matrix(psi[r, ], nrow = n_vars))
-    }
-
-    if (verbose) {
-      pb$tick()
-    }
-  }
-
+  mfbvar:::mcmc_ss_iw(Y[-(1:n_lags),],Pi,Sigma,psi,Z,Z_fcst,Lambda_comp,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
+                      prior_S,D_mat,dt,d1,d_fcst_lags,inv_prior_psi_Omega,inv_prior_psi_Omega_mean,check_roots,Z_1,n_reps,
+                      n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ)
 
   ################################################################
   ### Prepare the return object
@@ -287,7 +234,7 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
   }
 
   prior_nu <- n_vars + 2
-  priors <- prior_Pi_Sigma(lambda1 = x$lambda1, lambda2 = x$lambda3, prior_Pi_AR1 = x$prior_Pi_AR1, Y = x$Y,
+  priors <- mfbvar:::prior_Pi_Sigma(lambda1 = x$lambda1, lambda2 = x$lambda3, prior_Pi_AR1 = x$prior_Pi_AR1, Y = x$Y,
                            n_lags = x$n_lags, prior_nu = prior_nu)
   prior_Pi_mean <- priors$prior_Pi_mean
   prior_Pi_Omega <- priors$prior_Pi_Omega
@@ -301,8 +248,8 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
   lambda4 <- x$lambda4
 
   # Add terms for constant
-  prior_Pi_Omega <- diag(c(diag(prior_Pi_Omega), x$lambda1^2*lambda4^2))
-  prior_Pi_mean <- rbind(prior_Pi_mean, 0)
+  prior_Pi_Omega <- diag(c(x$lambda1^2*lambda4^2, diag(prior_Pi_Omega)))
+  prior_Pi_mean <- rbind(0, prior_Pi_mean)
 
   add_args <- list(...)
   n_reps <- add_args$n_reps
@@ -317,10 +264,10 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
   # n_T: sample size (full sample)
   # n_T_: sample size (reduced sample)
 
-  Lambda <- build_Lambda(freq, n_lags)
+  Lambda <- mfbvar:::build_Lambda(freq, n_lags)
   n_q <- sum(freq == "q")
   T_b <- max(which(!apply(apply(Y[, freq == "m", drop = FALSE], 2, is.na), 1, any)))
-  Lambda_ <- build_Lambda(rep("q", n_q), 3)
+  Lambda_ <- mfbvar:::build_Lambda(rep("q", n_q), 3)
 
   n_pseudolags <- dim(Lambda)[2]/n_vars
   n_T <- dim(Y)[1]# - n_lags
@@ -351,6 +298,7 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
   if (n_fcst>0) {
     Z_fcst<- array(NA, dim = c(n_fcst+n_lags, n_vars, n_reps),
                    dimnames = list(c((n_T-n_lags+1):n_T, paste0("fcst_", 1:n_fcst)), NULL, NULL))
+    Z_fcst[,,1] <- 0
   }
 
 
@@ -368,7 +316,7 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
   # for multiple chains
 
   if (is.null(init_Z)) {
-    Z[,, 1] <- fill_na(Y)
+    Z[,, 1] <- mfbvar:::fill_na(Y)
   } else {
     if (all(dim(Z[,, 1]) == dim(init_Z))) {
       Z[,, 1] <- init_Z
@@ -378,10 +326,10 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
 
   }
 
-  ols_results <- ols_initialization(z = Z[,, 1], d = d, n_lags = n_lags, n_T = n_T, n_vars = n_vars, n_determ = 1)
+  ols_results <- mfbvar:::ols_initialization(z = Z[,, 1], d = d, n_lags = n_lags, n_T = n_T, n_vars = n_vars, n_determ = 1)
 
   if (is.null(init_Pi)) {
-    Pi[,, 1]    <- cbind(ols_results$Pi, ols_results$const)
+    Pi[,, 1]    <- cbind(ols_results$const, ols_results$Pi)
   } else {
     if (all(dim(Pi[,, 1]) == dim(init_Pi))) {
       Pi[,, 1] <- init_Pi
@@ -411,63 +359,8 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
   inv_prior_Pi_Omega <- chol2inv(chol(prior_Pi_Omega))
   Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi_mean
 
-  if (verbose) {
-    pb <- progress_bar$new(
-      format = "[:bar] :percent eta: :eta",
-      clear = FALSE, total = n_reps, width = min(c(60, getOption("width"))))
-  }
-
-  for (r in 2:(n_reps)) {
-    Pi_r1 <- Pi[,,r-1]
-    Sigma_r1 <- Sigma[,,r-1]
-
-    Z_res <- kf_sim_smooth(Y, Pi_r1, Sigma_r1, Lambda_, Z_1, n_q, T_b)
-
-    Z[,, r] <- rbind(Z_1, Z_res)
-
-    Z_comp <- build_Z(z = Z[,, r], n_lags = n_lags)
-    XX <- Z_comp[-nrow(Z_comp), ]
-    XX <- cbind(XX, 1)
-    YY <- Z_comp[-1, 1:n_vars]
-
-    XXt.XX <- crossprod(XX)
-    XXt.XX.inv <- chol2inv(chol(XXt.XX))
-    Pi_sample <- XXt.XX.inv %*% crossprod(XX, YY)
-
-    # Posterior moments of Pi
-    post_Pi_Omega <- chol2inv(chol(inv_prior_Pi_Omega + XXt.XX))
-    post_Pi       <- post_Pi_Omega %*% (Omega_Pi + crossprod(XX, YY))
-    S <- crossprod(YY - XX %*% Pi_sample)
-    Pi_diff <- prior_Pi_mean - Pi_sample
-    post_S <- prior_S + S + t(Pi_diff) %*% chol2inv(chol(prior_Pi_Omega + XXt.XX.inv)) %*% Pi_diff
-
-
-    Sigma_r <- rinvwish(v = post_nu, S = post_S)
-    Sigma[,, r]   <- Sigma_r
-
-    Pi_r <- rmatn(M = t(post_Pi), Q = post_Pi_Omega, P = Sigma_r)
-    Pi[,, r] <- Pi_r
-    const_r <- Pi_r[, ncol(Pi_r)]
-    Pi_r <- Pi_r[, -ncol(Pi_r)]
-
-
-    ################################################################
-    ### Forecasting step
-    if (n_fcst>0) {
-
-      # Forecast the process with mean subtracted
-      Z_fcst[1:n_lags, , r] <- Z[(n_T - n_lags+1):n_T,, r]
-      for (h in 1:n_fcst) {
-        Z_fcst[n_lags + h, , r] <- const_r + Pi_r  %*% matrix(c(t(Z_fcst[(n_lags+h-1):h,, r])), ncol = 1) +
-          rmultn(m = matrix(0, nrow = n_vars), Sigma = Sigma[,,r])
-      }
-
-    }
-
-    if (verbose) {
-      pb$tick()
-    }
-  }
+  mfbvar:::mcmc_minn_iw(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,
+                        Omega_Pi,prior_Pi_mean,prior_S,Z_1,n_reps,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst)
 
 
   ################################################################

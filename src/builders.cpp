@@ -24,7 +24,7 @@ arma::mat build_U_cpp(const arma::mat & Pi, int n_determ, int n_vars, int n_lags
 }
 
 // [[Rcpp::export]]
-arma::mat create_X(arma::mat y, arma::uword k) {
+arma::mat create_X(const arma::mat & y, arma::uword k) {
   arma::uword TT = y.n_rows - k;
   arma::uword n = y.n_cols;
   arma::mat X = arma::mat(TT, n*k + 1, arma::fill::ones);
@@ -36,7 +36,7 @@ arma::mat create_X(arma::mat y, arma::uword k) {
 }
 
 // [[Rcpp::export]]
-arma::mat create_X_noint(arma::mat y, arma::uword k) {
+arma::mat create_X_noint(const arma::mat & y, arma::uword k) {
   arma::uword TT = y.n_rows - k;
   arma::uword n = y.n_cols;
   arma::mat X = arma::mat(TT, n*k, arma::fill::zeros);

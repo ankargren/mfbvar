@@ -85,6 +85,14 @@ max_eig_cpp <- function(A) {
     .Call(`_mfbvar_max_eig_cpp`, A)
 }
 
+mcmc_minn_iw <- function(y_in_p, Pi, Sigma, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst) {
+    invisible(.Call(`_mfbvar_mcmc_minn_iw`, y_in_p, Pi, Sigma, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst))
+}
+
+mcmc_ss_iw <- function(y_in_p, Pi, Sigma, psi, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, inv_prior_psi_Omega, inv_prior_psi_Omega_mean, check_roots, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ) {
+    invisible(.Call(`_mfbvar_mcmc_ss_iw`, y_in_p, Pi, Sigma, psi, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, inv_prior_psi_Omega, inv_prior_psi_Omega_mean, check_roots, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ))
+}
+
 posterior_psi_Omega_fsv <- function(U, D_mat, idivar, inv_prior_psi_Omega) {
     .Call(`_mfbvar_posterior_psi_Omega_fsv`, U, D_mat, idivar, inv_prior_psi_Omega)
 }

@@ -11,7 +11,7 @@
 //' @keywords internal
 //' @return The maximum eigenvalue.
 // [[Rcpp::export]]
-double max_eig_cpp(arma::mat A) {
+double max_eig_cpp(const arma::mat & A) {
   arma::cx_vec eigval = arma::eig_gen(A);
   return max(abs(eigval));
 }
