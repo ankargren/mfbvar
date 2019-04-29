@@ -5,6 +5,7 @@
 #include "mvn.h"
 #include "simsm_adaptive_univariate.h"
 #include "simsm_adaptive_cv.h"
+#include "simsm_adaptive_sv.h"
 
 arma::mat build_U_cpp(const arma::mat & Pi, int n_determ, int n_vars, int n_lags);
 arma::mat create_X_t(const arma::mat & y);
@@ -22,6 +23,13 @@ void posterior_psi_iw(arma::vec & psi_i, arma::mat & mu_mat,
                  const arma::mat & Z_i, const arma::mat & X,
                  const arma::mat & inv_prior_psi_Omega_mean, const arma::mat & dt,
                  int n_determ, int n_vars, int n_lags);
+void posterior_psi_csv(arma::vec & psi_i, arma::mat & mu_mat,
+                       const arma::mat & Pi_i, const arma::mat & D_mat,
+                       const arma::mat & Sigma_chol_inv, const arma::mat & exp_sqrt_f,
+                       const arma::mat & inv_prior_psi_Omega,
+                       const arma::mat & Z_i, const arma::mat & X,
+                       const arma::mat & inv_prior_psi_Omega_mean, const arma::mat & dt,
+                       int n_determ, int n_vars, int n_lags);
 
 double max_eig_cpp(const arma::mat & A);
 #endif

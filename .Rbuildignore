@@ -1,10 +1,10 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+README.rmd
+README_cache/
+codecov.yml
+README.md
+cran-comments.md
 man-roxygen
-^README\.Rmd$
-^README-.*\.png$
-README_cache
-^\.travis\.yml$
-^codecov\.yml$
-^cran-comments\.md$
-^/\.gitattributes$
+\.travis.yml
+_config.yml

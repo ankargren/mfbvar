@@ -85,8 +85,16 @@ max_eig_cpp <- function(A) {
     .Call(`_mfbvar_max_eig_cpp`, A)
 }
 
-mcmc_minn_iw <- function(y_in_p, Pi, Sigma, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst) {
-    invisible(.Call(`_mfbvar_mcmc_minn_iw`, y_in_p, Pi, Sigma, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst))
+mcmc_minn_csv <- function(y_in_p, Pi, Sigma, Z, Z_fcst, phi, sigma, f, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst) {
+    invisible(.Call(`_mfbvar_mcmc_minn_csv`, y_in_p, Pi, Sigma, Z, Z_fcst, phi, sigma, f, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst))
+}
+
+mcmc_ss_csv <- function(y_in_p, Pi, Sigma, psi, Z, Z_fcst, phi, sigma, f, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, inv_prior_psi_Omega, inv_prior_psi_Omega_mean, check_roots, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ) {
+    invisible(.Call(`_mfbvar_mcmc_ss_csv`, y_in_p, Pi, Sigma, psi, Z, Z_fcst, phi, sigma, f, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, inv_prior_psi_Omega, inv_prior_psi_Omega_mean, check_roots, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ))
+}
+
+mcmc_minn_iw <- function(y_in_p, Pi, Sigma, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst) {
+    invisible(.Call(`_mfbvar_mcmc_minn_iw`, y_in_p, Pi, Sigma, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst))
 }
 
 mcmc_ss_iw <- function(y_in_p, Pi, Sigma, psi, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, inv_prior_psi_Omega, inv_prior_psi_Omega_mean, check_roots, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ) {
@@ -95,6 +103,18 @@ mcmc_ss_iw <- function(y_in_p, Pi, Sigma, psi, Z, Z_fcst, Lambda_comp, prior_Pi_
 
 posterior_psi_Omega_fsv <- function(U, D_mat, idivar, inv_prior_psi_Omega) {
     .Call(`_mfbvar_posterior_psi_Omega_fsv`, U, D_mat, idivar, inv_prior_psi_Omega)
+}
+
+posterior_psi_Omega_csv <- function(U, D_mat, Sigma_chol_inv, exp_sqrt_f, inv_prior_psi_Omega, n_determ, n_vars, n_lags) {
+    .Call(`_mfbvar_posterior_psi_Omega_csv`, U, D_mat, Sigma_chol_inv, exp_sqrt_f, inv_prior_psi_Omega, n_determ, n_vars, n_lags)
+}
+
+posterior_psi_mean_csv <- function(U, D_mat, exp_sqrt_f, inv_prior_psi_Omega_mean, post_psi_Omega, Y_tilde) {
+    .Call(`_mfbvar_posterior_psi_mean_csv`, U, D_mat, exp_sqrt_f, inv_prior_psi_Omega_mean, post_psi_Omega, Y_tilde)
+}
+
+posterior_psi_csv <- function(psi_i, mu_mat, Pi_i, D_mat, Sigma_chol_inv, exp_sqrt_f, inv_prior_psi_Omega, Z_i, X, inv_prior_psi_Omega_mean, dt, n_determ, n_vars, n_lags) {
+    invisible(.Call(`_mfbvar_posterior_psi_csv`, psi_i, mu_mat, Pi_i, D_mat, Sigma_chol_inv, exp_sqrt_f, inv_prior_psi_Omega, Z_i, X, inv_prior_psi_Omega_mean, dt, n_determ, n_vars, n_lags))
 }
 
 posterior_psi_mean_fsv <- function(U, D_mat, idivar, inv_prior_psi_Omega_mean, post_psi_Omega, Y_tilde) {
@@ -115,6 +135,10 @@ posterior_psi_Omega_iw <- function(U, D_mat, Sigma_i, inv_prior_psi_Omega) {
 
 posterior_psi_iw <- function(psi_i, mu_mat, Pi_i, D_mat, Sigma_i, inv_prior_psi_Omega, Z_i, X, inv_prior_psi_Omega_mean, dt, n_determ, n_vars, n_lags) {
     invisible(.Call(`_mfbvar_posterior_psi_iw`, psi_i, mu_mat, Pi_i, D_mat, Sigma_i, inv_prior_psi_Omega, Z_i, X, inv_prior_psi_Omega_mean, dt, n_determ, n_vars, n_lags))
+}
+
+forwardAlg <- function(chol_diag, chol_offdiag, covector, htmp) {
+    invisible(.Call(`_mfbvar_forwardAlg`, chol_diag, chol_offdiag, covector, htmp))
 }
 
 rmvn <- function(Phi, d, alpha) {

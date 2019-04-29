@@ -1,0 +1,249 @@
+#include "mfbvar.h"
+#include "progutils.h"
+#include "auxmix.h"
+#include "update.h"
+// [[Rcpp::export]]
+void mcmc_minn_csv(const arma::mat & y_in_p,
+                   arma::cube& Pi, arma::cube& Sigma, arma::cube& Z, arma::cube& Z_fcst,
+                   arma::vec& phi, arma::vec& sigma, arma::mat& f,
+                   const arma::mat& Lambda_comp, const arma::mat& prior_Pi_Omega,
+                   const arma::mat& inv_prior_Pi_Omega,
+                   const arma::mat& Omega_Pi, const arma::mat& prior_Pi_mean,
+                   const arma::mat & prior_S, const arma::mat& Z_1,
+                   const double priorlatent0, const double phi_invvar, const double phi_meaninvvar,
+                   const double prior_sigma2, const double prior_df,
+                   arma::uword n_reps,
+                   arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars,
+                   arma::uword n_T, arma::uword n_fcst) {
+  arma::mat Pi_i = Pi.slice(0);
+  arma::mat Sigma_i = Sigma.slice(0);
+  arma::mat y_i, X, XX, XX_inv, Pi_sample, post_Pi_Omega, post_Pi, Sigma_chol_inv;
+  arma::mat S, Pi_diff, post_S, Sigma_chol, x, y_scaled, X_scaled, eps, u, u_tilde;
+
+  arma::vec f_i = f.row(0).t();
+  arma::vec exp_sqrt_f = arma::exp(0.5 * f_i);
+  arma::vec errors = arma::vec(n_vars);
+  double phi_i = phi(0), sigma_i = sigma(0), vol_pred;
+  arma::imat r = arma::imat(n_T, n_vars);
+  double f0 = 0.0;
+  arma::mat mixprob = arma::mat(10*n_T, n_vars);
+
+  arma::mat Z_i = arma::mat(n_lags + y_in_p.n_rows, n_vars, arma::fill::zeros);
+  arma::mat Z_fcst_i = arma::mat(n_vars, n_lags + n_fcst);
+  Z_i.rows(0, n_lags - 1) = Z_1;
+
+  arma::cube Sigma_chol_cube = arma::cube(n_vars, n_vars, n_T, arma::fill::zeros);
+  Sigma_chol = arma::chol(Sigma_i, "lower");
+  int post_nu = n_T + n_vars + 2;
+
+  for (arma::uword i = 0; i < n_reps; ++i) {
+    Sigma_chol_cube.each_slice() = Sigma_chol;
+    for (arma::uword j = 0; j < n_T; ++j) {
+      Sigma_chol_cube.slice(j) * exp_sqrt_f(j);
+    }
+    y_i = simsm_adaptive_sv(y_in_p, Pi_i, Sigma_chol_cube, Lambda_comp, Z_1, n_q, T_b);
+    Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
+    Z.slice(i) = Z_i;
+
+    X = create_X(Z_i, n_lags);
+    exp_sqrt_f = arma::exp(0.5 * f_i);
+    y_scaled = y_i;
+    y_scaled.each_col() /= exp_sqrt_f;
+    X_scaled = X;
+    X_scaled.each_col() /= exp_sqrt_f;
+    XX = X_scaled.t() * X_scaled;
+
+    XX_inv = arma::inv_sympd(XX);
+    Pi_sample = XX_inv * (X_scaled.t() * y_scaled);
+    post_Pi_Omega = arma::inv_sympd(inv_prior_Pi_Omega + XX);
+    post_Pi = post_Pi_Omega * (Omega_Pi + X_scaled.t() * y_scaled);
+    S = arma::trans((y_scaled - X_scaled * Pi_sample)) * (y_scaled - X_scaled * Pi_sample);
+    Pi_diff = prior_Pi_mean - Pi_sample;
+    post_S = prior_S + S + Pi_diff.t() * arma::inv_sympd(prior_Pi_Omega + XX_inv) * Pi_diff;
+    Sigma_i = rinvwish(post_nu, post_S);
+    Sigma.slice(i) = Sigma_i;
+    Sigma_chol = arma::chol(Sigma_i, "lower");
+    Sigma_chol_inv = arma::inv(arma::trimatl(Sigma_chol));
+    Pi_i = rmatn(post_Pi.t(), post_Pi_Omega, Sigma_i);
+    Pi.slice(i) = Pi_i;
+
+    // Sample factor and related parameters here
+
+    Rcpp::Rcout << "csv" << std::endl;
+    eps = y_i - X * Pi_i.t();
+    u = eps * Sigma_chol_inv.t();
+    u_tilde = arma::log(arma::pow(u, 2.0));
+    update_csv(u_tilde, phi_i, sigma_i, f_i, f0, mixprob, r, priorlatent0, phi_invvar,
+               phi_meaninvvar, prior_sigma2, prior_df);
+    f.row(i) = f_i.t();
+    phi(i) = phi_i;
+    sigma(i) = sigma_i;
+    Rcpp::Rcout << "fcst" << std::endl;
+    vol_pred = f_i(n_T-1);
+    if (n_fcst > 0) {
+      Z_fcst_i.head_cols(n_lags) = Z_i.tail_rows(n_lags).t();
+      for (arma::uword h = 0; h < n_fcst; ++h) {
+        vol_pred = phi_i * vol_pred + R::rnorm(0.0, sigma_i);
+        errors.imbue(norm_rand);
+        errors = errors * std::exp(0.5 * vol_pred);
+        x = create_X_t(Z_fcst_i.cols(0+h, n_lags-1+h).t());
+        Z_fcst_i.col(n_lags + h) = Pi_i * x + Sigma_chol * errors;
+      }
+      Z_fcst.slice(i) = Z_fcst_i.t();
+    }
+  }
+
+}
+
+
+// [[Rcpp::export]]
+void mcmc_ss_csv(const arma::mat & y_in_p,
+                 arma::cube& Pi, arma::cube& Sigma, arma::mat& psi, arma::cube& Z,
+                 arma::cube& Z_fcst,
+                 arma::vec& phi, arma::vec& sigma, arma::mat& f,
+                 const arma::mat& Lambda_comp, const arma::mat& prior_Pi_Omega,
+                 const arma::mat& inv_prior_Pi_Omega,
+                 const arma::mat& Omega_Pi, const arma::mat& prior_Pi_mean,
+                 const arma::mat & prior_S,
+                 const arma::mat & D_mat, const arma::mat & dt, const arma::mat & d1,
+                 const arma::mat & d_fcst_lags, const arma::mat& inv_prior_psi_Omega, const arma::mat& inv_prior_psi_Omega_mean,
+                 bool check_roots, const arma::mat& Z_1,
+                 const double priorlatent0, const double phi_invvar, const double phi_meaninvvar,
+                 const double prior_sigma2, const double prior_df,
+                 arma::uword n_reps,
+                 arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars,
+                 arma::uword n_T, arma::uword n_fcst, arma::uword n_determ) {
+
+  arma::mat Pi_i = Pi.slice(0);
+  arma::mat Sigma_i = Sigma.slice(0);
+  arma::vec psi_i  = psi.row(0).t();
+  arma::mat y_i, X, XX, XX_inv, Pi_sample, post_Pi_Omega, post_Pi, Sigma_chol, Sigma_chol_inv;
+  arma::mat S, Pi_diff, post_S, x, mu_mat, mZ, mZ1, mX, y_scaled, X_scaled, eps, u, u_tilde;
+
+  arma::vec f_i = f.row(0).t();
+  arma::vec exp_sqrt_f = arma::exp(0.5 * f_i);
+  arma::vec errors = arma::vec(n_vars);
+  double phi_i = phi(0), sigma_i = sigma(0), vol_pred;
+  arma::imat r = arma::imat(n_T, n_vars);
+  double f0 = 0.0;
+  arma::mat mixprob = arma::mat(10*n_T, n_vars);
+
+  arma::mat my = arma::mat(arma::size(y_in_p), arma::fill::zeros);
+
+  arma::mat Z_i = arma::mat(n_lags + y_in_p.n_rows, n_vars, arma::fill::zeros);
+  arma::mat Z_fcst_i = arma::mat(n_vars, n_lags + n_fcst);
+  arma::mat Z_i_demean = Z_i;
+  Z_i.rows(0, n_lags - 1) = Z_1;
+
+  arma::mat Pi_i0 = arma::mat(n_vars, n_vars*n_lags+1, arma::fill::zeros);
+  arma::mat Pi_comp = arma::mat(n_vars*n_lags, n_vars*n_lags, arma::fill::zeros);
+  Pi_comp.submat(n_vars, 0, n_vars*n_lags - 1, n_vars*(n_lags-1) - 1) = arma::eye(n_vars*(n_lags-1), n_vars*(n_lags-1));
+
+  arma::mat Psi_i = arma::mat(psi_i.begin(), n_vars, n_determ, false, true);
+  mu_mat = dt * Psi_i.t();
+  arma::mat mu_long = arma::mat(n_lags+n_T, n_vars, arma::fill::zeros);
+  arma::rowvec Lambda_single = arma::rowvec(n_lags, arma::fill::zeros);
+  for (arma::uword i = 0; i < n_lags; ++i) {
+    Lambda_single(i) = Lambda_comp.at(0, i*n_q);
+  }
+
+  arma::cube Sigma_chol_cube = arma::cube(n_vars, n_vars, n_T, arma::fill::zeros);
+  Sigma_chol = arma::chol(Sigma_i, "lower");
+  int post_nu = n_T + n_vars + 2;
+
+  for (arma::uword i = 0; i < n_reps; ++i) {
+    Sigma_chol_cube.each_slice() = Sigma_chol;
+    for (arma::uword j = 0; j < n_T; ++j) {
+      Sigma_chol_cube.slice(j) * exp_sqrt_f(j);
+    }
+    my.cols(0, n_vars - n_q - 1) = y_in_p.cols(0, n_vars - n_q - 1) - mu_mat.cols(0, n_vars - n_q - 1);
+    mu_long.rows(0, n_lags-1) = d1.tail_rows(n_lags) * Psi_i.t();
+    mu_long.rows(n_lags, n_T+n_lags-1) = mu_mat;
+    for (arma::uword j = 0; j < n_T; ++j) {
+      my.row(j).cols(n_vars - n_q - 1, n_vars - 1) = y_in_p.row(j).cols(n_vars - n_q - 1, n_vars - 1) - Lambda_single * mu_long.rows(j, j+n_lags-1).cols(n_vars - n_q - 1, n_vars - 1);// Needs fixing
+    }
+
+    mZ1 = Z_1 - d1 * Psi_i.t();
+    Pi_i0.cols(1, n_vars*n_lags) = Pi_i;
+
+    mZ = simsm_adaptive_sv(my, Pi_i0, Sigma_chol_cube, Lambda_comp, mZ1, n_q, T_b);
+    Z_i_demean.rows(0, n_lags - 1) = mZ1;
+    Z_i_demean.rows(n_lags, n_T + n_lags - 1) = mZ;
+    Z_i.rows(n_lags, n_T + n_lags - 1) = mZ + mu_mat;
+    Z.slice(i) = Z_i;
+
+    mX = create_X_noint(Z_i_demean, n_lags);
+    exp_sqrt_f = arma::exp(0.5 * f_i);
+    y_scaled = mZ;
+    y_scaled.each_col() /= exp_sqrt_f;
+    X_scaled = mX;
+    X_scaled.each_col() /= exp_sqrt_f;
+    XX = X_scaled.t() * X_scaled;
+
+    XX_inv = arma::inv_sympd(XX);
+    Pi_sample = XX_inv * (X_scaled.t() * y_scaled);
+    post_Pi_Omega = arma::inv_sympd(inv_prior_Pi_Omega + XX);
+    post_Pi = post_Pi_Omega * (Omega_Pi + X_scaled.t() * y_scaled);
+    S = arma::trans((y_scaled - X_scaled * Pi_sample)) * (y_scaled - X_scaled * Pi_sample);
+    Pi_diff = prior_Pi_mean - Pi_sample;
+    post_S = prior_S + S + Pi_diff.t() * arma::inv_sympd(prior_Pi_Omega + XX_inv) * Pi_diff;
+    Sigma_i = rinvwish(post_nu, post_S);
+
+    Sigma.slice(i) = Sigma_i;
+    bool stationarity_check = false;
+    int num_try = 0, iter = 0;
+    double root = 1000;
+    while (stationarity_check == false) {
+      iter += 1;
+      Pi_i = rmatn(post_Pi.t(), post_Pi_Omega, Sigma_i);
+      if (check_roots) {
+        Pi_comp.rows(0, n_vars-1) = Pi_i;
+        root = max_eig_cpp(Pi_comp);
+      } else {
+        root = 0.0;
+      }
+      if (root < 1.0) {
+        stationarity_check = true;
+        num_try = iter;
+      }
+      if (iter == 1000) {
+        Rcpp::stop("Attemped to draw stationary Pi 1,000 times.");
+      }
+    }
+
+    Pi.slice(i) = Pi_i;
+
+    X = create_X_noint(Z_i, n_lags);
+    Rcpp::Rcout << "before psi" << std::endl;
+    posterior_psi_csv(psi_i, mu_mat, Pi_i, D_mat, Sigma_chol_inv, exp_sqrt_f, inv_prior_psi_Omega, mZ + mu_mat, X,
+                     inv_prior_psi_Omega_mean, dt, n_determ, n_vars, n_lags);
+Rcpp::Rcout << "after psi" << std::endl;
+
+    psi.row(i) = psi_i.t();
+    eps = y_i - X * Pi_i.t();
+    Rcpp::Rcout << "after eps" << std::endl;
+    u = eps * Sigma_chol_inv.t();
+    Rcpp::Rcout << "after u" << std::endl;
+    u_tilde = arma::log(arma::pow(u, 2.0));
+    Rcpp::Rcout << "before csv" << std::endl;
+    update_csv(u_tilde, phi_i, sigma_i, f_i, f0, mixprob, r, priorlatent0, phi_invvar,
+               phi_meaninvvar, prior_sigma2, prior_df);
+    Rcpp::Rcout << "after csv" << std::endl;
+    f.row(i) = f_i.t();
+    phi(i) = phi_i;
+    sigma(i) = sigma_i;
+    Rcpp::Rcout << "fcst" << std::endl;
+    vol_pred = f_i(n_T-1);
+    if (n_fcst > 0) {
+      Z_fcst_i.head_cols(n_lags) = Z_i.tail_rows(n_lags).t() - mu_mat.tail_rows(n_lags).t();
+      for (arma::uword h = 0; h < n_fcst; ++h) {
+        vol_pred = phi_i * vol_pred + R::rnorm(0.0, sigma_i);
+        errors.imbue(norm_rand);
+        errors = errors * std::exp(0.5 * vol_pred);
+        x = create_X_t_noint(Z_fcst_i.cols(0+h, n_lags-1+h).t());
+        Z_fcst_i.col(n_lags + h) = Pi_i * x + Sigma_chol * errors;
+      }
+      Z_fcst.slice(i) = Z_fcst_i.t() + d_fcst_lags * Psi_i.t();
+    }
+  }
+}
