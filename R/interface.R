@@ -11,7 +11,7 @@
 #' @param lambda4 (Minnesota only) Prior variance of the intercept.
 #' @templateVar n_lags TRUE
 #' @templateVar n_fcst TRUE
-#' @param thin Store every \code{thin}th draw
+#' @param n_thin Store every \code{n_thin}th draw
 #' @templateVar n_burnin TRUE
 #' @templateVar n_reps TRUE
 #' @param d (Steady state only) Either a matrix with same number of rows as \code{Y} and \code{n_determ} number of columns containing the deterministic terms or a string \code{"intercept"} for requesting an intercept as the only deterministic
@@ -61,7 +61,7 @@
 #' @seealso \code{\link{interval_to_moments}}, \code{\link{print.mfbvar_prior}}, \code{\link{summary.mfbvar_prior}}, \code{\link{estimate_mfbvar}}, \code{\link[factorstochvol]{fsvsample}}
 set_prior <- function(Y, freq, prior_Pi_AR1 = rep(0, ncol(Y)), lambda1 = 0.2,
                       lambda2 = 0.5, lambda3 = 1, lambda4 = 10000, n_lags,
-                      n_fcst = 0, thin = 1, n_burnin, n_reps, d = NULL, d_fcst = NULL,
+                      n_fcst = 0, n_thin = 1, n_burnin, n_reps, d = NULL, d_fcst = NULL,
                       prior_psi_mean = NULL, prior_psi_Omega = NULL, n_fac = NULL,
                       cl = NULL, verbose = FALSE, check_roots = FALSE, ...) {
   prior_call <- mget(names(formals())[names(formals()) != "..."], sys.frame(sys.nframe()))
@@ -286,9 +286,9 @@ check_prior <- function(prior_obj) {
     prior_obj$supplied_args <- c(prior_obj$supplied_args, "n_fcst")
   }
 
-  if ("thin" %in% prior_obj$supplied_args) {
-    if (!is.atomic(prior_obj$thin) || length(prior_obj$thin) > 1) {
-      stop("thin must be a vector with a single element.")
+  if ("n_thin" %in% prior_obj$supplied_args) {
+    if (!is.atomic(prior_obj$n_thin) || length(prior_obj$n_thin) > 1) {
+      stop("n_thin must be a vector with a single element.")
     }
   }
 
@@ -645,7 +645,7 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
   }
 
   time_out <- c(time_out, Sys.time())
-  burn_in <- mcmc_sampler(update_prior(mfbvar_prior, n_fcst = 0), n_reps = mfbvar_prior$n_burnin, thin = mfbvar_prior$n_burnin)
+  burn_in <- mcmc_sampler(update_prior(mfbvar_prior, n_fcst = 0), n_reps = mfbvar_prior$n_burnin, n_thin = mfbvar_prior$n_burnin)
 
   if (mfbvar_prior$verbose) {
     end_burnin <- Sys.time()

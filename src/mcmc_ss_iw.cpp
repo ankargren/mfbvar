@@ -10,7 +10,10 @@ void mcmc_ss_iw(const arma::mat & y_in_p,
                   const arma::mat & d_fcst_lags, const arma::mat& inv_prior_psi_Omega, const arma::mat& inv_prior_psi_Omega_mean,
                   bool check_roots, const arma::mat& Z_1, arma::uword n_reps,
                   arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars,
-                  arma::uword n_T, arma::uword n_fcst, arma::uword n_determ) {
+                  arma::uword n_T, arma::uword n_fcst, arma::uword n_determ,
+                  arma::uword n_thin, bool verbose) {
+
+  Progress p(n_reps, true);
 
   arma::mat Pi_i = Pi.slice(0);
   arma::mat Sigma_i = Sigma.slice(0);
@@ -55,7 +58,6 @@ void mcmc_ss_iw(const arma::mat & y_in_p,
     Z_i_demean.rows(0, n_lags - 1) = mZ1;
     Z_i_demean.rows(n_lags, n_T + n_lags - 1) = mZ;
     Z_i.rows(n_lags, n_T + n_lags - 1) = mZ + mu_mat;
-    Z.slice(i) = Z_i;
 
     mX = create_X_noint(Z_i_demean, n_lags);
     XX = mX.t() * mX;
@@ -69,7 +71,6 @@ void mcmc_ss_iw(const arma::mat & y_in_p,
     post_S = prior_S + S + Pi_diff.t() * arma::inv_sympd(prior_Pi_Omega + XX_inv) * Pi_diff;
     Sigma_i = rinvwish(post_nu, post_S);
 
-    Sigma.slice(i) = Sigma_i;
     Sigma_chol = arma::chol(Sigma_i, "lower");
     bool stationarity_check = false;
     int num_try = 0, iter = 0;
@@ -92,21 +93,27 @@ void mcmc_ss_iw(const arma::mat & y_in_p,
       }
     }
 
-    Pi.slice(i) = Pi_i;
-
     X = create_X_noint(Z_i, n_lags);
     posterior_psi_iw(psi_i, mu_mat, Pi_i, D_mat, Sigma_i, inv_prior_psi_Omega, mZ + mu_mat, X, inv_prior_psi_Omega_mean, dt, n_determ, n_vars, n_lags);
-    psi.row(i) = psi_i.t();
 
     arma::vec errors = arma::vec(n_vars);
-    if (n_fcst > 0) {
-      Z_fcst_i.head_cols(n_lags) = Z_i.tail_rows(n_lags).t() - mu_mat.tail_rows(n_lags).t();
-      for (arma::uword h = 0; h < n_fcst; ++h) {
-        errors.imbue(norm_rand);
-        x = create_X_t_noint(Z_fcst_i.cols(0+h, n_lags-1+h).t());
-        Z_fcst_i.col(n_lags + h) = Pi_i * x + Sigma_chol * errors;
+    if (i % n_thin == 0) {
+      if (n_fcst > 0) {
+        Z_fcst_i.head_cols(n_lags) = Z_i.tail_rows(n_lags).t() - mu_mat.tail_rows(n_lags).t();
+        for (arma::uword h = 0; h < n_fcst; ++h) {
+          errors.imbue(norm_rand);
+          x = create_X_t_noint(Z_fcst_i.cols(0+h, n_lags-1+h).t());
+          Z_fcst_i.col(n_lags + h) = Pi_i * x + Sigma_chol * errors;
+        }
+        Z_fcst.slice(i/n_thin) = Z_fcst_i.t() + d_fcst_lags * Psi_i.t();
       }
-      Z_fcst.slice(i) = Z_fcst_i.t() + d_fcst_lags * Psi_i.t();
+      Z.slice(i/n_thin) = Z_i;
+      Sigma.slice(i/n_thin) = Sigma_i;
+      Pi.slice(i/n_thin) = Pi_i;
+      psi.row(i/n_thin) = psi_i.t();
     }
+  }
+  if (verbose) {
+    p.increment();
   }
 }

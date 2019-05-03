@@ -23,10 +23,10 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
   add_args <- list(...)
 
   n_reps <- add_args$n_reps
-  if (!is.null(x$thin)) {
-    thin <- x$thin
+  if (!is.null(x$n_thin)) {
+    n_thin <- x$n_thin
   } else {
-    thin <- 1
+    n_thin <- 1
   }
 
   init <- add_args$init
@@ -132,21 +132,21 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
                           nrow = n_q)
   }
 
-  Pi <- array(init_Pi, dim = c(n_vars, n_vars*n_lags + 1, n_reps/thin))
-  Z <- array(init_Z, dim = c(TT, n_vars, n_reps/thin))
+  Pi <- array(init_Pi, dim = c(n_vars, n_vars*n_lags + 1, n_reps/n_thin))
+  Z <- array(init_Z, dim = c(TT, n_vars, n_reps/n_thin))
   if (n_fcst > 0) {
     Z_fcst <- array(NA, dim = c(n_fcst+n_lags, n_vars, n_reps),
                     dimnames = list(c((n_T-n_lags+1):n_T, paste0("fcst_", 1:n_fcst)), NULL, NULL))
   }
 
-  mu_storage <- matrix(init_mu, n_vars, n_reps/thin)
-  sigma_storage <- matrix(init_sigma, n_vars+n_fac, n_reps/thin)
-  phi_storage <- matrix(init_phi, n_vars+n_fac, n_reps/thin)
+  mu_storage <- matrix(init_mu, n_vars, n_reps/n_thin)
+  sigma_storage <- matrix(init_sigma, n_vars+n_fac, n_reps/n_thin)
+  phi_storage <- matrix(init_phi, n_vars+n_fac, n_reps/n_thin)
 
-  facload_storage <- array(matrix(init_facload, nrow = n_vars, ncol = n_fac), dim = c(n_vars, n_fac, n_reps/thin))
-  fac_storage <- array(matrix(init_fac, n_fac, TT), dim = c(n_fac, TT, n_reps/thin))
+  facload_storage <- array(matrix(init_facload, nrow = n_vars, ncol = n_fac), dim = c(n_vars, n_fac, n_reps/n_thin))
+  fac_storage <- array(matrix(init_fac, n_fac, TT), dim = c(n_fac, TT, n_reps/n_thin))
 
-  latent <- array(init_latent, dim = c(TT, n_vars+n_fac, n_reps/thin),
+  latent <- array(init_latent, dim = c(TT, n_vars+n_fac, n_reps/n_thin),
                   dimnames = list(rownames(init_latent), colnames(init_latent), NULL))
 
   Pi_i <- Pi[,,1]
@@ -187,7 +187,7 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
 
 
     ## Storage
-    if (i %% thin == 0) {
+    if (i %% n_thin == 0) {
 
       if (n_fcst > 0) {
         mu <- c(startpara$mu, numeric(n_fac))
@@ -203,20 +203,20 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
           X_t <- mfbvar:::create_X_t(Z_pred[j:(n_lags+j-1), ])
           Z_pred[j+n_lags, ] <- Pi_i %*% X_t + startfacload %*% error_pred[(n_vars+1):(n_vars+n_fac)] + error_pred[1:n_vars]
         }
-        Z_fcst[,,i/thin] <- Z_pred
+        Z_fcst[,,i/n_thin] <- Z_pred
       }
 
-      Pi[,,i/thin] <- Pi_i
-      Z[,,i/thin] <- Z_i
+      Pi[,,i/n_thin] <- Pi_i
+      Z[,,i/n_thin] <- Z_i
 
-      mu_storage[,i/thin] <- startpara$mu
-      sigma_storage[,i/thin] <- startpara$sigma
-      phi_storage[,i/thin] <- startpara$phi
+      mu_storage[,i/n_thin] <- startpara$mu
+      sigma_storage[,i/n_thin] <- startpara$sigma
+      phi_storage[,i/n_thin] <- startpara$phi
 
-      fac_storage[,,i/thin] <- startfac
-      facload_storage[,,i/thin] <- startfacload
+      fac_storage[,,i/n_thin] <- startfac
+      facload_storage[,,i/n_thin] <- startfacload
 
-      latent[,,i/thin] <- startlatent
+      latent[,,i/n_thin] <- startlatent
     }
 
     ## Stochastic volatility block: sample latent factors, latent volatilities and factor loadings
@@ -343,10 +343,10 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
 
 
 
-  if (!is.null(x$thin)) {
-    thin <- x$thin
+  if (!is.null(x$n_thin)) {
+    n_thin <- x$n_thin
   } else {
-    thin <- 1
+    n_thin <- 1
   }
 
   init <- add_args$init
@@ -459,22 +459,22 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
                           nrow = n_q)
   }
 
-  Pi <- array(init_Pi, dim = c(n_vars, n_vars*n_lags, n_reps/thin))
-  Z <- array(init_Z, dim = c(TT, n_vars, n_reps/thin))
+  Pi <- array(init_Pi, dim = c(n_vars, n_vars*n_lags, n_reps/n_thin))
+  Z <- array(init_Z, dim = c(TT, n_vars, n_reps/n_thin))
   psi   <- matrix(init_psi, n_reps, n_vars * n_determ, byrow = TRUE)
   if (n_fcst > 0) {
     Z_fcst <- array(NA, dim = c(n_fcst+n_lags, n_vars, n_reps),
                     dimnames = list(c((n_T-n_lags+1):n_T, paste0("fcst_", 1:n_fcst)), NULL, NULL))
   }
 
-  mu_storage <- matrix(init_mu, n_vars, n_reps/thin)
-  sigma_storage <- matrix(init_sigma, n_vars+n_fac, n_reps/thin)
-  phi_storage <- matrix(init_phi, n_vars+n_fac, n_reps/thin)
+  mu_storage <- matrix(init_mu, n_vars, n_reps/n_thin)
+  sigma_storage <- matrix(init_sigma, n_vars+n_fac, n_reps/n_thin)
+  phi_storage <- matrix(init_phi, n_vars+n_fac, n_reps/n_thin)
 
-  facload_storage <- array(matrix(init_facload, nrow = n_vars, ncol = n_fac), dim = c(n_vars, n_fac, n_reps/thin))
-  fac_storage <- array(matrix(init_fac, n_fac, TT), dim = c(n_fac, TT, n_reps/thin))
+  facload_storage <- array(matrix(init_facload, nrow = n_vars, ncol = n_fac), dim = c(n_vars, n_fac, n_reps/n_thin))
+  fac_storage <- array(matrix(init_fac, n_fac, TT), dim = c(n_fac, TT, n_reps/n_thin))
 
-  latent <- array(init_latent, dim = c(TT, n_vars+n_fac, n_reps/thin),
+  latent <- array(init_latent, dim = c(TT, n_vars+n_fac, n_reps/n_thin),
                   dimnames = list(rownames(init_latent), colnames(init_latent), NULL))
 
   Pi_i <- init_Pi
@@ -528,7 +528,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
 
 
     ## Storage
-    if (i %% thin == 0) {
+    if (i %% n_thin == 0) {
 
       if (n_fcst > 0) {
         mu <- c(startpara$mu, numeric(n_fac))
@@ -544,21 +544,21 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
           X_t <- mfbvar:::create_X_t_noint(Z_pred[j:(n_lags+j-1), ])
           Z_pred[j+n_lags, ] <- Pi_i %*% X_t + startfacload %*% error_pred[(n_vars+1):(n_vars+n_fac)] + error_pred[1:n_vars]
         }
-        Z_fcst[,,i/thin] <- Z_pred + rbind(d[(TT+1):(TT+n_lags), ,drop = FALSE], d_fcst[,,drop=FALSE]) %*% t(matrix(psi_i, nrow = n_vars))
+        Z_fcst[,,i/n_thin] <- Z_pred + rbind(d[(TT+1):(TT+n_lags), ,drop = FALSE], d_fcst[,,drop=FALSE]) %*% t(matrix(psi_i, nrow = n_vars))
       }
 
-      Pi[,,i/thin] <- Pi_i
-      Z[,,i/thin] <- Z_i
-      psi[i/thin, ] <- psi_i
+      Pi[,,i/n_thin] <- Pi_i
+      Z[,,i/n_thin] <- Z_i
+      psi[i/n_thin, ] <- psi_i
 
-      mu_storage[,i/thin] <- startpara$mu
-      sigma_storage[,i/thin] <- startpara$sigma
-      phi_storage[,i/thin] <- startpara$phi
+      mu_storage[,i/n_thin] <- startpara$mu
+      sigma_storage[,i/n_thin] <- startpara$sigma
+      phi_storage[,i/n_thin] <- startpara$phi
 
-      fac_storage[,,i/thin] <- startfac
-      facload_storage[,,i/thin] <- startfacload
+      fac_storage[,,i/n_thin] <- startfac
+      facload_storage[,,i/n_thin] <- startfacload
 
-      latent[,,i/thin] <- startlatent
+      latent[,,i/n_thin] <- startlatent
     }
 
     ## Stochastic volatility block: sample latent factors, latent volatilities and factor loadings

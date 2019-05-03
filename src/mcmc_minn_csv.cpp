@@ -14,7 +14,10 @@ void mcmc_minn_csv(const arma::mat & y_in_p,
                    const double prior_sigma2, const double prior_df,
                    arma::uword n_reps,
                    arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars,
-                   arma::uword n_T, arma::uword n_fcst) {
+                   arma::uword n_T, arma::uword n_fcst, arma::uword n_thin, bool verbose) {
+
+  Progress p(n_reps, true);
+
   arma::mat Pi_i = Pi.slice(0);
   arma::mat Sigma_i = Sigma.slice(0);
   arma::mat y_i, X, XX, XX_inv, Pi_sample, post_Pi_Omega, post_Pi, Sigma_chol_inv;
@@ -43,7 +46,6 @@ void mcmc_minn_csv(const arma::mat & y_in_p,
     }
     y_i = simsm_adaptive_sv(y_in_p, Pi_i, Sigma_chol_cube, Lambda_comp, Z_1, n_q, T_b);
     Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
-    Z.slice(i) = Z_i;
 
     X = create_X(Z_i, n_lags);
     exp_sqrt_f = arma::exp(0.5 * f_i);
@@ -61,35 +63,38 @@ void mcmc_minn_csv(const arma::mat & y_in_p,
     Pi_diff = prior_Pi_mean - Pi_sample;
     post_S = prior_S + S + Pi_diff.t() * arma::inv_sympd(prior_Pi_Omega + XX_inv) * Pi_diff;
     Sigma_i = rinvwish(post_nu, post_S);
-    Sigma.slice(i) = Sigma_i;
     Sigma_chol = arma::chol(Sigma_i, "lower");
     Sigma_chol_inv = arma::inv(arma::trimatl(Sigma_chol));
     Pi_i = rmatn(post_Pi.t(), post_Pi_Omega, Sigma_i);
-    Pi.slice(i) = Pi_i;
 
     // Sample factor and related parameters here
-
-    Rcpp::Rcout << "csv" << std::endl;
     eps = y_i - X * Pi_i.t();
     u = eps * Sigma_chol_inv.t();
-    u_tilde = arma::log(arma::pow(u, 2.0));
+    u_tilde = arma::log(arma::pow(u+0.0001, 2.0));
     update_csv(u_tilde, phi_i, sigma_i, f_i, f0, mixprob, r, priorlatent0, phi_invvar,
                phi_meaninvvar, prior_sigma2, prior_df);
-    f.row(i) = f_i.t();
-    phi(i) = phi_i;
-    sigma(i) = sigma_i;
-    Rcpp::Rcout << "fcst" << std::endl;
     vol_pred = f_i(n_T-1);
-    if (n_fcst > 0) {
-      Z_fcst_i.head_cols(n_lags) = Z_i.tail_rows(n_lags).t();
-      for (arma::uword h = 0; h < n_fcst; ++h) {
-        vol_pred = phi_i * vol_pred + R::rnorm(0.0, sigma_i);
-        errors.imbue(norm_rand);
-        errors = errors * std::exp(0.5 * vol_pred);
-        x = create_X_t(Z_fcst_i.cols(0+h, n_lags-1+h).t());
-        Z_fcst_i.col(n_lags + h) = Pi_i * x + Sigma_chol * errors;
+    if (i % n_thin == 0) {
+      if (n_fcst > 0) {
+        Z_fcst_i.head_cols(n_lags) = Z_i.tail_rows(n_lags).t();
+        for (arma::uword h = 0; h < n_fcst; ++h) {
+          vol_pred = phi_i * vol_pred + R::rnorm(0.0, sigma_i);
+          errors.imbue(norm_rand);
+          errors = errors * std::exp(0.5 * vol_pred);
+          x = create_X_t(Z_fcst_i.cols(0+h, n_lags-1+h).t());
+          Z_fcst_i.col(n_lags + h) = Pi_i * x + Sigma_chol * errors;
+        }
+        Z_fcst.slice(i/n_thin) = Z_fcst_i.t();
       }
-      Z_fcst.slice(i) = Z_fcst_i.t();
+      Z.slice(i/n_thin) = Z_i;
+      Sigma.slice(i/n_thin) = Sigma_i;
+      Pi.slice(i/n_thin) = Pi_i;
+      f.row(i/n_thin) = f_i.t();
+      phi(i/n_thin) = phi_i;
+      sigma(i/n_thin) = sigma_i;
+    }
+    if (verbose) {
+      p.increment();
     }
   }
 
@@ -112,7 +117,10 @@ void mcmc_ss_csv(const arma::mat & y_in_p,
                  const double prior_sigma2, const double prior_df,
                  arma::uword n_reps,
                  arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars,
-                 arma::uword n_T, arma::uword n_fcst, arma::uword n_determ) {
+                 arma::uword n_T, arma::uword n_fcst, arma::uword n_determ, arma::uword n_thin,
+                 bool verbose) {
+
+  Progress p(n_reps, true);
 
   arma::mat Pi_i = Pi.slice(0);
   arma::mat Sigma_i = Sigma.slice(0);
@@ -170,7 +178,6 @@ void mcmc_ss_csv(const arma::mat & y_in_p,
     Z_i_demean.rows(0, n_lags - 1) = mZ1;
     Z_i_demean.rows(n_lags, n_T + n_lags - 1) = mZ;
     Z_i.rows(n_lags, n_T + n_lags - 1) = mZ + mu_mat;
-    Z.slice(i) = Z_i;
 
     mX = create_X_noint(Z_i_demean, n_lags);
     exp_sqrt_f = arma::exp(0.5 * f_i);
@@ -188,8 +195,9 @@ void mcmc_ss_csv(const arma::mat & y_in_p,
     Pi_diff = prior_Pi_mean - Pi_sample;
     post_S = prior_S + S + Pi_diff.t() * arma::inv_sympd(prior_Pi_Omega + XX_inv) * Pi_diff;
     Sigma_i = rinvwish(post_nu, post_S);
+    Sigma_chol = arma::chol(Sigma_i, "lower");
+    Sigma_chol_inv = arma::inv(arma::trimatl(Sigma_chol));
 
-    Sigma.slice(i) = Sigma_i;
     bool stationarity_check = false;
     int num_try = 0, iter = 0;
     double root = 1000;
@@ -211,39 +219,43 @@ void mcmc_ss_csv(const arma::mat & y_in_p,
       }
     }
 
-    Pi.slice(i) = Pi_i;
-
     X = create_X_noint(Z_i, n_lags);
-    Rcpp::Rcout << "before psi" << std::endl;
     posterior_psi_csv(psi_i, mu_mat, Pi_i, D_mat, Sigma_chol_inv, exp_sqrt_f, inv_prior_psi_Omega, mZ + mu_mat, X,
                      inv_prior_psi_Omega_mean, dt, n_determ, n_vars, n_lags);
-Rcpp::Rcout << "after psi" << std::endl;
 
-    psi.row(i) = psi_i.t();
-    eps = y_i - X * Pi_i.t();
-    Rcpp::Rcout << "after eps" << std::endl;
+    mZ1 = Z_1 - d1 * Psi_i.t();
+    Z_i_demean.rows(0, n_lags - 1) = mZ1;
+    Z_i_demean.rows(n_lags, n_T + n_lags - 1) = Z_i.rows(n_lags, n_T + n_lags - 1) - mu_mat; // Not the same as mu_mat b/c different mu_mat
+    X = create_X_noint(Z_i_demean, n_lags);
+    eps = Z_i_demean.rows(n_lags, n_T + n_lags - 1) - X * Pi_i.t();
     u = eps * Sigma_chol_inv.t();
-    Rcpp::Rcout << "after u" << std::endl;
     u_tilde = arma::log(arma::pow(u, 2.0));
-    Rcpp::Rcout << "before csv" << std::endl;
     update_csv(u_tilde, phi_i, sigma_i, f_i, f0, mixprob, r, priorlatent0, phi_invvar,
                phi_meaninvvar, prior_sigma2, prior_df);
-    Rcpp::Rcout << "after csv" << std::endl;
-    f.row(i) = f_i.t();
-    phi(i) = phi_i;
-    sigma(i) = sigma_i;
-    Rcpp::Rcout << "fcst" << std::endl;
     vol_pred = f_i(n_T-1);
-    if (n_fcst > 0) {
-      Z_fcst_i.head_cols(n_lags) = Z_i.tail_rows(n_lags).t() - mu_mat.tail_rows(n_lags).t();
-      for (arma::uword h = 0; h < n_fcst; ++h) {
-        vol_pred = phi_i * vol_pred + R::rnorm(0.0, sigma_i);
-        errors.imbue(norm_rand);
-        errors = errors * std::exp(0.5 * vol_pred);
-        x = create_X_t_noint(Z_fcst_i.cols(0+h, n_lags-1+h).t());
-        Z_fcst_i.col(n_lags + h) = Pi_i * x + Sigma_chol * errors;
+    if (verbose) {
+      p.increment();
+    }
+    if (i % n_thin == 0) {
+      if (n_fcst > 0) {
+        Z_fcst_i.head_cols(n_lags) = Z_i_demean.tail_rows(n_lags).t();
+        for (arma::uword h = 0; h < n_fcst; ++h) {
+          vol_pred = phi_i * vol_pred + R::rnorm(0.0, sigma_i);
+          errors.imbue(norm_rand);
+          errors = errors * std::exp(0.5 * vol_pred);
+          x = create_X_t_noint(Z_fcst_i.cols(0+h, n_lags-1+h).t());
+          Z_fcst_i.col(n_lags + h) = Pi_i * x + Sigma_chol * errors;
+        }
+        Z_fcst.slice(i/n_thin) = Z_fcst_i.t() + d_fcst_lags * Psi_i.t();
       }
-      Z_fcst.slice(i) = Z_fcst_i.t() + d_fcst_lags * Psi_i.t();
+
+      Z.slice(i/n_thin) = Z_i;
+      Sigma.slice(i/n_thin) = Sigma_i;
+      Pi.slice(i/n_thin) = Pi_i;
+      psi.row(i/n_thin) = psi_i.t();
+      f.row(i/n_thin) = f_i.t();
+      phi(i/n_thin) = phi_i;
+      sigma(i/n_thin) = sigma_i;
     }
   }
 }

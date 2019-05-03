@@ -30,9 +30,11 @@ arma::mat posterior_psi_Omega_csv(const arma::mat & U, const arma::mat & D_mat,
     mid_mat += arma::kron(D_temp.t() * D_temp, identity);
   }
   arma::mat UA = arma::mat(arma::size(U), arma::fill::zeros);
+
   for (int i = 0; i < n_lags+1; ++i) {
     UA.rows(i*(n_determ*n_vars), (i+1)*(n_determ*n_vars) - 1) = arma::trimatu(Sigma_chol_inv_t) * U.rows(i*(n_determ*n_vars), (i+1)*(n_determ*n_vars) - 1);
   }
+
   arma::mat psi_Omega = arma::inv_sympd((UA.t() * mid_mat) * UA + inv_prior_psi_Omega);
   return psi_Omega;
 }

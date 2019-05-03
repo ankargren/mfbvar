@@ -41,6 +41,7 @@ mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
 
   add_args <- list(...)
   n_reps <- add_args$n_reps
+  n_thin <- ifelse(is.null(add_args$n_thin),1,add_args$n_thin)
   init <- add_args$init
   init_Pi <- init$init_Pi
   init_Sigma <- init$init_Sigma
@@ -88,17 +89,15 @@ mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
   ### If smoothing of the state vector:
   # smoothed_Z: T * p * n_reps
 
-  Pi    <- array(NA, dim = c(n_vars, n_vars * n_lags, n_reps))
-  Sigma <- array(NA, dim = c(n_vars, n_vars, n_reps))
-  psi   <- array(NA, dim = c(n_reps, n_vars * n_determ))
-  Z     <- array(NA, dim = c(n_T, n_vars, n_reps))
-  if (n_fcst > 0) {
-    Z_fcst<- array(NA, dim = c(n_fcst+n_lags, n_vars, n_reps),
-                   dimnames = list(c((n_T-n_lags+1):n_T, paste0("fcst_", 1:n_fcst)), NULL, NULL))
-    Z_fcst[,,1] <- 0
-    d_fcst_lags <- matrix(rbind(d[(n_T-n_lags+1):n_T, , drop = FALSE], d_fcst), nrow = n_fcst + n_lags)
-  }
-  roots <- vector("numeric", n_reps)
+  Pi    <- array(NA, dim = c(n_vars, n_vars * n_lags, n_reps/n_thin))
+  Sigma <- array(NA, dim = c(n_vars, n_vars, n_reps/n_thin))
+  psi   <- array(NA, dim = c(n_reps/n_thin, n_vars * n_determ))
+  Z     <- array(NA, dim = c(n_T, n_vars, n_ren_reps/n_thinps))
+  Z_fcst<- array(NA, dim = c(n_fcst+n_lags, n_vars, n_reps/n_thin),
+                 dimnames = list(c((n_T-n_lags+1):n_T, paste0("fcst_", 1:n_fcst)), NULL, NULL))
+  Z_fcst[,,1] <- 0
+  d_fcst_lags <- matrix(rbind(d[(n_T-n_lags+1):n_T, , drop = FALSE], d_fcst), nrow = n_fcst + n_lags)
+  roots <- vector("numeric", n_reps/n_thin)
   num_tries <- roots
 
 
@@ -200,7 +199,7 @@ mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
 
   mfbvar:::mcmc_ss_iw(Y[-(1:n_lags),],Pi,Sigma,psi,Z,Z_fcst,Lambda_comp,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
                       prior_S,D_mat,dt,d1,d_fcst_lags,inv_prior_psi_Omega,inv_prior_psi_Omega_mean,check_roots,Z_1,n_reps,
-                      n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ)
+                      n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose)
 
   ################################################################
   ### Prepare the return object
@@ -209,7 +208,7 @@ mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      prior_S = prior_S, prior_nu = n_vars+2, post_nu = n_T + n_vars+2, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
                      prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps - 1, Lambda = Lambda,
-                     init = list(init_Pi = Pi[,, n_reps], init_Sigma = Sigma[,, n_reps], init_psi = psi[n_reps, ], init_Z = Z[,, n_reps]))
+                     init = list(init_Pi = Pi[,, n_reps/n_thin], init_Sigma = Sigma[,, n_reps/n_thin], init_psi = psi[n_reps/n_thin, ], init_Z = Z[,, n_reps/n_thin]))
 
   if (check_roots == TRUE) {
     return_obj$roots <- roots
@@ -253,6 +252,7 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
 
   add_args <- list(...)
   n_reps <- add_args$n_reps
+  n_thin <- ifelse(!is.null(add_args$n_thin), add_args$n_thin, ifelse(!is.null(x$n_thin), x$n_thin, 1))
   init <- add_args$init
   init_Pi <- init$init_Pi
   init_Sigma <- init$init_Sigma
@@ -292,13 +292,16 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
   ### If smoothing of the state vector:
   # smoothed_Z: T * p * n_reps
 
-  Pi    <- array(NA, dim = c(n_vars, n_vars * n_lags + 1, n_reps))
-  Sigma <- array(NA, dim = c(n_vars, n_vars, n_reps))
-  Z     <- array(NA, dim = c(n_T, n_vars, n_reps))
-  if (n_fcst>0) {
-    Z_fcst<- array(NA, dim = c(n_fcst+n_lags, n_vars, n_reps),
-                   dimnames = list(c((n_T-n_lags+1):n_T, paste0("fcst_", 1:n_fcst)), NULL, NULL))
+  Pi    <- array(NA, dim = c(n_vars, n_vars * n_lags + 1, n_reps/n_thin))
+  Sigma <- array(NA, dim = c(n_vars, n_vars, n_reps/n_thin))
+  Z     <- array(NA, dim = c(n_T, n_vars, n_reps/n_thin))
+
+  Z_fcst<- array(NA, dim = c(n_fcst+n_lags, n_vars, n_reps/n_thin))
+  if (n_fcst > 0) {
+    rownames(Z_fcst) <- c((n_T-n_lags+1):n_T, paste0("fcst_", 1:n_fcst))
     Z_fcst[,,1] <- 0
+  } else {
+    rownames(Z_fcst) <- (n_T-n_lags+1):n_T
   }
 
 
@@ -359,8 +362,13 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
   inv_prior_Pi_Omega <- chol2inv(chol(prior_Pi_Omega))
   Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi_mean
 
+  set.seed(10)
+  Sigma[,,1]<-diag(1:3)
+  Sigma[1,3,1]<-0.5
+  Sigma[3,1,1]<-0.5
   mfbvar:::mcmc_minn_iw(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,
-                        Omega_Pi,prior_Pi_mean,prior_S,Z_1,n_reps,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst)
+                        Omega_Pi,prior_Pi_mean,prior_S,Z_1,n_reps,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,
+                        n_thin,verbose)
 
 
   ################################################################
@@ -370,7 +378,7 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      prior_S = prior_S, prior_nu = prior_nu, post_nu = prior_nu + n_T_, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
                      prior_psi_Omega = NULL, prior_psi_mean = NULL, n_reps = n_reps-1, Lambda = Lambda, freq = freq,
-                     init = list(init_Pi = Pi[,, n_reps], init_Sigma = Sigma[,, n_reps], init_Z = Z[,, n_reps]))
+                     init = list(init_Pi = Pi[,, n_reps/n_thin], init_Sigma = Sigma[,, n_reps/n_thin], init_Z = Z[,, n_reps/n_thin]))
 
   if (n_fcst>0) {
     return_obj$Z_fcst <- Z_fcst
