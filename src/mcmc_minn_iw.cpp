@@ -9,9 +9,11 @@ void mcmc_minn_iw(const arma::mat & y_in_p,
                   arma::uword n_reps,
                   arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars,
                   arma::uword n_T, arma::uword n_fcst,
-                  arma::uword n_thin, bool verbose) {
+                  arma::uword n_thin, bool verbose, int prior_nu = 2) {
 
-  Progress p(n_reps, true);
+  if (verbose) {
+    Progress p(n_reps, true);
+  }
 
   arma::mat Pi_i = Pi.slice(0);
   arma::mat Sigma_i = Sigma.slice(0);
@@ -20,12 +22,13 @@ void mcmc_minn_iw(const arma::mat & y_in_p,
   arma::mat Z_i = arma::mat(n_lags + y_in_p.n_rows, n_vars, arma::fill::zeros);
   arma::mat Z_fcst_i = arma::mat(n_vars, n_lags + n_fcst);
   Z_i.rows(0, n_lags - 1) = Z_1;
-  int post_nu = n_T + n_vars + 2;
+  int post_nu = n_T + n_vars + prior_nu;
 
   Sigma_chol = arma::chol(Sigma_i, "lower");
 
   for (arma::uword i = 0; i < n_reps; ++i) {
     y_i = simsm_adaptive_cv(y_in_p, Pi_i, Sigma_chol, Lambda_comp, Z_1, n_q, T_b);
+    Rcpp::Rcout << "rnorm: " << Rcpp::rnorm(1) << std::endl;
     Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
 
     X = create_X(Z_i, n_lags);
@@ -39,10 +42,7 @@ void mcmc_minn_iw(const arma::mat & y_in_p,
     Pi_diff = prior_Pi_mean - Pi_sample;
     post_S = prior_S + S + Pi_diff.t() * arma::inv_sympd(prior_Pi_Omega + XX_inv) * Pi_diff;
     Sigma_i = rinvwish(post_nu, post_S);
-
     Pi_i = rmatn(post_Pi.t(), post_Pi_Omega, Sigma_i);
-
-    Sigma_chol = arma::chol(Sigma_i, "lower");
     arma::vec errors = arma::vec(n_vars);
 
     if (i % n_thin == 0) {

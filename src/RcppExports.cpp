@@ -214,8 +214,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // mcmc_minn_iw
-void mcmc_minn_iw(const arma::mat& y_in_p, arma::cube& Pi, arma::cube& Sigma, arma::cube& Z, arma::cube& Z_fcst, const arma::mat& Lambda_comp, const arma::mat& prior_Pi_Omega, const arma::mat& inv_prior_Pi_Omega, const arma::mat& Omega_Pi, const arma::mat& prior_Pi_mean, const arma::mat& prior_S, const arma::mat& Z_1, arma::uword n_reps, arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars, arma::uword n_T, arma::uword n_fcst, arma::uword n_thin, bool verbose);
-RcppExport SEXP _mfbvar_mcmc_minn_iw(SEXP y_in_pSEXP, SEXP PiSEXP, SEXP SigmaSEXP, SEXP ZSEXP, SEXP Z_fcstSEXP, SEXP Lambda_compSEXP, SEXP prior_Pi_OmegaSEXP, SEXP inv_prior_Pi_OmegaSEXP, SEXP Omega_PiSEXP, SEXP prior_Pi_meanSEXP, SEXP prior_SSEXP, SEXP Z_1SEXP, SEXP n_repsSEXP, SEXP n_qSEXP, SEXP T_bSEXP, SEXP n_lagsSEXP, SEXP n_varsSEXP, SEXP n_TSEXP, SEXP n_fcstSEXP, SEXP n_thinSEXP, SEXP verboseSEXP) {
+void mcmc_minn_iw(const arma::mat& y_in_p, arma::cube& Pi, arma::cube& Sigma, arma::cube& Z, arma::cube& Z_fcst, const arma::mat& Lambda_comp, const arma::mat& prior_Pi_Omega, const arma::mat& inv_prior_Pi_Omega, const arma::mat& Omega_Pi, const arma::mat& prior_Pi_mean, const arma::mat& prior_S, const arma::mat& Z_1, arma::uword n_reps, arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars, arma::uword n_T, arma::uword n_fcst, arma::uword n_thin, bool verbose, int prior_nu);
+RcppExport SEXP _mfbvar_mcmc_minn_iw(SEXP y_in_pSEXP, SEXP PiSEXP, SEXP SigmaSEXP, SEXP ZSEXP, SEXP Z_fcstSEXP, SEXP Lambda_compSEXP, SEXP prior_Pi_OmegaSEXP, SEXP inv_prior_Pi_OmegaSEXP, SEXP Omega_PiSEXP, SEXP prior_Pi_meanSEXP, SEXP prior_SSEXP, SEXP Z_1SEXP, SEXP n_repsSEXP, SEXP n_qSEXP, SEXP T_bSEXP, SEXP n_lagsSEXP, SEXP n_varsSEXP, SEXP n_TSEXP, SEXP n_fcstSEXP, SEXP n_thinSEXP, SEXP verboseSEXP, SEXP prior_nuSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type y_in_p(y_in_pSEXP);
@@ -239,7 +239,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::uword >::type n_fcst(n_fcstSEXP);
     Rcpp::traits::input_parameter< arma::uword >::type n_thin(n_thinSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
-    mcmc_minn_iw(y_in_p, Pi, Sigma, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose);
+    Rcpp::traits::input_parameter< int >::type prior_nu(prior_nuSEXP);
+    mcmc_minn_iw(y_in_p, Pi, Sigma, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, prior_nu);
     return R_NilValue;
 END_RCPP
 }
@@ -607,7 +608,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mfbvar_max_eig_cpp", (DL_FUNC) &_mfbvar_max_eig_cpp, 1},
     {"_mfbvar_mcmc_minn_csv", (DL_FUNC) &_mfbvar_mcmc_minn_csv, 29},
     {"_mfbvar_mcmc_ss_csv", (DL_FUNC) &_mfbvar_mcmc_ss_csv, 38},
-    {"_mfbvar_mcmc_minn_iw", (DL_FUNC) &_mfbvar_mcmc_minn_iw, 21},
+    {"_mfbvar_mcmc_minn_iw", (DL_FUNC) &_mfbvar_mcmc_minn_iw, 22},
     {"_mfbvar_mcmc_ss_iw", (DL_FUNC) &_mfbvar_mcmc_ss_iw, 30},
     {"_mfbvar_posterior_psi_Omega_fsv", (DL_FUNC) &_mfbvar_posterior_psi_Omega_fsv, 4},
     {"_mfbvar_posterior_psi_Omega_csv", (DL_FUNC) &_mfbvar_posterior_psi_Omega_csv, 8},

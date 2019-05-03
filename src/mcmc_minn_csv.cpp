@@ -16,7 +16,10 @@ void mcmc_minn_csv(const arma::mat & y_in_p,
                    arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars,
                    arma::uword n_T, arma::uword n_fcst, arma::uword n_thin, bool verbose) {
 
-  Progress p(n_reps, true);
+  if (verbose) {
+    Progress p(n_reps, true);
+  }
+
 
   arma::mat Pi_i = Pi.slice(0);
   arma::mat Sigma_i = Sigma.slice(0);
@@ -42,8 +45,9 @@ void mcmc_minn_csv(const arma::mat & y_in_p,
   for (arma::uword i = 0; i < n_reps; ++i) {
     Sigma_chol_cube.each_slice() = Sigma_chol;
     for (arma::uword j = 0; j < n_T; ++j) {
-      Sigma_chol_cube.slice(j) * exp_sqrt_f(j);
+      Sigma_chol_cube.slice(j) = Sigma_chol_cube.slice(j) * exp_sqrt_f(j);
     }
+
     y_i = simsm_adaptive_sv(y_in_p, Pi_i, Sigma_chol_cube, Lambda_comp, Z_1, n_q, T_b);
     Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
 
@@ -120,7 +124,9 @@ void mcmc_ss_csv(const arma::mat & y_in_p,
                  arma::uword n_T, arma::uword n_fcst, arma::uword n_determ, arma::uword n_thin,
                  bool verbose) {
 
-  Progress p(n_reps, true);
+  if (verbose) {
+    Progress p(n_reps, true);
+  }
 
   arma::mat Pi_i = Pi.slice(0);
   arma::mat Sigma_i = Sigma.slice(0);
@@ -162,7 +168,7 @@ void mcmc_ss_csv(const arma::mat & y_in_p,
   for (arma::uword i = 0; i < n_reps; ++i) {
     Sigma_chol_cube.each_slice() = Sigma_chol;
     for (arma::uword j = 0; j < n_T; ++j) {
-      Sigma_chol_cube.slice(j) * exp_sqrt_f(j);
+      Sigma_chol_cube.slice(j) = Sigma_chol_cube.slice(j) * exp_sqrt_f(j);
     }
     my.cols(0, n_vars - n_q - 1) = y_in_p.cols(0, n_vars - n_q - 1) - mu_mat.cols(0, n_vars - n_q - 1);
     mu_long.rows(0, n_lags-1) = d1.tail_rows(n_lags) * Psi_i.t();

@@ -236,7 +236,7 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
   priors <- mfbvar:::prior_Pi_Sigma(lambda1 = x$lambda1, lambda2 = x$lambda3, prior_Pi_AR1 = x$prior_Pi_AR1, Y = x$Y,
                            n_lags = x$n_lags, prior_nu = prior_nu)
   prior_Pi_mean <- priors$prior_Pi_mean
-  prior_Pi_Omega <- priors$prior_Pi_Omega
+  prior_Pi_Omega <- test$prior_Pi_Omega[-13,-13]# priors$prior_Pi_Omega
   prior_S <- priors$prior_S
 
   Y <- x$Y
@@ -362,13 +362,13 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
   inv_prior_Pi_Omega <- chol2inv(chol(prior_Pi_Omega))
   Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi_mean
 
-  set.seed(10)
-  Sigma[,,1]<-diag(1:3)
-  Sigma[1,3,1]<-0.5
-  Sigma[3,1,1]<-0.5
-  mfbvar:::mcmc_minn_iw(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,
+  set.seed(1)
+  post_S_new <- mfbvar:::mcmc_minn_iw(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,
                         Omega_Pi,prior_Pi_mean,prior_S,Z_1,n_reps,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,
-                        n_thin,verbose)
+                        n_thin,verbose,2)
+  Z_new = Z * 1
+  Sigma_new = Sigma * 1
+  Pi_new = Pi * 1
 
 
   ################################################################

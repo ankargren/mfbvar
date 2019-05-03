@@ -19,6 +19,8 @@
 #' @param d_fcst (Steady state only) The deterministic terms for the forecasting period (not used if \code{d = "intercept"}).
 #' @param prior_psi_mean (Steady state only) Vector of length \code{n_determ*n_vars} with the prior means of the steady-state parameters.
 #' @param prior_psi_Omega (Steady state only) Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.
+#' @param prior_phi (Only used with common stochastic volatility) Vector with two elements \code{c(mean, variance)} for the AR(1) parameter in the log-volatility regression
+#' @param prior_sigma2 (Only used with common stochastic volatility) Vector with two elements \code{c(mean, df)} for the innovation variance of the log-volatility regression
 #' @param n_fac (Only used with factor stochastic volatility) Number of factors to use for the factor stochastic volatility model
 #' @param cl (Only used with factor stochastic volatility) Cluster object to use for drawing regression parameters in parallel
 #' @param ... (Only used with factor stochastic volatility) Arguments to pass along to \code{\link[factorstochvol]{fsvsample}}. See details.
@@ -62,7 +64,8 @@
 set_prior <- function(Y, freq, prior_Pi_AR1 = rep(0, ncol(Y)), lambda1 = 0.2,
                       lambda2 = 0.5, lambda3 = 1, lambda4 = 10000, n_lags,
                       n_fcst = 0, n_thin = 1, n_burnin, n_reps, d = NULL, d_fcst = NULL,
-                      prior_psi_mean = NULL, prior_psi_Omega = NULL, n_fac = NULL,
+                      prior_psi_mean = NULL, prior_psi_Omega = NULL, prior_phi = c(0.9, 0.1),
+                      prior_sigma2 = c(0.01, 4), n_fac = NULL,
                       cl = NULL, verbose = FALSE, check_roots = FALSE, ...) {
   prior_call <- mget(names(formals())[names(formals()) != "..."], sys.frame(sys.nframe()))
   prior_call$supplied_args <- names(as.list(match.call()))[-1]
@@ -313,7 +316,21 @@ check_prior <- function(prior_obj) {
     stop("check_roots: must be logical.\n")
   }
 
+  if ("prior_phi" %in% prior_obj$supplied_args) {
+    if (!is.atomic(prior_obj$prior_phi) || length(prior_obj$prior_phi) != 2) {
+      stop("prior_phi must be a vector with two numeric elements.")
+    }
+  } else {
+    prior_obj$supplied_args <- c(prior_obj$supplied_args, "prior_phi")
+  }
 
+  if ("prior_sigma2" %in% prior_obj$supplied_args) {
+    if (!is.atomic(prior_obj$prior_sigma2) || length(prior_obj$prior_sigma2) != 2) {
+      stop("prior_sigma2 must be a vector with two numeric elements.")
+    }
+  } else {
+    prior_obj$supplied_args <- c(prior_obj$supplied_args, "prior_sigma2")
+  }
 
 
   if (!is.null(prior_obj$n_fac)) {
@@ -462,6 +479,17 @@ print.mfbvar_prior <- function(x, ...) {
     cat("FALSE\n Missing elements:", names(test_sub)[which(test_sub)], "\n\n")
   }
 
+  cat("Checking if common stochastic volatility can be used... ")
+  if (length(x$prior_phi) == 2 && length(x$prior_sigma2) == 2) {
+    cat("TRUE\n\n")
+  } else {
+    switch(paste0(as.numeric(is.null(x$prior_phi)), as.numeric(is.null(x$prior_sigma2))),
+           "01" = cat("FALSE\n Missing element: prior_sigma2 \n\n"),
+           "10" = cat("FALSE\n Missing element: prior_phi \n\n"),
+           "00" = cat("FALSE\n Missing elements: prior_phi, prior_sigma2 \n\n"))
+
+  }
+
   cat("Checking if factor stochastic volatility can be used... ")
   if (!is.null(x$n_fac)) {
     cat("TRUE\n\n")
@@ -578,7 +606,7 @@ summary.mfbvar_prior <- function(object, ...) {
 #'
 #' @param mfbvar_prior a \code{mfbvar_prior} object
 #' @param prior either \code{"ss"} (steady-state prior) or \code{"minn"} (Minnesota prior)
-#' @param variance form of the error variance-covariance matrix: either \code{"iw"} for the inverse Wishart prior, or \code{"fsv"} for a time-varying matrix modeled using a factor stochastic volatility model
+#' @param variance form of the error variance-covariance matrix: \code{"iw"} for the inverse Wishart prior, \code{"csv"} for common stochastic volatility or \code{"fsv"} for factor stochastic volatility
 #' @param ... additional arguments to \code{update_prior} (if \code{mfbvar_prior} is \code{NULL}, the arguments are passed on to \code{set_prior})
 #' @return An object of class \code{mfbvar}, \code{mfbvar_<prior>} and \code{mfbvar_<prior>_<variance>} containing posterior quantities as well as the prior object
 #' @seealso \code{\link{set_prior}}, \code{\link{update_prior}}, \code{\link{predict.mfbvar}}, \code{\link{plot.mfbvar_minn}},
@@ -600,6 +628,12 @@ summary.mfbvar_prior <- function(object, ...) {
 #'
 #' If \code{variance = "iw"}, it also includes:
 #' \item{Sigma}{Array of error covariance matrices; \code{Sigma[,, r]} is the \code{r}th draw}
+#'
+#' #' If \code{variance = "csv"}, it also includes:
+#' \item{Sigma}{Array of error covariance matrices; \code{Sigma[,, r]} is the \code{r}th draw}
+#' \item{phi}{Vector of AR(1) parameters for the log-volatility regression; \code{phi[r]} is the \code{r}th draw}
+#' \item{sigma}{Vector of error standard deviations for the log-volatility regression; \code{sigma[r]} is the \code{r}th draw}#'
+#' \item{f}{Matrix of log-volatilities; \code{f[r, ]} is the \code{r}th draw}
 #'
 #' If \code{variance = "fsv"}, it also includes:
 #' \item{facload}{Array of factor loadings; \code{facload[,, r]} is the \code{r}th draw}
@@ -633,11 +667,11 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
   if (!(prior %in% c("ss", "minn"))) {
     stop("prior must be 'ss' or 'minn'.")
   }
-  if (!(variance %in% c("iw", "fsv"))) {
-    stop("volatility must be 'iw' or 'fsv'.")
+  if (!(variance %in% c("iw", "fsv", "csv"))) {
+    stop("volatility must be 'iw', 'csv' or 'fsv'.")
   }
 
-  class(mfbvar_prior) <- c(class(mfbvar_prior), sprintf("mfbvar_%s_%s", prior, variance), sprintf("mfbvar_%s", prior))
+  class(mfbvar_prior) <- c(class(mfbvar_prior), sprintf("mfbvar_%s_%s", prior, variance), sprintf("mfbvar_%s", prior), sprintf("mfbvar_%s", variance))
 
   if (mfbvar_prior$verbose) {
     cat(paste0("##############################################\nRunning the burn-in sampler with ", mfbvar_prior$n_burnin, " draws\n\n"))
@@ -753,8 +787,11 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
 
 print.mfbvar <- function(x, ...){
   ss <- ifelse(x$prior == "ss", "steady-state ", "")
-  fsv <- ifelse(x$variance == "fsv", sprintf("Factor stochastic volatility (%d factors)", x$mfbvar_prior$n_fac), "Inverse Wishart")
-  cat(paste0(sprintf("Mixed-frequency %sBVAR with:\n", ss), ncol(x$Y), " variables", ifelse(!is.null(x$names_col), paste0(" (", paste(x$names_col, collapse = ", "), ")"), " "), "\nError covariance matrix: ", fsv, "\n",
+  var_type <- switch(x$variance,
+                iw = "Inverse Wishart",
+                fsv = sprintf("Factor stochastic volatility (%d factors)", x$mfbvar_prior$n_fac),
+                csv = "Common stochastic volatility")
+  cat(paste0(sprintf("Mixed-frequency %sBVAR with:\n", ss), ncol(x$Y), " variables", ifelse(!is.null(x$names_col), paste0(" (", paste(x$names_col, collapse = ", "), ")"), " "), "\nError covariance matrix: ", var_type, "\n",
              x$n_lags, " lags\n",
              nrow(x$Y), " time periods", ifelse(!is.null(x$names_row), paste0(" (", x$names_row[1], " - ", x$names_row[length(x$names_row)], ")"), " "), "\n", ifelse(is.null(x$n_fcst), "0", x$n_fcst), " periods forecasted\n",
              x$n_reps, " draws used in main chain"))
@@ -775,8 +812,11 @@ print.mfbvar <- function(x, ...){
 
 summary.mfbvar <- function(x, ...){
   ss <- ifelse(x$prior == "ss", "steady-state ", "")
-  fsv <- ifelse(x$variance == "fsv", sprintf("Factor stochastic volatility (%d factors)", x$mfbvar_prior$n_fac), "Inverse Wishart")
-  cat(paste0(sprintf("Mixed-frequency %sBVAR with:\n", ss), ncol(x$Y), " variables", ifelse(!is.null(x$names_col), paste0(" (", paste(x$names_col, collapse = ", "), ")"), " "), "\nError covariance matrix: ", fsv, "\n",
+  var_type <- switch(x$variance,
+                     iw = "Inverse Wishart",
+                     fsv = sprintf("Factor stochastic volatility (%d factors)", x$mfbvar_prior$n_fac),
+                     csv = "Common stochastic volatility")
+  cat(paste0(sprintf("Mixed-frequency %sBVAR with:\n", ss), ncol(x$Y), " variables", ifelse(!is.null(x$names_col), paste0(" (", paste(x$names_col, collapse = ", "), ")"), " "), "\nError covariance matrix: ", var_type, "\n",
              x$n_lags, " lags\n",
              nrow(x$Y), " time periods", ifelse(!is.null(x$names_row), paste0(" (", x$names_row[1], " - ", x$names_row[length(x$names_row)], ")"), " "), "\n", ifelse(is.null(x$n_fcst), "0", x$n_fcst), " periods forecasted\n",
              x$n_reps, " draws used in main chain"))
@@ -1077,23 +1117,42 @@ plot.mfbvar_minn <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_s
 
 #' @rdname plot-mfbvar
 varplot <- function(x, variables = colnames(x$Y), var_bands = 0.95, nrow_facet = NULL, ...) {
+  if (!inherits(x, c("mfbvar_csv", "mfbvar_fsv"))) {
+    stop("The fitted model does not have a time-varying error covariance matrix.")
+  }
+  if (inherits(x, "mfbvar_csv")) {
+    sv_type <- "csv"
+  }
+  if (inherits(x, "mfbvar_fsv")) {
+    sv_type <- "fsv"
+  }
   n_reps <- dim(x$latent)[3]
   n_T <- nrow(x$latent)
   n_vars <- ncol(x$Y)
   n_plotvars <- length(variables)
   n_lags <- x$n_lags
   variances <- array(0, dim = c(n_T, n_plotvars, n_reps))
-  n_fac <- x$mfbvar_prior$n_fac
   if (is.character(variables)) {
     variables_num <- which(variables == colnames(x$Y))
   } else {
     variables_num <- variables
   }
-  for (i in 1:n_reps) {
-    for (tt in 1:n_T) {
-      variances[tt,,i] <- sqrt(diag(matrix(x$facload[variables_num,,i], n_plotvars, n_fac) %*% diag(exp(x$latent[tt, (n_vars+1):(n_vars+n_fac), i]), n_fac) %*% t(matrix(x$facload[variables_num,,i], n_plotvars, n_fac)))+exp(x$latent[tt, variables_num, i]))
+  if (sv_type == "fsv") {
+    n_fac <- x$mfbvar_prior$n_fac
+    for (i in 1:n_reps) {
+      for (tt in 1:n_T) {
+        variances[tt,,i] <- sqrt(diag(matrix(x$facload[variables_num,,i], n_plotvars, n_fac) %*% diag(exp(x$latent[tt, (n_vars+1):(n_vars+n_fac), i]), n_fac) %*% t(matrix(x$facload[variables_num,,i], n_plotvars, n_fac)))+exp(x$latent[tt, variables_num, i]))
+      }
     }
   }
+  if (sv_type == "csv") {
+    for (i in 1:n_T) {
+      for (j in 1:n_reps) {
+        variances[i,,j] = exp(0.5*f[j,i])*sqrt(diag(Sigma[,,j])[variables_num])
+      }
+    }
+  }
+
   date <- tryCatch(as.Date(rownames(x$Y)), error = function(cond) cond)
   if (inherits(date, "error")) {
     if (is.null(rownames(x$Y))) {

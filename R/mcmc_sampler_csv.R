@@ -165,10 +165,7 @@ mcmc_sampler.mfbvar_minn_csv <- function(x, ...){
   inv_prior_Pi_Omega <- chol2inv(chol(prior_Pi_Omega))
   Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi_mean
 
-  set.seed(10)
-  Sigma[,,1]<-diag(1:3)
-  Sigma[1,3,1]<-0.5
-  Sigma[3,1,1]<-0.5
+  set.seed(1)
   mfbvar:::mcmc_minn_csv(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,phi,sigma,f,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,
                         Omega_Pi,prior_Pi_mean,prior_S,Z_1,10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,
                         n_reps,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,n_thin,verbose)
@@ -287,11 +284,12 @@ mcmc_sampler.mfbvar_ss_csv <- function(x, ...) {
   phi <- rep(NA, n_reps/n_thin)
   sigma <- rep(NA, n_reps/n_thin)
   f <- matrix(NA, n_reps/n_thin, n_T_)
+  Z_fcst<- array(NA, dim = c(n_fcst+n_lags, n_vars, n_reps/n_thin))
   if (n_fcst > 0) {
-    Z_fcst<- array(NA, dim = c(n_fcst+n_lags, n_vars, n_reps/n_thin),
-                   dimnames = list(c((n_T-n_lags+1):n_T, paste0("fcst_", 1:n_fcst)), NULL, NULL))
+    rownames(Z_fcst) <- c((n_T-n_lags+1):n_T, paste0("fcst_", 1:n_fcst))
     Z_fcst[,,1] <- 0
-    d_fcst_lags <- matrix(rbind(d[(n_T-n_lags+1):n_T, , drop = FALSE], d_fcst), nrow = n_fcst + n_lags)
+  } else {
+    rownames(Z_fcst) <- (n_T-n_lags+1):n_T
   }
   roots <- vector("numeric", n_reps/n_thin)
   num_tries <- roots
