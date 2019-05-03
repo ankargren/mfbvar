@@ -540,6 +540,10 @@ summary.mfbvar_prior <- function(object, ...) {
   cat("  prior_psi_mean:", ifelse(is.null(object$prior_psi_mean), "<missing>", "prior mean vector of steady states"), "\n")
   cat("  prior_psi_Omega:", ifelse(is.null(object$prior_psi_Omega), "<missing>", "prior covariance matrix of steady states"), "\n")
   cat("----------------------------\n")
+  cat("Common stochastic volatility-specific elements:\n")
+  cat(sprintf("  prior_phi: mean = %g, var = %g", object$prior_phi[1], object$prior_phi[2]), "\n")
+  cat(sprintf("  prior_sigma2: mean = %g, df = %d", object$prior_sigma2[1], object$prior_sigma2[2]), "\n")
+  cat("----------------------------\n")
   cat("Factor stochastic volatility-specific elements:\n")
   cat("  n_fac:", ifelse(is.null(object$n_fac), "<missing>", object$n_fac), "\n")
   cat("  cl:", ifelse(is.null(object$cl), "<missing>", sprintf("%s with %d workers", class(object$cl)[1], length(object$cl))), "\n")
@@ -691,7 +695,7 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
   }
 
   time_out <- c(time_out, Sys.time())
-  main_run <-  mcmc_sampler(mfbvar_prior, n_reps = mfbvar_prior$n_reps+1, init = burn_in$init)
+  main_run <-  mcmc_sampler(mfbvar_prior, n_reps = mfbvar_prior$n_reps, init = burn_in$init)
   time_out <- c(time_out, Sys.time())
   if (mfbvar_prior$verbose) {
     time_diff <- Sys.time() - start_burnin
@@ -714,7 +718,6 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
   }
   if (mfbvar_prior$n_fcst > 0) {
     names_fcst <- paste0("fcst_", 1:mfbvar_prior$n_fcst)
-    main_run$Z_fcst <- main_run$Z_fcst[,,-1]
     rownames(main_run$Z_fcst)[1:main_run$n_lags] <- names_row[(main_run$n_T-main_run$n_lags+1):main_run$n_T]
     rownames(main_run$Z_fcst)[(main_run$n_lags+1):(main_run$n_fcst+main_run$n_lags)] <- names_fcst
     colnames(main_run$Z_fcst) <- names_col
@@ -727,9 +730,6 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
   main_run$names_col <- names_col
   main_run$names_fcst <- names_fcst
   main_run$mfbvar_prior <- mfbvar_prior
-  main_run$Pi <- main_run$Pi[,,-1]
-  main_run$Sigma <- main_run$Sigma[,,-1]
-  main_run$Z <- main_run$Z[,,-1]
 
   dimnames(main_run$Z) <- list(time = names_row[(nrow(mfbvar_prior$Y)-nrow(main_run$Z)+1):nrow(mfbvar_prior$Y)],
                                variable = names_col,
@@ -751,7 +751,6 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
     rownames(mfbvar_prior$d) <- rownames(mfbvar_prior$Y)
     main_run$names_determ <- names_determ
     n_determ <- dim(mfbvar_prior$d)[2]
-    main_run$psi <- main_run$psi[-1, ]
     dimnames(main_run$psi) <- list(iteration = 1:mfbvar_prior$n_reps,
                                    param = paste0(rep(names_col, n_determ), ".", rep(names_determ, each = n_vars)))
     dimnames(main_run$Pi) <- list(dep = names_col,
@@ -763,7 +762,7 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
                                   iteration = 1:mfbvar_prior$n_reps)
   }
 
-  class(main_run) <- c("mfbvar", sprintf("mfbvar_%s_%s", prior, variance), sprintf("mfbvar_%s", prior))
+  class(main_run) <- c("mfbvar", sprintf("mfbvar_%s_%s", prior, variance), sprintf("mfbvar_%s", prior), sprintf("mfbvar_%s", variance))
   time_out <- c(time_out, Sys.time())
   main_run$time_out <- time_out
   main_run$variance <- variance
@@ -1126,8 +1125,8 @@ varplot <- function(x, variables = colnames(x$Y), var_bands = 0.95, nrow_facet =
   if (inherits(x, "mfbvar_fsv")) {
     sv_type <- "fsv"
   }
-  n_reps <- dim(x$latent)[3]
-  n_T <- nrow(x$latent)
+  n_reps <- x$n_reps
+  n_T <- x$n_T_
   n_vars <- ncol(x$Y)
   n_plotvars <- length(variables)
   n_lags <- x$n_lags
@@ -1139,18 +1138,10 @@ varplot <- function(x, variables = colnames(x$Y), var_bands = 0.95, nrow_facet =
   }
   if (sv_type == "fsv") {
     n_fac <- x$mfbvar_prior$n_fac
-    for (i in 1:n_reps) {
-      for (tt in 1:n_T) {
-        variances[tt,,i] <- sqrt(diag(matrix(x$facload[variables_num,,i], n_plotvars, n_fac) %*% diag(exp(x$latent[tt, (n_vars+1):(n_vars+n_fac), i]), n_fac) %*% t(matrix(x$facload[variables_num,,i], n_plotvars, n_fac)))+exp(x$latent[tt, variables_num, i]))
-      }
-    }
+    variances_fsv(variances, x$latent, x$facload, variables_num, n_fac, n_reps, n_T, n_vars, n_plotvars)
   }
   if (sv_type == "csv") {
-    for (i in 1:n_T) {
-      for (j in 1:n_reps) {
-        variances[i,,j] = exp(0.5*f[j,i])*sqrt(diag(Sigma[,,j])[variables_num])
-      }
-    }
+    variances_csv(variances, x$Sigma, x$f, n_T, n_reps, variables_num)
   }
 
   date <- tryCatch(as.Date(rownames(x$Y)), error = function(cond) cond)

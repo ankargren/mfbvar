@@ -16,10 +16,7 @@ void mcmc_minn_csv(const arma::mat & y_in_p,
                    arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars,
                    arma::uword n_T, arma::uword n_fcst, arma::uword n_thin, bool verbose) {
 
-  if (verbose) {
-    Progress p(n_reps, true);
-  }
-
+  Progress p(n_reps, verbose);
 
   arma::mat Pi_i = Pi.slice(0);
   arma::mat Sigma_i = Sigma.slice(0);
@@ -124,9 +121,7 @@ void mcmc_ss_csv(const arma::mat & y_in_p,
                  arma::uword n_T, arma::uword n_fcst, arma::uword n_determ, arma::uword n_thin,
                  bool verbose) {
 
-  if (verbose) {
-    Progress p(n_reps, true);
-  }
+  Progress p(n_reps, verbose);
 
   arma::mat Pi_i = Pi.slice(0);
   arma::mat Sigma_i = Sigma.slice(0);

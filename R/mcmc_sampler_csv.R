@@ -26,10 +26,10 @@ mcmc_sampler.mfbvar_minn_csv <- function(x, ...){
   prior_Pi_Omega <- diag(c(x$lambda1^2*lambda4^2, diag(prior_Pi_Omega)))
   prior_Pi_mean <- rbind(0, prior_Pi_mean)
 
-  phi_invvar <- 1/x$phi_var
-  phi_meaninvvar <- x$phi_mean * phi_invvar
-  prior_sigma2 <- x$prior_sigma2
-  prior_df <- x$prior_df
+  phi_invvar <- 1/x$prior_phi[2]
+  phi_meaninvvar <- x$prior_phi[1] * phi_invvar
+  prior_sigma2 <- x$prior_sigma2[1]
+  prior_df <- x$prior_sigma2[2]
 
   add_args <- list(...)
   n_reps <- add_args$n_reps
@@ -139,13 +139,13 @@ mcmc_sampler.mfbvar_minn_csv <- function(x, ...){
   }
 
   if (is.null(init_phi)) {
-    phi[1] <- x$phi_mean
+    phi[1] <- x$prior_phi[1]
   } else {
     phi[1] <- init_phi
   }
 
   if (is.null(init_sigma)) {
-    sigma[1] <- sqrt(x$prior_sigma2)
+    sigma[1] <- sqrt(x$prior_sigma2[1])
   } else {
     sigma[1] <- init_sigma
   }
@@ -170,7 +170,7 @@ mcmc_sampler.mfbvar_minn_csv <- function(x, ...){
                         Omega_Pi,prior_Pi_mean,prior_S,Z_1,10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,
                         n_reps,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,n_thin,verbose)
 
-  return_obj <- list(Pi = Pi, Sigma = Sigma, Z = Z, phi, sigma, f,
+  return_obj <- list(Pi = Pi, Sigma = Sigma, Z = Z, phi = phi, sigma = sigma, f = f,
                      Z_fcst = NULL, n_lags = n_lags, n_vars = n_vars,
                      n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega,
                      prior_Pi_mean = prior_Pi_mean, prior_S = prior_S,
@@ -186,6 +186,7 @@ mcmc_sampler.mfbvar_minn_csv <- function(x, ...){
   if (n_fcst > 0) {
     return_obj$Z_fcst <- Z_fcst
   }
+  return(return_obj)
 
 }
 
@@ -219,10 +220,10 @@ mcmc_sampler.mfbvar_ss_csv <- function(x, ...) {
   check_roots <- x$check_roots
   verbose <- x$verbose
 
-  phi_invvar <- 1/x$phi_var
-  phi_meaninvvar <- x$phi_mean * phi_invvar
-  prior_sigma2 <- x$prior_sigma2
-  prior_df <- x$prior_df
+  phi_invvar <- 1/x$prior_phi[2]
+  phi_meaninvvar <- x$prior_phi[1] * phi_invvar
+  prior_sigma2 <- x$prior_sigma2[1]
+  prior_df <- x$prior_sigma2[2]
 
   add_args <- list(...)
   n_reps <- add_args$n_reps
@@ -368,13 +369,13 @@ mcmc_sampler.mfbvar_ss_csv <- function(x, ...) {
   }
 
   if (is.null(init_phi)) {
-    phi[1] <- x$phi_mean
+    phi[1] <- x$prior_phi[1]
   } else {
     phi[1] <- init_phi
   }
 
   if (is.null(init_sigma)) {
-    sigma[1] <- sqrt(x$prior_sigma2)
+    sigma[1] <- sqrt(x$prior_sigma2[1])
   } else {
     sigma[1] <- init_sigma
   }
@@ -407,7 +408,7 @@ mcmc_sampler.mfbvar_ss_csv <- function(x, ...) {
                        prior_S,D_mat,dt,d1,d_fcst_lags,inv_prior_psi_Omega,inv_prior_psi_Omega_mean,check_roots,Z_1,
                        10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,n_reps,n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose)
 
-  return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z, phi, sigma, f, roots = NULL, num_tries = NULL,
+  return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z, phi = phi, sigma = sigma, f = f, roots = NULL, num_tries = NULL,
                      Z_fcst = NULL, smoothed_Z = NULL, n_determ = n_determ,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      prior_S = prior_S, prior_nu = n_vars+2, post_nu = n_T + n_vars+2, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,

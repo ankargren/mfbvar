@@ -283,6 +283,39 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// variances_fsv
+void variances_fsv(arma::cube& variances, const arma::cube& latent, const arma::cube& facload, arma::uvec variables_num, arma::uword n_fac, arma::uword n_reps, arma::uword n_T, arma::uword n_vars, arma::uword n_plotvars);
+RcppExport SEXP _mfbvar_variances_fsv(SEXP variancesSEXP, SEXP latentSEXP, SEXP facloadSEXP, SEXP variables_numSEXP, SEXP n_facSEXP, SEXP n_repsSEXP, SEXP n_TSEXP, SEXP n_varsSEXP, SEXP n_plotvarsSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::cube& >::type variances(variancesSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type latent(latentSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type facload(facloadSEXP);
+    Rcpp::traits::input_parameter< arma::uvec >::type variables_num(variables_numSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_fac(n_facSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_reps(n_repsSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_T(n_TSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_vars(n_varsSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_plotvars(n_plotvarsSEXP);
+    variances_fsv(variances, latent, facload, variables_num, n_fac, n_reps, n_T, n_vars, n_plotvars);
+    return R_NilValue;
+END_RCPP
+}
+// variances_csv
+void variances_csv(arma::cube& variances, const arma::cube& Sigma, const arma::mat& f, arma::uword n_T, arma::uword n_reps, arma::uvec variables_num);
+RcppExport SEXP _mfbvar_variances_csv(SEXP variancesSEXP, SEXP SigmaSEXP, SEXP fSEXP, SEXP n_TSEXP, SEXP n_repsSEXP, SEXP variables_numSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::cube& >::type variances(variancesSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type Sigma(SigmaSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type f(fSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_T(n_TSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_reps(n_repsSEXP);
+    Rcpp::traits::input_parameter< arma::uvec >::type variables_num(variables_numSEXP);
+    variances_csv(variances, Sigma, f, n_T, n_reps, variables_num);
+    return R_NilValue;
+END_RCPP
+}
 // posterior_psi_Omega_fsv
 arma::mat posterior_psi_Omega_fsv(const arma::mat& U, const arma::mat& D_mat, const arma::mat& idivar, const arma::mat& inv_prior_psi_Omega);
 RcppExport SEXP _mfbvar_posterior_psi_Omega_fsv(SEXP USEXP, SEXP D_matSEXP, SEXP idivarSEXP, SEXP inv_prior_psi_OmegaSEXP) {
@@ -610,6 +643,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mfbvar_mcmc_ss_csv", (DL_FUNC) &_mfbvar_mcmc_ss_csv, 38},
     {"_mfbvar_mcmc_minn_iw", (DL_FUNC) &_mfbvar_mcmc_minn_iw, 22},
     {"_mfbvar_mcmc_ss_iw", (DL_FUNC) &_mfbvar_mcmc_ss_iw, 30},
+    {"_mfbvar_variances_fsv", (DL_FUNC) &_mfbvar_variances_fsv, 9},
+    {"_mfbvar_variances_csv", (DL_FUNC) &_mfbvar_variances_csv, 6},
     {"_mfbvar_posterior_psi_Omega_fsv", (DL_FUNC) &_mfbvar_posterior_psi_Omega_fsv, 4},
     {"_mfbvar_posterior_psi_Omega_csv", (DL_FUNC) &_mfbvar_posterior_psi_Omega_csv, 8},
     {"_mfbvar_posterior_psi_mean_csv", (DL_FUNC) &_mfbvar_posterior_psi_mean_csv, 6},

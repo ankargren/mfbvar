@@ -101,6 +101,14 @@ mcmc_ss_iw <- function(y_in_p, Pi, Sigma, psi, Z, Z_fcst, Lambda_comp, prior_Pi_
     invisible(.Call(`_mfbvar_mcmc_ss_iw`, y_in_p, Pi, Sigma, psi, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, inv_prior_psi_Omega, inv_prior_psi_Omega_mean, check_roots, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose))
 }
 
+variances_fsv <- function(variances, latent, facload, variables_num, n_fac, n_reps, n_T, n_vars, n_plotvars) {
+    invisible(.Call(`_mfbvar_variances_fsv`, variances, latent, facload, variables_num, n_fac, n_reps, n_T, n_vars, n_plotvars))
+}
+
+variances_csv <- function(variances, Sigma, f, n_T, n_reps, variables_num) {
+    invisible(.Call(`_mfbvar_variances_csv`, variances, Sigma, f, n_T, n_reps, variables_num))
+}
+
 posterior_psi_Omega_fsv <- function(U, D_mat, idivar, inv_prior_psi_Omega) {
     .Call(`_mfbvar_posterior_psi_Omega_fsv`, U, D_mat, idivar, inv_prior_psi_Omega)
 }

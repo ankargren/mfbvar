@@ -92,10 +92,14 @@ mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
   Pi    <- array(NA, dim = c(n_vars, n_vars * n_lags, n_reps/n_thin))
   Sigma <- array(NA, dim = c(n_vars, n_vars, n_reps/n_thin))
   psi   <- array(NA, dim = c(n_reps/n_thin, n_vars * n_determ))
-  Z     <- array(NA, dim = c(n_T, n_vars, n_ren_reps/n_thinps))
-  Z_fcst<- array(NA, dim = c(n_fcst+n_lags, n_vars, n_reps/n_thin),
-                 dimnames = list(c((n_T-n_lags+1):n_T, paste0("fcst_", 1:n_fcst)), NULL, NULL))
-  Z_fcst[,,1] <- 0
+  Z     <- array(NA, dim = c(n_T, n_vars, n_reps/n_thin))
+  Z_fcst<- array(NA, dim = c(n_fcst+n_lags, n_vars, n_reps/n_thin))
+  if (n_fcst > 0) {
+    rownames(Z_fcst) <- c((n_T-n_lags+1):n_T, paste0("fcst_", 1:n_fcst))
+    Z_fcst[,,1] <- 0
+  } else {
+    rownames(Z_fcst) <- (n_T-n_lags+1):n_T
+  }
   d_fcst_lags <- matrix(rbind(d[(n_T-n_lags+1):n_T, , drop = FALSE], d_fcst), nrow = n_fcst + n_lags)
   roots <- vector("numeric", n_reps/n_thin)
   num_tries <- roots

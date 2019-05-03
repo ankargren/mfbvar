@@ -657,7 +657,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
   ### Prepare the return object
   return_obj <- list(Pi = Pi, Z = Z, psi = psi, Z_fcst = NULL, n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst,
                      prior_Pi_Omega = prior_Pi_Omega, d = d, Y = x$Y, n_T = n_T, n_T_ = TT, n_reps = n_reps-1,
-                     n_determ = n_determ, facload = facload_storage, latent = latent, mu = mu, sigma = sigma, phi = phi,
+                     n_determ = n_determ, facload = facload_storage, latent = latent,  mu = mu_storage, sigma = sigma_storage, phi = phi_storage,
                      init = list(init_Pi = Pi_i, init_Z = Z_i, init_psi = psi_i, init_mu = startpara$mu,
                                  init_phi = startpara$phi, init_sigma = startpara$sigma,
                                  init_facload = startfacload,
