@@ -211,7 +211,7 @@ mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
                      Z_fcst = NULL, smoothed_Z = NULL, n_determ = n_determ,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      prior_S = prior_S, prior_nu = n_vars+2, post_nu = n_T + n_vars+2, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
-                     prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps - 1, Lambda = Lambda,
+                     prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, Lambda = Lambda,
                      init = list(init_Pi = Pi[,, n_reps/n_thin], init_Sigma = Sigma[,, n_reps/n_thin], init_psi = psi[n_reps/n_thin, ], init_Z = Z[,, n_reps/n_thin]))
 
   if (check_roots == TRUE) {
@@ -240,7 +240,7 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
   priors <- mfbvar:::prior_Pi_Sigma(lambda1 = x$lambda1, lambda2 = x$lambda3, prior_Pi_AR1 = x$prior_Pi_AR1, Y = x$Y,
                            n_lags = x$n_lags, prior_nu = prior_nu)
   prior_Pi_mean <- priors$prior_Pi_mean
-  prior_Pi_Omega <- test$prior_Pi_Omega[-13,-13]# priors$prior_Pi_Omega
+  prior_Pi_Omega <- priors$prior_Pi_Omega
   prior_S <- priors$prior_S
 
   Y <- x$Y
@@ -381,7 +381,7 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
                      Z_fcst = NULL, smoothed_Z = NULL, n_determ = 1,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      prior_S = prior_S, prior_nu = prior_nu, post_nu = prior_nu + n_T_, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
-                     prior_psi_Omega = NULL, prior_psi_mean = NULL, n_reps = n_reps-1, Lambda = Lambda, freq = freq,
+                     prior_psi_Omega = NULL, prior_psi_mean = NULL, n_reps = n_reps, Lambda = Lambda, freq = freq,
                      init = list(init_Pi = Pi[,, n_reps/n_thin], init_Sigma = Sigma[,, n_reps/n_thin], init_Z = Z[,, n_reps/n_thin]))
 
   if (n_fcst>0) {

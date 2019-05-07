@@ -349,18 +349,19 @@ BEGIN_RCPP
 END_RCPP
 }
 // posterior_psi_mean_csv
-arma::vec posterior_psi_mean_csv(const arma::mat& U, const arma::mat& D_mat, const arma::mat& exp_sqrt_f, const arma::vec& inv_prior_psi_Omega_mean, const arma::mat& post_psi_Omega, const arma::mat& Y_tilde);
-RcppExport SEXP _mfbvar_posterior_psi_mean_csv(SEXP USEXP, SEXP D_matSEXP, SEXP exp_sqrt_fSEXP, SEXP inv_prior_psi_Omega_meanSEXP, SEXP post_psi_OmegaSEXP, SEXP Y_tildeSEXP) {
+arma::vec posterior_psi_mean_csv(const arma::mat& U, const arma::mat& D_mat, const arma::mat& Sigma_chol_inv, const arma::mat& exp_sqrt_f, const arma::vec& inv_prior_psi_Omega_mean, const arma::mat& post_psi_Omega, const arma::mat& Y_tilde);
+RcppExport SEXP _mfbvar_posterior_psi_mean_csv(SEXP USEXP, SEXP D_matSEXP, SEXP Sigma_chol_invSEXP, SEXP exp_sqrt_fSEXP, SEXP inv_prior_psi_Omega_meanSEXP, SEXP post_psi_OmegaSEXP, SEXP Y_tildeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type U(USEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type D_mat(D_matSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type Sigma_chol_inv(Sigma_chol_invSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type exp_sqrt_f(exp_sqrt_fSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type inv_prior_psi_Omega_mean(inv_prior_psi_Omega_meanSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type post_psi_Omega(post_psi_OmegaSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type Y_tilde(Y_tildeSEXP);
-    rcpp_result_gen = Rcpp::wrap(posterior_psi_mean_csv(U, D_mat, exp_sqrt_f, inv_prior_psi_Omega_mean, post_psi_Omega, Y_tilde));
+    rcpp_result_gen = Rcpp::wrap(posterior_psi_mean_csv(U, D_mat, Sigma_chol_inv, exp_sqrt_f, inv_prior_psi_Omega_mean, post_psi_Omega, Y_tilde));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -647,7 +648,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mfbvar_variances_csv", (DL_FUNC) &_mfbvar_variances_csv, 6},
     {"_mfbvar_posterior_psi_Omega_fsv", (DL_FUNC) &_mfbvar_posterior_psi_Omega_fsv, 4},
     {"_mfbvar_posterior_psi_Omega_csv", (DL_FUNC) &_mfbvar_posterior_psi_Omega_csv, 8},
-    {"_mfbvar_posterior_psi_mean_csv", (DL_FUNC) &_mfbvar_posterior_psi_mean_csv, 6},
+    {"_mfbvar_posterior_psi_mean_csv", (DL_FUNC) &_mfbvar_posterior_psi_mean_csv, 7},
     {"_mfbvar_posterior_psi_csv", (DL_FUNC) &_mfbvar_posterior_psi_csv, 14},
     {"_mfbvar_posterior_psi_mean_fsv", (DL_FUNC) &_mfbvar_posterior_psi_mean_fsv, 6},
     {"_mfbvar_posterior_psi_fsv", (DL_FUNC) &_mfbvar_posterior_psi_fsv, 15},

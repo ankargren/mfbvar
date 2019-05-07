@@ -165,6 +165,7 @@ void mcmc_ss_csv(const arma::mat & y_in_p,
     for (arma::uword j = 0; j < n_T; ++j) {
       Sigma_chol_cube.slice(j) = Sigma_chol_cube.slice(j) * exp_sqrt_f(j);
     }
+
     my.cols(0, n_vars - n_q - 1) = y_in_p.cols(0, n_vars - n_q - 1) - mu_mat.cols(0, n_vars - n_q - 1);
     mu_long.rows(0, n_lags-1) = d1.tail_rows(n_lags) * Psi_i.t();
     mu_long.rows(n_lags, n_T+n_lags-1) = mu_mat;
@@ -233,6 +234,7 @@ void mcmc_ss_csv(const arma::mat & y_in_p,
     u_tilde = arma::log(arma::pow(u, 2.0));
     update_csv(u_tilde, phi_i, sigma_i, f_i, f0, mixprob, r, priorlatent0, phi_invvar,
                phi_meaninvvar, prior_sigma2, prior_df);
+
     vol_pred = f_i(n_T-1);
     if (verbose) {
       p.increment();

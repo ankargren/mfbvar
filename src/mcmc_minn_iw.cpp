@@ -26,7 +26,6 @@ void mcmc_minn_iw(const arma::mat & y_in_p,
 
   for (arma::uword i = 0; i < n_reps; ++i) {
     y_i = simsm_adaptive_cv(y_in_p, Pi_i, Sigma_chol, Lambda_comp, Z_1, n_q, T_b);
-    Rcpp::Rcout << "rnorm: " << Rcpp::rnorm(1) << std::endl;
     Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
 
     X = create_X(Z_i, n_lags);

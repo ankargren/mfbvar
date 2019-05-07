@@ -112,8 +112,9 @@ void mcmc_ss_iw(const arma::mat & y_in_p,
       Pi.slice(i/n_thin) = Pi_i;
       psi.row(i/n_thin) = psi_i.t();
     }
+    if (verbose) {
+      p.increment();
+    }
   }
-  if (verbose) {
-    p.increment();
-  }
+
 }

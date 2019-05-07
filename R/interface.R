@@ -861,7 +861,7 @@ plot.mfbvar_ss <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_sta
     if (inherits(row_names, "error")) {
       stop("To plot the forecasts, either fcst_start must be supplied or the rownames of Y be dates (YYYY-MM-DD).")
     }
-    fcst_start <- as_date(rownames(x$Y)[nrow(x$Y)]) %m+% months(1)
+    fcst_start <-lubridate::as_date(rownames(x$Y)[nrow(x$Y)]) %m+% months(1)
   } else {
     fcst_start <- tryCatch(as.Date(fcst_start), error = function(cond) cond)
     if (inherits(fcst_start, "error")) {
@@ -1004,7 +1004,7 @@ plot.mfbvar_minn <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_s
     if (inherits(row_names, "error")) {
       stop("To plot the forecasts, either fcst_start must be supplied or the rownames of Y be dates (YYYY-MM-DD).")
     }
-    fcst_start <- as_date(rownames(x$Y)[nrow(x$Y)]) %m+% months(1)
+    fcst_start <-lubridate::as_date(rownames(x$Y)[nrow(x$Y)]) %m+% months(1)
   } else {
     fcst_start <- tryCatch(as.Date(fcst_start), error = function(cond) cond)
     if (inherits(fcst_start, "error")) {
@@ -1169,7 +1169,8 @@ varplot <- function(x, variables = colnames(x$Y), var_bands = 0.95, nrow_facet =
   } else {
     p <- p + facet_wrap(~variable, scales = "free_y", nrow = nrow_facet)
   }
-  p
+  print(p)
+  return(variances)
 }
 
 

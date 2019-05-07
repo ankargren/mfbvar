@@ -23,25 +23,19 @@ arma::mat posterior_psi_Omega_csv(const arma::mat & U, const arma::mat & D_mat,
   arma::mat mid_mat = arma::mat(pm1 * Sigma_chol_inv.n_cols, pm1 * Sigma_chol_inv.n_cols, arma::fill::zeros);
   arma::uword n_T = D_mat.n_rows;
   arma::mat D_temp;
-  arma::mat identity = arma::mat(arma::size(Sigma_chol_inv), arma::fill::eye);
-  arma::mat Sigma_chol_inv_t = Sigma_chol_inv.t();
+  arma::mat Sigma_inv = arma::trimatu(Sigma_chol_inv.t()) * arma::trimatl(Sigma_chol_inv);
   for (arma::uword i = 0; i < n_T; i++) {
     D_temp = D_mat.row(i) / exp_sqrt_f(i);
-    mid_mat += arma::kron(D_temp.t() * D_temp, identity);
+    mid_mat += arma::kron(D_temp.t() * D_temp, Sigma_inv);
   }
-  arma::mat UA = arma::mat(arma::size(U), arma::fill::zeros);
-
-  for (int i = 0; i < n_lags+1; ++i) {
-    UA.rows(i*(n_determ*n_vars), (i+1)*(n_determ*n_vars) - 1) = arma::trimatu(Sigma_chol_inv_t) * U.rows(i*(n_determ*n_vars), (i+1)*(n_determ*n_vars) - 1);
-  }
-
-  arma::mat psi_Omega = arma::inv_sympd((UA.t() * mid_mat) * UA + inv_prior_psi_Omega);
+  arma::mat psi_Omega = arma::inv_sympd((U.t() * mid_mat) * U + inv_prior_psi_Omega);
   return psi_Omega;
 }
 
 
 // [[Rcpp::export]]
-arma::vec posterior_psi_mean_csv(const arma::mat & U, const arma::mat & D_mat, const arma::mat & exp_sqrt_f,
+arma::vec posterior_psi_mean_csv(const arma::mat & U, const arma::mat & D_mat, const arma::mat & Sigma_chol_inv,
+                                 const arma::mat & exp_sqrt_f,
                                  const arma::vec & inv_prior_psi_Omega_mean, const arma::mat & post_psi_Omega,
                                  const arma::mat & Y_tilde) {
   arma::mat SigmaYD = arma::mat(Y_tilde.n_cols, D_mat.n_cols, arma::fill::zeros);
@@ -49,6 +43,7 @@ arma::vec posterior_psi_mean_csv(const arma::mat & U, const arma::mat & D_mat, c
   for (arma::uword i = 0; i < n_T; i++) {
     SigmaYD += arma::trans(Y_tilde.row(i) / exp_sqrt_f(i)) * (D_mat.row(i) / exp_sqrt_f(i));
   }
+  SigmaYD = arma::trimatu(Sigma_chol_inv.t()) * arma::trimatl(Sigma_chol_inv) * SigmaYD;
   arma::vec sigmaYD = arma::vectorise(SigmaYD);
   arma::vec psi = post_psi_Omega * (U.t() * sigmaYD + inv_prior_psi_Omega_mean);
   return psi;
@@ -67,7 +62,7 @@ void posterior_psi_csv(arma::vec & psi_i, arma::mat & mu_mat,
                                                      n_determ, n_vars, n_lags);
   arma::mat Y_tilde = Z_i - X * Pi_i.t();
 
-  arma::mat post_psi = posterior_psi_mean_csv(U, D_mat, exp_sqrt_f, inv_prior_psi_Omega_mean,
+  arma::mat post_psi = posterior_psi_mean_csv(U, D_mat, Sigma_chol_inv, exp_sqrt_f, inv_prior_psi_Omega_mean,
                                               post_psi_Omega, Y_tilde);
   psi_i = rmultn(post_psi, post_psi_Omega);
   arma::mat Psi_i = arma::mat(psi_i.begin(), n_vars, n_determ);

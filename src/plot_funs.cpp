@@ -1,3 +1,4 @@
+//[[Rcpp::depends(RcppArmadillo)]]
 #include <RcppArmadillo.h>
 //[[Rcpp::export]]
 void variances_fsv(arma::cube & variances, const arma::cube & latent, const arma::cube & facload, arma::uvec variables_num, arma::uword n_fac, arma::uword n_reps, arma::uword n_T, arma::uword n_vars, arma::uword n_plotvars) {
@@ -21,7 +22,7 @@ void variances_csv(arma::cube & variances, const arma::cube & Sigma, const arma:
   for (arma::uword i = 0; i < n_T; ++i) {
     for (arma::uword j = 0; j < n_reps; ++j) {
       Sigma_i = Sigma.slice(j).diag();
-      variances.slice(j).row(i) = std::exp(0.5 * f(j, i)) * arma::sqrt(Sigma_i.rows(variables_num-1));
+      variances.slice(j).row(i) = std::exp(0.5 * f(j, i)) * arma::sqrt(Sigma_i.rows(variables_num-1).t());
     }
   }
 }

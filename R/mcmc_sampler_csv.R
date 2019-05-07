@@ -292,6 +292,7 @@ mcmc_sampler.mfbvar_ss_csv <- function(x, ...) {
   } else {
     rownames(Z_fcst) <- (n_T-n_lags+1):n_T
   }
+  d_fcst_lags <- matrix(rbind(d[(n_T-n_lags+1):n_T, , drop = FALSE], d_fcst), nrow = n_fcst + n_lags)
   roots <- vector("numeric", n_reps/n_thin)
   num_tries <- roots
 

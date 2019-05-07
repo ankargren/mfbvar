@@ -117,8 +117,8 @@ posterior_psi_Omega_csv <- function(U, D_mat, Sigma_chol_inv, exp_sqrt_f, inv_pr
     .Call(`_mfbvar_posterior_psi_Omega_csv`, U, D_mat, Sigma_chol_inv, exp_sqrt_f, inv_prior_psi_Omega, n_determ, n_vars, n_lags)
 }
 
-posterior_psi_mean_csv <- function(U, D_mat, exp_sqrt_f, inv_prior_psi_Omega_mean, post_psi_Omega, Y_tilde) {
-    .Call(`_mfbvar_posterior_psi_mean_csv`, U, D_mat, exp_sqrt_f, inv_prior_psi_Omega_mean, post_psi_Omega, Y_tilde)
+posterior_psi_mean_csv <- function(U, D_mat, Sigma_chol_inv, exp_sqrt_f, inv_prior_psi_Omega_mean, post_psi_Omega, Y_tilde) {
+    .Call(`_mfbvar_posterior_psi_mean_csv`, U, D_mat, Sigma_chol_inv, exp_sqrt_f, inv_prior_psi_Omega_mean, post_psi_Omega, Y_tilde)
 }
 
 posterior_psi_csv <- function(psi_i, mu_mat, Pi_i, D_mat, Sigma_chol_inv, exp_sqrt_f, inv_prior_psi_Omega, Z_i, X, inv_prior_psi_Omega_mean, dt, n_determ, n_vars, n_lags) {
