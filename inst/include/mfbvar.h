@@ -35,4 +35,7 @@ void posterior_psi_csv(arma::vec & psi_i, arma::mat & mu_mat,
 
 double max_eig_cpp(const arma::mat & A);
 
+// Import the rgig
+double rgig(double lambda, double chi, double psi);
+
 #endif

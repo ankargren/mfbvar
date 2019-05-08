@@ -1,5 +1,5 @@
-#ifndef _UPDATE_H_
-#define _UPDATE_H_
+#ifndef _UPDATE_CSV_H_
+#define _UPDATE_CSV_H_
 void update_csv(
     const arma::mat& data,
     double& phi,

@@ -54,3 +54,9 @@ arma::vec rmultn(const arma::vec & m, const arma::mat & Sigma){
   return(X);
 }
 
+double rgig(double lambda, double chi, double psi) {
+  SEXP (*fun)(int, double, double, double) = NULL;
+  if (!fun) fun = (SEXP(*)(int, double, double, double)) R_GetCCallable("GIGrvg", "do_rgig");
+  return Rcpp::as<double>(fun(1, lambda, chi, psi));
+}
+

@@ -142,3 +142,4 @@ void posterior_psi_iw(arma::vec & psi_i, arma::mat & mu_mat,
 
   mu_mat = dt * Psi_i.t();
 }
+
