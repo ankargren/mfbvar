@@ -78,8 +78,10 @@ mcmc_sampler.mfbvar_ss <- function(x, ...) {
 
 
   n_q <- sum(freq == "q")
+  n_m <- n_vars - n_q
   T_b <- max(which(!apply(apply(Y[, freq == "m", drop = FALSE], 2, is.na), 1, any)))
   Lambda_ <- build_Lambda(rep("q", n_q), 3)
+  n_Lambda <- ncol(Lambda_)/nrow(Lambda_)
   ################################################################
   ### Preallocation
   # Pi and Sigma store their i-th draws in the third dimension, psi
@@ -221,7 +223,21 @@ mcmc_sampler.mfbvar_ss <- function(x, ...) {
     ### Smoothing step
 
     Pi_r <- cbind(Pi[,,r], 0)
-    mZ <- Y - d %*% t(matrix(psi[r,], nrow = n_vars))
+    mu_mat <- d %*% t(matrix(psi[r,], nrow = n_vars))
+    mZ <- Y
+    mZ[, 1:n_m] <- mZ[, 1:n_m] - mu_mat[,1:n_m]
+    mu_mat_q <- build_Z(mu_mat[, (n_m+1):n_vars, drop=FALSE], n_Lambda)
+    mZ[-(1:(n_Lambda-1)), (n_m+1):n_vars] <- mZ[-(1:(n_Lambda-1)), (n_m+1):n_vars] - mu_mat_q %*% t(Lambda_)
+    for (i in 1:(n_Lambda-1)) {
+      if (i == 1) {
+        mZ[i, (n_m+1):n_vars] <- mZ[i, (n_m+1):n_vars] - mu_mat[i, (n_m+1):n_vars]
+      } else {
+        mu_mat_q <- build_Z(mu_mat[1:i, (n_m+1):n_vars, drop=FALSE], i)
+        Lambda_temp <- t(Lambda_[,1:(n_q*i),drop=FALSE])
+        Lambda_temp <- apply(Lambda_temp, 2, function(x) x/sum(x))
+        mZ[i, (n_m+1):n_vars] <- mZ[i, (n_m+1):n_vars] - mu_mat_q %*% Lambda_temp
+      }
+    }
     mZ <- as.matrix(mZ)
     demeaned_z0 <- Z_1 - d[1:n_lags, ] %*% t(matrix(psi[r,], nrow = n_vars))
     Z_res <- kf_sim_smooth(mZ, Pi_r, Sigma[,,r], Lambda_, demeaned_z0, n_q, T_b)

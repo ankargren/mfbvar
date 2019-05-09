@@ -187,7 +187,7 @@ check_prior <- function(prior_obj) {
       stop("prior_psi_mean must be a vector or matrix with one row or column.")
     }
     if (is.atomic(prior_obj$prior_psi_mean)) {
-      if (length(prior_obj$prior_psi_mean) != ncol(prior_obj$Y)) {
+      if (length(prior_obj$prior_psi_mean) %% ncol(prior_obj$Y) != 0) {
         stop("prior_psi_mean has ", length(prior_obj$prior_psi_mean), " elements, but there are ", ncol(prior_obj$Y), " variables in Y.")
       }
     }
@@ -207,6 +207,9 @@ check_prior <- function(prior_obj) {
     } else {
       if (dim(prior_obj$prior_psi_Omega)[1] != dim(prior_obj$prior_psi_Omega)[2]) {
         stop("prior_psi_Omega must be a positive-definite symmetric matrix.")
+      }
+      if (dim(prior_obj$prior_psi_Omega)[1] != length(prior_obj$prior_psi_mean)) {
+        stop("The dimension of prior_psi_Omega must correspond to the number of elements in prior_psi_mean.")
       }
     }
   }
