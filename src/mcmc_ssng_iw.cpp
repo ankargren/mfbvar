@@ -1,4 +1,5 @@
 #include "mfbvar.h"
+#include "ss_utils.h"
 #include "update_ng.h"
 // [[Rcpp::export]]
 void mcmc_ssng_iw(const arma::mat & y_in_p,
@@ -50,7 +51,18 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
   double phi_mu_i = phi_mu(0);
   arma::vec omega_i = omega.row(0).t();
   arma::mat inv_prior_psi_Omega = arma::diagmat(omega_i);
-  arma::vec inv_prior_psi_Omega_mean = arma::diagmat(prior_psi_mean / omega_i);
+  arma::vec inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
+  double M, batch = 1.0;
+  arma::running_stat<double> stats;
+  double accept = 0.0;
+  bool adaptive_mh = false;
+  if (s < 0) {
+    M = std::abs(s);
+    s = 1.0;
+    adaptive_mh = true;
+  }
+  arma::vec min_vec(2);
+  min_vec(0) = 0.01;
 
 
   for (arma::uword i = 0; i < n_reps; ++i) {
@@ -64,7 +76,6 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
 
     mZ1 = Z_1 - d1 * Psi_i.t();
     Pi_i0.cols(1, n_vars*n_lags) = Pi_i;
-
     mZ = simsm_adaptive_cv(my, Pi_i0, Sigma_chol, Lambda_comp, mZ1, n_q, T_b);
     Z_i_demean.rows(0, n_lags - 1) = mZ1;
     Z_i_demean.rows(n_lags, n_T + n_lags - 1) = mZ;
@@ -72,16 +83,15 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
 
     mX = create_X_noint(Z_i_demean, n_lags);
     XX = mX.t() * mX;
-
     XX_inv = arma::inv_sympd(XX);
     Pi_sample = XX_inv * (mX.t() * mZ);
+
     post_Pi_Omega = arma::inv_sympd(inv_prior_Pi_Omega + XX);
     post_Pi = post_Pi_Omega * (Omega_Pi + mX.t() * mZ);
     S = arma::trans((mZ - mX * Pi_sample)) * (mZ - mX * Pi_sample);
     Pi_diff = prior_Pi_mean - Pi_sample;
     post_S = prior_S + S + Pi_diff.t() * arma::inv_sympd(prior_Pi_Omega + XX_inv) * Pi_diff;
-    Sigma_i = rinvwish(post_nu, post_S);
-
+    Sigma_i = rinvwish(post_nu, arma::symmatu(post_S)); //Fixed in 9.400.3
     Sigma_chol = arma::chol(Sigma_i, "lower");
     bool stationarity_check = false;
     int num_try = 0, iter = 0;
@@ -103,14 +113,25 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
         Rcpp::stop("Attemped to draw stationary Pi 1,000 times.");
       }
     }
-
-    update_ng(phi_mu_i, lambda_mu_i, omega_i, nm, c0, c1, s, psi_i, prior_psi_mean);
-    inv_prior_psi_Omega = arma::diagmat(omega_i);
-    inv_prior_psi_Omega_mean = arma::diagmat(prior_psi_mean / omega_i);
+    update_ng(phi_mu_i, lambda_mu_i, omega_i, nm, c0, c1, s, psi_i, prior_psi_mean, accept);
+    if (adaptive_mh) {
+      stats(accept);
+      if (i % 100 == 0) {
+        batch += 1.0;
+        min_vec(1) = std::pow(batch, -0.5);
+        if (stats.mean() > 0.44) {
+          s = s * std::exp(arma::min(min_vec));
+        } else {
+          s = s * std::exp(-arma::min(min_vec));
+        }
+        stats.reset();
+      }
+    }
+    inv_prior_psi_Omega = arma::diagmat(1/omega_i);
+    inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
 
     X = create_X_noint(Z_i, n_lags);
     posterior_psi_iw(psi_i, mu_mat, Pi_i, D_mat, Sigma_i, inv_prior_psi_Omega, mZ + mu_mat, X, inv_prior_psi_Omega_mean, dt, n_determ, n_vars, n_lags);
-
     arma::vec errors = arma::vec(n_vars);
     if (i % n_thin == 0) {
       if (n_fcst > 0) {

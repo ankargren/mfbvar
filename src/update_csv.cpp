@@ -1,5 +1,6 @@
-#ifndef _UPDATE_CSV_H_
-#define _UPDATE_CSV_H_
+#include "mfbvar.h"
+#include "progutils.h"
+#include "auxmix.h"
 void update_csv(
     const arma::mat& data,
     double& phi,
@@ -99,5 +100,3 @@ void update_csv(
   h = hnew.tail(T);
   h0 = hnew[0];
 }
-#endif
-

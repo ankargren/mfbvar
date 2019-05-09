@@ -9,11 +9,7 @@
 #include <progress.hpp>
 #include "progress_bar.hpp"
 
-arma::mat build_U_cpp(const arma::mat & Pi, int n_determ, int n_vars, int n_lags);
-arma::mat create_X_t(const arma::mat & y);
-arma::mat create_X(const arma::mat & y, arma::uword k);
-arma::mat create_X_t_noint(const arma::mat & y);
-arma::mat create_X_noint(const arma::mat & y, arma::uword k);
+
 
 arma::vec rmultn(const arma::vec & m, const arma::mat & Sigma);
 arma::mat rinvwish(int v, const arma::mat & S);
@@ -36,6 +32,6 @@ void posterior_psi_csv(arma::vec & psi_i, arma::mat & mu_mat,
 double max_eig_cpp(const arma::mat & A);
 
 // Import the rgig
-double rgig(double lambda, double chi, double psi);
+double do_rgig1(double lambda, double chi, double psi);
 
 #endif

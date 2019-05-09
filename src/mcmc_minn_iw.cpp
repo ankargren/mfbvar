@@ -1,4 +1,5 @@
 #include "mfbvar.h"
+#include "minn_utils.h"
 // [[Rcpp::export]]
 void mcmc_minn_iw(const arma::mat & y_in_p,
                   arma::cube& Pi, arma::cube& Sigma, arma::cube& Z, arma::cube& Z_fcst,

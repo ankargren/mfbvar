@@ -1,4 +1,5 @@
 #include "mfbvar.h"
+#include "ss_utils.h"
 
 // [[Rcpp::export]]
 arma::mat posterior_psi_Omega_fsv(const arma::mat & U, const arma::mat & D_mat,

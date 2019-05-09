@@ -1,4 +1,5 @@
 #include "mfbvar.h"
+#include "ss_utils.h"
 // [[Rcpp::export]]
 void mcmc_ss_iw(const arma::mat & y_in_p,
                   arma::cube& Pi, arma::cube& Sigma, arma::mat& psi, arma::cube& Z,

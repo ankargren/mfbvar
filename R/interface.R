@@ -668,8 +668,8 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
     prior <- args$prior_type
   }
 
-  if (!(prior %in% c("ss", "minn"))) {
-    stop("prior must be 'ss' or 'minn'.")
+  if (!(prior %in% c("ss", "ssng", "minn"))) {
+    stop("prior must be 'ss', 'ssng' or 'minn'.")
   }
   if (!(variance %in% c("iw", "fsv", "csv"))) {
     stop("volatility must be 'iw', 'csv' or 'fsv'.")
@@ -742,7 +742,7 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
   }
 
 
-  if (prior == "ss") {
+  if (prior %in% c("ss", "ssng")) {
     if (is.null(colnames(mfbvar_prior$d))) {
       names_determ <- paste0("d", 1:ncol(mfbvar_prior$d))
     } else {
@@ -996,6 +996,11 @@ plot.mfbvar_ss <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_sta
     theme(axis.text.x=element_text(angle=45, hjust=1))
 }
 
+#' @rdname plot-mfbvar
+plot.mfbvar_ssng <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_start = NULL,
+                           pred_bands = 0.8, nrow_facet = NULL, ss_bands = 0.95, ...) {
+  plot.mfbvar_ss(x, fcst_start = fcst_start, aggregate_fcst = aggregate_fcst, ss_bands = ss_bands, ...)
+}
 #' @rdname plot-mfbvar
 plot.mfbvar_minn <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_start = NULL,
                              pred_bands = 0.8, nrow_facet = NULL, ...){
