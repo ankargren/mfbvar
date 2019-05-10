@@ -1174,8 +1174,7 @@ varplot <- function(x, variables = colnames(x$Y), var_bands = 0.95, nrow_facet =
   } else {
     p <- p + facet_wrap(~variable, scales = "free_y", nrow = nrow_facet)
   }
-  print(p)
-  return(variances)
+  p
 }
 
 
@@ -1287,6 +1286,12 @@ plot.mfbvar_prior <- function(x, nrow_facet = NULL, ...){
     ss_flag <- TRUE
   } else {
     ss_flag <- FALSE
+  }
+
+  if (!is.null(x$d)& !is.null(x$prior_psi_mean)) {
+    ssng_flag <- TRUE
+  } else {
+    ssng_flag <- FALSE
   }
 
   if (ss_flag) {
