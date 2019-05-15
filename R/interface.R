@@ -1215,8 +1215,9 @@ predict.mfbvar <- function(object, fcst_start = NULL, aggregate_fcst = TRUE, pre
     }
   }
 
-  final_non_na <- min(unlist(apply(object$Y, 2, function(x) Position(is.na, x, nomatch = nrow(object$Y))))[object$mfbvar_prior$freq == "m"])
-  final_fcst <- object$n_lags- (nrow(object$Y)-final_non_na)+1
+  final_non_na <- min(c(unlist(apply(object$Y, 2, function(x) Position(is.na, x, nomatch = nrow(object$Y))))[object$mfbvar_prior$freq == "m"])-1,
+                      apply(object$Y[,object$mfbvar_prior$freq == "q"], 2, function(x) max(which(!is.na(x)))))
+  final_fcst <- object$n_lags - (nrow(object$Y)-final_non_na)+1
   if (final_fcst >= 1) {
     incl_fcst <- final_fcst:(object$n_lags + object$n_fcst)
   } else {
