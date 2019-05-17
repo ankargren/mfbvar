@@ -1,7 +1,8 @@
 .Rproj.user
 .Rhistory
 .RData
+.Ruserdata
 src/*.o
 src/*.so
 src/*.dll
-README_cache/
+autom4te.cache/

@@ -97,7 +97,7 @@ mcmc_ssng_csv <- function(y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z
     invisible(.Call(`_mfbvar_mcmc_ssng_csv`, y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, phi, sigma, f, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose))
 }
 
-mcmc_minn_iw <- function(y_in_p, Pi, Sigma, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, prior_nu = 2L) {
+mcmc_minn_iw <- function(y_in_p, Pi, Sigma, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, prior_nu) {
     invisible(.Call(`_mfbvar_mcmc_minn_iw`, y_in_p, Pi, Sigma, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, prior_nu))
 }
 

@@ -188,8 +188,10 @@ check_prior <- function(prior_obj) {
     stop("freq: must be supplied.")
   }
 
-  if (min(unlist(apply(prior_obj$Y[, prior_obj$freq == "m", drop = FALSE], 2, function(x) Position(is.na, x, nomatch = 9999999999)))) == 1) {
-    stop("Y: monthly variables are NA at the beginning of the sample.")
+  if ("m" %in% prior_obj$freq) {
+    if (min(unlist(apply(prior_obj$Y[, prior_obj$freq == "m", drop = FALSE], 2, function(x) Position(is.na, x, nomatch = 9999999999)))) == 1) {
+      stop("Y: monthly variables are NA at the beginning of the sample.")
+    }
   }
 
   if ("prior_Pi_AR1" %in% prior_obj$supplied_args) {
@@ -675,6 +677,8 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
     stop("volatility must be 'iw', 'csv' or 'fsv'.")
   }
 
+
+
   class(mfbvar_prior) <- c(class(mfbvar_prior), sprintf("mfbvar_%s_%s", prior, variance), sprintf("mfbvar_%s", prior), sprintf("mfbvar_%s", variance))
 
   if (mfbvar_prior$verbose) {
@@ -762,7 +766,11 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
                                   iteration = 1:mfbvar_prior$n_reps)
   }
 
-  class(main_run) <- c("mfbvar", sprintf("mfbvar_%s_%s", prior, variance), sprintf("mfbvar_%s", prior), sprintf("mfbvar_%s", variance))
+  if (sum(mfbvar_prior$freq == "m") == 0 || sum(mfbvar_prior$freq == "m") == ncol(mfbvar_prior$Y)) {
+    class(main_run) <- c("sfbvar", sprintf("sfbvar_%s_%s", prior, variance), sprintf("sfbvar_%s", prior), sprintf("sfbvar_%s", variance))
+  } else {
+    class(main_run) <- c("mfbvar", sprintf("mfbvar_%s_%s", prior, variance), sprintf("mfbvar_%s", prior), sprintf("mfbvar_%s", variance))
+  }
   time_out <- c(time_out, Sys.time())
   main_run$time_out <- time_out
   main_run$variance <- variance
@@ -1250,6 +1258,71 @@ predict.mfbvar <- function(object, fcst_start = NULL, aggregate_fcst = TRUE, pre
       bind_rows(dplyr::filter(fcst_collapsed, freq == "m")) %>%
       ungroup()
   }
+
+  if (!is.null(pred_bands) && !is.na(pred_bands)) {
+    pred_quantiles <- c(0.5-pred_bands/2, 0.5, 0.5+pred_bands/2)
+    fcst_collapsed <- group_by(fcst_collapsed, variable, time, fcst_date) %>%
+      summarize(lower = quantile(fcst, prob = pred_quantiles[1]),
+                median = quantile(fcst, prob = pred_quantiles[2]),
+                upper = quantile(fcst, prob = pred_quantiles[3])) %>%
+      ungroup()
+  }
+
+
+  return(fcst_collapsed)
+}
+
+predict.sfbvar <- function(object, fcst_start = NULL, pred_bands = 0.8, ...) {
+  sf_type <- unique(object$freq)
+  if (object$n_fcst==0) {
+    stop("No forecasts exist in the provided object.")
+  }
+  if (!is.null(fcst_start)) {
+    fcst_start <- as.Date(fcst_start)
+  }
+  if (object$n_fcst > 0) {
+    if (!inherits(fcst_start, "Date")) {
+      tmp <- tryCatch(lubridate::ymd(rownames(object$Y)[nrow(object$Y)]), warning = function(cond) cond)
+      if (inherits(tmp, "warning")) {
+        stop("To summarize the forecasts, either fcst_start must be supplied or the rownames of Y be dates (YYYY-MM-DD).")
+      } else {
+        if (sf_type == "m") {
+          fcst_start <- lubridate::ymd(rownames(object$Y)[nrow(object$Y)]) %m+% months(1)
+        } else {
+          fcst_start <- lubridate::ymd(rownames(object$Y)[nrow(object$Y)]) %m+% months(3)
+        }
+      }
+    }
+  }
+
+  final_fcst <- object$n_lags+1
+  if (final_fcst >= 1) {
+    incl_fcst <- final_fcst:(object$n_lags + object$n_fcst)
+  } else {
+    incl_fcst <- 1:(object$n_lags + object$n_fcst)
+  }
+
+  if (sf_type == "m") {
+    ret_names <- fcst_start %m+% months((-(length(incl_fcst)-object$n_fcst)):(object$n_fcst-1))
+  } else {
+    ret_names <- fcst_start %m+% months(3*((-(length(incl_fcst)-object$n_fcst)):(object$n_fcst-1)))
+  }
+  fcst_collapsed <- tibble(variable = rep(rep(object$names_col, each = length(incl_fcst)), object$n_reps),
+                           iter = rep(1:object$n_reps, each = object$n_vars*length(incl_fcst)),
+                           fcst = c(object$Z_fcst[incl_fcst,,]),
+                           fcst_date = rep(as.Date(as.character(ret_names)), object$n_vars*object$n_reps),
+                           freq = rep(rep(object$mfbvar_prior$freq, each = length(incl_fcst)), object$n_reps),
+                           time = rep(nrow(object$Y)+object$n_fcst-max(incl_fcst)+incl_fcst, object$n_vars*object$n_reps)
+  ) %>%
+    transmute(variable = variable,
+              iter = iter,
+              year = year(fcst_date),
+              quarter = quarter(fcst_date),
+              fcst_date = fcst_date,
+              fcst = fcst,
+              freq = freq,
+              time = time)
+
 
   if (!is.null(pred_bands) && !is.na(pred_bands)) {
     pred_quantiles <- c(0.5-pred_bands/2, 0.5, 0.5+pred_bands/2)

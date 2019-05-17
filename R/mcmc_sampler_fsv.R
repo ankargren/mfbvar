@@ -4,33 +4,32 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
   if (is.null(x$n_fac)) {
     stop("The number of factors (n_fac) must be provided.")
   }
-
-  n_vars <- ncol(x$Y)
+  Y <- x$Y
+  n_vars <- ncol(Y)
   n_lags <- x$n_lags
   n_q <- sum(x$freq == "q")
   n_m <- n_vars - n_q
   n_fac <- x$n_fac
   n_fcst <- x$n_fcst
-
-  y_in_p <- x$Y[-(1:n_lags), ]
-
-  T_b <- min(apply(y_in_p[,1:n_m], 2, function(x) ifelse(any(is.na(x)), min(which(is.na(x))), Inf))-1, nrow(y_in_p))
-  TT <- nrow(x$Y) - n_lags
-  n_T <- nrow(x$Y)
-
-
+  if (n_q == 0 || n_q == n_vars) {
+    complete_quarters <- apply(Y, 1, function(x) !any(is.na(x)))
+    Y <- Y[complete_quarters, ]
+  }
+  y_in_p <- Y[-(1:n_lags), ]
+  if (n_q < n_vars) {
+    T_b <- min(apply(y_in_p[,1:n_m], 2, function(x) ifelse(any(is.na(x)), min(which(is.na(x))), Inf))-1, nrow(y_in_p))
+  } else {
+    T_b <- nrow(y_in_p)
+  }
+  TT <- nrow(Y) - n_lags
+  n_T <- nrow(Y)
 
   add_args <- list(...)
-
   n_reps <- add_args$n_reps
-  if (!is.null(x$n_thin)) {
-    n_thin <- x$n_thin
-  } else {
-    n_thin <- 1
-  }
+  n_thin <- ifelse(!is.null(add_args$n_thin), add_args$n_thin, ifelse(!is.null(x$n_thin), x$n_thin, 1))
 
   init <- add_args$init
-  error_variance <- mfbvar:::compute_error_variances(x$Y)
+  error_variance <- mfbvar:::compute_error_variances(Y)
 
   priormu <- x$priormu
   priorphiidi <- x$priorphiidi
@@ -100,9 +99,8 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
   }
 
   cl <- x$cl
-  Z1 <- mfbvar:::fill_na(x$Y)[(1:n_lags), ]
+  Z1 <- mfbvar:::fill_na(Y)[(1:n_lags), ]
   verbose <- x$verbose
-  mf <- TRUE
 
   ## Set up cluster (if used)
   if (!is.null(cl)) {
@@ -113,7 +111,7 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
     parallelize <- FALSE
   }
 
-  prior_Pi_Omega <- mfbvar:::create_prior_Pi_Omega(x$lambda1, x$lambda2, x$lambda3, x$prior_Pi_AR1, x$Y, n_lags)
+  prior_Pi_Omega <- mfbvar:::create_prior_Pi_Omega(x$lambda1, x$lambda2, x$lambda3, x$prior_Pi_AR1, Y, n_lags)
   prior_Pi_AR1 <- x$prior_Pi_AR1
   prior_zero_mean <- all(x$prior_Pi_AR1 == 0)
 
@@ -127,9 +125,7 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
 
   ## Obtain the aggregation matrix for the quarterly only
   if (mf) {
-    Lambda_companion <- mfbvar:::build_Lambda(c(rep("m", n_vars-n_q), rep("q", n_q)), n_lags)
-    Lambda_comp <- matrix(Lambda_companion[(n_m+1):n_vars, c(t(sapply((n_m+1):n_vars, function(x) seq(from = x, to = n_vars*n_lags, by = n_vars))))],
-                          nrow = n_q)
+    Lambda_ <- mfbvar:::build_Lambda(rep("q", n_q), 3)
   }
 
   Pi <- array(init_Pi, dim = c(n_vars, n_vars*n_lags + 1, n_reps/n_thin))
@@ -172,7 +168,7 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
 
     ## Mixed-frequency block: sample latent monthly series
     if (mf) {
-      Z_i <- tryCatch(mfbvar:::rsimsm_adaptive_univariate(y_in_p, Pi_i, Sig, Lambda_comp, Z1, n_q, T_b, t(startfac) %*% t(startfacload)), error = function(cond) cond)
+      Z_i <- tryCatch(mfbvar:::rsimsm_adaptive_univariate(y_in_p, Pi_i, Sig, Lambda_, Z1, n_q, T_b, t(startfac) %*% t(startfacload)), error = function(cond) cond)
       if (inherits(Z_i, "error")) {
         warning("MCMC halted because of an error in the mixed-frequency step. See $error for more information.")
         error <- list(error = Z_i, iter = i, block = "z")
@@ -279,7 +275,7 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
   ################################################################
   ### Prepare the return object
   return_obj <- list(Pi = Pi, Z = Z, Z_fcst = NULL, n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst,
-                     prior_Pi_Omega = prior_Pi_Omega, Y = x$Y, n_T = n_T, n_T_ = TT, n_reps = n_reps,
+                     prior_Pi_Omega = prior_Pi_Omega, Y = Y, n_T = n_T, n_T_ = TT, n_reps = n_reps,
                      facload = facload_storage, latent = latent,  mu = mu_storage, sigma = sigma_storage, phi = phi_storage,
                      init = list(init_Pi = Pi_i, init_Z = Z_i, init_mu = startpara$mu,
                                  init_phi = startpara$phi, init_sigma = startpara$sigma,
@@ -300,9 +296,6 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
 #' @rdname mcmc_sampler
 mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
 
-  add_args <- list(...)
-  n_reps <- add_args$n_reps
-
   if (is.null(x$n_fac)) {
     stop("The number of factors (n_fac) must be provided.")
   }
@@ -311,9 +304,34 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
     stop("d_fcst has ", nrow(x$d_fcst), " rows, but n_fcst is ", x$n_fcst, ".")
   }
 
+  Y <- x$Y
+  d <- x$Y
+  n_vars <- ncol(Y)
+  n_lags <- x$n_lags
+  n_q <- sum(x$freq == "q")
+  n_m <- n_vars - n_q
+  n_fac <- x$n_fac
+  n_fcst <- x$n_fcst
+  n_determ <- dim(d)[2]
+  if (n_q == 0 || n_q == n_vars) {
+    complete_quarters <- apply(Y, 1, function(x) !any(is.na(x)))
+    Y <- Y[complete_quarters, ]
+    d_fcst <- rbind(d[!complete_quarters, , drop = FALSE], d_fcst)
+    d <- d[complete_quarters, , drop = FALSE]
+  }
+  y_in_p <- Y[-(1:n_lags), ]
+  if (n_q < n_vars) {
+    T_b <- min(apply(y_in_p[,1:n_m], 2, function(x) ifelse(any(is.na(x)), min(which(is.na(x))), Inf))-1, nrow(y_in_p))
+  } else {
+    T_b <- nrow(y_in_p)
+  }
+  TT <- nrow(Y) - n_lags
+  n_T <- nrow(Y)
 
-  d <- x$d
-  d_fcst <- x$d_fcst
+  add_args <- list(...)
+  n_reps <- add_args$n_reps
+  n_thin <- ifelse(!is.null(add_args$n_thin), add_args$n_thin, ifelse(!is.null(x$n_thin), x$n_thin, 1))
+
   prior_psi_mean <- x$prior_psi_mean
   prior_psi_Omega <- x$prior_psi_Omega
   check_roots <- x$check_roots
@@ -324,33 +342,9 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
     num_tries <- NULL
   }
 
-  n_vars <- ncol(x$Y)
-  n_lags <- x$n_lags
-  n_q <- sum(x$freq == "q")
-  n_m <- n_vars - n_q
-  n_fac <- x$n_fac
-  n_fcst <- x$n_fcst
-  n_determ <- dim(d)[2]
-
-  y_in_p <- x$Y[-(1:n_lags), ]
-
-  T_b <- min(apply(y_in_p[,1:n_m,drop=FALSE], 2, function(x) ifelse(any(is.na(x)), min(which(is.na(x))), Inf))-1, nrow(y_in_p))
-  TT <- nrow(x$Y) - n_lags
-  n_T <- nrow(x$Y)
-
-
-
-
-
-
-  if (!is.null(x$n_thin)) {
-    n_thin <- x$n_thin
-  } else {
-    n_thin <- 1
-  }
 
   init <- add_args$init
-  error_variance <- mfbvar:::compute_error_variances(x$Y)
+  error_variance <- mfbvar:::compute_error_variances(Y)
 
   priormu <- x$priormu
   priorphiidi <- x$priorphiidi
@@ -427,7 +421,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
   }
 
   cl <- x$cl
-  Z1 <- mfbvar:::fill_na(x$Y)[(1:n_lags), ]
+  Z1 <- mfbvar:::fill_na(Y)[(1:n_lags), ]
   verbose <- x$verbose
   mf <- TRUE
 
@@ -440,7 +434,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
     parallelize <- FALSE
   }
 
-  prior_Pi_Omega <- mfbvar:::create_prior_Pi_Omega(x$lambda1, x$lambda2, x$lambda3, x$prior_Pi_AR1, x$Y, n_lags)[-1, ]
+  prior_Pi_Omega <- mfbvar:::create_prior_Pi_Omega(x$lambda1, x$lambda2, x$lambda3, x$prior_Pi_AR1, Y, n_lags)[-1, ]
   prior_Pi_AR1 <- x$prior_Pi_AR1
   prior_zero_mean <- all(x$prior_Pi_AR1 == 0)
 
@@ -454,9 +448,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
 
   ## Obtain the aggregation matrix for the quarterly only
   if (mf) {
-    Lambda_companion <- mfbvar:::build_Lambda(c(rep("m", n_vars-n_q), rep("q", n_q)), n_lags)
-    Lambda_comp <- matrix(Lambda_companion[(n_m+1):n_vars, c(t(sapply((n_m+1):n_vars, function(x) seq(from = x, to = n_vars*n_lags, by = n_vars))))],
-                          nrow = n_q)
+    Lambda_ <- mfbvar:::build_Lambda(rep("q", n_q), 3)
   }
 
   Pi <- array(init_Pi, dim = c(n_vars, n_vars*n_lags, n_reps/n_thin))
@@ -512,7 +504,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
       mZ <- y_in_p - mu_mat
       mZ <- as.matrix(mZ)
       mZ1 <- Z1 - d1 %*% t(matrix(psi_i, nrow = n_vars))
-      Z_i_demean <- tryCatch(mfbvar:::rsimsm_adaptive_univariate(mZ, Pi_i0, Sig, Lambda_comp, mZ1, n_q, T_b, t(startfac) %*% t(startfacload)), error = function(cond) cond)
+      Z_i_demean <- tryCatch(mfbvar:::rsimsm_adaptive_univariate(mZ, Pi_i0, Sig, Lambda_, mZ1, n_q, T_b, t(startfac) %*% t(startfacload)), error = function(cond) cond)
       if (inherits(Z_i, "error")) {
         warning("MCMC halted because of an error in the mixed-frequency step. See $error for more information.")
         error <- list(error = Z_i_demean, iter = i, block = "z")
@@ -656,7 +648,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
   ################################################################
   ### Prepare the return object
   return_obj <- list(Pi = Pi, Z = Z, psi = psi, Z_fcst = NULL, n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst,
-                     prior_Pi_Omega = prior_Pi_Omega, d = d, Y = x$Y, n_T = n_T, n_T_ = TT, n_reps = n_reps,
+                     prior_Pi_Omega = prior_Pi_Omega, d = d, Y = Y, n_T = n_T, n_T_ = TT, n_reps = n_reps,
                      n_determ = n_determ, facload = facload_storage, latent = latent,  mu = mu_storage, sigma = sigma_storage, phi = phi_storage,
                      init = list(init_Pi = Pi_i, init_Z = Z_i, init_psi = psi_i, init_mu = startpara$mu,
                                  init_phi = startpara$phi, init_sigma = startpara$sigma,

@@ -46,12 +46,23 @@ mcmc_sampler.mfbvar_minn_csv <- function(x, ...){
   # n_T: sample size (full sample)
   # n_T_: sample size (reduced sample)
 
-  Lambda <- mfbvar:::build_Lambda(freq, n_lags)
   n_q <- sum(freq == "q")
-  T_b <- max(which(!apply(apply(Y[, freq == "m", drop = FALSE], 2, is.na), 1, any)))
-  Lambda_ <- mfbvar:::build_Lambda(rep("q", n_q), 3)
+  if (n_q < n_vars) {
+    T_b <- max(which(!apply(apply(Y[, freq == "m", drop = FALSE], 2, is.na), 1, any)))
+  } else {
+    T_b <- nrow(Y)
+  }
+  if (n_q > 0) {
+    Lambda_ <- mfbvar:::build_Lambda(rep("q", n_q), 3)
+  } else {
+    Lambda_ <- matrix(0, 1, 3)
+  }
+  if (n_q == 0 || n_q == n_vars) {
+    complete_quarters <- apply(Y, 1, function(x) !any(is.na(x)))
+    Y <- Y[complete_quarters, ]
+  }
 
-  n_pseudolags <- dim(Lambda)[2]/n_vars
+  n_pseudolags <- min(c(n_lags, 3))
   n_T <- dim(Y)[1]# - n_lags
   n_T_ <- n_T - n_pseudolags
   d <- matrix(1, nrow = nrow(Y), ncol = 1)
@@ -173,7 +184,7 @@ mcmc_sampler.mfbvar_minn_csv <- function(x, ...){
                      n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega,
                      prior_Pi_mean = prior_Pi_mean, prior_S = prior_S,
                      prior_nu = n_vars+2, post_nu = n_T + n_vars+2, d = d, Y = Y,
-                     n_T = n_T, n_T_ = n_T_, n_reps = n_reps, Lambda = Lambda,
+                     n_T = n_T, n_T_ = n_T_, n_reps = n_reps, Lambda_ = Lambda_,
                      init = list(init_Pi = Pi[,, n_reps/n_thin],
                                  init_Sigma = Sigma[,, n_reps/n_thin],
                                  init_Z = Z[,, n_reps/n_thin],
@@ -240,23 +251,31 @@ mcmc_sampler.mfbvar_ss_csv <- function(x, ...) {
   # n_T_: sample size (reduced sample)
   n_vars <- dim(Y)[2]
   n_lags <- prod(dim(as.matrix(prior_Pi_mean)))/n_vars^2
-  Lambda <- mfbvar:::build_Lambda(freq, n_lags)
+  n_q <- sum(freq == "q")
+  n_m <- sum(freq == "m")
+  if (n_q == 0 || n_q == n_vars) {
+    complete_quarters <- apply(Y, 1, function(x) !any(is.na(x)))
+    Y <- Y[complete_quarters, ]
+    d_fcst <- rbind(d[!complete_quarters, , drop = FALSE], d_fcst)
+    d <- d[complete_quarters, , drop = FALSE]
+  }
+  y_in_p <- Y[-(1:n_lags), ]
+  if (n_q < n_vars) {
+    T_b <- min(apply(y_in_p[,1:n_m], 2, function(x) ifelse(any(is.na(x)), min(which(is.na(x))), Inf))-1, nrow(y_in_p))
+  } else {
+    T_b <- nrow(y_in_p)
+  }
+  if (n_q > 0) {
+    Lambda_ <- mfbvar:::build_Lambda(rep("q", n_q), 3)
+  } else {
+    Lambda_ <- matrix(0, 1, 3)
+  }
 
-  n_pseudolags <- dim(Lambda)[2]/n_vars
+  n_pseudolags <- min(c(n_lags, 3))
   n_determ <- dim(d)[2]
   n_T <- dim(Y)[1]# - n_lags
   n_T_ <- n_T - n_pseudolags
-  y_in_p <- x$Y[-(1:n_lags), ]
 
-
-  n_q <- sum(freq == "q")
-  n_m <- sum(freq == "m")
-  T_b <- min(apply(y_in_p[,1:n_m], 2, function(x) ifelse(any(is.na(x)), min(which(is.na(x))), Inf))-1, nrow(y_in_p))
-  Lambda_companion <- mfbvar:::build_Lambda(c(rep("m", n_vars-n_q), rep("q", n_q)), n_lags)
-  Lambda_comp <- matrix(Lambda_companion[(n_m+1):n_vars, c(t(sapply((n_m+1):n_vars, function(x) seq(from = x, to = n_vars*n_lags, by = n_vars))))],
-                        nrow = n_q)
-
-  Lambda_ <- mfbvar:::build_Lambda(rep("q", n_q), 3)
   ################################################################
   ### Preallocation
   # Pi and Sigma store their i-th draws in the third dimension, psi
@@ -401,7 +420,7 @@ mcmc_sampler.mfbvar_ss_csv <- function(x, ...) {
   inv_prior_psi_Omega_mean <- inv_prior_psi_Omega %*% prior_psi_mean
   Z_1 <- Z[1:n_pseudolags,, 1]
 
-  mfbvar:::mcmc_ss_csv(Y[-(1:n_lags),],Pi,Sigma,psi,Z,Z_fcst,phi,sigma,f,Lambda_comp,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
+  mfbvar:::mcmc_ss_csv(Y[-(1:n_lags),],Pi,Sigma,psi,Z,Z_fcst,phi,sigma,f,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
                        prior_S,D_mat,dt,d1,d_fcst_lags,inv_prior_psi_Omega,inv_prior_psi_Omega_mean,check_roots,Z_1,
                        10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,n_reps,n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose)
 
@@ -409,7 +428,7 @@ mcmc_sampler.mfbvar_ss_csv <- function(x, ...) {
                      Z_fcst = NULL, smoothed_Z = NULL, n_determ = n_determ,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      prior_S = prior_S, prior_nu = n_vars+2, post_nu = n_T + n_vars+2, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
-                     prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, Lambda = Lambda,
+                     prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, Lambda_ = Lambda_,
                      init = list(init_Pi = Pi[,, n_reps/n_thin], init_Sigma = Sigma[,, n_reps/n_thin], init_psi = psi[n_reps/n_thin, ], init_Z = Z[,, n_reps/n_thin], init_phi = phi[n_reps/n_thin], init_sigma = sigma[n_reps/n_thin], init_f = f[n_reps/n_thin,]))
 
   if (check_roots == TRUE) {
@@ -478,26 +497,35 @@ mcmc_sampler.mfbvar_ssng_csv <- function(x, ...) {
   # n_T_: sample size (reduced sample)
   n_vars <- dim(Y)[2]
   n_lags <- prod(dim(as.matrix(prior_Pi_mean)))/n_vars^2
-  Lambda <- mfbvar:::build_Lambda(freq, n_lags)
-
-  n_pseudolags <- dim(Lambda)[2]/n_vars
+  n_q <- sum(freq == "q")
+  n_m <- sum(freq == "m")
+  if (n_q == 0 || n_q == n_vars) {
+    complete_quarters <- apply(Y, 1, function(x) !any(is.na(x)))
+    Y <- Y[complete_quarters, ]
+    d_fcst <- rbind(d[!complete_quarters, , drop = FALSE], d_fcst)
+    d <- d[complete_quarters, , drop = FALSE]
+  }
+  y_in_p <- Y[-(1:n_lags), ]
+  if (n_q < n_vars) {
+    T_b <- min(apply(y_in_p[,1:n_m], 2, function(x) ifelse(any(is.na(x)), min(which(is.na(x))), Inf))-1, nrow(y_in_p))
+  } else {
+    T_b <- nrow(y_in_p)
+  }
+  if (n_q > 0) {
+    Lambda_ <- mfbvar:::build_Lambda(rep("q", n_q), 3)
+  } else {
+    Lambda_ <- matrix(0, 1, 3)
+  }
+  n_pseudolags <- min(c(n_lags, 3))
   n_determ <- dim(d)[2]
   n_T <- dim(Y)[1]# - n_lags
   n_T_ <- n_T - n_pseudolags
-  y_in_p <- x$Y[-(1:n_lags), ]
+
+
 
   c0 <- ifelse(is.null(x$c0), 0.01, x$c0)
   c1 <- ifelse(is.null(x$c1), 0.01, x$c1)
   s <- ifelse(is.null(x[["s"]]), -10, x$s)
-
-  n_q <- sum(freq == "q")
-  n_m <- sum(freq == "m")
-  T_b <- min(apply(y_in_p[,1:n_m], 2, function(x) ifelse(any(is.na(x)), min(which(is.na(x))), Inf))-1, nrow(y_in_p))
-  Lambda_companion <- mfbvar:::build_Lambda(c(rep("m", n_vars-n_q), rep("q", n_q)), n_lags)
-  Lambda_comp <- matrix(Lambda_companion[(n_m+1):n_vars, c(t(sapply((n_m+1):n_vars, function(x) seq(from = x, to = n_vars*n_lags, by = n_vars))))],
-                        nrow = n_q)
-
-  Lambda_ <- mfbvar:::build_Lambda(rep("q", n_q), 3)
   ################################################################
   ### Preallocation
   # Pi and Sigma store their i-th draws in the third dimension, psi
@@ -664,7 +692,7 @@ mcmc_sampler.mfbvar_ssng_csv <- function(x, ...) {
 
   Z_1 <- Z[1:n_pseudolags,, 1]
 
-  mfbvar:::mcmc_ssng_csv(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,phi,sigma,f,Lambda_comp,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
+  mfbvar:::mcmc_ssng_csv(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,phi,sigma,f,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
                        prior_S,D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,
                        10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,n_reps,n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose)
 
@@ -673,7 +701,7 @@ mcmc_sampler.mfbvar_ssng_csv <- function(x, ...) {
                      Z_fcst = NULL, smoothed_Z = NULL, n_determ = n_determ,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      prior_S = prior_S, prior_nu = n_vars+2, post_nu = n_T + n_vars+2, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
-                     prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, Lambda = Lambda,
+                     prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, Lambda_ = Lambda_,
                      init = list(init_Pi = Pi[,, n_reps/n_thin], init_Sigma = Sigma[,, n_reps/n_thin], init_psi = psi[n_reps/n_thin, ], init_Z = Z[,, n_reps/n_thin], init_phi = phi[n_reps/n_thin], init_sigma = sigma[n_reps/n_thin], init_f = f[n_reps/n_thin,], init_omega = omega[n_reps/n_thin, ], init_lambda_mu = lambda_mu[n_reps/n_thin], init_phi_mu = phi_mu[n_reps/n_thin]))
 
   if (check_roots == TRUE) {

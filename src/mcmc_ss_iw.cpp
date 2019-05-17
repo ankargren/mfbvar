@@ -13,13 +13,20 @@ void mcmc_ss_iw(const arma::mat & y_in_p,
                   arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars,
                   arma::uword n_T, arma::uword n_fcst, arma::uword n_determ,
                   arma::uword n_thin, bool verbose) {
+  bool single_freq;
+  if (n_q == 0 || n_q == n_vars) {
+    single_freq = true;
+  } else {
+    single_freq = false;
+  }
 
   Progress p(n_reps, verbose);
 
   arma::mat Pi_i = Pi.slice(0);
   arma::mat Sigma_i = Sigma.slice(0);
   arma::vec psi_i  = psi.row(0).t();
-  arma::mat y_i, X, XX, XX_inv, Pi_sample, post_Pi_Omega, post_Pi;
+  arma::mat y_i = y_in_p;
+  arma::mat X, XX, XX_inv, Pi_sample, post_Pi_Omega, post_Pi;
   arma::mat S, Pi_diff, post_S, x, mu_mat, mZ, mZ1, mX;
   arma::mat my = arma::mat(arma::size(y_in_p), arma::fill::zeros);
 
@@ -35,30 +42,43 @@ void mcmc_ss_iw(const arma::mat & y_in_p,
   arma::mat Psi_i = arma::mat(psi_i.begin(), n_vars, n_determ, false, true);
   mu_mat = dt * Psi_i.t();
   arma::mat mu_long = arma::mat(n_lags+n_T, n_vars, arma::fill::zeros);
-  arma::rowvec Lambda_single = arma::rowvec(n_lags, arma::fill::zeros);
-  for (arma::uword i = 0; i < n_lags; ++i) {
+  arma::rowvec Lambda_single = arma::rowvec(Lambda_comp.n_cols/Lambda_comp.n_rows, arma::fill::zeros);
+  for (arma::uword i = 0; i < Lambda_comp.n_cols/Lambda_comp.n_rows; ++i) {
     Lambda_single(i) = Lambda_comp.at(0, i*n_q);
   }
 
   int post_nu = n_T + n_vars + 2;
   arma::mat Sigma_chol = arma::chol(Sigma_i, "lower");
 
+  // if single freq, we don't need to update
+  if (single_freq) {
+    Z_i.rows(n_lags, n_T + n_lags - 1) = y_in_p;
+  }
+
   for (arma::uword i = 0; i < n_reps; ++i) {
 
-    my.cols(0, n_vars - n_q - 1) = y_in_p.cols(0, n_vars - n_q - 1) - mu_mat.cols(0, n_vars - n_q - 1);
-    mu_long.rows(0, n_lags-1) = d1.tail_rows(n_lags) * Psi_i.t();
-    mu_long.rows(n_lags, n_T+n_lags-1) = mu_mat;
-    for (arma::uword j = 0; j < n_T; ++j) {
-      my.row(j).cols(n_vars - n_q - 1, n_vars - 1) = y_in_p.row(j).cols(n_vars - n_q - 1, n_vars - 1) - Lambda_single * mu_long.rows(j, j+n_lags-1).cols(n_vars - n_q - 1, n_vars - 1);// Needs fixing
+    if (!single_freq) {
+      my.cols(0, n_vars - n_q - 1) = y_in_p.cols(0, n_vars - n_q - 1) - mu_mat.cols(0, n_vars - n_q - 1);
+      mu_long.rows(0, n_lags-1) = d1.tail_rows(n_lags) * Psi_i.t();
+      mu_long.rows(n_lags, n_T+n_lags-1) = mu_mat;
+      for (arma::uword j = 0; j < n_T; ++j) {
+        my.row(j).cols(n_vars - n_q - 1, n_vars - 1) = y_in_p.row(j).cols(n_vars - n_q - 1, n_vars - 1) - Lambda_single * mu_long.rows(j, j+n_lags-1).cols(n_vars - n_q - 1, n_vars - 1);// Needs fixing
+      }
+    } else {
+      // Even if single freq, mZ needs to be updated
+      mZ = y_in_p - mu_mat;
     }
 
     mZ1 = Z_1 - d1 * Psi_i.t();
     Pi_i0.cols(1, n_vars*n_lags) = Pi_i;
 
-    mZ = simsm_adaptive_cv(my, Pi_i0, Sigma_chol, Lambda_comp, mZ1, n_q, T_b);
+    if (!single_freq) {
+      mZ = simsm_adaptive_cv(my, Pi_i0, Sigma_chol, Lambda_comp, mZ1, n_q, T_b);
+      Z_i.rows(n_lags, n_T + n_lags - 1) = mZ + mu_mat;
+    }
+
     Z_i_demean.rows(0, n_lags - 1) = mZ1;
     Z_i_demean.rows(n_lags, n_T + n_lags - 1) = mZ;
-    Z_i.rows(n_lags, n_T + n_lags - 1) = mZ + mu_mat;
 
     mX = create_X_noint(Z_i_demean, n_lags);
     XX = mX.t() * mX;
