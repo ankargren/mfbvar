@@ -6,7 +6,7 @@
 #' @templateVar freq TRUE
 #' @templateVar prior_Pi_AR1 TRUE
 #' @templateVar lambda1 TRUE
-#' @param (Only if \code{variance != "iw"}) The cross-variable tightness
+#' @param (Only if \code{variance %in% c("diffuse", "fsv")}) The cross-variable tightness
 #' @templateVar lambda3 TRUE
 #' @param lambda4 (Minnesota only) Prior variance of the intercept.
 #' @templateVar n_lags TRUE
@@ -612,7 +612,7 @@ summary.mfbvar_prior <- function(object, ...) {
 #'
 #' @param mfbvar_prior a \code{mfbvar_prior} object
 #' @param prior either \code{"ss"} (steady-state prior) or \code{"minn"} (Minnesota prior)
-#' @param variance form of the error variance-covariance matrix: \code{"iw"} for the inverse Wishart prior, \code{"csv"} for common stochastic volatility or \code{"fsv"} for factor stochastic volatility
+#' @param variance form of the error variance-covariance matrix: \code{"iw"} for the inverse Wishart prior, \code{"diffuse"} for a diffuse prior, \code{"csv"} for common stochastic volatility or \code{"fsv"} for factor stochastic volatility
 #' @param ... additional arguments to \code{update_prior} (if \code{mfbvar_prior} is \code{NULL}, the arguments are passed on to \code{set_prior})
 #' @return An object of class \code{mfbvar}, \code{mfbvar_<prior>} and \code{mfbvar_<prior>_<variance>} containing posterior quantities as well as the prior object
 #' @seealso \code{\link{set_prior}}, \code{\link{update_prior}}, \code{\link{predict.mfbvar}}, \code{\link{plot.mfbvar_minn}},
@@ -632,7 +632,7 @@ summary.mfbvar_prior <- function(object, ...) {
 #' \item{roots}{The maximum eigenvalue of the lag polynomial (if \code{check_roots = TRUE})}
 #' \item{num_tries}{The number of attempts for drawing a stationary \eqn{\Pi} (if \code{check_roots = TRUE})}
 #'
-#' If \code{variance = "iw"}, it also includes:
+#' If \code{variance = "iw"} or \code{variance = "diffuse"}, it also includes:
 #' \item{Sigma}{Array of error covariance matrices; \code{Sigma[,, r]} is the \code{r}th draw}
 #'
 #' #' If \code{variance = "csv"}, it also includes:
@@ -673,8 +673,8 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
   if (!(prior %in% c("ss", "ssng", "minn"))) {
     stop("prior must be 'ss', 'ssng' or 'minn'.")
   }
-  if (!(variance %in% c("iw", "fsv", "csv"))) {
-    stop("volatility must be 'iw', 'csv' or 'fsv'.")
+  if (!(variance %in% c("iw", "fsv", "csv", "diffuse"))) {
+    stop("volatility must be 'iw', 'diffuse', 'csv' or 'fsv'.")
   }
 
 
@@ -739,7 +739,7 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
                                variable = names_col,
                                iteration = 1:mfbvar_prior$n_reps)
 
-  if (variance == "iw") {
+  if (variance %in% c("iw", "diffuse")) {
     dimnames(main_run$Sigma) <- list(names_col,
                                      names_col,
                                      iteration = 1:mfbvar_prior$n_reps)
@@ -796,6 +796,7 @@ print.mfbvar <- function(x, ...){
   ss <- ifelse(x$prior == "ss", "steady-state ", "")
   var_type <- switch(x$variance,
                 iw = "Inverse Wishart",
+                diffuse = "Diffuse",
                 fsv = sprintf("Factor stochastic volatility (%d factors)", x$mfbvar_prior$n_fac),
                 csv = "Common stochastic volatility")
   cat(paste0(sprintf("Mixed-frequency %sBVAR with:\n", ss), ncol(x$Y), " variables", ifelse(!is.null(x$names_col), paste0(" (", paste(x$names_col, collapse = ", "), ")"), " "), "\nError covariance matrix: ", var_type, "\n",
@@ -821,6 +822,7 @@ summary.mfbvar <- function(x, ...){
   ss <- ifelse(x$prior == "ss", "steady-state ", "")
   var_type <- switch(x$variance,
                      iw = "Inverse Wishart",
+                     diffuse = "Diffuse",
                      fsv = sprintf("Factor stochastic volatility (%d factors)", x$mfbvar_prior$n_fac),
                      csv = "Common stochastic volatility")
   cat(paste0(sprintf("Mixed-frequency %sBVAR with:\n", ss), ncol(x$Y), " variables", ifelse(!is.null(x$names_col), paste0(" (", paste(x$names_col, collapse = ", "), ")"), " "), "\nError covariance matrix: ", var_type, "\n",
@@ -1206,11 +1208,15 @@ varplot <- function(x, variables = colnames(x$Y), var_bands = 0.95, nrow_facet =
 #' predict(mod_minn, pred_quantiles = 0.5, tidy = TRUE)
 predict.mfbvar <- function(object, fcst_start = NULL, aggregate_fcst = TRUE, pred_bands = 0.8, ...) {
 
+  end_month <- FALSE
   if (object$n_fcst==0) {
     stop("No forecasts exist in the provided object.")
   }
   if (!is.null(fcst_start)) {
     fcst_start <- as.Date(fcst_start)
+    if (days_in_month(fcst_start) == day(fcst_start)) {
+      end_month <- TRUE
+    }
   }
   if (object$n_fcst > 0) {
     if (!inherits(fcst_start, "Date")) {
@@ -1218,13 +1224,17 @@ predict.mfbvar <- function(object, fcst_start = NULL, aggregate_fcst = TRUE, pre
       if (inherits(tmp, "warning")) {
         stop("To summarize the forecasts, either fcst_start must be supplied or the rownames of Y be dates (YYYY-MM-DD).")
       } else {
-        fcst_start <- lubridate::ymd(rownames(object$Y)[nrow(object$Y)]) %m+% months(1)
+        final_est <- lubridate::ymd(rownames(object$Y)[nrow(object$Y)])
+        fcst_start <- final_est %m+% months(1)
+        if (days_in_month(final_est) == day(final_est)) {
+          end_month <- TRUE
+        }
       }
     }
   }
 
   final_non_na <- min(c(unlist(apply(object$Y, 2, function(x) Position(is.na, x, nomatch = nrow(object$Y))))[object$mfbvar_prior$freq == "m"])-1,
-                      apply(object$Y[,object$mfbvar_prior$freq == "q"], 2, function(x) max(which(!is.na(x)))))
+                      apply(object$Y[,object$mfbvar_prior$freq == "q", drop = FALSE], 2, function(x) max(which(!is.na(x)))))
   final_fcst <- object$n_lags - (nrow(object$Y)-final_non_na)+1
   if (final_fcst >= 1) {
     incl_fcst <- final_fcst:(object$n_lags + object$n_fcst)
@@ -1232,8 +1242,12 @@ predict.mfbvar <- function(object, fcst_start = NULL, aggregate_fcst = TRUE, pre
     incl_fcst <- 1:(object$n_lags + object$n_fcst)
   }
 
-
   ret_names <- fcst_start %m+% months((-(length(incl_fcst)-object$n_fcst)):(object$n_fcst-1))
+
+  if (end_month) {
+    ret_names <- ceiling_date(ret_names, unit = "months") - days(1)
+  }
+
   fcst_collapsed <- tibble(variable = rep(rep(object$names_col, each = length(incl_fcst)), object$n_reps),
                            iter = rep(1:object$n_reps, each = object$n_vars*length(incl_fcst)),
                            fcst = c(object$Z_fcst[incl_fcst,,]),
@@ -1273,12 +1287,16 @@ predict.mfbvar <- function(object, fcst_start = NULL, aggregate_fcst = TRUE, pre
 }
 
 predict.sfbvar <- function(object, fcst_start = NULL, pred_bands = 0.8, ...) {
+  end_period <- FALSE
   sf_type <- unique(object$freq)
   if (object$n_fcst==0) {
     stop("No forecasts exist in the provided object.")
   }
   if (!is.null(fcst_start)) {
     fcst_start <- as.Date(fcst_start)
+    if (days_in_month(fcst_start) == day(fcst_start)) {
+      end_month <- TRUE
+    }
   }
   if (object$n_fcst > 0) {
     if (!inherits(fcst_start, "Date")) {
@@ -1286,10 +1304,14 @@ predict.sfbvar <- function(object, fcst_start = NULL, pred_bands = 0.8, ...) {
       if (inherits(tmp, "warning")) {
         stop("To summarize the forecasts, either fcst_start must be supplied or the rownames of Y be dates (YYYY-MM-DD).")
       } else {
+        final_est <- lubridate::ymd(rownames(object$Y)[nrow(object$Y)])
         if (sf_type == "m") {
-          fcst_start <- lubridate::ymd(rownames(object$Y)[nrow(object$Y)]) %m+% months(1)
+          fcst_start <- final_est %m+% months(1)
         } else {
-          fcst_start <- lubridate::ymd(rownames(object$Y)[nrow(object$Y)]) %m+% months(3)
+          fcst_start <- final_est %m+% months(3)
+        }
+        if (days_in_month(final_est) == day(final_est)) {
+          end_month <- TRUE
         }
       }
     }
@@ -1307,6 +1329,11 @@ predict.sfbvar <- function(object, fcst_start = NULL, pred_bands = 0.8, ...) {
   } else {
     ret_names <- fcst_start %m+% months(3*((-(length(incl_fcst)-object$n_fcst)):(object$n_fcst-1)))
   }
+
+  if (end_month) {
+    ret_names <- ceiling_date(ret_names, unit = "months") - days(1)
+  }
+
   fcst_collapsed <- tibble(variable = rep(rep(object$names_col, each = length(incl_fcst)), object$n_reps),
                            iter = rep(1:object$n_reps, each = object$n_vars*length(incl_fcst)),
                            fcst = c(object$Z_fcst[incl_fcst,,]),

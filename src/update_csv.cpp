@@ -1,3 +1,10 @@
+// Copyright of original code: Gregor Kastner (stochvol package)
+// Copyright of modified code: Sebastian Ankargren (mfbvar package)
+// The following code is a derivative work of the code
+// developed by Gregor Kastner for the stochvol package, which
+// is licensed GPL>=2. This code is therefore licensed under
+// the terms of the GNU Public License, version 3.
+
 #include "mfbvar.h"
 #include "progutils.h"
 #include "auxmix.h"

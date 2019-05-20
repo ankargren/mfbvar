@@ -41,9 +41,10 @@ void mcmc_ss_iw(const arma::mat & y_in_p,
 
   arma::mat Psi_i = arma::mat(psi_i.begin(), n_vars, n_determ, false, true);
   mu_mat = dt * Psi_i.t();
-  arma::mat mu_long = arma::mat(n_lags+n_T, n_vars, arma::fill::zeros);
-  arma::rowvec Lambda_single = arma::rowvec(Lambda_comp.n_cols/Lambda_comp.n_rows, arma::fill::zeros);
-  for (arma::uword i = 0; i < Lambda_comp.n_cols/Lambda_comp.n_rows; ++i) {
+  arma::uword n_Lambda = Lambda_comp.n_cols/Lambda_comp.n_rows;
+  arma::mat mu_long = arma::mat(n_Lambda+n_T, n_vars, arma::fill::zeros);
+  arma::rowvec Lambda_single = arma::rowvec(n_Lambda, arma::fill::zeros);
+  for (arma::uword i = 0; i < n_Lambda; ++i) {
     Lambda_single(i) = Lambda_comp.at(0, i*n_q);
   }
 
@@ -58,12 +59,8 @@ void mcmc_ss_iw(const arma::mat & y_in_p,
   for (arma::uword i = 0; i < n_reps; ++i) {
 
     if (!single_freq) {
-      my.cols(0, n_vars - n_q - 1) = y_in_p.cols(0, n_vars - n_q - 1) - mu_mat.cols(0, n_vars - n_q - 1);
-      mu_long.rows(0, n_lags-1) = d1.tail_rows(n_lags) * Psi_i.t();
-      mu_long.rows(n_lags, n_T+n_lags-1) = mu_mat;
-      for (arma::uword j = 0; j < n_T; ++j) {
-        my.row(j).cols(n_vars - n_q - 1, n_vars - 1) = y_in_p.row(j).cols(n_vars - n_q - 1, n_vars - 1) - Lambda_single * mu_long.rows(j, j+n_lags-1).cols(n_vars - n_q - 1, n_vars - 1);// Needs fixing
-      }
+      update_demean(my, mu_long, y_in_p, mu_mat, d1, Psi_i, Lambda_single, n_vars,
+                    n_q, n_Lambda, n_T);
     } else {
       // Even if single freq, mZ needs to be updated
       mZ = y_in_p - mu_mat;

@@ -97,8 +97,16 @@ mcmc_ssng_csv <- function(y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z
     invisible(.Call(`_mfbvar_mcmc_ssng_csv`, y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, phi, sigma, f, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose))
 }
 
+mcmc_minn_diffuse <- function(y_in_p, Pi, Sigma, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, Omega_Pi, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose) {
+    invisible(.Call(`_mfbvar_mcmc_minn_diffuse`, y_in_p, Pi, Sigma, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, Omega_Pi, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose))
+}
+
 mcmc_minn_iw <- function(y_in_p, Pi, Sigma, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, prior_nu) {
     invisible(.Call(`_mfbvar_mcmc_minn_iw`, y_in_p, Pi, Sigma, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, prior_nu))
+}
+
+mcmc_ss_diffuse <- function(y_in_p, Pi, Sigma, psi, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, Omega_Pi, D_mat, dt, d1, d_fcst_lags, inv_prior_psi_Omega, inv_prior_psi_Omega_mean, check_roots, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose) {
+    invisible(.Call(`_mfbvar_mcmc_ss_diffuse`, y_in_p, Pi, Sigma, psi, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, Omega_Pi, D_mat, dt, d1, d_fcst_lags, inv_prior_psi_Omega, inv_prior_psi_Omega_mean, check_roots, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose))
 }
 
 mcmc_ss_iw <- function(y_in_p, Pi, Sigma, psi, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, inv_prior_psi_Omega, inv_prior_psi_Omega_mean, check_roots, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose) {
@@ -220,5 +228,13 @@ rsimsm_adaptive_univariate <- function(y_, Phi, Sigma, Lambda, Z1, n_q_, T_b, f)
 #' \item{}{An \code{n_T}-long vector of the log-likelihoods. \code{exp(sum(loglike(...)))} is the likelihood.}
 loglike <- function(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0) {
     .Call(`_mfbvar_loglike`, Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
+}
+
+update_demean <- function(my, mu_long, y_in_p, mu_mat, d1, Psi_i, Lambda_single, n_vars, n_q, n_Lambda, n_T) {
+    invisible(.Call(`_mfbvar_update_demean`, my, mu_long, y_in_p, mu_mat, d1, Psi_i, Lambda_single, n_vars, n_q, n_Lambda, n_T))
+}
+
+posterior_phi_mu <- function(lambda, phi_mu, omega, nm) {
+    .Call(`_mfbvar_posterior_phi_mu`, lambda, phi_mu, omega, nm)
 }
 

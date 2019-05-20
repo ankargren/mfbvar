@@ -16,12 +16,19 @@ void mcmc_minn_csv(const arma::mat & y_in_p,
                    arma::uword n_reps,
                    arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars,
                    arma::uword n_T, arma::uword n_fcst, arma::uword n_thin, bool verbose) {
+  bool single_freq;
+  if (n_q == 0 || n_q == n_vars) {
+    single_freq = true;
+  } else {
+    single_freq = false;
+  }
 
   Progress p(n_reps, verbose);
 
   arma::mat Pi_i = Pi.slice(0);
   arma::mat Sigma_i = Sigma.slice(0);
-  arma::mat y_i, X, XX, XX_inv, Pi_sample, post_Pi_Omega, post_Pi, Sigma_chol_inv;
+  arma::mat X, XX, XX_inv, Pi_sample, post_Pi_Omega, post_Pi, Sigma_chol_inv;
+  arma::mat y_i = y_in_p;
   arma::mat S, Pi_diff, post_S, Sigma_chol, x, y_scaled, X_scaled, eps, u, u_tilde;
 
   arma::vec f_i = f.row(0).t();
@@ -40,16 +47,22 @@ void mcmc_minn_csv(const arma::mat & y_in_p,
   Sigma_chol = arma::chol(Sigma_i, "lower");
   int post_nu = n_T + n_vars + 2;
 
+  if (single_freq) {
+    Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
+    X = create_X(Z_i, n_lags);
+  }
+
   for (arma::uword i = 0; i < n_reps; ++i) {
     Sigma_chol_cube.each_slice() = Sigma_chol;
     for (arma::uword j = 0; j < n_T; ++j) {
       Sigma_chol_cube.slice(j) = Sigma_chol_cube.slice(j) * exp_sqrt_f(j);
     }
+    if (!single_freq) {
+      y_i = simsm_adaptive_sv(y_in_p, Pi_i, Sigma_chol_cube, Lambda_comp, Z_1, n_q, T_b);
+      Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
+      X = create_X(Z_i, n_lags);
+    }
 
-    y_i = simsm_adaptive_sv(y_in_p, Pi_i, Sigma_chol_cube, Lambda_comp, Z_1, n_q, T_b);
-    Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
-
-    X = create_X(Z_i, n_lags);
     exp_sqrt_f = arma::exp(0.5 * f_i);
     y_scaled = y_i;
     y_scaled.each_col() /= exp_sqrt_f;
@@ -121,13 +134,20 @@ void mcmc_ss_csv(const arma::mat & y_in_p,
                  arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars,
                  arma::uword n_T, arma::uword n_fcst, arma::uword n_determ, arma::uword n_thin,
                  bool verbose) {
+  bool single_freq;
+  if (n_q == 0 || n_q == n_vars) {
+    single_freq = true;
+  } else {
+    single_freq = false;
+  }
 
   Progress p(n_reps, verbose);
 
   arma::mat Pi_i = Pi.slice(0);
   arma::mat Sigma_i = Sigma.slice(0);
   arma::vec psi_i  = psi.row(0).t();
-  arma::mat y_i, X, XX, XX_inv, Pi_sample, post_Pi_Omega, post_Pi, Sigma_chol, Sigma_chol_inv;
+  arma::mat X, XX, XX_inv, Pi_sample, post_Pi_Omega, post_Pi, Sigma_chol, Sigma_chol_inv;
+  arma::mat y_i = y_in_p;
   arma::mat S, Pi_diff, post_S, x, mu_mat, mZ, mZ1, mX, y_scaled, X_scaled, eps, u, u_tilde;
 
   arma::vec f_i = f.row(0).t();
@@ -151,9 +171,10 @@ void mcmc_ss_csv(const arma::mat & y_in_p,
 
   arma::mat Psi_i = arma::mat(psi_i.begin(), n_vars, n_determ, false, true);
   mu_mat = dt * Psi_i.t();
-  arma::mat mu_long = arma::mat(n_lags+n_T, n_vars, arma::fill::zeros);
-  arma::rowvec Lambda_single = arma::rowvec(n_lags, arma::fill::zeros);
-  for (arma::uword i = 0; i < n_lags; ++i) {
+  arma::uword n_Lambda = Lambda_comp.n_cols/Lambda_comp.n_rows;
+  arma::mat mu_long = arma::mat(n_Lambda+n_T, n_vars, arma::fill::zeros);
+  arma::rowvec Lambda_single = arma::rowvec(n_Lambda, arma::fill::zeros);
+  for (arma::uword i = 0; i < n_Lambda; ++i) {
     Lambda_single(i) = Lambda_comp.at(0, i*n_q);
   }
 
@@ -161,26 +182,39 @@ void mcmc_ss_csv(const arma::mat & y_in_p,
   Sigma_chol = arma::chol(Sigma_i, "lower");
   int post_nu = n_T + n_vars + 2;
 
+  // if single freq, we don't need to update
+  if (single_freq) {
+    Z_i.rows(n_lags, n_T + n_lags - 1) = y_in_p;
+  }
+
   for (arma::uword i = 0; i < n_reps; ++i) {
     Sigma_chol_cube.each_slice() = Sigma_chol;
     for (arma::uword j = 0; j < n_T; ++j) {
       Sigma_chol_cube.slice(j) = Sigma_chol_cube.slice(j) * exp_sqrt_f(j);
     }
 
-    my.cols(0, n_vars - n_q - 1) = y_in_p.cols(0, n_vars - n_q - 1) - mu_mat.cols(0, n_vars - n_q - 1);
-    mu_long.rows(0, n_lags-1) = d1.tail_rows(n_lags) * Psi_i.t();
-    mu_long.rows(n_lags, n_T+n_lags-1) = mu_mat;
-    for (arma::uword j = 0; j < n_T; ++j) {
-      my.row(j).cols(n_vars - n_q - 1, n_vars - 1) = y_in_p.row(j).cols(n_vars - n_q - 1, n_vars - 1) - Lambda_single * mu_long.rows(j, j+n_lags-1).cols(n_vars - n_q - 1, n_vars - 1);// Needs fixing
+    if (!single_freq) {
+      my.cols(0, n_vars - n_q - 1) = y_in_p.cols(0, n_vars - n_q - 1) - mu_mat.cols(0, n_vars - n_q - 1);
+      mu_long.rows(0, n_Lambda-1) = d1.tail_rows(n_Lambda) * Psi_i.t();
+      mu_long.rows(n_Lambda, n_T+n_Lambda-1) = mu_mat;
+      for (arma::uword j = 0; j < n_T; ++j) {
+        my.row(j).cols(n_vars - n_q - 1, n_vars - 1) = y_in_p.row(j).cols(n_vars - n_q - 1, n_vars - 1) - Lambda_single * mu_long.rows(j, j+n_Lambda-1).cols(n_vars - n_q - 1, n_vars - 1);// Needs fixing
+      }
+    } else {
+      // Even if single freq, mZ needs to be updated
+      mZ = y_in_p - mu_mat;
     }
 
     mZ1 = Z_1 - d1 * Psi_i.t();
     Pi_i0.cols(1, n_vars*n_lags) = Pi_i;
 
-    mZ = simsm_adaptive_sv(my, Pi_i0, Sigma_chol_cube, Lambda_comp, mZ1, n_q, T_b);
+    if (!single_freq) {
+      mZ = simsm_adaptive_sv(my, Pi_i0, Sigma_chol_cube, Lambda_comp, mZ1, n_q, T_b);
+      Z_i.rows(n_lags, n_T + n_lags - 1) = mZ + mu_mat;
+    }
+
     Z_i_demean.rows(0, n_lags - 1) = mZ1;
     Z_i_demean.rows(n_lags, n_T + n_lags - 1) = mZ;
-    Z_i.rows(n_lags, n_T + n_lags - 1) = mZ + mu_mat;
 
     mX = create_X_noint(Z_i_demean, n_lags);
     exp_sqrt_f = arma::exp(0.5 * f_i);
@@ -284,6 +318,12 @@ void mcmc_ssng_csv(const arma::mat & y_in_p,
                  arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars,
                  arma::uword n_T, arma::uword n_fcst, arma::uword n_determ, arma::uword n_thin,
                  bool verbose) {
+  bool single_freq;
+  if (n_q == 0 || n_q == n_vars) {
+    single_freq = true;
+  } else {
+    single_freq = false;
+  }
 
   Progress p(n_reps, verbose);
 
@@ -306,11 +346,13 @@ void mcmc_ssng_csv(const arma::mat & y_in_p,
   // Steady state
   arma::mat Psi_i = arma::mat(psi_i.begin(), n_vars, n_determ, false, true);
   mu_mat = dt * Psi_i.t();
-  arma::mat mu_long = arma::mat(n_lags+n_T, n_vars, arma::fill::zeros);
-  arma::rowvec Lambda_single = arma::rowvec(n_lags, arma::fill::zeros);
-  for (arma::uword i = 0; i < n_lags; ++i) {
+  arma::uword n_Lambda = Lambda_comp.n_cols/Lambda_comp.n_rows;
+  arma::mat mu_long = arma::mat(n_Lambda+n_T, n_vars, arma::fill::zeros);
+  arma::rowvec Lambda_single = arma::rowvec(n_Lambda, arma::fill::zeros);
+  for (arma::uword i = 0; i < n_Lambda; ++i) {
     Lambda_single(i) = Lambda_comp.at(0, i*n_q);
   }
+
   arma::uword nm = n_vars*n_determ;
   double lambda_mu_i = lambda_mu(0);
   double phi_mu_i = phi_mu(0);
@@ -321,6 +363,7 @@ void mcmc_ssng_csv(const arma::mat & y_in_p,
   arma::running_stat<double> stats;
   double accept = 0.0;
   bool adaptive_mh = false;
+  double s_prop;
   if (s < 0) {
     M = std::abs(s);
     s = 1.0;
@@ -345,26 +388,35 @@ void mcmc_ssng_csv(const arma::mat & y_in_p,
   Sigma_chol = arma::chol(Sigma_i, "lower");
   int post_nu = n_T + n_vars + 2;
 
+  // if single freq, we don't need to update
+  if (single_freq) {
+    Z_i.rows(n_lags, n_T + n_lags - 1) = y_in_p;
+  }
+
   for (arma::uword i = 0; i < n_reps; ++i) {
     Sigma_chol_cube.each_slice() = Sigma_chol;
     for (arma::uword j = 0; j < n_T; ++j) {
       Sigma_chol_cube.slice(j) = Sigma_chol_cube.slice(j) * exp_sqrt_f(j);
     }
 
-    my.cols(0, n_vars - n_q - 1) = y_in_p.cols(0, n_vars - n_q - 1) - mu_mat.cols(0, n_vars - n_q - 1);
-    mu_long.rows(0, n_lags-1) = d1.tail_rows(n_lags) * Psi_i.t();
-    mu_long.rows(n_lags, n_T+n_lags-1) = mu_mat;
-    for (arma::uword j = 0; j < n_T; ++j) {
-      my.row(j).cols(n_vars - n_q - 1, n_vars - 1) = y_in_p.row(j).cols(n_vars - n_q - 1, n_vars - 1) - Lambda_single * mu_long.rows(j, j+n_lags-1).cols(n_vars - n_q - 1, n_vars - 1);// Needs fixing
+    if (!single_freq) {
+      update_demean(my, mu_long, y_in_p, mu_mat, d1, Psi_i, Lambda_single, n_vars,
+                    n_q, n_Lambda, n_T);
+    } else {
+      // Even if single freq, mZ needs to be updated
+      mZ = y_in_p - mu_mat;
     }
 
     mZ1 = Z_1 - d1 * Psi_i.t();
     Pi_i0.cols(1, n_vars*n_lags) = Pi_i;
 
-    mZ = simsm_adaptive_sv(my, Pi_i0, Sigma_chol_cube, Lambda_comp, mZ1, n_q, T_b);
+    if (!single_freq) {
+      mZ = simsm_adaptive_cv(my, Pi_i0, Sigma_chol, Lambda_comp, mZ1, n_q, T_b);
+      Z_i.rows(n_lags, n_T + n_lags - 1) = mZ + mu_mat;
+    }
+
     Z_i_demean.rows(0, n_lags - 1) = mZ1;
     Z_i_demean.rows(n_lags, n_T + n_lags - 1) = mZ;
-    Z_i.rows(n_lags, n_T + n_lags - 1) = mZ + mu_mat;
 
     mX = create_X_noint(Z_i_demean, n_lags);
     exp_sqrt_f = arma::exp(0.5 * f_i);
@@ -413,9 +465,15 @@ void mcmc_ssng_csv(const arma::mat & y_in_p,
         batch += 1.0;
         min_vec(1) = std::pow(batch, -0.5);
         if (stats.mean() > 0.44) {
-          s = s * std::exp(arma::min(min_vec));
+          s_prop = log(s) + arma::min(min_vec);
+          if (s_prop < M){
+            s = std::exp(s_prop);
+          }
         } else {
-          s = s * std::exp(-arma::min(min_vec));
+          s_prop = log(s) - arma::min(min_vec);
+          if (s_prop > -M){
+            s = std::exp(s_prop);
+          }
         }
         stats.reset();
       }

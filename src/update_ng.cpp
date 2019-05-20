@@ -1,5 +1,6 @@
 #include "mfbvar.h"
 
+// [[Rcpp::export]]
 double posterior_phi_mu(const double lambda, const double phi_mu, const arma::vec omega,
                         const arma::uword nm) {
   double log_prob = arma::accu((phi_mu-1)*arma::log(omega)-0.5*lambda*phi_mu*omega) +

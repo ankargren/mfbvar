@@ -76,7 +76,7 @@ mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
   }
 
 
-  n_pseudolags <- min(c(n_lags, 3))
+  n_pseudolags <- max(c(n_lags, 3))
   n_determ <- dim(d)[2]
   n_T <- dim(Y)[1]# - n_lags
   n_T_ <- n_T - n_pseudolags
@@ -113,7 +113,8 @@ mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
   } else {
     rownames(Z_fcst) <- (n_T-n_lags+1):n_T
   }
-  d_fcst_lags <- matrix(rbind(d[(n_T-n_lags+1):n_T, , drop = FALSE], d_fcst), nrow = n_fcst + n_lags)
+  d_fcst_lags <- as.matrix(rbind(d[(n_T-n_lags+1):n_T, , drop = FALSE], d_fcst))
+  d_fcst_lags <- d_fcst_lags[1:(n_lags+n_fcst), , drop = FALSE]
   roots <- vector("numeric", n_reps/n_thin)
   num_tries <- roots
 
@@ -311,7 +312,7 @@ mcmc_sampler.mfbvar_ssng_iw <- function(x, ...) {
   }
 
 
-  n_pseudolags <- min(c(n_lags, 3))
+  n_pseudolags <- max(c(n_lags, 3))
   n_determ <- dim(d)[2]
   n_T <- dim(Y)[1]# - n_lags
   n_T_ <- n_T - n_pseudolags
@@ -351,7 +352,8 @@ mcmc_sampler.mfbvar_ssng_iw <- function(x, ...) {
   } else {
     rownames(Z_fcst) <- (n_T-n_lags+1):n_T
   }
-  d_fcst_lags <- matrix(rbind(d[(n_T-n_lags+1):n_T, , drop = FALSE], d_fcst), nrow = n_fcst + n_lags)
+  d_fcst_lags <- as.matrix(rbind(d[(n_T-n_lags+1):n_T, , drop = FALSE], d_fcst))
+  d_fcst_lags <- d_fcst_lags[1:(n_lags+n_fcst), , drop = FALSE]
   roots <- vector("numeric", n_reps/n_thin)
   num_tries <- roots
 
@@ -557,7 +559,7 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
     Y <- Y[complete_quarters, ]
   }
 
-  n_pseudolags <- min(c(n_lags, 3))
+  n_pseudolags <- max(c(n_lags, 3))
   n_T <- dim(Y)[1]# - n_lags
   n_T_ <- n_T - n_pseudolags
   d <- matrix(1, nrow = nrow(Y), ncol = 1)

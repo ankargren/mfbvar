@@ -1,6 +1,10 @@
-// Functions related to sampling the indicators
-// Constants relating to the approximation of log(chisq) through
-// normal mixture (Omori et al., 2007) can be found in auxmix.h
+// Copyright of original code: Gregor Kastner (stochvol package)
+// Copyright of modified code: Sebastian Ankargren (mfbvar package)
+// The following code is a derivative work of the code
+// developed by Gregor Kastner for the stochvol package, which
+// is licensed GPL>=2. This code is therefore licensed under
+// the terms of the GNU Public License, version 3.
+
 
 #include <RcppArmadillo.h>
 #include "auxmix.h"
