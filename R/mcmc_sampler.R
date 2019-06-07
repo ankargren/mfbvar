@@ -70,13 +70,16 @@ mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
     T_b <- nrow(y_in_p)
   }
   if (n_q > 0) {
-    Lambda_ <- mfbvar:::build_Lambda(rep("q", n_q), 3)
+    if (x$aggregation == "average") {
+      Lambda_ <- mfbvar:::build_Lambda(rep("average", n_q), 3)
+    } else {
+      Lambda_ <- mfbvar:::build_Lambda(rep("triangular", n_q), 5)}
   } else {
     Lambda_ <- matrix(0, 1, 3)
   }
 
 
-  n_pseudolags <- max(c(n_lags, 3))
+  n_pseudolags <- max(c(n_lags, ncol(Lambda_)/nrow(Lambda_)))
   n_determ <- dim(d)[2]
   n_T <- dim(Y)[1]# - n_lags
   n_T_ <- n_T - n_pseudolags
@@ -244,6 +247,7 @@ mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
 
 }
 
+#' @rdname mcmc_sampler
 mcmc_sampler.mfbvar_ssng_iw <- function(x, ...) {
 
   n_vars <- ncol(x$Y)
@@ -306,13 +310,16 @@ mcmc_sampler.mfbvar_ssng_iw <- function(x, ...) {
     T_b <- nrow(y_in_p)
   }
   if (n_q > 0) {
-    Lambda_ <- mfbvar:::build_Lambda(rep("q", n_q), 3)
+    if (x$aggregation == "average") {
+      Lambda_ <- mfbvar:::build_Lambda(rep("average", n_q), 3)
+    } else {
+      Lambda_ <- mfbvar:::build_Lambda(rep("triangular", n_q), 5)}
   } else {
     Lambda_ <- matrix(0, 1, 3)
   }
 
 
-  n_pseudolags <- max(c(n_lags, 3))
+  n_pseudolags <- max(c(n_lags, ncol(Lambda_)/nrow(Lambda_)))
   n_determ <- dim(d)[2]
   n_T <- dim(Y)[1]# - n_lags
   n_T_ <- n_T - n_pseudolags
@@ -500,7 +507,6 @@ mcmc_sampler.mfbvar_ssng_iw <- function(x, ...) {
 
 }
 
-
 #' @rdname mcmc_sampler
 mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
 
@@ -549,17 +555,20 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
   } else {
     T_b <- nrow(Y)
   }
-  if (n_q > 0) {
-    Lambda_ <- mfbvar:::build_Lambda(rep("q", n_q), 3)
-  } else {
-    Lambda_ <- matrix(0, 1, 3)
-  }
   if (n_q == 0 || n_q == n_vars) {
     complete_quarters <- apply(Y, 1, function(x) !any(is.na(x)))
     Y <- Y[complete_quarters, ]
   }
+  if (n_q > 0) {
+    if (x$aggregation == "average") {
+      Lambda_ <- mfbvar:::build_Lambda(rep("average", n_q), 3)
+    } else {
+      Lambda_ <- mfbvar:::build_Lambda(rep("triangular", n_q), 5)}
+  } else {
+    Lambda_ <- matrix(0, 1, 3)
+  }
 
-  n_pseudolags <- max(c(n_lags, 3))
+  n_pseudolags <- max(c(n_lags, ncol(Lambda_)/nrow(Lambda_)))
   n_T <- dim(Y)[1]# - n_lags
   n_T_ <- n_T - n_pseudolags
   d <- matrix(1, nrow = nrow(Y), ncol = 1)

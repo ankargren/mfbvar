@@ -163,12 +163,12 @@ build_Lambda <- function(aggregation, n_lags) {
     if (aggregation[i] == "m") {
       fill_vec <- c(1, rep(0, n_pseudolags - 1))
     }
-    if (aggregation[i] == "q") {
+    if (aggregation[i] == "average") {
       fill_vec <- c(rep(1/3, 3), rep(0, n_pseudolags - 3))
     }
-    # if (aggregation[i] == "triangular") {
-    #   fill_vec <- c(1/3, 2/3, 1, 2/3, 1/3, rep(0, n_pseudolags - 5))
-    # }
+    if (aggregation[i] == "triangular") {
+      fill_vec <- c(1/3, 2/3, 1, 2/3, 1/3, rep(0, n_pseudolags - 5))/3 # Divide by three to make commensurate in scale
+    }
 
     Lambda[i, seq(i, n_pseudolags * n_vars, by = n_vars)] <- fill_vec
   }

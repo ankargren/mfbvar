@@ -127,7 +127,11 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
 
   ## Obtain the aggregation matrix for the quarterly only
   if (mf) {
-    Lambda_ <- mfbvar:::build_Lambda(rep("q", n_q), 3)
+    if (x$aggregation == "average") {
+      Lambda_ <- mfbvar:::build_Lambda(rep("average", n_q), 3)
+    } else {
+      Lambda_ <- mfbvar:::build_Lambda(rep("triangular", n_q), 5)
+    }
   }
 
   Pi <- array(init_Pi, dim = c(n_vars, n_vars*n_lags + 1, n_reps/n_thin))
@@ -456,7 +460,11 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
 
   ## Obtain the aggregation matrix for the quarterly only
   if (mf) {
-    Lambda_ <- mfbvar:::build_Lambda(rep("q", n_q), 3)
+      if (x$aggregation == "average") {
+        Lambda_ <- mfbvar:::build_Lambda(rep("average", n_q), 3)
+      } else {
+        Lambda_ <- mfbvar:::build_Lambda(rep("triangular", n_q), 5)
+    }
   }
 
   Pi <- array(init_Pi, dim = c(n_vars, n_vars*n_lags, n_reps/n_thin))
@@ -497,9 +505,11 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
   mu_mat <- dt %*% t(matrix(psi_i, nrow = n_vars))
   n_Lambda <- ncol(Lambda_)/nrow(Lambda_)
   mu_long <- matrix(0, n_Lambda+n_T_, n_vars)
-  Lambda_single <- matrix(0, 1, n_Lambda)
-  for (i in 1:n_Lambda) {
-    Lambda_single[i] <- Lambda_[1, (i-1)*n_q+1]
+  if (mf) {
+    Lambda_single <- matrix(0, 1, n_Lambda)
+    for (i in 1:n_Lambda) {
+      Lambda_single[i] <- Lambda_[1, (i-1)*n_q+1]
+    }
   }
   my <- matrix(0, nrow(y_in_p), ncol(y_in_p))
 
@@ -884,7 +894,11 @@ mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
 
   ## Obtain the aggregation matrix for the quarterly only
   if (mf) {
-    Lambda_ <- mfbvar:::build_Lambda(rep("q", n_q), 3)
+    if (x$aggregation == "average") {
+    Lambda_ <- mfbvar:::build_Lambda(rep("average", n_q), 3)
+    } else {
+      Lambda_ <- mfbvar:::build_Lambda(rep("triangular", n_q), 5)
+    }
   }
 
   Pi <- array(init_Pi, dim = c(n_vars, n_vars*n_lags, n_reps/n_thin))
@@ -932,9 +946,11 @@ mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
   mu_mat <- dt %*% t(matrix(psi_i, nrow = n_vars))
   n_Lambda <- ncol(Lambda_)/nrow(Lambda_)
   mu_long <- matrix(0, n_Lambda+n_T_, n_vars)
-  Lambda_single <- matrix(0, 1, n_Lambda)
-  for (i in 1:n_Lambda) {
-    Lambda_single[i] <- Lambda_[1, (i-1)*n_q+1]
+  if (mf) {
+    Lambda_single <- matrix(0, 1, n_Lambda)
+    for (i in 1:n_Lambda) {
+      Lambda_single[i] <- Lambda_[1, (i-1)*n_q+1]
+    }
   }
   my <- matrix(0, nrow(y_in_p), ncol(y_in_p))
 
@@ -1100,11 +1116,11 @@ mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
     gig_chi <- lambda_mu_i * phi_mu_i
     gig_psi <- (psi_i-prior_psi_mean)^2
     for (j in 1:(n_vars*n_determ)) {
-      omega_i[j] = do_rgig1(gig_lambda, gig_chi, gig_psi[i])
+      omega_i[j] = mfbvar:::do_rgig1(gig_lambda, gig_chi, gig_psi[j])
     }
-    lambda_mu_i <- rgamma(n_vars*n_determ * phi_mu_i + c0, (0.5 * phi_mu_i * sum(omega_i) + c1))
-    phi_mu_proposal <- phi_mu * exp(rnorm(1, sd = s))
-    prob <- exp(posterior_phi_mu(lambda_mu_i, phi_mu_proposal, omega_i, n_vars*n_determ)-posterior_phi_mu(lambda_mu_i, phi_mu_i, omega_i, n_vars*n_determ)) * phi_mu_proposal/phi_mu
+    lambda_mu_i <- rgamma(1, n_vars*n_determ * phi_mu_i + c0, (0.5 * phi_mu_i * sum(omega_i) + c1))
+    phi_mu_proposal <- phi_mu_i * exp(rnorm(1, sd = s))
+    prob <- exp(mfbvar:::posterior_phi_mu(lambda_mu_i, phi_mu_proposal, omega_i, n_vars*n_determ)-mfbvar:::posterior_phi_mu(lambda_mu_i, phi_mu_i, omega_i, n_vars*n_determ)) * phi_mu_proposal/phi_mu_i
     u <- runif(1)
     if (u < prob) {
       phi_mu <- phi_mu_proposal

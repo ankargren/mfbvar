@@ -82,7 +82,7 @@ create_prior_Pi_Omega <- function(lambda1, lambda2, lambda3, prior_Pi_AR1, Y, n_
     prior_Pi_Omega[-1, i] <- lambda1 * lambda2^((1:n_vars) != i) * sqrt(error_variance[i])/
       ((rep(1:n_lags, each = n_vars))^(lambda3) * rep(sqrt(error_variance), times = n_lags))
     if (i %in% block_exo) {
-      prior_Pi_Omega[-1, i] <- prior_Pi_Omega[-1, i] * (1e-04)^(!(1:ncol(Y) %in% block_exo))
+      prior_Pi_Omega[-1, i] <- prior_Pi_Omega[-1, i] * (1e-06)^(!(1:ncol(Y) %in% block_exo))
     }
   }
 

@@ -130,8 +130,6 @@ void mcmc_ss_diffuse(const arma::mat & y_in_p,
           x = create_X_t_noint(Z_fcst_i.cols(0+h, n_lags-1+h).t());
           Z_fcst_i.col(n_lags + h) = Pi_i * x + Sigma_chol * errors;
         }
-        Rcpp::Rcout << "Z_fcst_i: " << arma::size(Z_fcst_i) << std::endl;
-        Rcpp::Rcout << "d_fcst_lags: " << arma::size(d_fcst_lags) << std::endl;
         Z_fcst.slice(i/n_thin) = Z_fcst_i.t() + d_fcst_lags * Psi_i.t();
       }
       Z.slice(i/n_thin) = Z_i;
