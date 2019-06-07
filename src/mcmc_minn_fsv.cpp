@@ -56,12 +56,6 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
   arma::mat Sig_i, y_hat, error_pred, latent_nofac, h_j, X_j, y_j;
 
 
-  bool Gammaprior = true;
-  bool truncnormal = false;
-  double MHcontrol = -1.0;
-  int MHsteps = 2;
-  int parameterization = 3;
-
   arma::mat Z_i = arma::mat(n_lags + y_in_p.n_rows, n_vars, arma::fill::zeros);
   arma::mat Z_fcst_i = arma::mat(n_vars, n_lags + n_fcst);
   Z_i.rows(0, n_lags - 1) = Z_1;
@@ -112,9 +106,8 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
     }
 
     update_fsv(armafacload, armaf, armah, armah0, curpara, armatau2, y_hat.t(), bmu,
-               Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, Gammaprior,
-               truncnormal, MHcontrol, MHsteps, parameterization, sv, priorhomoskedastic,
-               priorh0, armarestr);
+               Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, sv,
+               priorhomoskedastic, priorh0, armarestr);
 
 
     cc_i = armaf.t() * armafacload.t(); // Common component

@@ -12,13 +12,17 @@ void update_fsv(arma::mat & armafacload, arma::mat & armaf, arma::mat & armah,
                 const arma::mat & armay,
                 const double bmu, const double Bmu, const double a0idi, const double b0idi,
                 const double a0fac, const double b0fac, const Rcpp::NumericVector & Bsigma,
-                  const double B011inv, const double B022inv, const bool Gammaprior,
-                  const bool truncnormal, const double MHcontrol, const int MHsteps,
-                  const int parameterization, const Rcpp::NumericVector & sv,
-                  const Rcpp::NumericVector & priorhomoskedastic,
-                  const Rcpp::NumericVector & priorh0, const arma::imat & armarestr) {
+                const double B011inv, const double B022inv, const Rcpp::NumericVector & sv,
+                const Rcpp::NumericVector & priorhomoskedastic,
+                const Rcpp::NumericVector & priorh0, const arma::imat & armarestr) {
 
 
+
+  bool Gammaprior = true;
+  bool truncnormal = false;
+  double MHcontrol = -1.0;
+  int MHsteps = 2;
+  int parameterization = 3;
 
   const int interweaving       = 4;
   const bool signswitch        = true;
@@ -43,12 +47,15 @@ void update_fsv(arma::mat & armafacload, arma::mat & armaf, arma::mat & armah,
       if (armarestr(i, j) == 0) armafacload(i,j) = 0.;
     }
   }
+  /*
+   * Needs to be done in R first
   // restriction on factor loadings matrix:
   for (int i = 0; i < m; i++) {
     for (int j = 0; j < r; j++) {
       if (armarestr(i,j) == 0) armatau2(i,j) = 0.;
     }
   }
+   */
   // pre-calculation of a posterior parameter
   double cT = 0;
   if (Gammaprior) {
@@ -181,23 +188,10 @@ void update_fsv(arma::mat & armafacload, arma::mat & armaf, arma::mat & armah,
       arma::vec curh_j = armah.unsafe_col(j);
       arma::vec curmixprob_j = curmixprob_arma.unsafe_col(j);
       arma::ivec curmixind_j = curmixind_arma.unsafe_col(j);
-      if (j == 0) {
-        Rcpp::Rcout << "curmixprob_j: " << curmixprob_j.rows(0, 9).t() << std::endl;
-        Rcpp::Rcout << "curmixind_j: " << curmixind_j.rows(0, 9).t() << std::endl;
-        Rcpp::Rcout << "curh_j: " << curh_j.rows(0, 9).t() << std::endl;
-        Rcpp::Rcout << "data - h: " << arma::mean(armaynorm.row(j)-curh_j.t()) << std::endl;
-      }
-
       stochvol::update_sv(armaynorm.row(j).t(), curpara_j, curh_j, curh0j, curmixprob_j, curmixind_j,
                           centered_baseline, C0(j), cT, Bsigma(j), a0idi, b0idi, bmu, Bmu, B011inv, B022inv, Gammaprior,
                           truncnormal, MHcontrol, MHsteps, parameterization, false, priorh0(j));
-      if (j == 0) {
-        Rcpp::Rcout << "curmixprob_j after: " << curmixprob_j.rows(0, 9).t() << std::endl;
-        Rcpp::Rcout << "curmixind_j after: " << curmixind_j.rows(0, 9).t() << std::endl;
-        Rcpp::Rcout << "curh_j after: " << curh_j.rows(0, 9).t() << std::endl;
-      }
       armah0(j) = curh0j;
-
     } else {
       double tmp = sum(square(armay.row(j) - armafacload.row(j)*armaf));
       tmp = 1/as<double>(rgamma(1, priorhomoskedastic(0) + .5*T, 1/(priorhomoskedastic(1) + .5*tmp)));
@@ -377,7 +371,6 @@ void update_fsv(arma::mat & armafacload, arma::mat & armaf, arma::mat & armah,
     // STEP 3:
     // update the factors (T independent r-variate regressions with m observations)
 
-    Rcpp::Rcout << Rcpp::rnorm(1) << std::endl;
     if (samplefac) {
       armadraw2 = rnorm(r*T);
       for (int j = 0; j < T; j++) {
@@ -430,8 +423,6 @@ void update_fsv(arma::mat & armafacload, arma::mat & armaf, arma::mat & armah,
     }
   }
 
-
-  Rcpp::Rcout << Rcpp::rnorm(1) << std::endl;
   // SIGN SWITCH:
   if (signswitch) {
     for (int j = 0; j < r; j++) {
@@ -441,5 +432,4 @@ void update_fsv(arma::mat & armafacload, arma::mat & armaf, arma::mat & armah,
       }
     }
   }
-  Rcpp::Rcout << Rcpp::rnorm(1) << std::endl;
 }
