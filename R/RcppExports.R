@@ -26,99 +26,8 @@ create_X_t_noint <- function(y) {
     .Call(`_mfbvar_create_X_t_noint`, y)
 }
 
-#' @title Kalman filter and smoother
-#'
-#' @description Kalman filter and smoother (\code{kf_ragged}) and simulation smoother (\code{kf_sim_smooth}) for mixed-frequency data with ragged edges. This function is more computationally efficient than using a companion form representation.
-#' @param y_ matrix with the data
-#' @param Phi_ matrix with the autoregressive parameters, where the last column is the intercept
-#' @param Sigma_ error covariance matrix
-#' @param Lambda_ aggregation matrix (for quarterly variables only)
-#' @param n_q_ number of quarterly variables
-#' @param T_b_ final time period where all monthly variables are observed
-#' @keywords internal
-#' @return For \code{kf_ragged}, a list with elements:
-#' \item{a}{The one-step predictions (for the compact form)}
-#' \item{a_tt}{The filtered estimates (for the compact form)}
-#' \item{a_tT}{The smoothed estimates (for the compact form)}
-#' \item{Z_tT}{The smoothed estimated (for the original form)}
-#' @details The returned matrices have the same number of rows as \code{y_}, but the first \code{n_lags} rows are zero.
-kf_loglike <- function(y_, Phi_, Sigma_, Lambda_, a00, P00) {
-    .Call(`_mfbvar_kf_loglike`, y_, Phi_, Sigma_, Lambda_, a00, P00)
-}
-
-#' @title Kalman filter and smoother
-#'
-#' @description Kalman filter and smoother (\code{kf_ragged}) and simulation smoother (\code{kf_sim_smooth}) for mixed-frequency data with ragged edges. This function is more computationally efficient than using a companion form representation.
-#' @param y_ matrix with the data
-#' @param Phi_ matrix with the autoregressive parameters, where the last column is the intercept
-#' @param Sigma_ error covariance matrix
-#' @param Lambda_ aggregation matrix (for quarterly variables only)
-#' @param n_q_ number of quarterly variables
-#' @param T_b_ final time period where all monthly variables are observed
-#' @keywords internal
-#' @return For \code{kf_ragged}, a list with elements:
-#' \item{a}{The one-step predictions (for the compact form)}
-#' \item{a_tt}{The filtered estimates (for the compact form)}
-#' \item{a_tT}{The smoothed estimates (for the compact form)}
-#' \item{Z_tT}{The smoothed estimated (for the original form)}
-#' @details The returned matrices have the same number of rows as \code{y_}, but the first \code{n_lags} rows are zero.
-kf_ragged <- function(y_, Phi_, Sigma_, Lambda_, Z1_, n_q_, T_b_) {
-    .Call(`_mfbvar_kf_ragged`, y_, Phi_, Sigma_, Lambda_, Z1_, n_q_, T_b_)
-}
-
-#' @describeIn kf_ragged Simulation smoother
-#' @param Z1 initial values, with \code{n_lags} rows and same number of columns as \code{y_}
-#' @return For \code{kf_sim_smooth}, a matrix with the draw from the posterior distribution.
-kf_sim_smooth <- function(y_, Phi_, Sigma_, Lambda_, Z1_, n_q_, T_b_) {
-    .Call(`_mfbvar_kf_sim_smooth`, y_, Phi_, Sigma_, Lambda_, Z1_, n_q_, T_b_)
-}
-
-#' @title Find maximum eigenvalue
-#'
-#' @description The function computes the maximum eigenvalue.
-#' @aliases max_eig max_eig_cpp
-#' @templateVar A TRUE
-#' @template man_template
-#' @keywords internal
-#' @return The maximum eigenvalue.
-max_eig_cpp <- function(A) {
-    .Call(`_mfbvar_max_eig_cpp`, A)
-}
-
-mcmc_minn_csv <- function(y_in_p, Pi, Sigma, Z, Z_fcst, phi, sigma, f, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose) {
-    invisible(.Call(`_mfbvar_mcmc_minn_csv`, y_in_p, Pi, Sigma, Z, Z_fcst, phi, sigma, f, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose))
-}
-
-mcmc_ss_csv <- function(y_in_p, Pi, Sigma, psi, Z, Z_fcst, phi, sigma, f, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, inv_prior_psi_Omega, inv_prior_psi_Omega_mean, check_roots, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose) {
-    invisible(.Call(`_mfbvar_mcmc_ss_csv`, y_in_p, Pi, Sigma, psi, Z, Z_fcst, phi, sigma, f, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, inv_prior_psi_Omega, inv_prior_psi_Omega_mean, check_roots, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose))
-}
-
-mcmc_ssng_csv <- function(y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, phi, sigma, f, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose) {
-    invisible(.Call(`_mfbvar_mcmc_ssng_csv`, y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, phi, sigma, f, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose))
-}
-
-mcmc_minn_diffuse <- function(y_in_p, Pi, Sigma, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, Omega_Pi, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose) {
-    invisible(.Call(`_mfbvar_mcmc_minn_diffuse`, y_in_p, Pi, Sigma, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, Omega_Pi, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose))
-}
-
-mcmc_minn_iw <- function(y_in_p, Pi, Sigma, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, prior_nu) {
-    invisible(.Call(`_mfbvar_mcmc_minn_iw`, y_in_p, Pi, Sigma, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, prior_nu))
-}
-
-mcmc_ss_diffuse <- function(y_in_p, Pi, Sigma, psi, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, Omega_Pi, D_mat, dt, d1, d_fcst_lags, inv_prior_psi_Omega, inv_prior_psi_Omega_mean, check_roots, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose) {
-    invisible(.Call(`_mfbvar_mcmc_ss_diffuse`, y_in_p, Pi, Sigma, psi, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, Omega_Pi, D_mat, dt, d1, d_fcst_lags, inv_prior_psi_Omega, inv_prior_psi_Omega_mean, check_roots, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose))
-}
-
-mcmc_ss_iw <- function(y_in_p, Pi, Sigma, psi, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, inv_prior_psi_Omega, inv_prior_psi_Omega_mean, check_roots, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose) {
-    invisible(.Call(`_mfbvar_mcmc_ss_iw`, y_in_p, Pi, Sigma, psi, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, inv_prior_psi_Omega, inv_prior_psi_Omega_mean, check_roots, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose))
-}
-
-mcmc_ssng_diffuse <- function(y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, Omega_Pi, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose) {
-    invisible(.Call(`_mfbvar_mcmc_ssng_diffuse`, y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, Omega_Pi, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose))
-}
-
-mcmc_ssng_iw <- function(y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose) {
-    invisible(.Call(`_mfbvar_mcmc_ssng_iw`, y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose))
+mcmc_minn_fsv <- function(y_in_p, Pi, Z, Z_fcst, mu, phi, sigma, f, facload, h, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, sv, priorhomoskedastic, priorh0, armarestr, armatau2, n_fac, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose) {
+    invisible(.Call(`_mfbvar_mcmc_minn_fsv`, y_in_p, Pi, Z, Z_fcst, mu, phi, sigma, f, facload, h, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, sv, priorhomoskedastic, priorh0, armarestr, armatau2, n_fac, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose))
 }
 
 variances_fsv <- function(variances, latent, facload, variables_num, n_fac, n_reps, n_T, n_vars, n_plotvars) {
@@ -199,46 +108,11 @@ rmultn <- function(m, Sigma) {
     .Call(`_mfbvar_rmultn`, m, Sigma)
 }
 
-rsimsm_adaptive_cv <- function(y_, Phi, Sigma_chol, Lambda, Z1, n_q_, T_b) {
-    .Call(`_mfbvar_rsimsm_adaptive_cv`, y_, Phi, Sigma_chol, Lambda, Z1, n_q_, T_b)
-}
-
-rsimsm_adaptive_sv <- function(y_, Phi, Sigma_chol, Lambda, Z1, n_q_, T_b) {
-    .Call(`_mfbvar_rsimsm_adaptive_sv`, y_, Phi, Sigma_chol, Lambda, Z1, n_q_, T_b)
-}
-
 rsimsm_adaptive_univariate <- function(y_, Phi, Sigma, Lambda, Z1, n_q_, T_b, f) {
     .Call(`_mfbvar_rsimsm_adaptive_univariate`, y_, Phi, Sigma, Lambda, Z1, n_q_, T_b, f)
 }
 
-#' @title Smooth and sample from the smoothed distribution
-#'
-#' @description Functions for smoothing and sampling from the (smoothed) distribution \eqn{p(Z_{1:T}|Y_{1:T}, \Theta)}.
-#' @details Implemented in C++.
-#' @aliases smoother simulation_smoother generate_mhh loglike
-#' @describeIn smoother Compute smoothed states
-#' @templateVar Y TRUE
-#' @templateVar Lambda TRUE
-#' @templateVar Pi_comp TRUE
-#' @templateVar Q_comp TRUE
-#' @templateVar n_T TRUE
-#' @templateVar n_vars TRUE
-#' @templateVar n_comp TRUE
-#' @templateVar z0 TRUE
-#' @templateVar P0 TRUE
-#' @template man_template
-#' @keywords internal
-#' @return For \code{loglike}:
-#' \item{}{An \code{n_T}-long vector of the log-likelihoods. \code{exp(sum(loglike(...)))} is the likelihood.}
-loglike <- function(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0) {
-    .Call(`_mfbvar_loglike`, Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
-}
-
 update_demean <- function(my, mu_long, y_in_p, mu_mat, d1, Psi_i, Lambda_single, n_vars, n_q, n_Lambda, n_T) {
     invisible(.Call(`_mfbvar_update_demean`, my, mu_long, y_in_p, mu_mat, d1, Psi_i, Lambda_single, n_vars, n_q, n_Lambda, n_T))
-}
-
-posterior_phi_mu <- function(lambda, phi_mu, omega, nm) {
-    .Call(`_mfbvar_posterior_phi_mu`, lambda, phi_mu, omega, nm)
 }
 
