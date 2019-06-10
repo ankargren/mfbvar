@@ -2,12 +2,13 @@
 #include "minn_utils.h"
 #include "update_fsv.h"
 #include "mvn.h"
+#include "mvn_par.h"
 // [[Rcpp::export]]
 void mcmc_minn_fsv(const arma::mat & y_in_p,
                    arma::cube& Pi, arma::cube& Z, arma::cube& Z_fcst,
                    arma::mat& mu, arma::mat& phi, arma::mat& sigma,
                    arma::cube& f, arma::cube& facload, arma::cube& h,
-                   const arma::mat& Lambda_comp, const arma::mat& prior_Pi_Omega,
+                   const arma::mat& Lambda_comp, arma::mat prior_Pi_Omega,
                    const arma::vec& prior_Pi_AR1, const arma::mat& Z_1,
                    double bmu, double Bmu, double a0idi, double b0idi, double a0fac, double b0fac,
                    const Rcpp::NumericVector & Bsigma, double B011inv, double B022inv,
@@ -59,6 +60,11 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
   arma::mat Z_i = arma::mat(n_lags + y_in_p.n_rows, n_vars, arma::fill::zeros);
   arma::mat Z_fcst_i = arma::mat(n_vars, n_lags + n_fcst);
   Z_i.rows(0, n_lags - 1) = Z_1;
+
+  arma::mat eps = arma::mat(n_vars*n_lags+1, n_vars);
+  arma::mat latent_nofac_full = arma::mat(n_T+n_lags, n_vars);
+  latent_nofac_full.head_rows(n_lags) = Z_1;
+  arma::mat X_nofac;
 
   if (single_freq) {
     Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
@@ -116,13 +122,20 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
     cc_i = armaf.t() * armafacload.t(); // Common component
     latent_nofac = y_i - cc_i;
 
-    for (arma::uword j = 0; j < n_vars; j++) {
-      arma::vec h_j = arma::exp(-0.5 * armah.col(j));
-      arma::mat X_j = X.each_col() % h_j;
-      arma::vec y_j = latent_nofac.col(j) % h_j;
-      Pi_i.row(j) = arma::trans(mvn_ccm(X_j, prior_Pi_Omega.col(j), y_j, prior_Pi_AR1[j], j));
-    }
+    // for (arma::uword j = 0; j < n_vars; j++) {
+    //   arma::vec h_j = arma::exp(-0.5 * armah.col(j));
+    //   arma::mat X_j = X.each_col() % h_j;
+    //   arma::vec y_j = latent_nofac.col(j) % h_j;
+    //   Pi_i.row(j) = arma::trans(mvn_ccm(X_j, prior_Pi_Omega.col(j), y_j, prior_Pi_AR1[j], j));
+    // }
 
+    eps.imbue(norm_rand);
+    latent_nofac_full.tail_rows(n_T) = latent_nofac;
+    X_nofac = create_X(latent_nofac_full, n_lags);
+    arma::mat output(n_vars*n_lags+1, n_vars);
+    Pi_parallel Pi_parallel_i(output, latent_nofac, X_nofac, prior_Pi_Omega, eps, armah, n_T, n_vars, n_lags);
+    RcppParallel::parallelFor(0, n_vars, Pi_parallel_i);
+    Pi_i = output.t();
 
     if (verbose) {
       p.increment();

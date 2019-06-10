@@ -30,6 +30,10 @@ mcmc_minn_fsv <- function(y_in_p, Pi, Z, Z_fcst, mu, phi, sigma, f, facload, h, 
     invisible(.Call(`_mfbvar_mcmc_minn_fsv`, y_in_p, Pi, Z, Z_fcst, mu, phi, sigma, f, facload, h, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose))
 }
 
+sample_Pi_parallel <- function(y, d, eps, factors, T, n, p) {
+    .Call(`_mfbvar_sample_Pi_parallel`, y, d, eps, factors, T, n, p)
+}
+
 variances_fsv <- function(variances, latent, facload, variables_num, n_fac, n_reps, n_T, n_vars, n_plotvars) {
     invisible(.Call(`_mfbvar_variances_fsv`, variances, latent, facload, variables_num, n_fac, n_reps, n_T, n_vars, n_plotvars))
 }
