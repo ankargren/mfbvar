@@ -26,6 +26,7 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
   arma::mat y_sim = arma::mat(n_T, n_vars).fill(NA_REAL);
   arma::mat Zt;
 
+
   ///////////////////////////////////////////////
   //               SIMULATING                  //
   ///////////////////////////////////////////////
@@ -138,6 +139,7 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
 
     n_obs = obs_vars.n_elem;
     for (arma::uword i = 0; i < n_obs; i++) {
+
       v_t = y(t, obs_vars(i)) - a_t * Z.row(obs_vars(i)).t() - c.col(obs_vars(i)) - intercept.col(obs_vars(i));
       F_t = (Z.row(obs_vars(i)) * P_t) * Z.row(obs_vars(i)).t();
       if (i < n_m) {
@@ -182,7 +184,6 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
     P_t_out.slice(t) = P_t;
     P_tt_out.slice(t) = P_tt;
   }
-
   ///////////////////////////////////////////////
   //                ADAPTIVE                   //
   ///////////////////////////////////////////////
@@ -322,7 +323,6 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
   ///////////////////////////////////////////////
   //               SMOOTHING                   //
   ///////////////////////////////////////////////
-
   arma::field<arma::mat> r_out(T_b, 1);
 
   arma::mat r = adaptive_to_compact_smoothing(a_tT_y, a_tt_y, a_tt, a_tt_compact, a_tt_out,

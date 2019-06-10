@@ -39,11 +39,7 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
   priorsigmaidi <- x$priorsigmaidi
   priorsigmafac <- x$priorsigmafac
   priorfacload <- x$priorfacload
-  priorng <- x$priorng
-  columnwise <- x$columnwise
   restrict <- x$restrict
-  heteroskedastic <- x$heteroskedastic
-  priorhomoskedastic <- x$priorhomoskedastic
 
   ### Regression parameters
   if (is.null(init$init_Pi)) {
@@ -235,9 +231,8 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
                                                   startlatent0 = startlatent0,
                                                   startfacload = startfacload, startfac = startfac, priormu = priormu,
                                                   priorphiidi = priorphiidi, priorphifac = priorphifac, priorsigmaidi = priorsigmaidi,
-                                                  priorsigmafac = priorsigmafac, priorfacload = priorfacload, priorng = priorng,
-                                                  columnwise = columnwise, restrict = restrict, heteroskedastic = heteroskedastic,
-                                                  priorhomoskedastic = priorhomoskedastic), error = function(cond) cond)
+                                                  priorsigmafac = priorsigmafac, priorfacload = priorfacload, restrict = restrict),
+                                                  error = function(cond) cond)
     if (inherits(fsample, "error")) {
       warning("MCMC halted because of an error in the factor stochastic volatility step. See $error for more information.")
       error <- list(error = fsample, iter = i, block = "fsample")
@@ -331,10 +326,15 @@ mcmc_sampler.mfbvar_minn_fsv2 <- function(x, ...){
   priorphifac <- x$priorphifac
   priorsigmaidi <- x$priorsigmaidi
   priorsigmafac <- x$priorsigmafac
-  armatau2 <- x$priorfacload
+  priorfacload <- x$priorfacload
   restrict <- x$restrict
-  sv <- x$heteroskedastic
-  priorhomoskedastic <- x$priorhomoskedastic
+
+  if (length(priorsigmaidi) == 1) {
+    priorsigmaidi <- rep(priorsigmaidi, n_vars)
+  }
+  if (length(priorsigmafac) == 1) {
+    priorsigmafac <- rep(priorsigmafac, n_fac)
+  }
 
   bmu <- priormu[1]
   Bmu <- priormu[2]^2
@@ -344,8 +344,11 @@ mcmc_sampler.mfbvar_minn_fsv2 <- function(x, ...){
   B011inv <- 1/10^8
   B022inv <- 1/10^12
 
+  armatau2 <- matrix(priorfacload^2, n_vars, n_fac) # priorfacload is scalar, or matrix
+
   armarestr <- matrix(FALSE, nrow = n_vars, ncol = n_fac)
   if (restrict == "upper") armarestr[upper.tri(armarestr)] <- TRUE
+  armarestr <- matrix(as.integer(!armarestr), nrow = nrow(armarestr), ncol = ncol(armarestr)) # restrinv
 
   a0idi <- priorphiidi[1]
   b0idi <- priorphiidi[2]
@@ -404,7 +407,7 @@ mcmc_sampler.mfbvar_minn_fsv2 <- function(x, ...){
 
   ### Latent high-frequency
   if (is.null(init$init_Z)) {
-    init_Z <- y_in_p
+    init_Z <- mfbvar:::fill_na(Y)
   } else {
     init_Z <- init$init_Z
   }
@@ -433,7 +436,7 @@ mcmc_sampler.mfbvar_minn_fsv2 <- function(x, ...){
     init_facload <- init$init_facload
   }
   if (is.null(init$init_fac)) {
-    init_fac <-  matrix(rnorm(n_fac*n_T_, sd = 0.005), n_fac, n_T_)
+    init_fac <-  matrix(rnorm(n_fac*n_T_, sd = 0.5), n_fac, n_T_)
   } else {
     init_fac <- init$init_fac
   }
@@ -468,7 +471,7 @@ mcmc_sampler.mfbvar_minn_fsv2 <- function(x, ...){
   # smoothed_Z: T * p * n_reps
 
   Pi <- array(init_Pi, dim = c(n_vars, n_vars*n_lags + 1, n_reps/n_thin))
-  Z <- array(init_Z, dim = c(n_T_, n_vars, n_reps/n_thin))
+  Z <- array(init_Z, dim = c(n_T, n_vars, n_reps/n_thin))
   Z_fcst<- array(NA, dim = c(n_fcst+n_lags, n_vars, n_reps/n_thin))
   if (n_fcst > 0) {
     rownames(Z_fcst) <- c((n_T-n_lags+1):n_T, paste0("fcst_", 1:n_fcst))
@@ -485,7 +488,7 @@ mcmc_sampler.mfbvar_minn_fsv2 <- function(x, ...){
                    dim = c(n_vars, n_fac, n_reps/n_thin))
   f <- array(matrix(init_fac, n_fac, n_T_), dim = c(n_fac, n_T_, n_reps/n_thin))
 
-  h <- array(init_latent, dim = c(n_T_, n_vars+n_fac, n_reps/n_thin),
+  h <- array(t(init_latent), dim = c(n_T_, n_vars+n_fac, n_reps/n_thin),
                   dimnames = list(rownames(init_latent), colnames(init_latent), NULL))
 
   ################################################################
@@ -493,24 +496,31 @@ mcmc_sampler.mfbvar_minn_fsv2 <- function(x, ...){
 
   Z_1 <- Z[1:n_pseudolags,, 1]
 
-  mfbvar:::mcmc_minn_fsv2(Y[-(1:n_lags),],Pi,Z,Z_fcst,mu,phi,sigma,f,facload,h,
+  mfbvar:::mcmc_minn_fsv(Y[-(1:n_lags),],Pi,Z,Z_fcst,mu,phi,sigma,f,facload,h,
                           Lambda_,prior_Pi_Omega,prior_Pi_AR1, Z_1,bmu,Bmu,
-                          a0idi,b0idi,a0fac,b0fac,Bsigma,B011inv,B022inv,sv,
-                          priorhomoskedastic,priorh0,armarestr,armatau2,n_fac,n_reps,
-                          n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,n_thin,verbose)
+                          a0idi,b0idi,a0fac,b0fac,Bsigma,B011inv,B022inv,priorh0,
+                          armarestr,armatau2,n_fac,n_reps,n_q,T_b-n_lags,n_lags,
+                          n_vars,n_T_,n_fcst,n_thin,verbose)
 
-  return_obj <- list(Pi = Pi, Sigma = Sigma, Z = Z, phi = phi, sigma = sigma, f = f,
-                     Z_fcst = NULL, n_lags = n_lags, n_vars = n_vars,
-                     n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega,
-                     prior_Pi_mean = prior_Pi_mean, prior_S = prior_S,
-                     prior_nu = n_vars+2, post_nu = n_T + n_vars+2, d = d, Y = Y,
-                     n_T = n_T, n_T_ = n_T_, n_reps = n_reps, Lambda_ = Lambda_,
+  return_obj <- list(Pi = Pi, Z = Z, Z_fcst = NULL, mu = mu, phi = phi,
+                     sigma = sigma, f = f, facload = facload, h = h,
+                     Lambda_ = Lambda_, prior_Pi_Omega = prior_Pi_Omega,
+                     prior_Pi_AR1 = prior_Pi_AR1, Z_1 = Z_1, bmu = bmu,
+                     Bmu = Bmu, a0idi = a0idi, b0idi = b0idi, a0fac = a0fac,
+                     b0fac = b0fac, Bsigma = Bsigma, B011inv = B011inv,
+                     B022inv = B022inv, priorh0 = priorh0, armarestr = armarestr,
+                     armatau2 = armatau2, n_fac = n_fac, n_reps = n_reps,
+                     n_q = n_q, T_b_ = T_b-n_lags, n_lags = n_lags,
+                     n_vars = n_vars, n_T_ = n_T_, n_fcst = n_fcst,
+                     n_thin = n_thin, verbose = verbose,
                      init = list(init_Pi = Pi[,, n_reps/n_thin],
-                                 init_Sigma = Sigma[,, n_reps/n_thin],
                                  init_Z = Z[,, n_reps/n_thin],
-                                 init_phi = phi[n_reps/n_thin],
-                                 init_sigma = sigma[n_reps/n_thin],
-                                 init_f = f[n_reps/n_thin,]))
+                                 init_mu = mu[, n_reps/n_thin],
+                                 init_phi = phi[, n_reps/n_thin],
+                                 init_sigma = sigma[, n_reps/n_thin],
+                                 init_facload = facload[,,n_reps/n_thin],
+                                 init_f = f[,,n_reps/n_thin],
+                                 init_h = h[,,n_reps/n_thin]))
 
   if (n_fcst > 0) {
     return_obj$Z_fcst <- Z_fcst

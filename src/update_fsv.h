@@ -12,8 +12,7 @@ void update_fsv(arma::mat & armafacload, arma::mat & armaf, arma::mat & armah,
                 const arma::mat & armay,
                 const double bmu, const double Bmu, const double a0idi, const double b0idi,
                 const double a0fac, const double b0fac, const Rcpp::NumericVector & Bsigma,
-                const double B011inv, const double B022inv, const Rcpp::NumericVector & sv,
-                const Rcpp::NumericVector & priorhomoskedastic,
+                const double B011inv, const double B022inv,
                 const Rcpp::NumericVector & priorh0, const arma::imat & armarestr) {
 
 
@@ -71,11 +70,6 @@ void update_fsv(arma::mat & armafacload, arma::mat & armaf, arma::mat & armah,
     for (int l = k; l < m; l++) {
       if (k == l) diagindices(k) = tmpcounter;
       tmpcounter++;
-    }
-  }
-  for (int j = m; j < mpr; j++) {
-    if (sv(j) == false) {
-      armah.col(j).fill(0.);
     }
   }
 
@@ -172,55 +166,75 @@ void update_fsv(arma::mat & armafacload, arma::mat & armaf, arma::mat & armah,
   }
   armafnorm = log(square(armaf));
 
+
+
   armahtilde = exp(-armah(arma::span::all, arma::span(0,m-1))/2.);
 
+  for (arma::uword ii = 0; ii < armay.n_cols; ii++) {
+    Rcpp::NumericVector tmp(5);
+    tmp[0] = armay(0, ii);
+    tmp[1] = armafacload[0];
+    tmp[2] = armaf[ii];
+    tmp[3] = arma::as_scalar(armafacload.row(0) * armaf.col(ii));
+    tmp[4] = armaynorm(0, ii);
 
+  }
   // STEP 1:
   // update indicators, latent volatilities, and SV-parameters
 
 
 
   // STEP 1 for "linearized residuals"
+
+
   for (int j = 0; j < m; j++) {
-    if (sv(j) == true) {
-      double curh0j = armah0(j);
-      arma::vec curpara_j = curpara_arma.unsafe_col(j);
-      arma::vec curh_j = armah.unsafe_col(j);
-      arma::vec curmixprob_j = curmixprob_arma.unsafe_col(j);
-      arma::ivec curmixind_j = curmixind_arma.unsafe_col(j);
-      stochvol::update_sv(armaynorm.row(j).t(), curpara_j, curh_j, curh0j, curmixprob_j, curmixind_j,
-                          centered_baseline, C0(j), cT, Bsigma(j), a0idi, b0idi, bmu, Bmu, B011inv, B022inv, Gammaprior,
-                          truncnormal, MHcontrol, MHsteps, parameterization, false, priorh0(j));
-      armah0(j) = curh0j;
-    } else {
-      double tmp = sum(square(armay.row(j) - armafacload.row(j)*armaf));
-      tmp = 1/as<double>(rgamma(1, priorhomoskedastic(0) + .5*T, 1/(priorhomoskedastic(1) + .5*tmp)));
-      armah.col(j).fill(log(tmp));
+
+    double curh0j = armah0(j);
+    arma::vec curpara_j = curpara_arma.unsafe_col(j);
+    arma::vec curh_j = armah.unsafe_col(j);
+    arma::vec armaynorm_j = armaynorm.row(j).t();
+    arma::vec curmixprob_j = curmixprob_arma.unsafe_col(j);
+    arma::ivec curmixind_j = curmixind_arma.unsafe_col(j);
+    double priorh0_j = priorh0(j);
+    double C0_j = C0(j);
+    double Bsigma_j = Bsigma(j);
+
+    if (j < 1) {
+
     }
+    stochvol::update_sv(armaynorm_j, curpara_j, curh_j, curh0j, curmixprob_j, curmixind_j,
+                        centered_baseline, C0_j, cT, Bsigma_j, a0idi, b0idi, bmu, Bmu, B011inv, B022inv, Gammaprior,
+                        truncnormal, MHcontrol, MHsteps, parameterization, false, priorh0_j);
+
+    armah0(j) = curh0j;
   }
+
 
 
   // STEP 1 for factors
   for (int j = m; j < mpr; j++) {
-    if (sv(j) == true) {
-      double curh0j = armah0(j);
-      arma::vec curpara_j = curpara_arma.unsafe_col(j);
-      arma::vec curh_j = armah.unsafe_col(j);
-      arma::vec curmixprob_j = curmixprob_arma.unsafe_col(j);
-      arma::ivec curmixind_j = curmixind_arma.unsafe_col(j);
-      stochvol::update_sv(armafnorm.row(j-m).t(), curpara_j, curh_j, curh0j, curmixprob_j, curmixind_j,
-                          centered_baseline, C0(j), cT, Bsigma(j), a0fac, b0fac, bmu, Bmu, B011inv, B022inv, Gammaprior,
-                          truncnormal, MHcontrol, MHsteps, parameterization, true, priorh0(j));
-      armah0(j) = curh0j;
-    }
+    double curh0j = armah0(j);
+    arma::vec curpara_j = curpara_arma.unsafe_col(j);
+    arma::vec curh_j = armah.unsafe_col(j);
+    arma::vec curmixprob_j = curmixprob_arma.unsafe_col(j);
+    arma::ivec curmixind_j = curmixind_arma.unsafe_col(j);
+    stochvol::update_sv(armafnorm.row(j-m).t(), curpara_j, curh_j, curh0j, curmixprob_j, curmixind_j,
+                        centered_baseline, C0(j), cT, Bsigma(j), a0fac, b0fac, bmu, Bmu, B011inv, B022inv, Gammaprior,
+                        truncnormal, MHcontrol, MHsteps, parameterization, true, priorh0(j));
+    armah0(j) = curh0j;
   }
 
   // intermediate step: calculate transformation of curh
+
+
   armahtilde = exp(-armah(arma::span::all, arma::span(0,m-1))/2.);
+
 
   // STEP 2:
   // update factor loadings: m independent r-variate regressions
   // with T observations (for unrestricted case)
+
+
   if (r > 0) {
 
     int oldpos = 0;
@@ -247,7 +261,6 @@ void update_fsv(arma::mat & armafacload, arma::mat & armaf, arma::mat & armah,
 
       // add precisions to diagonal:
       armaSigma.submat(0,0,activecols-1,activecols-1).diag() += 1/arma::nonzeros(armatau2.row(j));
-
       // Find Cholesky factor of posterior precision matrix
       try {
         armaR.submat(0, 0, activecols-1, activecols-1) = arma::chol(armaSigma.submat(0,0,activecols-1,activecols-1));
@@ -298,6 +311,8 @@ void update_fsv(arma::mat & armafacload, arma::mat & armaf, arma::mat & armah,
     //Rprintf("\n\n");
     //for (int is = 0; is < m; is++) Rprintf("%f %f\n", curfacload(is, 0), curfacload(is, 1));
      // STEP 2+: "Deep" Interweaving
+
+
       for (int j = 0; j < r; j++) {
 
         int userow = j;
@@ -371,6 +386,7 @@ void update_fsv(arma::mat & armafacload, arma::mat & armaf, arma::mat & armah,
     // STEP 3:
     // update the factors (T independent r-variate regressions with m observations)
 
+
     if (samplefac) {
       armadraw2 = rnorm(r*T);
       for (int j = 0; j < T; j++) {
@@ -422,6 +438,7 @@ void update_fsv(arma::mat & armafacload, arma::mat & armaf, arma::mat & armah,
       }
     }
   }
+
 
   // SIGN SWITCH:
   if (signswitch) {

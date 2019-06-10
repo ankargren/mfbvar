@@ -394,19 +394,29 @@ check_prior <- function(prior_obj) {
     }
 
     if ("priorsigmaidi" %in% prior_obj$supplied_args) {
-      if (!(is.numeric(prior_obj$priorsigmaidi) && is.atomic(prior_obj$priorsigmaidi) && length(prior_obj$priorsigmaidi) %in% c(1, ncol(prior_obj$Y)))) {
-        stop(sprintf("priorsigmaidi should be a numeric vector with 1 or n_vars elements, but is %s with %d elements", class(prior_obj$priorsigmaidi), length(prior_obj$priorsigmaidi)))
+      if (!(is.numeric(prior_obj$priorsigmaidi))) {
+        stop("priorsigmaidi should be numeric.")
+      }
+      if (length(prior_obj$priorsigmaidi) == 1) {
+      } else if (length(prior_obj$priorsigmaidi) == ncol(prior_obj$Y)) {
+      } else {
+        stop("priorsigmaidi should be a numeric vector of length 1 or n_vars.")
       }
     } else {
-      prior_obj$priorsigmaidi <- 1
+      prior_obj$priorsigmaidi <- rep(1, ncol(prior_obj$Y))
     }
 
     if ("priorsigmafac" %in% prior_obj$supplied_args) {
-      if (!(is.numeric(prior_obj$priorsigmafac) && is.atomic(prior_obj$priorsigmafac) && length(prior_obj$priorsigmafac) %in% c(1, ncol(prior_obj$n_fac)))) {
-        stop(sprintf("priorsigmafac should be a numeric vector with 1 or n_vars elements, but is %s with %d elements", class(prior_obj$priorsigmafac), length(prior_obj$priorsigmaidi)))
+      if (!(is.numeric(prior_obj$priorsigmafac))) {
+        stop("priorsigmafac should be numeric.")
+      }
+      if (length(prior_obj$priorsigmafac) == 1) {
+      } else if (length(prior_obj$priorsigmafac) == prior_obj$n_fac) {
+      } else {
+        stop("priorsigmafac should be a numeric vector of length 1 or n_fac")
       }
     } else {
-      prior_obj$priorsigmafac <- 1
+      prior_obj$priorsigmafac <- rep(1, prior_obj$n_fac)
     }
 
     if ("priorfacload" %in% prior_obj$supplied_args) {
@@ -417,51 +427,22 @@ check_prior <- function(prior_obj) {
       prior_obj$priorfacload <- 1
     }
 
-    if ("priorng" %in% prior_obj$supplied_args) {
-      if (!(is.numeric(prior_obj$priorng) && length(prior_obj$priorng) == 2)) {
-        stop(sprintf("priorng should be a numeric vector of length 2, but is %s of length %d", class(prior_obj$priorng), length(prior_obj$priorng)))
-      }
-    } else {
-      prior_obj$priorng <- c(1, 1)
-    }
-
-    if ("columnwise" %in% prior_obj$supplied_args) {
-      if (!(is.logical(prior_obj$columnwise) && length(prior_obj$priorng) == 1)) {
-        stop(sprintf("columnwise should be a single logical value, but is %s of length %d", class(prior_obj$columnwise), length(prior_obj$columnwise)))
-      }
-    } else {
-      prior_obj$columnwise <- FALSE
-    }
-
     if ("restrict" %in% prior_obj$supplied_args) {
       if (!(is.character(prior_obj$restrict) && length(prior_obj$priorng) == 1)) {
         stop(sprintf("restrict should be a single string, but is %s of length %d", class(prior_obj$restrict), length(prior_obj$restrict)))
+      } else {
+        if (!(prior_obj$restrict %in% c("none", "upper"))) {
+          stop(sprintf("restrict should be 'none' or 'upper', but is %s", prior_obj$restrict))
+        }
       }
     } else {
       prior_obj$restrict <- "none"
     }
 
-    if ("heteroskedastic" %in% prior_obj$supplied_args) {
-      if (!(is.logical(prior_obj$heteroskedastic) && length(prior_obj$priorng) %in% c(1, 2, ncol(prior_obj$Y)+prior_obj$n_fac))) {
-        stop(sprintf("heteroskedastic should be a vector of 1, 2, or n_vars + n_fac logical values, but is %s of length %d", class(prior_obj$heteroskedastic), length(prior_obj$heteroskedastic)))
-      }
-    } else {
-      prior_obj$heteroskedastic <- TRUE
-    }
 
-    if (any(!prior_obj$heteroskedastic)) {
-      if ("priorhomoskedastic" %in% prior_obj$supplied_args) {
-        if (!(is.numeric(prior_obj$priorhomoskedastic) && is.matrix(prior_obj$priorhomoskedastic) && dim(prior_obj$priorhomoskedastic) == c(ncol(prior_obj$Y)+prior_obj$n_fac, 2))) {
-          stop(sprintf("priorhomoskedastic should be a matrix of dimensions (n_vars + n_fac) x 2, but is %s of length %d", class(prior_obj$priorhomoskedastic), length(prior_obj$priorhomoskedastic)))
-        }
-      } else {
-        prior_obj$priorhomoskedastic <- c(1.1, 1.1)
-      }
-    } else {
-      prior_obj$priorhomoskedastic <- c(1.1, 1.1)
-    }
+
   } else if (is.null(prior_obj$n_fac) && any(prior_obj$supplied_args %in% c("priormu", "priorphiidi", "priorphifac", "priorsigmaidi", "priorsigmafac",
-                   "priorfacload", "priorng", "columnwise", "restrict", "heteroskedastic", "priorhomoskedastic"))) {
+                   "priorfacload", "restrict"))) {
     stop("Please set the number of factors before attempting to pass additional arguments along to fsvsim.")
   }
 

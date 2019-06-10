@@ -11,7 +11,6 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
                    const arma::vec& prior_Pi_AR1, const arma::mat& Z_1,
                    double bmu, double Bmu, double a0idi, double b0idi, double a0fac, double b0fac,
                    const Rcpp::NumericVector & Bsigma, double B011inv, double B022inv,
-                   const Rcpp::NumericVector & sv, const Rcpp::NumericVector & priorhomoskedastic,
                    const Rcpp::NumericVector & priorh0, const arma::imat & armarestr,
                    const arma::mat & armatau2, // armatau2 is the matrix with prior variance of factor loadings
                    arma::uword n_fac, arma::uword n_reps,
@@ -31,8 +30,7 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
   arma::mat y_i = y_in_p;
   arma::mat x;
   arma::vec vol_pred;
-  arma::vec errors_sv = arma::vec(n_vars + n_fac);
-  arma::vec errors_var = arma::vec(n_vars);
+
 
   // fsv
   Rcpp::NumericMatrix curpara = Rcpp::NumericMatrix(3, n_vars + n_fac);
@@ -53,8 +51,10 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
 
   arma::vec armah0 = arma::vec(n_vars + n_fac);
 
-  arma::mat Sig_i, y_hat, error_pred, latent_nofac, h_j, X_j, y_j;
-
+  arma::mat Sig_i, y_hat, latent_nofac, h_j, X_j, y_j;
+  arma::vec error_pred;
+  arma::vec errors_sv = arma::vec(n_vars + n_fac);
+  arma::vec errors_var = arma::vec(n_vars + n_fac);
 
   arma::mat Z_i = arma::mat(n_lags + y_in_p.n_rows, n_vars, arma::fill::zeros);
   arma::mat Z_fcst_i = arma::mat(n_vars, n_lags + n_fcst);
@@ -76,16 +76,17 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
     y_hat = y_i - X * Pi_i.t();
 
     if (i % n_thin == 0) {
+
       mu_i = curpara_arma.row(0).t();
       phi_i = curpara_arma.row(1).t();
       sigma_i = curpara_arma.row(2).t(); // sigma, not sigma2
       if (n_fcst > 0) {
-        vol_pred = armah.tail_rows(1);
+        vol_pred = armah.tail_rows(1).t();
         Z_fcst_i.head_cols(n_lags) = Z_i.tail_rows(n_lags).t();
         for (arma::uword h = 0; h < n_fcst; ++h) {
           errors_sv.imbue(norm_rand);
           errors_var.imbue(norm_rand);
-          vol_pred = mu_i + phi_i % (vol_pred - mu_i) + sigma_i % errors_sv;; // Twice because we first need it for the volatility, then for the VAR
+          vol_pred = mu_i + phi_i % (vol_pred - mu_i) + sigma_i % errors_sv; // Twice because we first need it for the volatility, then for the VAR
           error_pred = arma::exp(0.5 * vol_pred) % errors_var;
           x = create_X_t(Z_fcst_i.cols(0+h, n_lags-1+h).t());
           Z_fcst_i.col(n_lags + h) = Pi_i * x + armafacload * error_pred.tail_rows(n_fac) + error_pred.head_rows(n_vars);
@@ -93,22 +94,24 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
         Z_fcst.slice(i/n_thin) = Z_fcst_i.t();
       }
 
+
       Z.slice(i/n_thin) = Z_i;
+
       Pi.slice(i/n_thin) = Pi_i;
+
 
       f.slice(i/n_thin) = armaf;
       facload.slice(i/n_thin) = armafacload;
       h.slice(i/n_thin) = armah;
 
+
       mu.col(i/n_thin) = mu_i.head(n_vars);
       phi.col(i/n_thin) = phi_i;
       sigma.col(i/n_thin) = sigma_i;
     }
-
-    update_fsv(armafacload, armaf, armah, armah0, curpara, armatau2, y_hat.t(), bmu,
-               Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, sv,
-               priorhomoskedastic, priorh0, armarestr);
-
+    update_fsv(armafacload, armaf, armah, armah0, curpara, armatau2, y_hat.t(),
+               bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv,
+               priorh0, armarestr);
 
     cc_i = armaf.t() * armafacload.t(); // Common component
     latent_nofac = y_i - cc_i;
@@ -117,7 +120,7 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
       arma::vec h_j = arma::exp(-0.5 * armah.col(j));
       arma::mat X_j = X.each_col() % h_j;
       arma::vec y_j = latent_nofac.col(j) % h_j;
-      Pi_i.row(j) = mvn_ccm(X_j, prior_Pi_Omega.col(j), y_j, prior_Pi_AR1[j], j);
+      Pi_i.row(j) = arma::trans(mvn_ccm(X_j, prior_Pi_Omega.col(j), y_j, prior_Pi_AR1[j], j));
     }
 
 

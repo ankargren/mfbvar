@@ -68,8 +68,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // mcmc_minn_fsv
-void mcmc_minn_fsv(const arma::mat& y_in_p, arma::cube& Pi, arma::cube& Z, arma::cube& Z_fcst, arma::mat& mu, arma::mat& phi, arma::mat& sigma, arma::cube& f, arma::cube& facload, arma::cube& h, const arma::mat& Lambda_comp, const arma::mat& prior_Pi_Omega, const arma::vec& prior_Pi_AR1, const arma::mat& Z_1, double bmu, double Bmu, double a0idi, double b0idi, double a0fac, double b0fac, const Rcpp::NumericVector& Bsigma, double B011inv, double B022inv, const Rcpp::NumericVector& sv, const Rcpp::NumericVector& priorhomoskedastic, const Rcpp::NumericVector& priorh0, const arma::imat& armarestr, const arma::mat& armatau2, arma::uword n_fac, arma::uword n_reps, arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars, arma::uword n_T, arma::uword n_fcst, arma::uword n_thin, bool verbose);
-RcppExport SEXP _mfbvar_mcmc_minn_fsv(SEXP y_in_pSEXP, SEXP PiSEXP, SEXP ZSEXP, SEXP Z_fcstSEXP, SEXP muSEXP, SEXP phiSEXP, SEXP sigmaSEXP, SEXP fSEXP, SEXP facloadSEXP, SEXP hSEXP, SEXP Lambda_compSEXP, SEXP prior_Pi_OmegaSEXP, SEXP prior_Pi_AR1SEXP, SEXP Z_1SEXP, SEXP bmuSEXP, SEXP BmuSEXP, SEXP a0idiSEXP, SEXP b0idiSEXP, SEXP a0facSEXP, SEXP b0facSEXP, SEXP BsigmaSEXP, SEXP B011invSEXP, SEXP B022invSEXP, SEXP svSEXP, SEXP priorhomoskedasticSEXP, SEXP priorh0SEXP, SEXP armarestrSEXP, SEXP armatau2SEXP, SEXP n_facSEXP, SEXP n_repsSEXP, SEXP n_qSEXP, SEXP T_bSEXP, SEXP n_lagsSEXP, SEXP n_varsSEXP, SEXP n_TSEXP, SEXP n_fcstSEXP, SEXP n_thinSEXP, SEXP verboseSEXP) {
+void mcmc_minn_fsv(const arma::mat& y_in_p, arma::cube& Pi, arma::cube& Z, arma::cube& Z_fcst, arma::mat& mu, arma::mat& phi, arma::mat& sigma, arma::cube& f, arma::cube& facload, arma::cube& h, const arma::mat& Lambda_comp, const arma::mat& prior_Pi_Omega, const arma::vec& prior_Pi_AR1, const arma::mat& Z_1, double bmu, double Bmu, double a0idi, double b0idi, double a0fac, double b0fac, const Rcpp::NumericVector& Bsigma, double B011inv, double B022inv, const Rcpp::NumericVector& priorh0, const arma::imat& armarestr, const arma::mat& armatau2, arma::uword n_fac, arma::uword n_reps, arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars, arma::uword n_T, arma::uword n_fcst, arma::uword n_thin, bool verbose);
+RcppExport SEXP _mfbvar_mcmc_minn_fsv(SEXP y_in_pSEXP, SEXP PiSEXP, SEXP ZSEXP, SEXP Z_fcstSEXP, SEXP muSEXP, SEXP phiSEXP, SEXP sigmaSEXP, SEXP fSEXP, SEXP facloadSEXP, SEXP hSEXP, SEXP Lambda_compSEXP, SEXP prior_Pi_OmegaSEXP, SEXP prior_Pi_AR1SEXP, SEXP Z_1SEXP, SEXP bmuSEXP, SEXP BmuSEXP, SEXP a0idiSEXP, SEXP b0idiSEXP, SEXP a0facSEXP, SEXP b0facSEXP, SEXP BsigmaSEXP, SEXP B011invSEXP, SEXP B022invSEXP, SEXP priorh0SEXP, SEXP armarestrSEXP, SEXP armatau2SEXP, SEXP n_facSEXP, SEXP n_repsSEXP, SEXP n_qSEXP, SEXP T_bSEXP, SEXP n_lagsSEXP, SEXP n_varsSEXP, SEXP n_TSEXP, SEXP n_fcstSEXP, SEXP n_thinSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type y_in_p(y_in_pSEXP);
@@ -95,8 +95,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type Bsigma(BsigmaSEXP);
     Rcpp::traits::input_parameter< double >::type B011inv(B011invSEXP);
     Rcpp::traits::input_parameter< double >::type B022inv(B022invSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type sv(svSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type priorhomoskedastic(priorhomoskedasticSEXP);
     Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type priorh0(priorh0SEXP);
     Rcpp::traits::input_parameter< const arma::imat& >::type armarestr(armarestrSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type armatau2(armatau2SEXP);
@@ -110,7 +108,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::uword >::type n_fcst(n_fcstSEXP);
     Rcpp::traits::input_parameter< arma::uword >::type n_thin(n_thinSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
-    mcmc_minn_fsv(y_in_p, Pi, Z, Z_fcst, mu, phi, sigma, f, facload, h, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, sv, priorhomoskedastic, priorh0, armarestr, armatau2, n_fac, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose);
+    mcmc_minn_fsv(y_in_p, Pi, Z, Z_fcst, mu, phi, sigma, f, facload, h, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose);
     return R_NilValue;
 END_RCPP
 }
@@ -447,7 +445,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mfbvar_create_X_noint", (DL_FUNC) &_mfbvar_create_X_noint, 2},
     {"_mfbvar_create_X_t", (DL_FUNC) &_mfbvar_create_X_t, 1},
     {"_mfbvar_create_X_t_noint", (DL_FUNC) &_mfbvar_create_X_t_noint, 1},
-    {"_mfbvar_mcmc_minn_fsv", (DL_FUNC) &_mfbvar_mcmc_minn_fsv, 38},
+    {"_mfbvar_mcmc_minn_fsv", (DL_FUNC) &_mfbvar_mcmc_minn_fsv, 36},
     {"_mfbvar_variances_fsv", (DL_FUNC) &_mfbvar_variances_fsv, 9},
     {"_mfbvar_variances_csv", (DL_FUNC) &_mfbvar_variances_csv, 6},
     {"_mfbvar_posterior_psi_Omega_fsv", (DL_FUNC) &_mfbvar_posterior_psi_Omega_fsv, 4},
