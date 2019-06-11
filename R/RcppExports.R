@@ -26,8 +26,20 @@ create_X_t_noint <- function(y) {
     .Call(`_mfbvar_create_X_t_noint`, y)
 }
 
-mcmc_minn_fsv <- function(y_in_p, Pi, Z, Z_fcst, mu, phi, sigma, f, facload, h, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose) {
-    invisible(.Call(`_mfbvar_mcmc_minn_fsv`, y_in_p, Pi, Z, Z_fcst, mu, phi, sigma, f, facload, h, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose))
+#' @title Find maximum eigenvalue
+#'
+#' @description The function computes the maximum eigenvalue.
+#' @aliases max_eig max_eig_cpp
+#' @templateVar A TRUE
+#' @template man_template
+#' @keywords internal
+#' @return The maximum eigenvalue.
+max_eig_cpp <- function(A) {
+    .Call(`_mfbvar_max_eig_cpp`, A)
+}
+
+mcmc_minn_fsv <- function(y_in_p, Pi, Z, Z_fcst, mu, phi, sigma, f, facload, h, aux, global, local, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, a) {
+    invisible(.Call(`_mfbvar_mcmc_minn_fsv`, y_in_p, Pi, Z, Z_fcst, mu, phi, sigma, f, facload, h, aux, global, local, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, a))
 }
 
 mcmc_ss_fsv <- function(y_in_p, Pi, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, mu, phi, sigma, f, facload, h, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng) {
@@ -112,11 +124,11 @@ rmultn <- function(m, Sigma) {
     .Call(`_mfbvar_rmultn`, m, Sigma)
 }
 
-rsimsm_adaptive_univariate <- function(y_, Phi, Sigma, Lambda, Z1, n_q_, T_b, f) {
-    .Call(`_mfbvar_rsimsm_adaptive_univariate`, y_, Phi, Sigma, Lambda, Z1, n_q_, T_b, f)
-}
-
 update_demean <- function(my, mu_long, y_in_p, mu_mat, d1, Psi_i, Lambda_single, n_vars, n_q, n_Lambda, n_T) {
     invisible(.Call(`_mfbvar_update_demean`, my, mu_long, y_in_p, mu_mat, d1, Psi_i, Lambda_single, n_vars, n_q, n_Lambda, n_T))
+}
+
+posterior_phi_mu <- function(lambda, phi_mu, omega, nm) {
+    .Call(`_mfbvar_posterior_phi_mu`, lambda, phi_mu, omega, nm)
 }
 

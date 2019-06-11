@@ -17,5 +17,6 @@ arma::mat rmatn(const arma::mat & M, const arma::mat & Q, const arma::mat & P);
 
 // Import the rgig
 double do_rgig1(double lambda, double chi, double psi);
+double rig(double mu, double lambda);
 
 #endif

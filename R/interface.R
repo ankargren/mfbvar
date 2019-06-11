@@ -677,8 +677,8 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
     prior <- args$prior_type
   }
 
-  if (!(prior %in% c("ss", "ssng", "minn"))) {
-    stop("prior must be 'ss', 'ssng' or 'minn'.")
+  if (!(prior %in% c("ss", "ssng", "minn", "dl"))) {
+    stop("prior must be 'ss', 'ssng', 'minn' or 'dl'.")
   }
   if (!(variance %in% c("iw", "fsv", "csv", "diffuse"))) {
     stop("volatility must be 'iw', 'diffuse', 'csv' or 'fsv'.")

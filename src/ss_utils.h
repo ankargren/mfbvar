@@ -30,5 +30,4 @@ void posterior_psi_fsv(arma::vec & psi_i, arma::mat & mu_mat,
                        int n_determ, int n_vars, int n_lags);
 
 double max_eig_cpp(const arma::mat & A);
-
 #endif
