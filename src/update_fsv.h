@@ -24,7 +24,7 @@ void update_fsv(arma::mat & armafacload, arma::mat & armaf, arma::mat & armah,
   int parameterization = 3;
 
   const int interweaving       = 4;
-  const bool signswitch        = true;
+  const bool signswitch        = false;
   const bool samplefac        = true;
   int nlambda = 0;
   const double c0 = 2.5;

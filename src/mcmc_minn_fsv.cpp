@@ -61,10 +61,14 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
   arma::mat Z_fcst_i = arma::mat(n_vars, n_lags + n_fcst);
   Z_i.rows(0, n_lags - 1) = Z_1;
 
-  arma::mat eps = arma::mat(n_vars*n_lags+1, n_vars);
-  arma::mat latent_nofac_full = arma::mat(n_T+n_lags, n_vars);
-  latent_nofac_full.head_rows(n_lags) = Z_1;
-  arma::mat X_nofac;
+  arma::mat eps;
+  bool rue = true;
+  if ((n_vars*n_lags) > 1.1 * n_T & arma::range(prior_Pi_AR1) < 1e-12) {
+    rue = false;
+    eps = arma::mat(n_T+n_vars*n_lags+1, n_vars);
+  } else {
+    eps = arma::mat(n_vars*n_lags+1, n_vars);
+  }
 
   if (single_freq) {
     Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
@@ -72,6 +76,7 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
   }
 
   for (arma::uword i = 0; i < n_reps; ++i) {
+
     if (!single_freq) {
       Sig_i = arma::exp(0.5 * armah.head_cols(n_vars));
       y_i = simsm_adaptive_univariate(y_in_p, Pi_i, Sig_i, Lambda_comp, Z_1, n_q, T_b, cc_i);
@@ -122,19 +127,18 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
     cc_i = armaf.t() * armafacload.t(); // Common component
     latent_nofac = y_i - cc_i;
 
-    // for (arma::uword j = 0; j < n_vars; j++) {
-    //   arma::vec h_j = arma::exp(-0.5 * armah.col(j));
-    //   arma::mat X_j = X.each_col() % h_j;
-    //   arma::vec y_j = latent_nofac.col(j) % h_j;
-    //   Pi_i.row(j) = arma::trans(mvn_ccm(X_j, prior_Pi_Omega.col(j), y_j, prior_Pi_AR1[j], j));
-    // }
-
     eps.imbue(norm_rand);
-    latent_nofac_full.tail_rows(n_T) = latent_nofac;
-    X_nofac = create_X(latent_nofac_full, n_lags);
     arma::mat output(n_vars*n_lags+1, n_vars);
-    Pi_parallel Pi_parallel_i(output, latent_nofac, X_nofac, prior_Pi_Omega, eps, armah, n_T, n_vars, n_lags);
-    RcppParallel::parallelFor(0, n_vars, Pi_parallel_i);
+    if (rue) {
+      Pi_parallel_rue Pi_parallel_i(output, latent_nofac, X, prior_Pi_Omega, eps,
+                                armah, prior_Pi_AR1, n_T, n_vars, n_lags);
+      RcppParallel::parallelFor(0, n_vars, Pi_parallel_i);
+    } else {
+      Pi_parallel_bcm Pi_parallel_i(output, latent_nofac, X, prior_Pi_Omega, eps,
+                                    armah, n_T, n_vars, n_lags);
+      RcppParallel::parallelFor(0, n_vars, Pi_parallel_i);
+    }
+
     Pi_i = output.t();
 
     if (verbose) {

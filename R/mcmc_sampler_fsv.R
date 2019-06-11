@@ -79,7 +79,7 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
     init_facload <- init$init_facload
   }
   if (is.null(init$init_fac)) {
-    init_fac <-  matrix(rnorm(n_fac*n_T_, sd = 0.005), n_fac, n_T_)
+    init_fac <-  matrix(rnorm(n_fac*n_T_, sd = 0.5), n_fac, n_T_)
   } else {
     init_fac <- init$init_fac
   }
@@ -144,7 +144,7 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
   facload_storage <- array(matrix(init_facload, nrow = n_vars, ncol = n_fac), dim = c(n_vars, n_fac, n_reps/n_thin))
   fac_storage <- array(matrix(init_fac, n_fac, n_T_), dim = c(n_fac, n_T_, n_reps/n_thin))
 
-  latent <- array(init_latent, dim = c(n_T_, n_vars+n_fac, n_reps/n_thin),
+  latent <- array(t(init_latent), dim = c(n_T_, n_vars+n_fac, n_reps/n_thin),
                   dimnames = list(rownames(init_latent), colnames(init_latent), NULL))
 
   Pi_i <- Pi[,,1]
@@ -226,7 +226,7 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
     fsample <- tryCatch(factorstochvol::fsvsample(y_hat, factors = n_fac, draws = 1, burnin = 0, priorh0idi = "stationary",
                                                   priorh0fac = "stationary", thin = 1, keeptime = "all",
                                                   runningstore = 0, runningstorethin = 10, runningstoremoments = 1,
-                                                  quiet = TRUE, interweaving = 4, signswitch = TRUE,
+                                                  quiet = TRUE, interweaving = 4, signswitch = FALSE,
                                                   startpara = startpara, startlatent = startlatent,
                                                   startlatent0 = startlatent0,
                                                   startfacload = startfacload, startfac = startfac, priormu = priormu,
@@ -281,7 +281,8 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
   ### Prepare the return object
   return_obj <- list(Pi = Pi, Z = Z, Z_fcst = NULL, n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst,
                      prior_Pi_Omega = prior_Pi_Omega, Y = Y, n_T = n_T, n_T_ = n_T_, n_reps = n_reps,
-                     facload = facload_storage, latent = latent,  mu = mu_storage, sigma = sigma_storage, phi = phi_storage,
+                     facload = facload_storage, f = fac_storage,
+                     h = latent,  mu = mu_storage, sigma = sigma_storage, phi = phi_storage,
                      init = list(init_Pi = Pi_i, init_Z = Z_i, init_mu = startpara$mu,
                                  init_phi = startpara$phi, init_sigma = startpara$sigma,
                                  init_facload = startfacload,
@@ -431,7 +432,7 @@ mcmc_sampler.mfbvar_minn_fsv2 <- function(x, ...){
 
   ### Factors and loadings
   if (is.null(init$init_facload)) {
-    init_facload <-  matrix(rnorm(n_vars*n_fac, sd = .5)^2, nrow=n_vars, ncol=n_fac)
+    init_facload <-  matrix(rnorm(n_vars*n_fac, sd = 0.5)^2, nrow=n_vars, ncol=n_fac)
   } else {
     init_facload <- init$init_facload
   }
