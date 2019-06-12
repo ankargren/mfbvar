@@ -17,12 +17,16 @@ void update_ng(double & phi_mu, double & lambda_mu, arma::vec & omega, arma::uwo
 
   // Update omega
   double gig_lambda = phi_mu-0.5;
-  double gig_chi = lambda_mu * phi_mu;
-  arma::vec gig_psi = arma::pow(psi_i-prior_psi_mean, 2.0);
-  for (arma::uword i = 0; i < nm; ++i) {
-    omega(i) = do_rgig1(gig_lambda, gig_chi, gig_psi(i));
-  }
+  //double gig_chi = lambda_mu * phi_mu;
+  //arma::vec gig_psi = arma::pow(psi_i-prior_psi_mean, 2.0);
 
+  arma::vec gig_chi = arma::pow(psi_i-prior_psi_mean, 2.0);
+  double gig_psi = lambda_mu * phi_mu;
+
+  for (arma::uword i = 0; i < nm; ++i) {
+    //omega(i) = do_rgig1(gig_lambda, gig_chi, gig_psi(i));
+    omega(i) = do_rgig1(gig_lambda, gig_chi(i), gig_psi);
+  }
   // Update lambda
   lambda_mu = R::rgamma((double)nm * phi_mu + c0, 1.0/(0.5 * phi_mu * arma::accu(omega) + c1)); // Check parametrization
 
