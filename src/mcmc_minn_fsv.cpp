@@ -11,7 +11,7 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
                    arma::cube& Pi, arma::cube& Z, arma::cube& Z_fcst,
                    arma::mat& mu, arma::mat& phi, arma::mat& sigma,
                    arma::cube& f, arma::cube& facload, arma::cube& h,
-                   arma::vec & aux, arma::vec & global, arma::vec & local,
+                   arma::mat & aux, arma::vec & global, arma::mat & local,
                    const arma::mat& Lambda_comp, arma::mat prior_Pi_Omega,
                    const arma::vec& prior_Pi_AR1, const arma::mat& Z_1,
                    double bmu, double Bmu, double a0idi, double b0idi, double a0fac, double b0fac,
@@ -81,14 +81,22 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
   }
 
   // DL
+
+  Rcpp::Rcout << "dl" << std::endl;
   bool dl = false;
-  double global_double;
+  double global_i;
   if (a > 0) {
     dl = true;
-    global_double = global(0);
+    global_i = global(0);
   }
+  arma::vec aux_i = aux.row(0).t();
+  arma::vec local_i = local.row(0).t();
+
+  Rcpp::Rcout << arma::size(aux_i) << std::endl;
+  Rcpp::Rcout << arma::size(local_i) << std::endl;
 
   for (arma::uword i = 0; i < n_reps; ++i) {
+    Rcpp::Rcout << i << std::endl;
 
     if (!single_freq) {
       Sig_i = arma::exp(0.5 * armah.head_cols(n_vars));
@@ -154,9 +162,10 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
 
     Pi_i = output.t();
     if (dl) {
-      update_dl(prior_Pi_Omega, aux, local, global_double, Pi_i, n_vars, n_lags, a);
-      global(0) = global_double;
-
+      update_dl(prior_Pi_Omega, aux_i, local_i, global_i, Pi_i.t(), n_vars, n_lags, a);
+      global(i) = global_i;
+      aux.row(i) = aux_i.t();
+      local.row(i) = local_i.t();
     }
 
 

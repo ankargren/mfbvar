@@ -197,9 +197,9 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
 
   Z_1 <- Z[1:n_pseudolags,, 1]
 
-  aux <- c(0)
+  aux <- matrix(0, 1, 1)
   global <- c(0)
-  local <- c(0)
+  local <- matrix(0, 1, 1)
   a <- -1
 
   mfbvar:::mcmc_minn_fsv(Y[-(1:n_lags),],Pi,Z,Z_fcst,mu,phi,sigma,f,facload,h,
@@ -296,7 +296,7 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
   priorh0 <- rep(-1.0, n_vars + n_fac)
 
   ## DL
-  if (is.null(x$a)) {
+  if (!("a" %in% names(x))) {
     a <- 1
   } else {
     a <- x$a
@@ -399,21 +399,21 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
   }
 
   if (is.null(init$init_global)) {
-    global <- init$init_global
+    init_global <- 0.1
   } else {
-    global <- 0.1
+    init_global <- init$init_global
   }
 
   if (is.null(init$init_aux)) {
-    aux <- init$init_aux
+    init_aux <- c(sqrt(prior_Pi_Omega[-1,])/init_global)
   } else {
-    aux <- sqrt(prior_Pi_Omega[-1,])/global
+    init_aux <- init$init_aux
   }
 
   if (is.null(init$init_local)) {
-    local <- init$init_local
+    init_local <- c(sqrt(prior_Pi_Omega[-1,])/init_global)
   } else {
-    local <- sqrt(prior_Pi_Omega[-1,])/global
+    init_local <- init$init_local
   }
 
   ################################################################
@@ -450,9 +450,12 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
   facload <- array(matrix(init_facload, nrow = n_vars, ncol = n_fac),
                    dim = c(n_vars, n_fac, n_reps/n_thin))
   f <- array(matrix(init_fac, n_fac, n_T_), dim = c(n_fac, n_T_, n_reps/n_thin))
-
   h <- array(t(init_latent), dim = c(n_T_, n_vars+n_fac, n_reps/n_thin),
              dimnames = list(rownames(init_latent), colnames(init_latent), NULL))
+
+  aux <- matrix(init_aux, nrow = n_reps/n_thin, ncol = n_vars*n_vars*n_lags, byrow = TRUE)
+  local <- matrix(init_local, nrow = n_reps/n_thin, ncol = n_vars*n_vars*n_lags, byrow = TRUE)
+  global <- rep(init_global, n_reps/n_thin)
 
   ################################################################
   ### Compute terms which do not vary in the sampler

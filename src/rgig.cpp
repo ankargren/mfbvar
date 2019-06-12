@@ -15,6 +15,7 @@ double do_rgig1(double lambda, double chi, double psi) {
   return Rcpp::as<double>(fun(1, lambda, chi, psi));
 }
 
+// [[Rcpp::export]]
 double rig(double mu, double lambda){
   double z = R::rnorm(0,1);
   double y = z*z;

@@ -26,6 +26,10 @@ create_X_t_noint <- function(y) {
     .Call(`_mfbvar_create_X_t_noint`, y)
 }
 
+dl_reg <- function(y, x, beta, aux, global, local, prior_Pi_Omega, n_reps, a) {
+    invisible(.Call(`_mfbvar_dl_reg`, y, x, beta, aux, global, local, prior_Pi_Omega, n_reps, a))
+}
+
 #' @title Find maximum eigenvalue
 #'
 #' @description The function computes the maximum eigenvalue.
@@ -98,6 +102,10 @@ do_rgig1 <- function(lambda, chi, psi) {
     .Call(`_mfbvar_do_rgig1`, lambda, chi, psi)
 }
 
+rig <- function(mu, lambda) {
+    .Call(`_mfbvar_rig`, mu, lambda)
+}
+
 rmvn <- function(Phi, d, alpha) {
     .Call(`_mfbvar_rmvn`, Phi, d, alpha)
 }
@@ -122,6 +130,10 @@ rinvwish <- function(v, S) {
 #' @keywords internal
 rmultn <- function(m, Sigma) {
     .Call(`_mfbvar_rmultn`, m, Sigma)
+}
+
+mcmc_minn_fsv_tmp <- function(y_in, Pi, armah, aux, global, local, prior_Pi_Omega, prior_Pi_AR1, n_fac, n_reps, n_lags, n_vars, n_T, a) {
+    invisible(.Call(`_mfbvar_mcmc_minn_fsv_tmp`, y_in, Pi, armah, aux, global, local, prior_Pi_Omega, prior_Pi_AR1, n_fac, n_reps, n_lags, n_vars, n_T, a))
 }
 
 update_demean <- function(my, mu_long, y_in_p, mu_mat, d1, Psi_i, Lambda_single, n_vars, n_q, n_Lambda, n_T) {
