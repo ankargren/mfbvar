@@ -6,6 +6,7 @@
 #include "mvn_par.h"
 #include "update_ng.h"
 #include "update_dl.h"
+#include <ctime>
 // [[Rcpp::export]]
 void mcmc_minn_fsv(const arma::mat & y_in_p,
                    arma::cube& Pi, arma::cube& Z, arma::cube& Z_fcst,
@@ -22,6 +23,7 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
                    arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars,
                    arma::uword n_T, arma::uword n_fcst, arma::uword n_thin, bool verbose,
                    const double a) {
+  Rcpp::Rcout << "start" << std::endl;
   bool single_freq;
   if (n_q == 0 || n_q == n_vars) {
     single_freq = true;
@@ -30,7 +32,7 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
   }
 
   Progress p(n_reps, verbose);
-
+  Rcpp::Rcout << "step1 " << std::endl;
   arma::mat Pi_i = Pi.slice(0);
   arma::mat X;
   arma::mat y_i = y_in_p;
@@ -39,6 +41,7 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
 
 
   // fsv
+  Rcpp::Rcout << "fsv" << std::endl;
   Rcpp::NumericMatrix curpara = Rcpp::NumericMatrix(3, n_vars + n_fac);
   arma::mat curpara_arma(curpara.begin(), curpara.nrow(), curpara.ncol(), false);
   curpara_arma.fill(0.0);
@@ -81,6 +84,7 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
   }
 
   // DL
+  Rcpp::Rcout << "dl" << std::endl;
   bool dl = false;
   double global_i;
   if (a > 0) {
@@ -91,6 +95,7 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
   arma::vec local_i = local.row(0).t();
 
   for (arma::uword i = 0; i < n_reps; ++i) {
+    Rcpp::Rcout << "loop " << i <<std::endl;
     if (!single_freq) {
       Sig_i = arma::exp(0.5 * armah.head_cols(n_vars));
       y_i = simsm_adaptive_univariate(y_in_p, Pi_i, Sig_i, Lambda_comp, Z_1, n_q, T_b, cc_i);
@@ -101,7 +106,7 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
     y_hat = y_i - X * Pi_i.t();
 
     if (i % n_thin == 0) {
-
+      Rcpp::Rcout << "fcst" << std::endl;
       mu_i = curpara_arma.row(0).t();
       phi_i = curpara_arma.row(1).t();
       sigma_i = curpara_arma.row(2).t(); // sigma, not sigma2
@@ -133,7 +138,12 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
       mu.col(i/n_thin) = mu_i.head(n_vars);
       phi.col(i/n_thin) = phi_i;
       sigma.col(i/n_thin) = sigma_i;
+
+      global(i/n_thin) = global_i;
+      aux.row(i/n_thin) = aux_i.t();
+      local.row(i/n_thin) = local_i.t();
     }
+    Rcpp::Rcout << "fsv" << std::endl;
     update_fsv(armafacload, armaf, armah, armah0, curpara, armatau2, y_hat.t(),
                bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv,
                priorh0, armarestr);
@@ -154,16 +164,22 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
     }
 
     Pi_i = output.t();
+
     if (dl) {
       update_dl(prior_Pi_Omega, aux_i, local_i, global_i, Pi_i.t(), n_vars, n_lags, a);
-      global(i) = global_i;
-      aux.row(i) = aux_i.t();
-      local.row(i) = local_i.t();
     }
 
 
     if (verbose) {
       p.increment();
+    }
+
+    if (i % 100 == 0) {
+      Rcpp::Rcout << "date1" << std::endl;
+      std::time_t t = std::time(0);   // get time now
+      Rcpp::Rcout << "date2" << std::endl;
+      std::tm* now = std::localtime(&t);
+      Rcpp::Rcout <<  "Iteration " << i << " at " << now->tm_hour << ':' << now->tm_min <<':'<< now->tm_sec << std::endl;
     }
   }
 

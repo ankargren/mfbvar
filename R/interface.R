@@ -24,7 +24,8 @@
 #' @param prior_phi (Only used with common stochastic volatility) Vector with two elements \code{c(mean, variance)} for the AR(1) parameter in the log-volatility regression
 #' @param prior_sigma2 (Only used with common stochastic volatility) Vector with two elements \code{c(mean, df)} for the innovation variance of the log-volatility regression
 #' @param n_fac (Only used with factor stochastic volatility) Number of factors to use for the factor stochastic volatility model
-#' @param cl (Only used with factor stochastic volatility) Cluster object to use for drawing regression parameters in parallel
+#' @param n_cores (Only used with factor stochastic volatility) Number of cores to use for drawing regression parameters in parallel
+#' @param a (Only used with factor stochastic volatility and Dirichlet-Laplace) Shrinkage hyperparameter a (lower values impose more powerful shrinkage)
 #' @param ... (Only used with factor stochastic volatility) Arguments to pass along to \code{\link[factorstochvol]{fsvsample}}. See details.
 #' @templateVar verbose TRUE
 #' @templateVar check_roots TRUE
@@ -47,11 +48,7 @@
 #'   \item{\code{priorsigmaidi}}{\code{ = 1}}
 #'   \item{\code{priorsigmafac}}{\code{ = 1}}
 #'   \item{\code{priorfacload}}{\code{ = 1}}
-#'   \item{\code{priorng}}{\code{ = c(1, 1)}}
-#'   \item{\code{columnwise}}{\code{ = FALSE}}
 #'   \item{\code{restrict}}{\code{ = "none"}}
-#'   \item{\code{heteroskedastic}}{\code{ = TRUE}}
-#'   \item{\code{priorhomoskedastic}}{\code{ = NA}}
 #' }
 #'
 #' The steady-state prior involves inverting the lag polynomial. For this reason, draws in which the largest eigenvalue
@@ -68,7 +65,7 @@ set_prior <- function(Y, freq, aggregation = "average", prior_Pi_AR1 = rep(0, nc
                       n_fcst = 0, n_thin = 1, n_burnin, n_reps, d = NULL, d_fcst = NULL,
                       prior_psi_mean = NULL, prior_psi_Omega = NULL, prior_phi = c(0.9, 0.1),
                       prior_sigma2 = c(0.01, 4), n_fac = NULL,
-                      cl = NULL, verbose = FALSE, check_roots = FALSE, ...) {
+                      n_cores = 1, a = 1/(ncol(Y)^2*n_lags), verbose = FALSE, check_roots = FALSE, ...) {
   prior_call <- mget(names(formals())[names(formals()) != "..."], sys.frame(sys.nframe()))
   prior_call$supplied_args <- names(as.list(match.call()))[-1]
   ellipsis <- list(...)
@@ -365,8 +362,8 @@ check_prior <- function(prior_obj) {
       stop("The number of factors is not a numeric scalar value.")
     }
 
-    if (!inherits(prior_obj$cl, "cluster") && !is.null(prior_obj$cl)) {
-      stop(sprintf("cl should be a cluster object, but is %s", class(prior_obj$cl)))
+    if (!is.atomic(prior_obj$n_cores) || length(prior_obj$n_cores) > 1) {
+      stop("n_cores must be a vector with a single element.")
     }
 
     if ("priormu" %in% prior_obj$supplied_args) {
@@ -446,6 +443,13 @@ check_prior <- function(prior_obj) {
     stop("Please set the number of factors before attempting to pass additional arguments along to fsvsim.")
   }
 
+  if ("a" %in% prior_obj$supplied_args) {
+    if (!is.atomic(prior_obj$a) || length(prior_obj$a) > 1) {
+      stop("a must be a vector with a single element.")
+    }
+  } else {
+    prior_obj$supplied_args <- c(prior_obj$supplied_args, "a")
+  }
 
   return(prior_obj)
 }
@@ -555,7 +559,8 @@ summary.mfbvar_prior <- function(object, ...) {
   cat("----------------------------\n")
   cat("Factor stochastic volatility-specific elements:\n")
   cat("  n_fac:", ifelse(is.null(object$n_fac), "<missing>", object$n_fac), "\n")
-  cat("  cl:", ifelse(is.null(object$cl), "<missing>", sprintf("%s with %d workers", class(object$cl)[1], length(object$cl))), "\n")
+  cat("  n_cores:", ifelse(is.null(object$n_cores), "<missing>", object$n_cores), "\n")
+  cat("  a:", ifelse(is.null(object[["a"]]), "<missing>", object[["a"]]), "\n")
   if ("priormu" %in% object$supplied_args) {
     cat("  priormu:", object$priormu, "\n")
   }

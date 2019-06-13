@@ -1,3 +1,8 @@
+mcmc_sampler <- function(x, ...) {
+  UseMethod("mcmc_sampler")
+}
+
+
 #' @rdname mcmc_sampler
 mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
   n_vars <- ncol(x$Y)
@@ -301,6 +306,8 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
   } else {
     a <- x$a
   }
+
+  RcppParallel::setThreadOptions(numThreads = x$n_cores)
 
   ## Initials
 
