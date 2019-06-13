@@ -19,7 +19,6 @@ void update_dl(arma::mat & prior_Pi_Omega, arma::vec & aux,
   }
   arma::vec Pi_local = arma::abs(Pi_vec) / local;
 
-  Rcpp::Rcout << K*(a-1.0) << ", " << 1.0 << ", " << 2.0 * arma::accu(Pi_local) << std::endl;
   global = do_rgig1(K*(a-1.0), 2.0 * arma::accu(Pi_local), 1.0);
 
   for (arma::uword i = 0; i < K; ++i) {

@@ -81,8 +81,6 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
   }
 
   // DL
-
-  Rcpp::Rcout << "dl" << std::endl;
   bool dl = false;
   double global_i;
   if (a > 0) {
@@ -92,12 +90,7 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
   arma::vec aux_i = aux.row(0).t();
   arma::vec local_i = local.row(0).t();
 
-  Rcpp::Rcout << arma::size(aux_i) << std::endl;
-  Rcpp::Rcout << arma::size(local_i) << std::endl;
-
   for (arma::uword i = 0; i < n_reps; ++i) {
-    Rcpp::Rcout << i << std::endl;
-
     if (!single_freq) {
       Sig_i = arma::exp(0.5 * armah.head_cols(n_vars));
       y_i = simsm_adaptive_univariate(y_in_p, Pi_i, Sig_i, Lambda_comp, Z_1, n_q, T_b, cc_i);
