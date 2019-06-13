@@ -89,7 +89,7 @@ void mcmc_minn_csv(const arma::mat & y_in_p,
     update_csv(u_tilde, phi_i, sigma_i, f_i, f0, mixprob, r, priorlatent0, phi_invvar,
                phi_meaninvvar, prior_sigma2, prior_df);
     vol_pred = f_i(n_T-1);
-    if (i % n_thin == 0) {
+    if ((i+1) % n_thin == 0) {
       if (n_fcst > 0) {
         Z_fcst_i.head_cols(n_lags) = Z_i.tail_rows(n_lags).t();
         for (arma::uword h = 0; h < n_fcst; ++h) {
@@ -274,7 +274,7 @@ void mcmc_ss_csv(const arma::mat & y_in_p,
     if (verbose) {
       p.increment();
     }
-    if (i % n_thin == 0) {
+    if ((i+1) % n_thin == 0) {
       if (n_fcst > 0) {
         Z_fcst_i.head_cols(n_lags) = Z_i_demean.tail_rows(n_lags).t();
         for (arma::uword h = 0; h < n_fcst; ++h) {
@@ -498,7 +498,7 @@ void mcmc_ssng_csv(const arma::mat & y_in_p,
     if (verbose) {
       p.increment();
     }
-    if (i % n_thin == 0) {
+    if ((i+1) % n_thin == 0) {
       if (n_fcst > 0) {
         Z_fcst_i.head_cols(n_lags) = Z_i_demean.tail_rows(n_lags).t();
         for (arma::uword h = 0; h < n_fcst; ++h) {

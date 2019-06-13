@@ -162,7 +162,7 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
 
     posterior_psi_iw(psi_i, mu_mat, Pi_i, D_mat, Sigma_i, inv_prior_psi_Omega, mZ + mu_mat, X, inv_prior_psi_Omega_mean, dt, n_determ, n_vars, n_lags);
     arma::vec errors = arma::vec(n_vars);
-    if (i % n_thin == 0) {
+    if ((i+1) % n_thin == 0) {
       if (n_fcst > 0) {
         Z_fcst_i.head_cols(n_lags) = Z_i.tail_rows(n_lags).t() - mu_mat.tail_rows(n_lags).t();
         for (arma::uword h = 0; h < n_fcst; ++h) {

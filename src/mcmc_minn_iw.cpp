@@ -64,7 +64,7 @@ void mcmc_minn_iw(const arma::mat & y_in_p,
     Sigma_chol = arma::chol(Sigma_i, "lower");
     Pi_i = rmatn(post_Pi.t(), post_Pi_Omega, Sigma_i);
 
-    if (i % n_thin == 0) {
+    if ((i+1) % n_thin == 0) {
       if (n_fcst > 0) {
 
         Z_fcst_i.head_cols(n_lags) = Z_i.tail_rows(n_lags).t();

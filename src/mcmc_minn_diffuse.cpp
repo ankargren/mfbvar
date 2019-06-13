@@ -65,7 +65,7 @@ void mcmc_minn_diffuse(const arma::mat & y_in_p,
     Sigma_chol = arma::chol(Sigma_i, "lower");
     Sigma_inv = arma::inv_sympd(Sigma_i);
 
-    if (i % n_thin == 0) {
+    if ((i+1) % n_thin == 0) {
       if (n_fcst > 0) {
 
         Z_fcst_i.head_cols(n_lags) = Z_i.tail_rows(n_lags).t();
