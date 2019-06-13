@@ -165,11 +165,11 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
       p.increment();
     }
 
-    if (i % 100 == 0) {
+
       std::time_t t = std::time(0);   // get time now
       std::tm* now = std::localtime(&t);
       Rcpp::Rcout <<  "Iteration " << i << " at " << now->tm_hour << ':' << now->tm_min <<':'<< now->tm_sec << std::endl;
-    }
+
   }
 
 }
@@ -325,8 +325,7 @@ void mcmc_ss_fsv(const arma::mat & y_in_p,
 
     y_hat = mZ - mX * Pi_i.t();
 
-    if (i % n_thin == 0) {
-
+    if ((i+1) % n_thin == 0) {
       mu_i = curpara_arma.row(0).t();
       phi_i = curpara_arma.row(1).t();
       sigma_i = curpara_arma.row(2).t(); // sigma, not sigma2

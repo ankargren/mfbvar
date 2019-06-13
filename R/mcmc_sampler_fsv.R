@@ -141,10 +141,10 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
   } else {
     init_facload <- init$init_facload
   }
-  if (is.null(init$init_fac)) {
-    init_fac <-  matrix(rnorm(n_fac*n_T_, sd = 0.5), n_fac, n_T_)
+  if (is.null(init$init_f)) {
+    init_f <-  matrix(rnorm(n_fac*n_T_, sd = 0.5), n_fac, n_T_)
   } else {
-    init_fac <- init$init_fac
+    init_f <- init$init_f
   }
 
   ### Latent volatilities
@@ -192,7 +192,7 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
 
   facload <- array(matrix(init_facload, nrow = n_vars, ncol = n_fac),
                    dim = c(n_vars, n_fac, n_reps/n_thin))
-  f <- array(matrix(init_fac, n_fac, n_T_), dim = c(n_fac, n_T_, n_reps/n_thin))
+  f <- array(matrix(init_f, n_fac, n_T_), dim = c(n_fac, n_T_, n_reps/n_thin))
 
   h <- array(t(init_latent), dim = c(n_T_, n_vars+n_fac, n_reps/n_thin),
                   dimnames = list(rownames(init_latent), colnames(init_latent), NULL))
@@ -387,10 +387,10 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
   } else {
     init_facload <- init$init_facload
   }
-  if (is.null(init$init_fac)) {
-    init_fac <-  matrix(rnorm(n_fac*n_T_, sd = 0.5), n_fac, n_T_)
+  if (is.null(init$init_f)) {
+    init_f <-  matrix(rnorm(n_fac*n_T_, sd = 0.5), n_fac, n_T_)
   } else {
-    init_fac <- init$init_fac
+    init_f <- init$init_f
   }
 
   ### Latent volatilities
@@ -456,7 +456,7 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
 
   facload <- array(matrix(init_facload, nrow = n_vars, ncol = n_fac),
                    dim = c(n_vars, n_fac, n_reps/n_thin))
-  f <- array(matrix(init_fac, n_fac, n_T_), dim = c(n_fac, n_T_, n_reps/n_thin))
+  f <- array(matrix(init_f, n_fac, n_T_), dim = c(n_fac, n_T_, n_reps/n_thin))
   h <- array(t(init_latent), dim = c(n_T_, n_vars+n_fac, n_reps/n_thin),
              dimnames = list(rownames(init_latent), colnames(init_latent), NULL))
 
@@ -657,10 +657,10 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
   } else {
     init_facload <- init$init_facload
   }
-  if (is.null(init$init_fac)) {
-    init_fac <-  matrix(rnorm(n_fac*n_T_, sd = 0.5), n_fac, n_T_)
+  if (is.null(init$init_f)) {
+    init_f <-  matrix(rnorm(n_fac*n_T_, sd = 0.5), n_fac, n_T_)
   } else {
-    init_fac <- init$init_fac
+    init_f <- init$init_f
   }
 
   ### Latent volatilities
@@ -713,7 +713,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
 
   facload <- array(matrix(init_facload, nrow = n_vars, ncol = n_fac),
                    dim = c(n_vars, n_fac, n_reps/n_thin))
-  f <- array(matrix(init_fac, n_fac, n_T_), dim = c(n_fac, n_T_, n_reps/n_thin))
+  f <- array(matrix(init_f, n_fac, n_T_), dim = c(n_fac, n_T_, n_reps/n_thin))
 
   h <- array(t(init_latent), dim = c(n_T_, n_vars+n_fac, n_reps/n_thin),
              dimnames = list(rownames(init_latent), colnames(init_latent), NULL))
@@ -948,10 +948,10 @@ mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
   } else {
     init_facload <- init$init_facload
   }
-  if (is.null(init$init_fac)) {
-    init_fac <-  matrix(rnorm(n_fac*n_T_, sd = 0.5), n_fac, n_T_)
+  if (is.null(init$init_f)) {
+    init_f <-  matrix(rnorm(n_fac*n_T_, sd = 0.5), n_fac, n_T_)
   } else {
-    init_fac <- init$init_fac
+    init_f <- init$init_f
   }
 
   ### Latent volatilities
@@ -1004,7 +1004,7 @@ mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
 
   facload <- array(matrix(init_facload, nrow = n_vars, ncol = n_fac),
                    dim = c(n_vars, n_fac, n_reps/n_thin))
-  f <- array(matrix(init_fac, n_fac, n_T_), dim = c(n_fac, n_T_, n_reps/n_thin))
+  f <- array(matrix(init_f, n_fac, n_T_), dim = c(n_fac, n_T_, n_reps/n_thin))
 
   h <- array(t(init_latent), dim = c(n_T_, n_vars+n_fac, n_reps/n_thin),
              dimnames = list(rownames(init_latent), colnames(init_latent), NULL))
