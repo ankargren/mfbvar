@@ -66,7 +66,7 @@
 set_prior <- function(Y, freq, aggregation = "average", prior_Pi_AR1 = rep(0, ncol(Y)), lambda1 = 0.2,
                       lambda2 = 0.5, lambda3 = 1, lambda4 = 10000, block_exo = NULL, n_lags,
                       n_fcst = 0, n_thin = 1, n_burnin, n_reps, d = NULL, d_fcst = NULL,
-                      prior_psi_mean = NULL, prior_psi_Omega = NULL, prior_phi = c(0.9, 0.1),
+                      prior_psi_mean = NULL, prior_psi_Omega = NULL, s = -1000, prior_phi = c(0.9, 0.1),
                       prior_sigma2 = c(0.01, 4), n_fac = NULL,
                       cl = NULL, verbose = FALSE, check_roots = FALSE, ...) {
   prior_call <- mget(names(formals())[names(formals()) != "..."], sys.frame(sys.nframe()))
