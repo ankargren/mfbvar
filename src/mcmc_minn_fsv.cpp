@@ -100,7 +100,7 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
 
     y_hat = y_i - X * Pi_i.t();
 
-    if (i % n_thin == 0) {
+    if ((i+1) % n_thin == 0) {
       mu_i = curpara_arma.row(0).t();
       phi_i = curpara_arma.row(1).t();
       sigma_i = curpara_arma.row(2).t(); // sigma, not sigma2
@@ -120,14 +120,11 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
 
 
       Z.slice(i/n_thin) = Z_i;
-
       Pi.slice(i/n_thin) = Pi_i;
-
 
       f.slice(i/n_thin) = armaf;
       facload.slice(i/n_thin) = armafacload;
       h.slice(i/n_thin) = armah;
-
 
       mu.col(i/n_thin) = mu_i.head(n_vars);
       phi.col(i/n_thin) = phi_i;
