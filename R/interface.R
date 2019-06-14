@@ -693,28 +693,11 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
 
   class(mfbvar_prior) <- c(class(mfbvar_prior), sprintf("mfbvar_%s_%s", prior, variance), sprintf("mfbvar_%s", prior), sprintf("mfbvar_%s", variance))
 
-  if (mfbvar_prior$verbose) {
-    cat(paste0("##############################################\nRunning the burn-in sampler with ", mfbvar_prior$n_burnin, " draws\n\n"))
-    start_burnin <- Sys.time()
-  }
-
   time_out <- c(time_out, Sys.time())
-  burn_in <- mcmc_sampler(update_prior(mfbvar_prior, n_fcst = 0), n_reps = mfbvar_prior$n_burnin, n_thin = mfbvar_prior$n_burnin)
-
-  if (mfbvar_prior$verbose) {
-    end_burnin <- Sys.time()
-    time_diff <- end_burnin - start_burnin
-    cat(paste0("\n   Time elapsed for drawing ", mfbvar_prior$n_burnin, " times for burn-in: ", signif(time_diff, digits = 1), " ",
-               attr(time_diff, "units"), "\n"))
-    cat(paste0("\nMoving on to the main chain with ",
-               mfbvar_prior$n_reps, " draws \n\n", ifelse(mfbvar_prior$n_fcst > 0, paste0("   Making forecasts ", mfbvar_prior$n_fcst, " steps ahead"), ""), "\n\n"))
-  }
-
-  time_out <- c(time_out, Sys.time())
-  main_run <-  mcmc_sampler(mfbvar_prior, n_reps = mfbvar_prior$n_reps, init = burn_in$init)
+  main_run <-  mcmc_sampler(mfbvar_prior)
   time_out <- c(time_out, Sys.time())
   if (mfbvar_prior$verbose) {
-    time_diff <- Sys.time() - start_burnin
+    time_diff <- Sys.time() - time_out[1]
     cat(paste0("\n   Total time elapsed: ", signif(time_diff, digits = 1), " ",
                attr(time_diff, "units"), "\n"))
   }
@@ -734,7 +717,7 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
   }
   if (mfbvar_prior$n_fcst > 0) {
     names_fcst <- paste0("fcst_", 1:mfbvar_prior$n_fcst)
-    rownames(main_run$Z_fcst)[1:main_run$n_lags] <- names_row[(main_run$n_T-main_run$n_lags+1):main_run$n_T]
+    rownames(main_run$Z_fcst)[1:main_run$n_lags] <- names_row[(length(names_row)-main_run$n_lags+1):length(names_row)]
     rownames(main_run$Z_fcst)[(main_run$n_lags+1):(main_run$n_fcst+main_run$n_lags)] <- names_fcst
     colnames(main_run$Z_fcst) <- names_col
   } else {

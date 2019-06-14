@@ -26,8 +26,8 @@ create_X_t_noint <- function(y) {
     .Call(`_mfbvar_create_X_t_noint`, y)
 }
 
-dl_reg <- function(y, x, beta, aux, global, local, prior_Pi_Omega, n_reps, a) {
-    invisible(.Call(`_mfbvar_dl_reg`, y, x, beta, aux, global, local, prior_Pi_Omega, n_reps, a))
+dl_reg <- function(y, x, beta, aux, global, local, prior_Pi_Omega, n_reps, a, gig) {
+    invisible(.Call(`_mfbvar_dl_reg`, y, x, beta, aux, global, local, prior_Pi_Omega, n_reps, a, gig))
 }
 
 #' @title Find maximum eigenvalue
@@ -42,8 +42,8 @@ max_eig_cpp <- function(A) {
     .Call(`_mfbvar_max_eig_cpp`, A)
 }
 
-mcmc_minn_fsv <- function(y_in_p, Pi, Z, Z_fcst, mu, phi, sigma, f, facload, h, aux, global, local, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, a) {
-    invisible(.Call(`_mfbvar_mcmc_minn_fsv`, y_in_p, Pi, Z, Z_fcst, mu, phi, sigma, f, facload, h, aux, global, local, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, a))
+mcmc_minn_fsv <- function(y_in_p, Pi, Z, Z_fcst, mu, phi, sigma, f, facload, h, aux, global, local, slice, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, a, gig) {
+    invisible(.Call(`_mfbvar_mcmc_minn_fsv`, y_in_p, Pi, Z, Z_fcst, mu, phi, sigma, f, facload, h, aux, global, local, slice, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, a, gig))
 }
 
 mcmc_ss_fsv <- function(y_in_p, Pi, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, mu, phi, sigma, f, facload, h, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng) {
@@ -130,10 +130,6 @@ rinvwish <- function(v, S) {
 #' @keywords internal
 rmultn <- function(m, Sigma) {
     .Call(`_mfbvar_rmultn`, m, Sigma)
-}
-
-mcmc_minn_fsv_tmp <- function(y_in, Pi, armah, aux, global, local, prior_Pi_Omega, prior_Pi_AR1, n_fac, n_reps, n_lags, n_vars, n_T, a) {
-    invisible(.Call(`_mfbvar_mcmc_minn_fsv_tmp`, y_in, Pi, armah, aux, global, local, prior_Pi_Omega, prior_Pi_AR1, n_fac, n_reps, n_lags, n_vars, n_T, a))
 }
 
 update_demean <- function(my, mu_long, y_in_p, mu_mat, d1, Psi_i, Lambda_single, n_vars, n_q, n_Lambda, n_T) {

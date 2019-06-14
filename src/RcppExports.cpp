@@ -68,8 +68,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // dl_reg
-void dl_reg(const arma::mat& y, arma::mat& x, arma::mat& beta, arma::mat& aux, arma::vec& global, arma::mat& local, arma::mat& prior_Pi_Omega, arma::uword n_reps, const double a);
-RcppExport SEXP _mfbvar_dl_reg(SEXP ySEXP, SEXP xSEXP, SEXP betaSEXP, SEXP auxSEXP, SEXP globalSEXP, SEXP localSEXP, SEXP prior_Pi_OmegaSEXP, SEXP n_repsSEXP, SEXP aSEXP) {
+void dl_reg(const arma::mat& y, arma::mat& x, arma::mat& beta, arma::mat& aux, arma::vec& global, arma::mat& local, arma::mat& prior_Pi_Omega, arma::uword n_reps, const double a, bool gig);
+RcppExport SEXP _mfbvar_dl_reg(SEXP ySEXP, SEXP xSEXP, SEXP betaSEXP, SEXP auxSEXP, SEXP globalSEXP, SEXP localSEXP, SEXP prior_Pi_OmegaSEXP, SEXP n_repsSEXP, SEXP aSEXP, SEXP gigSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type y(ySEXP);
@@ -81,7 +81,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::mat& >::type prior_Pi_Omega(prior_Pi_OmegaSEXP);
     Rcpp::traits::input_parameter< arma::uword >::type n_reps(n_repsSEXP);
     Rcpp::traits::input_parameter< const double >::type a(aSEXP);
-    dl_reg(y, x, beta, aux, global, local, prior_Pi_Omega, n_reps, a);
+    Rcpp::traits::input_parameter< bool >::type gig(gigSEXP);
+    dl_reg(y, x, beta, aux, global, local, prior_Pi_Omega, n_reps, a, gig);
     return R_NilValue;
 END_RCPP
 }
@@ -97,8 +98,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // mcmc_minn_fsv
-void mcmc_minn_fsv(const arma::mat& y_in_p, arma::cube& Pi, arma::cube& Z, arma::cube& Z_fcst, arma::mat& mu, arma::mat& phi, arma::mat& sigma, arma::cube& f, arma::cube& facload, arma::cube& h, arma::mat& aux, arma::vec& global, arma::mat& local, const arma::mat& Lambda_comp, arma::mat prior_Pi_Omega, const arma::vec& prior_Pi_AR1, const arma::mat& Z_1, double bmu, double Bmu, double a0idi, double b0idi, double a0fac, double b0fac, const Rcpp::NumericVector& Bsigma, double B011inv, double B022inv, const Rcpp::NumericVector& priorh0, const arma::imat& armarestr, const arma::mat& armatau2, arma::uword n_fac, arma::uword n_reps, arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars, arma::uword n_T, arma::uword n_fcst, arma::uword n_thin, bool verbose, const double a);
-RcppExport SEXP _mfbvar_mcmc_minn_fsv(SEXP y_in_pSEXP, SEXP PiSEXP, SEXP ZSEXP, SEXP Z_fcstSEXP, SEXP muSEXP, SEXP phiSEXP, SEXP sigmaSEXP, SEXP fSEXP, SEXP facloadSEXP, SEXP hSEXP, SEXP auxSEXP, SEXP globalSEXP, SEXP localSEXP, SEXP Lambda_compSEXP, SEXP prior_Pi_OmegaSEXP, SEXP prior_Pi_AR1SEXP, SEXP Z_1SEXP, SEXP bmuSEXP, SEXP BmuSEXP, SEXP a0idiSEXP, SEXP b0idiSEXP, SEXP a0facSEXP, SEXP b0facSEXP, SEXP BsigmaSEXP, SEXP B011invSEXP, SEXP B022invSEXP, SEXP priorh0SEXP, SEXP armarestrSEXP, SEXP armatau2SEXP, SEXP n_facSEXP, SEXP n_repsSEXP, SEXP n_qSEXP, SEXP T_bSEXP, SEXP n_lagsSEXP, SEXP n_varsSEXP, SEXP n_TSEXP, SEXP n_fcstSEXP, SEXP n_thinSEXP, SEXP verboseSEXP, SEXP aSEXP) {
+void mcmc_minn_fsv(const arma::mat& y_in_p, arma::cube& Pi, arma::cube& Z, arma::cube& Z_fcst, arma::mat& mu, arma::mat& phi, arma::mat& sigma, arma::cube& f, arma::cube& facload, arma::cube& h, arma::mat& aux, arma::vec& global, arma::mat& local, arma::vec& slice, const arma::mat& Lambda_comp, arma::mat prior_Pi_Omega, const arma::vec& prior_Pi_AR1, const arma::mat& Z_1, double bmu, double Bmu, double a0idi, double b0idi, double a0fac, double b0fac, const Rcpp::NumericVector& Bsigma, double B011inv, double B022inv, const Rcpp::NumericVector& priorh0, const arma::imat& armarestr, const arma::mat& armatau2, arma::uword n_fac, arma::uword n_reps, arma::uword n_burnin, arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars, arma::uword n_T, arma::uword n_fcst, arma::uword n_thin, bool verbose, const double a, bool gig);
+RcppExport SEXP _mfbvar_mcmc_minn_fsv(SEXP y_in_pSEXP, SEXP PiSEXP, SEXP ZSEXP, SEXP Z_fcstSEXP, SEXP muSEXP, SEXP phiSEXP, SEXP sigmaSEXP, SEXP fSEXP, SEXP facloadSEXP, SEXP hSEXP, SEXP auxSEXP, SEXP globalSEXP, SEXP localSEXP, SEXP sliceSEXP, SEXP Lambda_compSEXP, SEXP prior_Pi_OmegaSEXP, SEXP prior_Pi_AR1SEXP, SEXP Z_1SEXP, SEXP bmuSEXP, SEXP BmuSEXP, SEXP a0idiSEXP, SEXP b0idiSEXP, SEXP a0facSEXP, SEXP b0facSEXP, SEXP BsigmaSEXP, SEXP B011invSEXP, SEXP B022invSEXP, SEXP priorh0SEXP, SEXP armarestrSEXP, SEXP armatau2SEXP, SEXP n_facSEXP, SEXP n_repsSEXP, SEXP n_burninSEXP, SEXP n_qSEXP, SEXP T_bSEXP, SEXP n_lagsSEXP, SEXP n_varsSEXP, SEXP n_TSEXP, SEXP n_fcstSEXP, SEXP n_thinSEXP, SEXP verboseSEXP, SEXP aSEXP, SEXP gigSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type y_in_p(y_in_pSEXP);
@@ -114,6 +115,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::mat& >::type aux(auxSEXP);
     Rcpp::traits::input_parameter< arma::vec& >::type global(globalSEXP);
     Rcpp::traits::input_parameter< arma::mat& >::type local(localSEXP);
+    Rcpp::traits::input_parameter< arma::vec& >::type slice(sliceSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type Lambda_comp(Lambda_compSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type prior_Pi_Omega(prior_Pi_OmegaSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type prior_Pi_AR1(prior_Pi_AR1SEXP);
@@ -132,6 +134,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::mat& >::type armatau2(armatau2SEXP);
     Rcpp::traits::input_parameter< arma::uword >::type n_fac(n_facSEXP);
     Rcpp::traits::input_parameter< arma::uword >::type n_reps(n_repsSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type n_burnin(n_burninSEXP);
     Rcpp::traits::input_parameter< arma::uword >::type n_q(n_qSEXP);
     Rcpp::traits::input_parameter< arma::uword >::type T_b(T_bSEXP);
     Rcpp::traits::input_parameter< arma::uword >::type n_lags(n_lagsSEXP);
@@ -141,7 +144,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::uword >::type n_thin(n_thinSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
     Rcpp::traits::input_parameter< const double >::type a(aSEXP);
-    mcmc_minn_fsv(y_in_p, Pi, Z, Z_fcst, mu, phi, sigma, f, facload, h, aux, global, local, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, a);
+    Rcpp::traits::input_parameter< bool >::type gig(gigSEXP);
+    mcmc_minn_fsv(y_in_p, Pi, Z, Z_fcst, mu, phi, sigma, f, facload, h, aux, global, local, slice, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, a, gig);
     return R_NilValue;
 END_RCPP
 }
@@ -505,29 +509,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// mcmc_minn_fsv_tmp
-void mcmc_minn_fsv_tmp(const arma::mat& y_in, arma::cube& Pi, arma::mat armah, arma::mat& aux, arma::vec& global, arma::mat& local, arma::mat prior_Pi_Omega, const arma::vec& prior_Pi_AR1, arma::uword n_fac, arma::uword n_reps, arma::uword n_lags, arma::uword n_vars, arma::uword n_T, const double a);
-RcppExport SEXP _mfbvar_mcmc_minn_fsv_tmp(SEXP y_inSEXP, SEXP PiSEXP, SEXP armahSEXP, SEXP auxSEXP, SEXP globalSEXP, SEXP localSEXP, SEXP prior_Pi_OmegaSEXP, SEXP prior_Pi_AR1SEXP, SEXP n_facSEXP, SEXP n_repsSEXP, SEXP n_lagsSEXP, SEXP n_varsSEXP, SEXP n_TSEXP, SEXP aSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type y_in(y_inSEXP);
-    Rcpp::traits::input_parameter< arma::cube& >::type Pi(PiSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type armah(armahSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type aux(auxSEXP);
-    Rcpp::traits::input_parameter< arma::vec& >::type global(globalSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type local(localSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type prior_Pi_Omega(prior_Pi_OmegaSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type prior_Pi_AR1(prior_Pi_AR1SEXP);
-    Rcpp::traits::input_parameter< arma::uword >::type n_fac(n_facSEXP);
-    Rcpp::traits::input_parameter< arma::uword >::type n_reps(n_repsSEXP);
-    Rcpp::traits::input_parameter< arma::uword >::type n_lags(n_lagsSEXP);
-    Rcpp::traits::input_parameter< arma::uword >::type n_vars(n_varsSEXP);
-    Rcpp::traits::input_parameter< arma::uword >::type n_T(n_TSEXP);
-    Rcpp::traits::input_parameter< const double >::type a(aSEXP);
-    mcmc_minn_fsv_tmp(y_in, Pi, armah, aux, global, local, prior_Pi_Omega, prior_Pi_AR1, n_fac, n_reps, n_lags, n_vars, n_T, a);
-    return R_NilValue;
-END_RCPP
-}
 // update_demean
 void update_demean(arma::mat& my, arma::mat& mu_long, const arma::mat& y_in_p, const arma::mat& mu_mat, const arma::mat& d1, const arma::mat& Psi_i, const arma::mat& Lambda_single, arma::uword n_vars, arma::uword n_q, arma::uword n_Lambda, arma::uword n_T);
 RcppExport SEXP _mfbvar_update_demean(SEXP mySEXP, SEXP mu_longSEXP, SEXP y_in_pSEXP, SEXP mu_matSEXP, SEXP d1SEXP, SEXP Psi_iSEXP, SEXP Lambda_singleSEXP, SEXP n_varsSEXP, SEXP n_qSEXP, SEXP n_LambdaSEXP, SEXP n_TSEXP) {
@@ -569,9 +550,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mfbvar_create_X_noint", (DL_FUNC) &_mfbvar_create_X_noint, 2},
     {"_mfbvar_create_X_t", (DL_FUNC) &_mfbvar_create_X_t, 1},
     {"_mfbvar_create_X_t_noint", (DL_FUNC) &_mfbvar_create_X_t_noint, 1},
-    {"_mfbvar_dl_reg", (DL_FUNC) &_mfbvar_dl_reg, 9},
+    {"_mfbvar_dl_reg", (DL_FUNC) &_mfbvar_dl_reg, 10},
     {"_mfbvar_max_eig_cpp", (DL_FUNC) &_mfbvar_max_eig_cpp, 1},
-    {"_mfbvar_mcmc_minn_fsv", (DL_FUNC) &_mfbvar_mcmc_minn_fsv, 40},
+    {"_mfbvar_mcmc_minn_fsv", (DL_FUNC) &_mfbvar_mcmc_minn_fsv, 43},
     {"_mfbvar_mcmc_ss_fsv", (DL_FUNC) &_mfbvar_mcmc_ss_fsv, 51},
     {"_mfbvar_variances_fsv", (DL_FUNC) &_mfbvar_variances_fsv, 9},
     {"_mfbvar_variances_csv", (DL_FUNC) &_mfbvar_variances_csv, 6},
@@ -592,7 +573,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mfbvar_rmatn", (DL_FUNC) &_mfbvar_rmatn, 3},
     {"_mfbvar_rinvwish", (DL_FUNC) &_mfbvar_rinvwish, 2},
     {"_mfbvar_rmultn", (DL_FUNC) &_mfbvar_rmultn, 2},
-    {"_mfbvar_mcmc_minn_fsv_tmp", (DL_FUNC) &_mfbvar_mcmc_minn_fsv_tmp, 14},
     {"_mfbvar_update_demean", (DL_FUNC) &_mfbvar_update_demean, 11},
     {"_mfbvar_posterior_phi_mu", (DL_FUNC) &_mfbvar_posterior_phi_mu, 4},
     {NULL, NULL, 0}

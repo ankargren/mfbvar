@@ -13,16 +13,17 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
                    arma::mat& mu, arma::mat& phi, arma::mat& sigma,
                    arma::cube& f, arma::cube& facload, arma::cube& h,
                    arma::mat & aux, arma::vec & global, arma::mat & local,
+                   arma::vec & slice,
                    const arma::mat& Lambda_comp, arma::mat prior_Pi_Omega,
                    const arma::vec& prior_Pi_AR1, const arma::mat& Z_1,
                    double bmu, double Bmu, double a0idi, double b0idi, double a0fac, double b0fac,
                    const Rcpp::NumericVector & Bsigma, double B011inv, double B022inv,
                    const Rcpp::NumericVector & priorh0, const arma::imat & armarestr,
                    const arma::mat & armatau2, // armatau2 is the matrix with prior variance of factor loadings
-                   arma::uword n_fac, arma::uword n_reps,
+                   arma::uword n_fac, arma::uword n_reps, arma::uword n_burnin,
                    arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars,
                    arma::uword n_T, arma::uword n_fcst, arma::uword n_thin, bool verbose,
-                   const double a) {
+                   const double a, bool gig) {
   bool single_freq;
   if (n_q == 0 || n_q == n_vars) {
     single_freq = true;
@@ -90,7 +91,13 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
   arma::vec aux_i = aux.row(0).t();
   arma::vec local_i = local.row(0).t();
 
-  for (arma::uword i = 0; i < n_reps; ++i) {
+  if (dl) {
+    prior_Pi_Omega.rows(1, n_vars*n_lags) = arma::reshape(aux_i % arma::pow(global_i * local_i, 2.0), n_vars*n_lags, n_vars);
+  }
+
+  arma::mat curpara_old, armafacload_old, armaf_old;
+
+  for (arma::uword i = 0; i < n_reps + n_burnin; ++i) {
     if (!single_freq) {
       Sig_i = arma::exp(0.5 * armah.head_cols(n_vars));
       y_i = simsm_adaptive_univariate(y_in_p, Pi_i, Sig_i, Lambda_comp, Z_1, n_q, T_b, cc_i);
@@ -100,10 +107,18 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
 
     y_hat = y_i - X * Pi_i.t();
 
-    if ((i+1) % n_thin == 0) {
-      mu_i = curpara_arma.row(0).t();
-      phi_i = curpara_arma.row(1).t();
-      sigma_i = curpara_arma.row(2).t(); // sigma, not sigma2
+    curpara_old = curpara_arma;
+    armafacload_old = armafacload;
+    armaf_old = armaf;
+
+    update_fsv(armafacload, armaf, armah, armah0, curpara, armatau2, y_hat.t(),
+               bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv,
+               priorh0, armarestr);
+
+    if ((i+1) % n_thin == 0 && i >= n_burnin) {
+      mu_i = curpara_old.row(0).t();
+      phi_i = curpara_old.row(1).t();
+      sigma_i = curpara_old.row(2).t();
       if (n_fcst > 0) {
         vol_pred = armah.tail_rows(1).t();
         Z_fcst_i.head_cols(n_lags) = Z_i.tail_rows(n_lags).t();
@@ -115,29 +130,30 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
           x = create_X_t(Z_fcst_i.cols(0+h, n_lags-1+h).t());
           Z_fcst_i.col(n_lags + h) = Pi_i * x + armafacload * error_pred.tail_rows(n_fac) + error_pred.head_rows(n_vars);
         }
-        Z_fcst.slice(i/n_thin) = Z_fcst_i.t();
+        Z_fcst.slice((i-n_burnin)/n_thin) = Z_fcst_i.t();
       }
 
-
-      Z.slice(i/n_thin) = Z_i;
-      Pi.slice(i/n_thin) = Pi_i;
-
-      f.slice(i/n_thin) = armaf;
-      facload.slice(i/n_thin) = armafacload;
-      h.slice(i/n_thin) = armah;
-
-      mu.col(i/n_thin) = mu_i.head(n_vars);
-      phi.col(i/n_thin) = phi_i;
-      sigma.col(i/n_thin) = sigma_i;
-
-      global(i/n_thin) = global_i;
-      aux.row(i/n_thin) = aux_i.t();
-      local.row(i/n_thin) = local_i.t();
+      Z.slice((i-n_burnin)/n_thin) = Z_i;
+      Pi.slice((i-n_burnin)/n_thin) = Pi_i;
+      f.slice((i-n_burnin)/n_thin) = armaf_old;
+      facload.slice((i-n_burnin)/n_thin) = armafacload_old;
+      h.slice((i-n_burnin)/n_thin) = armah;
+      mu.col((i-n_burnin)/n_thin) = mu_i.head(n_vars);
+      phi.col((i-n_burnin)/n_thin) = phi_i;
+      sigma.col((i-n_burnin)/n_thin) = sigma_i;
+      if (dl) {
+        global((i-n_burnin)/n_thin) = global_i;
+        aux.row((i-n_burnin)/n_thin) = aux_i.t();
+        local.row((i-n_burnin)/n_thin) = local_i.t();
+      }
+      // Update after storage so sampler is aligned
+      mu_i = curpara_arma.row(0).t();
+      phi_i = curpara_arma.row(1).t();
+      sigma_i = curpara_arma.row(2).t(); // sigma, not sigma2
+      armaf = armaf_old;
+      armafacload = armafacload_old;
     }
 
-    update_fsv(armafacload, armaf, armah, armah0, curpara, armatau2, y_hat.t(),
-               bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv,
-               priorh0, armarestr);
 
     cc_i = armaf.t() * armafacload.t(); // Common component
     latent_nofac = y_i - cc_i;
@@ -157,18 +173,20 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
     Pi_i = output.t();
 
     if (dl) {
-      update_dl(prior_Pi_Omega, aux_i, local_i, global_i, Pi_i.t(), n_vars, n_lags, a);
+      update_dl(prior_Pi_Omega, aux_i, local_i, global_i, Pi_i.t(), n_vars, n_lags, a, slice, gig, true);
     }
-
 
     if (verbose) {
       p.increment();
     }
 
-
+    if ((i+1) % 100 == 0) {
       std::time_t t = std::time(0);   // get time now
       std::tm* now = std::localtime(&t);
-      Rcpp::Rcout <<  "Iteration " << i << " at " << now->tm_hour << ':' << now->tm_min <<':'<< now->tm_sec << std::endl;
+      Rcpp::Rcout <<  "Iteration " << i+1 << " at " << std::setw(2) << std::setfill('0') << now->tm_hour << ':' << std::setw(2) << std::setfill('0') << now->tm_min <<':'<< std::setw(2) << std::setfill('0') << now->tm_sec << std::endl;
+    }
+
+
 
   }
 

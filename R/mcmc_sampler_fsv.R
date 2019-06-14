@@ -206,17 +206,19 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
   global <- c(0)
   local <- matrix(0, 1, 1)
   a <- -1
+  slice <- c(0)
+  gig <- TRUE
 
   mfbvar:::mcmc_minn_fsv(Y[-(1:n_lags),],Pi,Z,Z_fcst,mu,phi,sigma,f,facload,h,
-                         aux,global,local,Lambda_,prior_Pi_Omega,prior_Pi_AR1, Z_1,bmu,Bmu,
+                         aux,global,local,slice,Lambda_,prior_Pi_Omega,prior_Pi_AR1, Z_1,bmu,Bmu,
                           a0idi,b0idi,a0fac,b0fac,Bsigma,B011inv,B022inv,priorh0,
                           armarestr,armatau2,n_fac,n_reps,n_q,T_b-n_lags,n_lags,
-                          n_vars,n_T_,n_fcst,n_thin,verbose,a)
+                          n_vars,n_T_,n_fcst,n_thin,verbose,a,gig)
 
   return_obj <- list(Pi = Pi, Z = Z, Z_fcst = NULL, mu = mu, phi = phi,
                      sigma = sigma, f = f, facload = facload, h = h,
                      Lambda_ = Lambda_, prior_Pi_Omega = prior_Pi_Omega,
-                     prior_Pi_AR1 = prior_Pi_AR1, Z_1 = Z_1, bmu = bmu,
+                     prior_Pi_AR1 = prior_Pi_AR1, Y = Y, Z_1 = Z_1, bmu = bmu,
                      Bmu = Bmu, a0idi = a0idi, b0idi = b0idi, a0fac = a0fac,
                      b0fac = b0fac, Bsigma = Bsigma, B011inv = B011inv,
                      B022inv = B022inv, priorh0 = priorh0, armarestr = armarestr,
@@ -307,13 +309,16 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
     a <- x$a
   }
 
+  gig <- ifelse(is.null(x$gig), TRUE, FALSE)
+
   RcppParallel::setThreadOptions(numThreads = x$n_cores)
 
   ## Initials
 
   add_args <- list(...)
-  n_reps <- add_args$n_reps
-  n_thin <- ifelse(!is.null(add_args$n_thin), add_args$n_thin, ifelse(!is.null(x$n_thin), x$n_thin, 1))
+  n_reps <- x$n_reps
+  n_burnin <- x$n_burnin
+  n_thin <- ifelse(is.null(x$n_thin), 1, x$n_thin)
 
   # n_vars: number of variables
   # n_lags: number of lags
@@ -423,6 +428,12 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
     init_local <- init$init_local
   }
 
+  if (is.null(init$init_slice)) {
+    init_slice <- rep(1, n_vars^2*n_lags)
+  } else {
+    init_slice <- init$init_slice
+  }
+
   ################################################################
   ### Preallocation
   # Pi and Sigma store their i-th draws in the third dimension, psi
@@ -462,22 +473,23 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
 
   aux <- matrix(init_aux, nrow = n_reps/n_thin, ncol = n_vars*n_vars*n_lags, byrow = TRUE)
   local <- matrix(init_local, nrow = n_reps/n_thin, ncol = n_vars*n_vars*n_lags, byrow = TRUE)
-  global <- rep(init_global, n_reps/n_thin)
+  global <- matrix(init_global, n_reps/n_thin, ncol = 1)
+  slice <- matrix(init_slice, nrow = 1, ncol = n_vars*n_vars*n_lags)
 
   ################################################################
   ### Compute terms which do not vary in the sampler
 
   Z_1 <- Z[1:n_pseudolags,, 1]
   mfbvar:::mcmc_minn_fsv(Y[-(1:n_lags),],Pi,Z,Z_fcst,mu,phi,sigma,f,facload,h,
-                         aux,global,local,Lambda_,prior_Pi_Omega,prior_Pi_AR1, Z_1,bmu,Bmu,
+                         aux,global,local,slice,Lambda_,prior_Pi_Omega,prior_Pi_AR1, Z_1,bmu,Bmu,
                          a0idi,b0idi,a0fac,b0fac,Bsigma,B011inv,B022inv,priorh0,
-                         armarestr,armatau2,n_fac,n_reps,n_q,T_b-n_lags,n_lags,
-                         n_vars,n_T_,n_fcst,n_thin,verbose,a)
+                         armarestr,armatau2,n_fac,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,
+                         n_vars,n_T_,n_fcst,n_thin,verbose,a,gig)
 
   return_obj <- list(Pi = Pi, Z = Z, Z_fcst = NULL, mu = mu, phi = phi,
                      sigma = sigma, f = f, facload = facload, h = h,
                      Lambda_ = Lambda_, prior_Pi_Omega = prior_Pi_Omega,
-                     prior_Pi_AR1 = prior_Pi_AR1, Z_1 = Z_1, bmu = bmu,
+                     prior_Pi_AR1 = prior_Pi_AR1, Y = Y, Z_1 = Z_1, bmu = bmu,
                      Bmu = Bmu, a0idi = a0idi, b0idi = b0idi, a0fac = a0fac,
                      b0fac = b0fac, Bsigma = Bsigma, B011inv = B011inv,
                      B022inv = B022inv, priorh0 = priorh0, armarestr = armarestr,
@@ -495,7 +507,8 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
                                  init_h = h[,,n_reps/n_thin],
                                  init_aux = aux,
                                  init_local = local,
-                                 init_global = global))
+                                 init_global = global,
+                                 init_slice = slice))
 
   if (n_fcst > 0) {
     return_obj$Z_fcst <- Z_fcst
@@ -745,7 +758,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
                      sigma = sigma, f = f, facload = facload, h = h,
                      Lambda_ = Lambda_, prior_Pi_Omega = prior_Pi_Omega,
                      prior_Pi_AR1 = prior_Pi_AR1, prior_psi_mean = prior_psi_mean,
-                     prior_psi_Omega = diag(omega[1, ]), Z_1 = Z_1, bmu = bmu,
+                     prior_psi_Omega = diag(omega[1, ]), Y = Y, Z_1 = Z_1, bmu = bmu,
                      Bmu = Bmu, a0idi = a0idi, b0idi = b0idi, a0fac = a0fac,
                      b0fac = b0fac, Bsigma = Bsigma, B011inv = B011inv,
                      B022inv = B022inv, priorh0 = priorh0, armarestr = armarestr,
@@ -1036,7 +1049,7 @@ mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
                      sigma = sigma, f = f, facload = facload, h = h,
                      Lambda_ = Lambda_, prior_Pi_Omega = prior_Pi_Omega,
                      prior_Pi_AR1 = prior_Pi_AR1, prior_psi_mean = prior_psi_mean,
-                     prior_psi_Omega = diag(omega[1, ]), Z_1 = Z_1, bmu = bmu,
+                     prior_psi_Omega = diag(omega[1, ]), Y = Y, Z_1 = Z_1, bmu = bmu,
                      Bmu = Bmu, a0idi = a0idi, b0idi = b0idi, a0fac = a0fac,
                      b0fac = b0fac, Bsigma = Bsigma, B011inv = B011inv,
                      B022inv = B022inv, priorh0 = priorh0, armarestr = armarestr,
