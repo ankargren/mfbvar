@@ -66,8 +66,9 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
   ## Initials
 
   add_args <- list(...)
-  n_reps <- add_args$n_reps
-  n_thin <- ifelse(!is.null(add_args$n_thin), add_args$n_thin, ifelse(!is.null(x$n_thin), x$n_thin, 1))
+  n_reps <- x$n_reps
+  n_burnin <- x$n_burnin
+  n_thin <- ifelse(is.null(x$n_thin), 1, x$n_thin)
 
   # n_vars: number of variables
   # n_lags: number of lags
@@ -212,7 +213,7 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
   mfbvar:::mcmc_minn_fsv(Y[-(1:n_lags),],Pi,Z,Z_fcst,mu,phi,sigma,f,facload,h,
                          aux,global,local,slice,Lambda_,prior_Pi_Omega,prior_Pi_AR1, Z_1,bmu,Bmu,
                           a0idi,b0idi,a0fac,b0fac,Bsigma,B011inv,B022inv,priorh0,
-                          armarestr,armatau2,n_fac,n_reps,n_q,T_b-n_lags,n_lags,
+                          armarestr,armatau2,n_fac,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,
                           n_vars,n_T_,n_fcst,n_thin,verbose,a,gig)
 
   return_obj <- list(Pi = Pi, Z = Z, Z_fcst = NULL, mu = mu, phi = phi,
@@ -312,7 +313,7 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
   gig <- ifelse(is.null(x$gig), TRUE, FALSE)
 
   RcppParallel::setThreadOptions(numThreads = x$n_cores)
-
+  cat("Number of cores: %s\n", Sys.getenv("RCPP_PARALLEL_NUM_THREADS"))
   ## Initials
 
   add_args <- list(...)
@@ -488,6 +489,7 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
 
   return_obj <- list(Pi = Pi, Z = Z, Z_fcst = NULL, mu = mu, phi = phi,
                      sigma = sigma, f = f, facload = facload, h = h,
+                     aux = aux, local = local, global = global,
                      Lambda_ = Lambda_, prior_Pi_Omega = prior_Pi_Omega,
                      prior_Pi_AR1 = prior_Pi_AR1, Y = Y, Z_1 = Z_1, bmu = bmu,
                      Bmu = Bmu, a0idi = a0idi, b0idi = b0idi, a0fac = a0fac,
@@ -496,19 +498,7 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
                      armatau2 = armatau2, n_fac = n_fac, n_reps = n_reps,
                      n_q = n_q, T_b_ = T_b-n_lags, n_lags = n_lags,
                      n_vars = n_vars, n_T_ = n_T_, n_fcst = n_fcst,
-                     n_thin = n_thin, verbose = verbose,
-                     init = list(init_Pi = Pi[,, n_reps/n_thin],
-                                 init_Z = Z[,, n_reps/n_thin],
-                                 init_mu = mu[, n_reps/n_thin],
-                                 init_phi = phi[, n_reps/n_thin],
-                                 init_sigma = sigma[, n_reps/n_thin],
-                                 init_facload = facload[,,n_reps/n_thin],
-                                 init_f = f[,,n_reps/n_thin],
-                                 init_h = h[,,n_reps/n_thin],
-                                 init_aux = aux,
-                                 init_local = local,
-                                 init_global = global,
-                                 init_slice = slice))
+                     n_thin = n_thin, verbose = verbose)
 
   if (n_fcst > 0) {
     return_obj$Z_fcst <- Z_fcst

@@ -732,12 +732,12 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
 
   dimnames(main_run$Z) <- list(time = names_row[(nrow(mfbvar_prior$Y)-nrow(main_run$Z)+1):nrow(mfbvar_prior$Y)],
                                variable = names_col,
-                               iteration = 1:mfbvar_prior$n_reps)
+                               iteration = 1:(mfbvar_prior$n_reps/mfbvar_prior$n_thin))
 
   if (variance %in% c("iw", "diffuse")) {
     dimnames(main_run$Sigma) <- list(names_col,
                                      names_col,
-                                     iteration = 1:mfbvar_prior$n_reps)
+                                     iteration = 1:(mfbvar_prior$n_reps/mfbvar_prior$n_thin))
   }
 
 
@@ -750,15 +750,15 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
     rownames(mfbvar_prior$d) <- rownames(mfbvar_prior$Y)
     main_run$names_determ <- names_determ
     n_determ <- dim(mfbvar_prior$d)[2]
-    dimnames(main_run$psi) <- list(iteration = 1:mfbvar_prior$n_reps,
+    dimnames(main_run$psi) <- list(iteration = 1:(mfbvar_prior$n_reps/mfbvar_prior$n_thin),
                                    param = paste0(rep(names_col, n_determ), ".", rep(names_determ, each = n_vars)))
     dimnames(main_run$Pi) <- list(dep = names_col,
                                   indep = paste0(rep(names_col, mfbvar_prior$n_lags), ".l", rep(1:mfbvar_prior$n_lags, each = n_vars)),
-                                  iteration = 1:mfbvar_prior$n_reps)
+                                  iteration = 1:(mfbvar_prior$n_reps/mfbvar_prior$n_thin))
   } else {
     dimnames(main_run$Pi) <- list(dep = names_col,
                                   indep = c("const", paste0(rep(names_col, mfbvar_prior$n_lags), ".l", rep(1:mfbvar_prior$n_lags, each = n_vars))),
-                                  iteration = 1:mfbvar_prior$n_reps)
+                                  iteration = 1:(mfbvar_prior$n_reps/mfbvar_prior$n_thin))
   }
 
   if (sum(mfbvar_prior$freq == "m") == 0 || sum(mfbvar_prior$freq == "m") == ncol(mfbvar_prior$Y)) {
@@ -1249,12 +1249,12 @@ predict.mfbvar <- function(object, fcst_start = NULL, aggregate_fcst = TRUE, pre
   n_m <- sum(object$mfbvar_prior$freq == "m")
   n_q <- sum(object$mfbvar_prior$freq == "q")
   n_vars <- n_m + n_q
-  fcst_collapsed <- tibble(variable = rep(rep(object$names_col[1:n_m], each = length(incl_fcst)), object$n_reps),
-                           iter = rep(1:object$n_reps, each = n_m*length(incl_fcst)),
+  fcst_collapsed <- tibble(variable = rep(rep(object$names_col[1:n_m], each = length(incl_fcst)), object$n_reps/object$n_thin),
+                           iter = rep(1:(object$n_reps/object$n_thin), each = n_m*length(incl_fcst)),
                            fcst = c(object$Z_fcst[incl_fcst,1:n_m,]),
-                           fcst_date = rep(as.Date(as.character(ret_names)), n_m*object$n_reps),
-                           freq = rep(rep(rep("m", n_m), each = length(incl_fcst)), object$n_reps),
-                           time = rep(nrow(object$Y)+object$n_fcst-max(incl_fcst)+incl_fcst, n_m*object$n_reps)
+                           fcst_date = rep(as.Date(as.character(ret_names)), n_m*object$n_reps/object$n_thin),
+                           freq = rep(rep(rep("m", n_m), each = length(incl_fcst)), object$n_reps/object$n_thin),
+                           time = rep(nrow(object$Y)+object$n_fcst-max(incl_fcst)+incl_fcst, n_m*object$n_reps/object$n_thin)
                            ) %>%
     transmute(variable = variable,
               iter = iter,
@@ -1269,7 +1269,7 @@ predict.mfbvar <- function(object, fcst_start = NULL, aggregate_fcst = TRUE, pre
     fcst_agg_required <- final_q+3-n_Lambda+1
     fcst_included <- nrow(object$Y)-object$n_lags+1
     fcst_agg_missing <- max(c(fcst_included - fcst_agg_required, 0))
-    fcst_q <- array(0, dim = c(dim(object$Z_fcst)[1]+max(c(fcst_agg_missing, 0)), n_q, object$n_reps))
+    fcst_q <- array(0, dim = c(dim(object$Z_fcst)[1]+max(c(fcst_agg_missing, 0)), n_q, object$n_reps/object$n_thin))
     if (fcst_agg_required < fcst_included) {
       ret_names_q <- c(ret_names_q[1] %m+% months((-fcst_agg_missing):(-1)),
                      ret_names_q)
@@ -1287,7 +1287,7 @@ predict.mfbvar <- function(object, fcst_start = NULL, aggregate_fcst = TRUE, pre
     end_of_quarter <- end_of_quarter[end_of_quarter >= n_Lambda]
     agg_fun <- function(fcst_q, Lambda_, end_of_quarter) {
       fcst_q_agg <- array(0, dim = c(length(end_of_quarter), dim(fcst_q)[2:3]))
-      for (i in 1:object$n_reps) {
+      for (i in 1:(object$n_reps/object$n_thin)) {
         Z_i <- matrix(fcst_q[,,i], nrow = nrow(fcst_q), ncol = ncol(fcst_q))
         for (j in 1:length(end_of_quarter)) {
           Z_ij <- matrix(t(Z_i[(((-n_Lambda+1):0)+end_of_quarter[j]), , drop = FALSE]), ncol = 1)
@@ -1299,12 +1299,12 @@ predict.mfbvar <- function(object, fcst_start = NULL, aggregate_fcst = TRUE, pre
 
     fcst_q_agg <- agg_fun(fcst_q, object$Lambda_, end_of_quarter)
 
-    fcst_quarterly <- tibble(variable = rep(rep(object$names_col[(n_m+1):n_vars], each = nrow(fcst_q_agg)), object$n_reps),
-           iter = rep(1:object$n_reps, each = n_q*nrow(fcst_q_agg)),
+    fcst_quarterly <- tibble(variable = rep(rep(object$names_col[(n_m+1):n_vars], each = nrow(fcst_q_agg)), object$n_reps/object$n_thin),
+           iter = rep(1:(object$n_reps/object$n_thin), each = n_q*nrow(fcst_q_agg)),
            fcst = c(fcst_q_agg),
-           fcst_date = rep(ret_names_q[end_of_quarter], n_q*object$n_reps),
-           freq = rep(rep(rep("q", n_q), each = nrow(fcst_q_agg)), object$n_reps),
-           time = rep(seq(final_q+3, by = 3, length.out = nrow(fcst_q_agg)), n_q*object$n_reps)
+           fcst_date = rep(ret_names_q[end_of_quarter], n_q*object$n_reps/object$n_thin),
+           freq = rep(rep(rep("q", n_q), each = nrow(fcst_q_agg)), object$n_reps/object$n_thin),
+           time = rep(seq(final_q+3, by = 3, length.out = nrow(fcst_q_agg)), n_q*object$n_reps/object$n_thin)
     ) %>%
       transmute(variable = variable,
                 iter = iter,
@@ -1316,12 +1316,12 @@ predict.mfbvar <- function(object, fcst_start = NULL, aggregate_fcst = TRUE, pre
                 time = time)
 
   } else {
-    fcst_quarterly <- tibble(variable = rep(rep(object$names_col[(n_m+1):n_vars], each = length(incl_fcst)), object$n_reps),
-                             iter = rep(1:object$n_reps, each = n_q*length(incl_fcst)),
+    fcst_quarterly <- tibble(variable = rep(rep(object$names_col[(n_m+1):n_vars], each = length(incl_fcst)), object$n_reps/object$n_thin),
+                             iter = rep(1:(object$n_reps/object$n_thin), each = n_q*length(incl_fcst)),
                              fcst = c(object$Z_fcst[incl_fcst,(n_m+1):n_vars,]),
-                             fcst_date = rep(as.Date(as.character(ret_names)), n_q*object$n_reps),
-                             freq = rep(rep(rep("q", n_q), each = length(incl_fcst)), object$n_reps),
-                             time = rep(nrow(object$Y)+object$n_fcst-max(incl_fcst)+incl_fcst, n_q*object$n_reps)
+                             fcst_date = rep(as.Date(as.character(ret_names)), n_q*object$n_reps/object$n_thin),
+                             freq = rep(rep(rep("q", n_q), each = length(incl_fcst)), object$n_reps/object$n_thin),
+                             time = rep(nrow(object$Y)+object$n_fcst-max(incl_fcst)+incl_fcst, n_q*object$n_reps/object$n_thin)
     ) %>%
       transmute(variable = variable,
                 iter = iter,
@@ -1393,12 +1393,12 @@ predict.sfbvar <- function(object, fcst_start = NULL, pred_bands = 0.8, ...) {
     ret_names <- lubridate::ceiling_date(ret_names, unit = "months") - lubridate::days(1)
   }
 
-  fcst_collapsed <- tibble(variable = rep(rep(object$names_col, each = length(incl_fcst)), object$n_reps),
-                           iter = rep(1:object$n_reps, each = object$n_vars*length(incl_fcst)),
+  fcst_collapsed <- tibble(variable = rep(rep(object$names_col, each = length(incl_fcst)), object$n_reps/object$n_thin),
+                           iter = rep(1:(object$n_reps/object$n_thin), each = object$n_vars*length(incl_fcst)),
                            fcst = c(object$Z_fcst[incl_fcst,,]),
-                           fcst_date = rep(as.Date(as.character(ret_names)), object$n_vars*object$n_reps),
-                           freq = rep(rep(object$mfbvar_prior$freq, each = length(incl_fcst)), object$n_reps),
-                           time = rep(nrow(object$Y)+object$n_fcst-max(incl_fcst)+incl_fcst, object$n_vars*object$n_reps)
+                           fcst_date = rep(as.Date(as.character(ret_names)), object$n_vars*object$n_reps/object$n_thin),
+                           freq = rep(rep(object$mfbvar_prior$freq, each = length(incl_fcst)), object$n_reps/object$n_thin),
+                           time = rep(nrow(object$Y)+object$n_fcst-max(incl_fcst)+incl_fcst, object$n_vars*object$n_reps/object$n_thin)
   ) %>%
     transmute(variable = variable,
               iter = iter,
