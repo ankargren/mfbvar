@@ -571,8 +571,9 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
   ## Initials
 
   add_args <- list(...)
-  n_reps <- add_args$n_reps
-  n_thin <- ifelse(!is.null(add_args$n_thin), add_args$n_thin, ifelse(!is.null(x$n_thin), x$n_thin, 1))
+  n_reps <- x$n_reps
+  n_burnin <- x$n_burnin
+  n_thin <- ifelse(is.null(x$n_thin), 1, x$n_thin)
 
   # n_vars: number of variables
   # n_lags: number of lags
@@ -736,7 +737,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
                          Lambda_,prior_Pi_Omega,prior_Pi_AR1,D_mat,dt,d1,
                          d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,bmu,Bmu,
                          a0idi,b0idi,a0fac,b0fac,Bsigma,B011inv,B022inv,priorh0,
-                         armarestr,armatau2,n_fac,n_reps,n_q,T_b-n_lags,n_lags,
+                         armarestr,armatau2,n_fac,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,
                          n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,FALSE)
 
   return_obj <- list(Pi = Pi, psi = psi, Z = Z, Z_fcst = NULL, mu = mu, phi = phi,
@@ -840,7 +841,9 @@ mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
   ## Initials
 
   add_args <- list(...)
-  n_reps <- add_args$n_reps
+  n_reps <- x$n_reps
+  n_burnin <- x$n_burnin
+  n_thin <- ifelse(is.null(x$n_thin), 1, x$n_thin)
   n_thin <- ifelse(!is.null(add_args$n_thin), add_args$n_thin, ifelse(!is.null(x$n_thin), x$n_thin, 1))
 
   # n_vars: number of variables
@@ -1026,7 +1029,7 @@ mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
                        Lambda_,prior_Pi_Omega,prior_Pi_AR1,D_mat,dt,d1,
                        d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,bmu,Bmu,
                        a0idi,b0idi,a0fac,b0fac,Bsigma,B011inv,B022inv,priorh0,
-                       armarestr,armatau2,n_fac,n_reps,n_q,T_b-n_lags,n_lags,
+                       armarestr,armatau2,n_fac,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,
                        n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,TRUE)
 
   return_obj <- list(Pi = Pi, psi = psi, omega = omega, lambda_mu = lambda_mu,

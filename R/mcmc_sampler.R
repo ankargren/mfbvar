@@ -40,8 +40,9 @@ mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
   verbose <- x$verbose
 
   add_args <- list(...)
-  n_reps <- add_args$n_reps
-  n_thin <- ifelse(is.null(add_args$n_thin),1,add_args$n_thin)
+  n_reps <- x$n_reps
+  n_burnin <- x$n_burnin
+  n_thin <- ifelse(is.null(x$n_thin), 1, x$n_thin)
   init <- add_args$init
   init_Pi <- init$init_Pi
   init_Sigma <- init$init_Sigma
@@ -214,13 +215,18 @@ mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
   Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi_mean
 
   # For the posterior of psi
-  inv_prior_psi_Omega <- solve(prior_psi_Omega)
-  inv_prior_psi_Omega_mean <- inv_prior_psi_Omega %*% prior_psi_mean
+  phi_mu <- matrix(0, 1, 1)
+  lambda_mu <- matrix(0, 1, 1)
+  omega <- matrix(diag(prior_psi_Omega), nrow = 1)
+  c0 <- 0
+  c1 <- 0
+  s <- 0
+
   Z_1 <- Z[1:n_pseudolags,, 1]
 
-  mfbvar:::mcmc_ss_iw(Y[-(1:n_lags),],Pi,Sigma,psi,Z,Z_fcst,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
-                      prior_S,D_mat,dt,d1,d_fcst_lags,inv_prior_psi_Omega,inv_prior_psi_Omega_mean,check_roots,Z_1,n_reps,
-                      n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose)
+  mfbvar:::mcmc_ssng_iw(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
+                      prior_S,D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,n_reps,n_burnin,
+                      n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,FALSE)
 
   # mfbvar:::mcmc_ssng_iw(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,Lambda_comp,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
   #                     prior_S,D_mat,dt,d1,d_fcst_lags,prior_psi_mean,0.01,0.01,1,check_roots,Z_1,n_reps,
@@ -277,8 +283,9 @@ mcmc_sampler.mfbvar_ssng_iw <- function(x, ...) {
   verbose <- x$verbose
 
   add_args <- list(...)
-  n_reps <- add_args$n_reps
-  n_thin <- ifelse(is.null(add_args$n_thin),1,add_args$n_thin)
+  n_reps <- x$n_reps
+  n_burnin <- x$n_burnin
+  n_thin <- ifelse(is.null(x$n_thin), 1, x$n_thin)
   init <- add_args$init
   init_Pi <- init$init_Pi
   init_Sigma <- init$init_Sigma
@@ -482,8 +489,8 @@ mcmc_sampler.mfbvar_ssng_iw <- function(x, ...) {
   Z_1 <- Z[1:n_pseudolags,, 1]
 
   mfbvar:::mcmc_ssng_iw(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
-                       prior_S,D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,n_reps,
-                       n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose)
+                       prior_S,D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,n_reps,n_burnin,
+                       n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,TRUE)
 
   ################################################################
   ### Prepare the return object
