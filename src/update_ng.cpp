@@ -5,7 +5,8 @@ double posterior_phi_mu(const double lambda, const double phi_mu, const arma::ve
                         const arma::uword nm) {
   double log_prob = arma::accu((phi_mu-1)*arma::log(omega)-0.5*lambda*phi_mu*omega) +
     nm*(phi_mu*std::log(lambda*phi_mu*0.5) -
-    std::lgamma(phi_mu)) - phi_mu;
+    std::lgamma(phi_mu)) -
+    exp(-phi_mu);
 
   return log_prob;
 }
@@ -26,7 +27,6 @@ void update_ng(double & phi_mu, double & lambda_mu, arma::vec & omega, arma::uwo
     //omega(i) = do_rgig1(gig_lambda, gig_chi, gig_psi(i));
     omega(i) = do_rgig1(gig_lambda, gig_chi(i), gig_psi);
   }
-
   // Update lambda
   lambda_mu = R::rgamma((double)nm * phi_mu + c0, 1.0/(0.5 * phi_mu * arma::accu(omega) + c1)); // Check parametrization
 
