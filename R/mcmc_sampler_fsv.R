@@ -732,7 +732,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
   c1 <- 0
   s <- 0
 
-  mfbvar:::mcmc_ss_fsv(Y[-(1:n_lags),],Pi,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,
+  mfbvar:::mcmc_ssng_fsv(Y[-(1:n_lags),],Pi,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,
                          mu,phi,sigma,f,facload,h,
                          Lambda_,prior_Pi_Omega,prior_Pi_AR1,D_mat,dt,d1,
                          d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,bmu,Bmu,
@@ -1024,7 +1024,7 @@ mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
 
 
 
-  mfbvar:::mcmc_ss_fsv(Y[-(1:n_lags),],Pi,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,
+  mfbvar:::mcmc_ssng_fsv(Y[-(1:n_lags),],Pi,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,
                        mu,phi,sigma,f,facload,h,
                        Lambda_,prior_Pi_Omega,prior_Pi_AR1,D_mat,dt,d1,
                        d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,bmu,Bmu,

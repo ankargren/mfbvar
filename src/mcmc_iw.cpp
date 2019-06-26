@@ -268,9 +268,12 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
       Sigma.slice((i-n_burnin)/n_thin) = Sigma_i;
       Pi.slice((i-n_burnin)/n_thin) = Pi_i;
       psi.row((i-n_burnin)/n_thin) = psi_i.t();
-      phi_mu((i-n_burnin)/n_thin) = phi_mu_i;
-      lambda_mu((i-n_burnin)/n_thin) = lambda_mu_i;
-      omega.row((i-n_burnin)/n_thin) = omega_i.t();
+      if (ssng) {
+        phi_mu((i-n_burnin)/n_thin) = phi_mu_i;
+        lambda_mu((i-n_burnin)/n_thin) = lambda_mu_i;
+        omega.row((i-n_burnin)/n_thin) = omega_i.t();
+      }
+
     }
     if (verbose) {
       p.increment();

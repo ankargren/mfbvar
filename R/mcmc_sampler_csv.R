@@ -30,8 +30,9 @@ mcmc_sampler.mfbvar_minn_csv <- function(x, ...){
   prior_df <- x$prior_sigma2[2]
 
   add_args <- list(...)
-  n_reps <- add_args$n_reps
-  n_thin <- ifelse(!is.null(add_args$n_thin), add_args$n_thin, ifelse(!is.null(x$n_thin), x$n_thin, 1))
+  n_reps <- x$n_reps
+  n_burnin <- x$n_burnin
+  n_thin <- ifelse(is.null(x$n_thin), 1, x$n_thin)
   init <- add_args$init
   init_Pi <- init$init_Pi
   init_Sigma <- init$init_Sigma
@@ -178,10 +179,9 @@ mcmc_sampler.mfbvar_minn_csv <- function(x, ...){
   inv_prior_Pi_Omega <- chol2inv(chol(prior_Pi_Omega))
   Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi_mean
 
-  set.seed(1)
   mfbvar:::mcmc_minn_csv(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,phi,sigma,f,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,
                         Omega_Pi,prior_Pi_mean,prior_S,Z_1,10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,
-                        n_reps,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,n_thin,verbose)
+                        n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,n_thin,verbose)
 
   return_obj <- list(Pi = Pi, Sigma = Sigma, Z = Z, phi = phi, sigma = sigma, f = f,
                      Z_fcst = NULL, n_lags = n_lags, n_vars = n_vars,
@@ -237,8 +237,9 @@ mcmc_sampler.mfbvar_ss_csv <- function(x, ...) {
   prior_df <- x$prior_sigma2[2]
 
   add_args <- list(...)
-  n_reps <- add_args$n_reps
-  n_thin <- ifelse(is.null(add_args$n_thin),1,add_args$n_thin)
+  n_reps <- x$n_reps
+  n_burnin <- x$n_burnin
+  n_thin <- ifelse(is.null(x$n_thin), 1, x$n_thin)
   init <- add_args$init
   init_Pi <- init$init_Pi
   init_Sigma <- init$init_Sigma
@@ -425,13 +426,19 @@ mcmc_sampler.mfbvar_ss_csv <- function(x, ...) {
   Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi_mean
 
   # For the posterior of psi
-  inv_prior_psi_Omega <- solve(prior_psi_Omega)
-  inv_prior_psi_Omega_mean <- inv_prior_psi_Omega %*% prior_psi_mean
   Z_1 <- Z[1:n_pseudolags,, 1]
 
-  mfbvar:::mcmc_ss_csv(Y[-(1:n_lags),],Pi,Sigma,psi,Z,Z_fcst,phi,sigma,f,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
-                       prior_S,D_mat,dt,d1,d_fcst_lags,inv_prior_psi_Omega,inv_prior_psi_Omega_mean,check_roots,Z_1,
-                       10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,n_reps,n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose)
+  phi_mu <- matrix(0, 1, 1)
+  lambda_mu <- matrix(0, 1, 1)
+  omega <- matrix(diag(prior_psi_Omega), nrow = 1)
+  c0 <- 0
+  c1 <- 0
+  s <- 0
+
+  mfbvar:::mcmc_ssng_csv(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,phi,sigma,f,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
+                       prior_S,D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,
+                       10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,n_reps,n_burnin,n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,
+                       verbose,FALSE)
 
   return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z, phi = phi, sigma = sigma, f = f, roots = NULL, num_tries = NULL,
                      Z_fcst = NULL, smoothed_Z = NULL, n_determ = n_determ,
@@ -485,8 +492,9 @@ mcmc_sampler.mfbvar_ssng_csv <- function(x, ...) {
   prior_df <- x$prior_sigma2[2]
 
   add_args <- list(...)
-  n_reps <- add_args$n_reps
-  n_thin <- ifelse(is.null(add_args$n_thin),1,add_args$n_thin)
+  n_reps <- x$n_reps
+  n_burnin <- x$n_burnin
+  n_thin <- ifelse(is.null(x$n_thin), 1, x$n_thin)
   init <- add_args$init
   init_Pi <- init$init_Pi
   init_Sigma <- init$init_Sigma
@@ -709,7 +717,7 @@ mcmc_sampler.mfbvar_ssng_csv <- function(x, ...) {
 
   mfbvar:::mcmc_ssng_csv(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,phi,sigma,f,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
                        prior_S,D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,
-                       10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,n_reps,n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose)
+                       10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,n_reps,n_burnin,n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,TRUE)
 
   return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z, phi_mu = phi_mu, lambda_mu = lambda_mu, omega = omega,
                      phi = phi, sigma = sigma, f = f, roots = NULL, num_tries = NULL,

@@ -202,7 +202,7 @@ void mcmc_ss_fsv(const arma::mat & y_in_p,
                  const Rcpp::NumericVector & Bsigma, double B011inv, double B022inv,
                  const Rcpp::NumericVector & priorh0, const arma::imat & armarestr,
                  const arma::mat & armatau2, // armatau2 is the matrix with prior variance of factor loadings
-                 arma::uword n_fac, arma::uword n_reps,
+                 arma::uword n_fac, arma::uword n_reps, arma::uword n_burnin,
                  arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars,
                  arma::uword n_T, arma::uword n_fcst, arma::uword n_determ, arma::uword n_thin,
                  bool verbose, bool ssng) {
@@ -213,7 +213,7 @@ void mcmc_ss_fsv(const arma::mat & y_in_p,
     single_freq = false;
   }
 
-  Progress p(n_reps, verbose);
+  Progress p(n_reps+n_burnin, verbose);
 
   arma::mat Pi_i = Pi.slice(0);
   arma::vec psi_i = psi.row(0).t();
@@ -313,7 +313,8 @@ void mcmc_ss_fsv(const arma::mat & y_in_p,
     Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
   }
 
-  for (arma::uword i = 0; i < n_reps; ++i) {
+  arma::mat curpara_old, armafacload_old, armaf_old;
+  for (arma::uword i = 0; i < n_reps + n_burnin; ++i) {
     if (!single_freq) {
       update_demean(my, mu_long, y_in_p, mu_mat, d1, Psi_i, Lambda_single, n_vars,
                     n_q, n_Lambda, n_T);
@@ -337,10 +338,17 @@ void mcmc_ss_fsv(const arma::mat & y_in_p,
 
     y_hat = mZ - mX * Pi_i.t();
 
-    if ((i+1) % n_thin == 0) {
-      mu_i = curpara_arma.row(0).t();
-      phi_i = curpara_arma.row(1).t();
-      sigma_i = curpara_arma.row(2).t(); // sigma, not sigma2
+    curpara_old = curpara_arma;
+    armafacload_old = armafacload;
+    armaf_old = armaf;
+    update_fsv(armafacload, armaf, armah, armah0, curpara, armatau2, y_hat.t(),
+               bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv,
+               priorh0, armarestr);
+
+    if ((i+1) % n_thin == 0 && i>= n_burnin) {
+      mu_i = curpara_old.row(0).t();
+      phi_i = curpara_old.row(1).t();
+      sigma_i = curpara_old.row(2).t(); // sigma, not sigma2
       if (n_fcst > 0) {
         vol_pred = armah.tail_rows(1).t();
         Z_fcst_i.head_cols(n_lags) = Z_i.tail_rows(n_lags).t() - mu_mat.tail_rows(n_lags).t();
@@ -350,28 +358,32 @@ void mcmc_ss_fsv(const arma::mat & y_in_p,
           vol_pred = mu_i + phi_i % (vol_pred - mu_i) + sigma_i % errors_sv; // Twice because we first need it for the volatility, then for the VAR
           error_pred = arma::exp(0.5 * vol_pred) % errors_var;
           x = create_X_t_noint(Z_fcst_i.cols(0+h, n_lags-1+h).t());
-          Z_fcst_i.col(n_lags + h) = Pi_i * x + armafacload * error_pred.tail_rows(n_fac) + error_pred.head_rows(n_vars);
+          Z_fcst_i.col(n_lags + h) = Pi_i * x + armafacload_old * error_pred.tail_rows(n_fac) + error_pred.head_rows(n_vars);
         }
-        Z_fcst.slice(i/n_thin) = Z_fcst_i.t() + d_fcst_lags * Psi_i.t();
+        Z_fcst.slice((i-n_burnin)/n_thin) = Z_fcst_i.t() + d_fcst_lags * Psi_i.t();
       }
 
 
-      Z.slice(i/n_thin) = Z_i;
-      Pi.slice(i/n_thin) = Pi_i;
-      psi.row(i/n_thin) = psi_i.t();
+      Z.slice((i-n_burnin)/n_thin) = Z_i;
+      Pi.slice((i-n_burnin)/n_thin) = Pi_i;
+      psi.row((i-n_burnin)/n_thin) = psi_i.t();
 
-      f.slice(i/n_thin) = armaf;
-      facload.slice(i/n_thin) = armafacload;
-      h.slice(i/n_thin) = armah;
+      f.slice((i-n_burnin)/n_thin) = armaf_old;
+      facload.slice((i-n_burnin)/n_thin) = armafacload_old;
+      h.slice((i-n_burnin)/n_thin) = armah;
 
 
-      mu.col(i/n_thin) = mu_i.head(n_vars);
-      phi.col(i/n_thin) = phi_i;
-      sigma.col(i/n_thin) = sigma_i;
+      mu.col((i-n_burnin)/n_thin) = mu_i.head(n_vars);
+      phi.col((i-n_burnin)/n_thin) = phi_i;
+      sigma.col((i-n_burnin)/n_thin) = sigma_i;
+
+      if (ssng) {
+        phi_mu((i-n_burnin)/n_thin) = phi_mu_i;
+        lambda_mu((i-n_burnin)/n_thin) = lambda_mu_i;
+        omega.row((i-n_burnin)/n_thin) = omega_i.t();
+      }
     }
-    update_fsv(armafacload, armaf, armah, armah0, curpara, armatau2, y_hat.t(),
-               bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv,
-               priorh0, armarestr);
+
 
     cc_i = armaf.t() * armafacload.t(); // Common component
     latent_nofac = mZ - cc_i;
