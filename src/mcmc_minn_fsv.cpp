@@ -128,7 +128,7 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
           vol_pred = mu_i + phi_i % (vol_pred - mu_i) + sigma_i % errors_sv; // Twice because we first need it for the volatility, then for the VAR
           error_pred = arma::exp(0.5 * vol_pred) % errors_var;
           x = create_X_t(Z_fcst_i.cols(0+h, n_lags-1+h).t());
-          Z_fcst_i.col(n_lags + h) = Pi_i * x + armafacload * error_pred.tail_rows(n_fac) + error_pred.head_rows(n_vars);
+          Z_fcst_i.col(n_lags + h) = Pi_i * x + armafacload_old * error_pred.tail_rows(n_fac) + error_pred.head_rows(n_vars);
         }
         Z_fcst.slice((i-n_burnin)/n_thin) = Z_fcst_i.t();
       }
@@ -146,12 +146,6 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
         aux.row((i-n_burnin)/n_thin) = aux_i.t();
         local.row((i-n_burnin)/n_thin) = local_i.t();
       }
-      // Update after storage so sampler is aligned
-      mu_i = curpara_arma.row(0).t();
-      phi_i = curpara_arma.row(1).t();
-      sigma_i = curpara_arma.row(2).t(); // sigma, not sigma2
-      armaf = armaf_old;
-      armafacload = armafacload_old;
     }
 
 
