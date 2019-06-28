@@ -145,7 +145,7 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
   double lambda_mu_i = lambda_mu(0);
   double phi_mu_i = phi_mu(0);
   arma::vec omega_i = omega.row(0).t();
-  arma::mat inv_prior_psi_Omega = arma::diagmat(omega_i);
+  arma::mat inv_prior_psi_Omega = arma::diagmat(1.0/omega_i);
   arma::vec inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
   double M, batch = 1.0;
   arma::running_stat<double> stats;
@@ -244,7 +244,7 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
         }
       }
 
-      inv_prior_psi_Omega = arma::diagmat(1/omega_i);
+      inv_prior_psi_Omega = arma::diagmat(1.0/omega_i);
       inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
     }
 

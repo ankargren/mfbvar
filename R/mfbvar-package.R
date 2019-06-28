@@ -4,7 +4,7 @@
 #' simple. The prior for the regression parameters is normal with Minnesota-style prior moments.
 #' The package supports either an inverse Wishart prior for the error covariance matrix, yielding a
 #' standard normal-inverse Wishart prior, or a time-varying error covariance matrix by means of a factor
-#' stochastic volatility model through the \code{\link[factorstochvol]{factorstochvol}} package.
+#' stochastic volatility model through the \code{\link[factorstochvol]{factorstochvol-package}} package.
 #'
 #' @section Specifying the prior:
 #' The prior of the VAR model is specified using the function \code{\link{set_prior}}. The function
@@ -26,4 +26,6 @@
 #'
 #' @docType package
 #' @name mfbvar
-NULL
+## quiets concerns of R CMD check re: the .'s that appear in pipelines
+if(getRversion() >= "2.15.1")  utils::globalVariables(c(".", "obj", "prior_type", "lower", "upper", "value",
+                                                        "variable", "iter", "fcst_date", "fcst", "freq", "prior_Pi_AR1"))

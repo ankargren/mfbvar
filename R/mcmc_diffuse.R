@@ -1,4 +1,3 @@
-#' @rdname mcmc_sampler
 mcmc_sampler.mfbvar_minn_diffuse <- function(x, ...){
 
   n_vars <- ncol(x$Y)
@@ -144,10 +143,10 @@ mcmc_sampler.mfbvar_minn_diffuse <- function(x, ...){
 
   # For the posterior of Pi
   inv_prior_Pi_Omega <- diag(1/c(prior_Pi_Omega))
-  Omega_Pi <- matrix(inv_prior_Pi_Omega %*% c(prior_Pi_mean), n_vars*n_lags + 1, n_vars)
+  prior_Pi_mean_vec <- c(prior_Pi_mean)
 
   mfbvar:::mcmc_minn_diffuse(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,Lambda_,prior_Pi_Omega,
-                             Omega_Pi,Z_1,n_reps,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,
+                             prior_Pi_mean_vec,Z_1,n_reps,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,
                         n_thin,verbose)
 
 
@@ -157,7 +156,7 @@ mcmc_sampler.mfbvar_minn_diffuse <- function(x, ...){
                      Z_fcst = NULL, smoothed_Z = NULL, n_determ = 1,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
-                     prior_psi_Omega = NULL, prior_psi_mean = NULL, n_reps = n_reps, Lambda_ = Lambda_, freq = freq,
+                     prior_psi_Omega = NULL, prior_psi_mean = NULL, n_reps = n_reps, n_burnin = n_burnin, n_thin = n_thin, Lambda_ = Lambda_, freq = freq,
                      init = list(init_Pi = Pi[,, n_reps/n_thin], init_Sigma = Sigma[,, n_reps/n_thin], init_Z = Z[,, n_reps/n_thin]))
 
   if (n_fcst>0) {
@@ -168,7 +167,6 @@ mcmc_sampler.mfbvar_minn_diffuse <- function(x, ...){
 
 }
 
-#' @rdname mcmc_sampler
 mcmc_sampler.mfbvar_dl_diffuse <- function(x, ...){
 
   n_vars <- ncol(x$Y)
@@ -223,7 +221,10 @@ mcmc_sampler.mfbvar_dl_diffuse <- function(x, ...){
     T_b <- nrow(Y)
   }
   if (n_q > 0) {
-    Lambda_ <- mfbvar:::build_Lambda(rep("q", n_q), 3)
+    if (x$aggregation == "average") {
+      Lambda_ <- mfbvar:::build_Lambda(rep("average", n_q), 3)
+    } else {
+      Lambda_ <- mfbvar:::build_Lambda(rep("triangular", n_q), 5)}
   } else {
     Lambda_ <- matrix(0, 1, 3)
   }
@@ -359,7 +360,7 @@ mcmc_sampler.mfbvar_dl_diffuse <- function(x, ...){
                      Z_fcst = NULL, smoothed_Z = NULL, n_determ = 1,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
-                     prior_psi_Omega = NULL, prior_psi_mean = NULL, n_reps = n_reps, Lambda_ = Lambda_, freq = freq,
+                     prior_psi_Omega = NULL, prior_psi_mean = NULL, n_reps = n_reps, n_burnin = n_burnin, n_thin = n_thin, Lambda_ = Lambda_, freq = freq,
                      init = list(init_Pi = Pi[,, n_reps/n_thin], init_Sigma = Sigma[,, n_reps/n_thin], init_Z = Z[,, n_reps/n_thin]))
 
   if (n_fcst>0) {
@@ -370,7 +371,6 @@ mcmc_sampler.mfbvar_dl_diffuse <- function(x, ...){
 
 }
 
-#' @rdname mcmc_sampler
 mcmc_sampler.mfbvar_ss_diffuse <- function(x, ...) {
 
   n_vars <- ncol(x$Y)
@@ -432,7 +432,10 @@ mcmc_sampler.mfbvar_ss_diffuse <- function(x, ...) {
     T_b <- nrow(y_in_p)
   }
   if (n_q > 0) {
-    Lambda_ <- mfbvar:::build_Lambda(rep("q", n_q), 3)
+    if (x$aggregation == "average") {
+      Lambda_ <- mfbvar:::build_Lambda(rep("average", n_q), 3)
+    } else {
+      Lambda_ <- mfbvar:::build_Lambda(rep("triangular", n_q), 5)}
   } else {
     Lambda_ <- matrix(0, 1, 3)
   }
@@ -586,7 +589,7 @@ mcmc_sampler.mfbvar_ss_diffuse <- function(x, ...) {
                      Z_fcst = NULL, smoothed_Z = NULL, n_determ = n_determ,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
-                     prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, Lambda_ = Lambda_,
+                     prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, n_burnin = n_burnin, n_thin = n_thin, Lambda_ = Lambda_,
                      init = list(init_Pi = Pi[,, n_reps/n_thin], init_Sigma = Sigma[,, n_reps/n_thin], init_psi = psi[n_reps/n_thin, ], init_Z = Z[,, n_reps/n_thin]))
 
   if (check_roots == TRUE) {
@@ -601,7 +604,6 @@ mcmc_sampler.mfbvar_ss_diffuse <- function(x, ...) {
 
 }
 
-#' @rdname mcmc_sampler
 mcmc_sampler.mfbvar_ssng_diffuse <- function(x, ...) {
 
   n_vars <- ncol(x$Y)
@@ -666,7 +668,10 @@ mcmc_sampler.mfbvar_ssng_diffuse <- function(x, ...) {
     T_b <- nrow(y_in_p)
   }
   if (n_q > 0) {
-    Lambda_ <- mfbvar:::build_Lambda(rep("q", n_q), 3)
+    if (x$aggregation == "average") {
+      Lambda_ <- mfbvar:::build_Lambda(rep("average", n_q), 3)
+    } else {
+      Lambda_ <- mfbvar:::build_Lambda(rep("triangular", n_q), 5)}
   } else {
     Lambda_ <- matrix(0, 1, 3)
   }
@@ -677,8 +682,8 @@ mcmc_sampler.mfbvar_ssng_diffuse <- function(x, ...) {
   n_T <- dim(Y)[1]# - n_lags
   n_T_ <- n_T - n_pseudolags
 
-  c0 <- ifelse(is.null(x$c0), 0.01, x$c0)
-  c1 <- ifelse(is.null(x$c1), 0.01, x$c1)
+  c0 <- ifelse(is.null(x$prior_ng), 0.01, x$prior_ng[1])
+  c1 <- ifelse(is.null(x$prior_ng), 0.01, x$prior_ng[2])
   s <- ifelse(is.null(x[["s"]]), 1, x$s)
 
   ################################################################
@@ -844,7 +849,7 @@ mcmc_sampler.mfbvar_ssng_diffuse <- function(x, ...) {
                      Z_fcst = NULL, smoothed_Z = NULL, n_determ = n_determ,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
-                     prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, Lambda_ = Lambda_,
+                     prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, n_burnin = n_burnin, n_thin = n_thin, Lambda_ = Lambda_,
                      init = list(init_Pi = Pi[,, n_reps/n_thin], init_Sigma = Sigma[,, n_reps/n_thin], init_psi = psi[n_reps/n_thin, ], init_Z = Z[,, n_reps/n_thin], init_omega = omega[n_reps/n_thin, ], init_lambda_mu = lambda_mu[n_reps/n_thin], init_phi_mu = phi_mu[n_reps/n_thin]))
 
   if (check_roots == TRUE) {

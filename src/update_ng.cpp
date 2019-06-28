@@ -5,8 +5,7 @@ double posterior_phi_mu(const double lambda, const double phi_mu, const arma::ve
                         const arma::uword nm) {
   double log_prob = arma::accu((phi_mu-1)*arma::log(omega)-0.5*lambda*phi_mu*omega) +
     nm*(phi_mu*std::log(lambda*phi_mu*0.5) -
-    std::lgamma(phi_mu)) -
-    exp(-phi_mu);
+    std::lgamma(phi_mu)) - phi_mu;
 
   return log_prob;
 }

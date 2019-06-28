@@ -10,7 +10,6 @@ mcmc_sampler <- function(x, ...) {
   UseMethod("mcmc_sampler")
 }
 
-#' @rdname mcmc_sampler
 mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
 
   n_vars <- ncol(x$Y)
@@ -238,7 +237,7 @@ mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
                      Z_fcst = NULL, smoothed_Z = NULL, n_determ = n_determ,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      prior_S = prior_S, prior_nu = n_vars+2, post_nu = n_T + n_vars+2, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
-                     prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, Lambda_ = Lambda_,
+                     prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, n_burnin = n_burnin, n_thin = n_thin, Lambda_ = Lambda_,
                      init = list(init_Pi = Pi[,, n_reps/n_thin], init_Sigma = Sigma[,, n_reps/n_thin], init_psi = psi[n_reps/n_thin, ], init_Z = Z[,, n_reps/n_thin]))
 
   if (check_roots == TRUE) {
@@ -253,7 +252,6 @@ mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
 
 }
 
-#' @rdname mcmc_sampler
 mcmc_sampler.mfbvar_ssng_iw <- function(x, ...) {
 
   n_vars <- ncol(x$Y)
@@ -331,8 +329,8 @@ mcmc_sampler.mfbvar_ssng_iw <- function(x, ...) {
   n_T <- dim(Y)[1]# - n_lags
   n_T_ <- n_T - n_pseudolags
 
-  c0 <- ifelse(is.null(x$c0), 0.01, x$c0)
-  c1 <- ifelse(is.null(x$c1), 0.01, x$c1)
+  c0 <- ifelse(is.null(x$prior_ng), 0.01, x$prior_ng[1])
+  c1 <- ifelse(is.null(x$prior_ng), 0.01, x$prior_ng[2])
   s <- ifelse(is.null(x[["s"]]), 1, x$s)
 
   ################################################################
@@ -499,7 +497,7 @@ mcmc_sampler.mfbvar_ssng_iw <- function(x, ...) {
                      Z_fcst = NULL, smoothed_Z = NULL, n_determ = n_determ,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      prior_S = prior_S, prior_nu = n_vars+2, post_nu = n_T + n_vars+2, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
-                     prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, Lambda_ = Lambda_,
+                     prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, n_burnin = n_burnin, n_thin = n_thin, Lambda_ = Lambda_,
                      init = list(init_Pi = Pi[,, n_reps/n_thin], init_Sigma = Sigma[,, n_reps/n_thin], init_psi = psi[n_reps/n_thin, ], init_Z = Z[,, n_reps/n_thin], init_omega = omega[n_reps/n_thin, ], init_lambda_mu = lambda_mu[n_reps/n_thin], init_phi_mu = phi_mu[n_reps/n_thin]))
 
   if (check_roots == TRUE) {
@@ -514,7 +512,6 @@ mcmc_sampler.mfbvar_ssng_iw <- function(x, ...) {
 
 }
 
-#' @rdname mcmc_sampler
 mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
 
   n_vars <- ncol(x$Y)
@@ -543,8 +540,9 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
   prior_Pi_mean <- rbind(0, prior_Pi_mean)
 
   add_args <- list(...)
-  n_reps <- add_args$n_reps
-  n_thin <- ifelse(!is.null(add_args$n_thin), add_args$n_thin, ifelse(!is.null(x$n_thin), x$n_thin, 1))
+  n_reps <- x$n_reps
+  n_burnin <- x$n_burnin
+  n_thin <- ifelse(is.null(x$n_thin), 1, x$n_thin)
   init <- add_args$init
   init_Pi <- init$init_Pi
   init_Sigma <- init$init_Sigma
@@ -669,7 +667,7 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
   Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi_mean
 
   mfbvar:::mcmc_minn_iw(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,
-                        Omega_Pi,prior_Pi_mean,prior_S,Z_1,n_reps,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,
+                        Omega_Pi,prior_Pi_mean,prior_S,Z_1,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,
                         n_thin,verbose,2)
 
 
@@ -679,7 +677,7 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
                      Z_fcst = NULL, smoothed_Z = NULL, n_determ = 1,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      prior_S = prior_S, prior_nu = prior_nu, post_nu = prior_nu + n_T_, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
-                     prior_psi_Omega = NULL, prior_psi_mean = NULL, n_reps = n_reps, Lambda_ = Lambda_, freq = freq,
+                     prior_psi_Omega = NULL, prior_psi_mean = NULL, n_reps = n_reps, n_burnin = n_burnin, n_thin = n_thin, Lambda_ = Lambda_, freq = freq,
                      init = list(init_Pi = Pi[,, n_reps/n_thin], init_Sigma = Sigma[,, n_reps/n_thin], init_Z = Z[,, n_reps/n_thin]))
 
   if (n_fcst>0) {

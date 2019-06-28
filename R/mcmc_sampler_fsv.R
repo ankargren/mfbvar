@@ -1,4 +1,3 @@
-#' @rdname mcmc_sampler
 mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
   n_vars <- ncol(x$Y)
   if (!(!is.null(x$Y) && !is.null(x$n_lags) && !is.null(x$n_burnin) && !is.null(x$n_reps))) {
@@ -218,7 +217,7 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
                      Bmu = Bmu, a0idi = a0idi, b0idi = b0idi, a0fac = a0fac,
                      b0fac = b0fac, Bsigma = Bsigma, B011inv = B011inv,
                      B022inv = B022inv, priorh0 = priorh0, armarestr = armarestr,
-                     armatau2 = armatau2, n_fac = n_fac, n_reps = n_reps,
+                     armatau2 = armatau2, n_fac = n_fac, n_reps = n_reps, n_burnin = n_burnin,
                      n_q = n_q, T_b_ = T_b-n_lags, n_lags = n_lags,
                      n_vars = n_vars, n_T_ = n_T_, n_fcst = n_fcst,
                      n_thin = n_thin, verbose = verbose,
@@ -238,7 +237,6 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
 
 }
 
-#' @rdname mcmc_sampler
 mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
   n_vars <- ncol(x$Y)
   if (!(!is.null(x$Y) && !is.null(x$n_lags) && !is.null(x$n_burnin) && !is.null(x$n_reps))) {
@@ -490,7 +488,7 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
                      Bmu = Bmu, a0idi = a0idi, b0idi = b0idi, a0fac = a0fac,
                      b0fac = b0fac, Bsigma = Bsigma, B011inv = B011inv,
                      B022inv = B022inv, priorh0 = priorh0, armarestr = armarestr,
-                     armatau2 = armatau2, n_fac = n_fac, n_reps = n_reps,
+                     armatau2 = armatau2, n_fac = n_fac, n_reps = n_reps, n_burnin = n_burnin,
                      n_q = n_q, T_b_ = T_b-n_lags, n_lags = n_lags,
                      n_vars = n_vars, n_T_ = n_T_, n_fcst = n_fcst,
                      n_thin = n_thin, verbose = verbose)
@@ -511,6 +509,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
   }
 
   prior_Pi_Omega <- mfbvar:::create_prior_Pi_Omega(x$lambda1, x$lambda2, x$lambda3, x$prior_Pi_AR1, x$Y, x$n_lags)
+  prior_Pi_Omega <- prior_Pi_Omega[-1, ]
   prior_Pi_AR1 <- x$prior_Pi_AR1
   prior_zero_mean <- all(x$prior_Pi_AR1 == 0)
 
@@ -614,7 +613,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
 
   ### Regression parameters
   if (is.null(init$init_Pi)) {
-    init_Pi <- matrix(0, nrow = n_vars, ncol = n_vars*(n_vars*n_lags + 1))
+    init_Pi <- matrix(0, nrow = n_vars, ncol = n_vars*(n_vars*n_lags))
   } else {
     init_Pi <- init$init_Pi
   }
@@ -691,7 +690,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
   ### If smoothing of the state vector:
   # smoothed_Z: T * p * n_reps
 
-  Pi <- array(init_Pi, dim = c(n_vars, n_vars*n_lags + 1, n_reps/n_thin))
+  Pi <- array(init_Pi, dim = c(n_vars, n_vars*n_lags, n_reps/n_thin))
   psi <- array(init_psi, dim = c(n_reps/n_thin, n_vars * n_determ))
   Z <- array(init_Z, dim = c(n_T, n_vars, n_reps/n_thin))
   Z_fcst<- array(NA, dim = c(n_fcst+n_lags, n_vars, n_reps/n_thin))
@@ -744,7 +743,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
                      sigma = sigma, f = f, facload = facload, h = h,
                      Lambda_ = Lambda_, prior_Pi_Omega = prior_Pi_Omega,
                      prior_Pi_AR1 = prior_Pi_AR1, prior_psi_mean = prior_psi_mean,
-                     prior_psi_Omega = diag(omega[1, ]), Y = Y, Z_1 = Z_1, bmu = bmu,
+                     prior_psi_Omega = diag(omega[1, ]), d = d, Y = Y, Z_1 = Z_1, bmu = bmu,
                      Bmu = Bmu, a0idi = a0idi, b0idi = b0idi, a0fac = a0fac,
                      b0fac = b0fac, Bsigma = Bsigma, B011inv = B011inv,
                      B022inv = B022inv, priorh0 = priorh0, armarestr = armarestr,
@@ -778,6 +777,7 @@ mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
   }
 
   prior_Pi_Omega <- mfbvar:::create_prior_Pi_Omega(x$lambda1, x$lambda2, x$lambda3, x$prior_Pi_AR1, x$Y, x$n_lags)
+  prior_Pi_Omega <- prior_Pi_Omega[-1, ]
   prior_Pi_AR1 <- x$prior_Pi_AR1
   prior_zero_mean <- all(x$prior_Pi_AR1 == 0)
 
@@ -834,8 +834,8 @@ mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
 
   priorh0 <- rep(-1.0, n_vars + n_fac)
 
-  c0 <- ifelse(is.null(x$c0), 0.01, x$c0)
-  c1 <- ifelse(is.null(x$c1), 0.01, x$c1)
+  c0 <- ifelse(is.null(x$prior_ng), 0.01, x$prior_ng[1])
+  c1 <- ifelse(is.null(x$prior_ng), 0.01, x$prior_ng[2])
   s <- ifelse(is.null(x[["s"]]), 1, x$s)
 
   ## Initials
@@ -885,7 +885,7 @@ mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
 
   ### Regression parameters
   if (is.null(init$init_Pi)) {
-    init_Pi <- matrix(0, nrow = n_vars, ncol = n_vars*(n_vars*n_lags + 1))
+    init_Pi <- matrix(0, nrow = n_vars, ncol = n_vars*(n_vars*n_lags))
   } else {
     init_Pi <- init$init_Pi
   }
@@ -984,7 +984,7 @@ mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
   ### If smoothing of the state vector:
   # smoothed_Z: T * p * n_reps
 
-  Pi <- array(init_Pi, dim = c(n_vars, n_vars*n_lags + 1, n_reps/n_thin))
+  Pi <- array(init_Pi, dim = c(n_vars, n_vars*n_lags, n_reps/n_thin))
   psi <- array(init_psi, dim = c(n_reps/n_thin, n_vars * n_determ))
   Z <- array(init_Z, dim = c(n_T, n_vars, n_reps/n_thin))
   Z_fcst<- array(NA, dim = c(n_fcst+n_lags, n_vars, n_reps/n_thin))
@@ -1037,11 +1037,11 @@ mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
                      sigma = sigma, f = f, facload = facload, h = h,
                      Lambda_ = Lambda_, prior_Pi_Omega = prior_Pi_Omega,
                      prior_Pi_AR1 = prior_Pi_AR1, prior_psi_mean = prior_psi_mean,
-                     prior_psi_Omega = diag(omega[1, ]), Y = Y, Z_1 = Z_1, bmu = bmu,
+                     prior_psi_Omega = diag(omega[1, ]), d = d, Y = Y, Z_1 = Z_1, bmu = bmu,
                      Bmu = Bmu, a0idi = a0idi, b0idi = b0idi, a0fac = a0fac,
                      b0fac = b0fac, Bsigma = Bsigma, B011inv = B011inv,
                      B022inv = B022inv, priorh0 = priorh0, armarestr = armarestr,
-                     armatau2 = armatau2, n_fac = n_fac, n_reps = n_reps,
+                     armatau2 = armatau2, n_fac = n_fac, n_reps = n_reps, n_burnin = n_burnin,
                      n_q = n_q, T_b_ = T_b-n_lags, n_lags = n_lags,
                      n_vars = n_vars, n_T_ = n_T_, n_fcst = n_fcst, n_determ = n_determ,
                      n_thin = n_thin, verbose = verbose,

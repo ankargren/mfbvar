@@ -10,7 +10,7 @@ The mfbvar package makes estimation of Bayesian VARs with a mix of monthly and q
 simple. The prior for the regression parameters is normal with Minnesota-style prior moments.
 The package supports either an inverse Wishart prior for the error covariance matrix, yielding a
 standard normal-inverse Wishart prior, or a time-varying error covariance matrix by means of a factor
-stochastic volatility model through the \code{\link[factorstochvol]{factorstochvol}} package.
+stochastic volatility model through the \code{\link[factorstochvol]{factorstochvol-package}} package.
 }
 \section{Specifying the prior}{
 

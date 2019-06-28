@@ -174,7 +174,7 @@ void mcmc_ssng_csv(const arma::mat & y_in_p,
   double lambda_mu_i = lambda_mu(0);
   double phi_mu_i = phi_mu(0);
   arma::vec omega_i = omega.row(0).t();
-  arma::mat inv_prior_psi_Omega = arma::diagmat(omega_i);
+  arma::mat inv_prior_psi_Omega = arma::diagmat(1.0/omega_i);
   arma::vec inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
   double M, batch = 1.0;
   arma::running_stat<double> stats;
@@ -228,7 +228,7 @@ void mcmc_ssng_csv(const arma::mat & y_in_p,
     Pi_i0.cols(1, n_vars*n_lags) = Pi_i;
 
     if (!single_freq) {
-      mZ = simsm_adaptive_cv(my, Pi_i0, Sigma_chol, Lambda_comp, mZ1, n_q, T_b);
+      mZ = simsm_adaptive_sv(my, Pi_i0, Sigma_chol_cube, Lambda_comp, mZ1, n_q, T_b);
       Z_i.rows(n_lags, n_T + n_lags - 1) = mZ + mu_mat;
     }
 

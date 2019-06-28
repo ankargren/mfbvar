@@ -188,7 +188,7 @@ mcmc_sampler.mfbvar_minn_csv <- function(x, ...){
                      n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega,
                      prior_Pi_mean = prior_Pi_mean, prior_S = prior_S,
                      prior_nu = n_vars+2, post_nu = n_T + n_vars+2, d = d, Y = Y,
-                     n_T = n_T, n_T_ = n_T_, n_reps = n_reps, Lambda_ = Lambda_,
+                     n_T = n_T, n_T_ = n_T_, n_reps = n_reps, n_burnin = n_burnin, n_thin = n_thin, Lambda_ = Lambda_,
                      init = list(init_Pi = Pi[,, n_reps/n_thin],
                                  init_Sigma = Sigma[,, n_reps/n_thin],
                                  init_Z = Z[,, n_reps/n_thin],
@@ -444,7 +444,7 @@ mcmc_sampler.mfbvar_ss_csv <- function(x, ...) {
                      Z_fcst = NULL, smoothed_Z = NULL, n_determ = n_determ,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      prior_S = prior_S, prior_nu = n_vars+2, post_nu = n_T + n_vars+2, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
-                     prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, Lambda_ = Lambda_,
+                     prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, n_burnin = n_burnin, n_thin = n_thin, Lambda_ = Lambda_,
                      init = list(init_Pi = Pi[,, n_reps/n_thin], init_Sigma = Sigma[,, n_reps/n_thin], init_psi = psi[n_reps/n_thin, ], init_Z = Z[,, n_reps/n_thin], init_phi = phi[n_reps/n_thin], init_sigma = sigma[n_reps/n_thin], init_f = f[n_reps/n_thin,]))
 
   if (check_roots == TRUE) {
@@ -545,8 +545,8 @@ mcmc_sampler.mfbvar_ssng_csv <- function(x, ...) {
 
 
 
-  c0 <- ifelse(is.null(x$c0), 0.01, x$c0)
-  c1 <- ifelse(is.null(x$c1), 0.01, x$c1)
+  c0 <- ifelse(is.null(x$prior_ng), 0.01, x$prior_ng[1])
+  c1 <- ifelse(is.null(x$prior_ng), 0.01, x$prior_ng[2])
   s <- ifelse(is.null(x[["s"]]), -10, x$s)
   ################################################################
   ### Preallocation

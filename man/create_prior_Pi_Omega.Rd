@@ -4,7 +4,8 @@
 \alias{create_prior_Pi_Omega}
 \title{Create the priors for Pi and Sigma}
 \usage{
-create_prior_Pi_Omega(lambda1, lambda2, lambda3, prior_Pi_AR1, Y, n_lags)
+create_prior_Pi_Omega(lambda1, lambda2, lambda3, prior_Pi_AR1, Y, n_lags,
+  block_exo = NULL)
 }
 \arguments{
 \item{lambda1}{overall tightness}

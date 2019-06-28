@@ -6,7 +6,6 @@
 #include "mvn_par.h"
 #include "update_ng.h"
 #include "update_dl.h"
-#include <ctime>
 // [[Rcpp::export]]
 void mcmc_minn_fsv(const arma::mat & y_in_p,
                    arma::cube& Pi, arma::cube& Z, arma::cube& Z_fcst,
@@ -69,7 +68,7 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
 
   arma::mat eps;
   bool rue = true;
-  if ((n_vars*n_lags) > 1.1 * n_T & arma::range(prior_Pi_AR1) < 1e-12) {
+  if (((n_vars*n_lags) > 1.1 * n_T) & (arma::range(prior_Pi_AR1) < 1e-12)) {
     rue = false;
     eps = arma::mat(n_T+n_vars*n_lags+1, n_vars);
   } else {
@@ -174,20 +173,13 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
       p.increment();
     }
 
-    if ((i+1) % 100 == 0) {
-      std::time_t t = std::time(0);   // get time now
-      std::tm* now = std::localtime(&t);
-      Rcpp::Rcout <<  "Iteration " << i+1 << " at " << std::setw(2) << std::setfill('0') << now->tm_hour << ':' << std::setw(2) << std::setfill('0') << now->tm_min <<':'<< std::setw(2) << std::setfill('0') << now->tm_sec << std::endl;
-    }
-
-
 
   }
 
 }
 
 // [[Rcpp::export]]
-void mcmc_ss_fsv(const arma::mat & y_in_p,
+void mcmc_ssng_fsv(const arma::mat & y_in_p,
                  arma::cube& Pi, arma::mat& psi, arma::vec& phi_mu,
                  arma::vec& lambda_mu, arma::mat& omega, arma::cube& Z, arma::cube& Z_fcst,
                  arma::mat& mu, arma::mat& phi, arma::mat& sigma,
@@ -253,14 +245,14 @@ void mcmc_ss_fsv(const arma::mat & y_in_p,
 
   arma::mat eps;
   bool rue = true;
-  if ((n_vars*n_lags) > 1.1 * n_T & arma::range(prior_Pi_AR1) < 1e-12) {
+  if (((n_vars*n_lags) > 1.1 * n_T) & (arma::range(prior_Pi_AR1) < 1e-12)) {
     rue = false;
     eps = arma::mat(n_T+n_vars*n_lags, n_vars);
   } else {
     eps = arma::mat(n_vars*n_lags, n_vars);
   }
 
-  arma::mat output(n_vars*n_lags, n_vars);
+
 
 
   // ss
@@ -302,7 +294,7 @@ void mcmc_ss_fsv(const arma::mat & y_in_p,
   }
 
   arma::vec omega_i = omega.row(0).t();
-  arma::mat inv_prior_psi_Omega = arma::diagmat(omega_i);
+  arma::mat inv_prior_psi_Omega = arma::diagmat(1/omega_i);
   arma::vec inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
   arma::running_stat<double> stats;
 
@@ -387,13 +379,13 @@ void mcmc_ss_fsv(const arma::mat & y_in_p,
 
     cc_i = armaf.t() * armafacload.t(); // Common component
     latent_nofac = mZ - cc_i;
-
     bool stationarity_check = false;
     int num_try = 0, iter = 0;
     double root = 1000;
     while (stationarity_check == false) {
       iter += 1;
       eps.imbue(norm_rand);
+      arma::mat output(n_vars*n_lags, n_vars);
       if (rue) {
         Pi_parallel_rue Pi_parallel_i(output, latent_nofac, mX, prior_Pi_Omega, eps,
                                       armah, prior_Pi_AR1, n_T, n_vars, n_lags);
@@ -444,7 +436,7 @@ void mcmc_ss_fsv(const arma::mat & y_in_p,
       inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
     }
     X = create_X_noint(Z_i, n_lags);
-    posterior_psi_fsv(psi_i, mu_mat, Pi_i, D_mat, idivar,
+    posterior_psi_fsv(psi_i, mu_mat, Pi_i, D_mat, arma::exp(idivar),
                       inv_prior_psi_Omega, Z_i.rows(n_lags, n_T + n_lags - 1), X,
                       armafacload, armaf, inv_prior_psi_Omega_mean,
                       dt, n_determ, n_vars, n_lags);

@@ -3,7 +3,9 @@
 \name{plot-mfbvar}
 \alias{plot-mfbvar}
 \alias{plot.mfbvar_ss}
+\alias{plot.mfbvar_ssng}
 \alias{plot.mfbvar_minn}
+\alias{plot.mfbvar_dl}
 \alias{varplot}
 \title{Plotting methods for posterior mfbvar objects}
 \usage{
@@ -11,7 +13,14 @@
   plot_start = NULL, pred_bands = 0.8, nrow_facet = NULL,
   ss_bands = 0.95, ...)
 
+\method{plot}{mfbvar_ssng}(x, fcst_start = NULL, aggregate_fcst = TRUE,
+  plot_start = NULL, pred_bands = 0.8, nrow_facet = NULL,
+  ss_bands = 0.95, ...)
+
 \method{plot}{mfbvar_minn}(x, fcst_start = NULL, aggregate_fcst = TRUE,
+  plot_start = NULL, pred_bands = 0.8, nrow_facet = NULL, ...)
+
+\method{plot}{mfbvar_dl}(x, fcst_start = NULL, aggregate_fcst = TRUE,
   plot_start = NULL, pred_bands = 0.8, nrow_facet = NULL, ...)
 
 varplot(x, variables = colnames(x$Y), var_bands = 0.95,
@@ -22,6 +31,8 @@ varplot(x, variables = colnames(x$Y), var_bands = 0.95,
 
 \item{fcst_start}{Date of the first forecast; if dates are available for the data used for obtaining \code{x}, these will be used.}
 
+\item{aggregate_fcst}{Boolean indicating whether forecasts of the latent monthly series should be aggregated to the quarterly frequency.}
+
 \item{plot_start}{Time period (date or number) to start plotting from. Default is to to use \code{5*n_fcst} time periods if \code{n_fcst} exists, otherwise the entire sample.}
 
 \item{pred_bands}{Single number (between \code{0.0} and \code{1.0}) giving the coverage level of forecast intervals.}
@@ -31,6 +42,8 @@ varplot(x, variables = colnames(x$Y), var_bands = 0.95,
 \item{ss_bands}{(Steady-state prior only) Single number (between \code{0.0} and \code{1.0}) giving the coverage level of posterior steady-state intervals.}
 
 \item{...}{Currently not in use.}
+
+\item{variables}{Vector of names or positions of variables to include in the plot of variances}
 
 \item{var_bands}{(\code{varplot} only) Single number (between \code{0.0} and \code{1.0}) giving the coverage level of posterior intervals for the error standard deviations.}
 }

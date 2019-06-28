@@ -3,13 +3,26 @@
 #include "ss_utils.h"
 #include "update_ng.h"
 #include "update_dl.h"
+//' MCMC Sampler for Minnesota with a Diffuse Error Covariance Prior
+//' @param y_in_p Matrix of data
+//' @param Pi Array for storing regression parameters
+//' @param Sigma Array for storing the error covariance matrix
+//' @param Z Array for storing the data
+//' @param Z_fcst Array for storing the forecasts
+//' @param aux Matrix for storing the auxiliary hyperparameters in the Dirichlet-Laplace prior
+//' @param global Vector for storing the global hyperparameters in the Dirichlet-Laplace prior
+//' @param local Matrix for storing the local hyperparameters in the Dirichlet-Laplace prior
+//' @param slice Vector that will hold the temporary slice variables if slice sampling is used for the Dirichet-Laplace prior
+//' @param Lambda_comp Aggregation matrix
+//' @param prior_Pi_Omega Matrix with prior variances of the regression parameters
+//' @param prior_Pi_mean_vec Vector of prior means of the regression parameters
 // [[Rcpp::export]]
 void mcmc_minn_diffuse(const arma::mat & y_in_p,
                   arma::cube& Pi, arma::cube& Sigma, arma::cube& Z, arma::cube& Z_fcst,
                   arma::mat & aux, arma::vec & global, arma::mat & local,
                   arma::vec & slice,
                   const arma::mat& Lambda_comp, arma::mat prior_Pi_Omega,
-                  const arma::mat& Omega_Pi,
+                  arma::vec prior_Pi_mean_vec,
                   const arma::mat& Z_1,
                   arma::uword n_reps, arma::uword n_burnin,
                   arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars,
@@ -59,6 +72,7 @@ void mcmc_minn_diffuse(const arma::mat & y_in_p,
   Sigma_chol = arma::chol(Sigma_i, "lower");
   Sigma_inv = arma::inv_sympd(Sigma_i);
   arma::vec prior_Pi_Omega_vec_inv = 1.0 / arma::vectorise(prior_Pi_Omega);
+  arma::vec Omega_Pi = prior_Pi_mean_vec % prior_Pi_Omega_vec_inv;
 
   for (arma::uword i = 0; i < n_reps; ++i) {
     if (!single_freq) {
@@ -71,7 +85,7 @@ void mcmc_minn_diffuse(const arma::mat & y_in_p,
     post_Pi_Omega_inv = arma::kron(Sigma_inv, X.t() * X);
     post_Pi_Omega_inv.diag() += prior_Pi_Omega_vec_inv;
     L = arma::chol(post_Pi_Omega_inv, "lower");
-    b = arma::vectorise(X.t() * y_i * Sigma_inv + Omega_Pi);
+    b = arma::vectorise(X.t() * y_i * Sigma_inv) + Omega_Pi;
     u1 = arma::solve(arma::trimatl(L), b);
     u2 = arma::solve(arma::trimatu(L.t()), u1);
     u3.imbue(norm_rand);
@@ -88,6 +102,7 @@ void mcmc_minn_diffuse(const arma::mat & y_in_p,
     if (dl) {
       update_dl(prior_Pi_Omega, aux_i, local_i, global_i, Pi_i.t(), n_vars, n_lags, a, slice, gig, true);
       prior_Pi_Omega_vec_inv = 1.0 / arma::vectorise(prior_Pi_Omega);
+      Omega_Pi = prior_Pi_mean_vec % prior_Pi_Omega_vec_inv;
     }
 
     if (((i+1) % n_thin == 0) && (i >= n_burnin)) {

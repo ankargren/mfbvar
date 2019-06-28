@@ -3,15 +3,12 @@
 \name{posterior_psi_mean}
 \alias{posterior_psi_mean}
 \alias{posterior_psi_Omega}
-\alias{posterior_psi_Omega_fsv}
 \title{Compute posterior moments of the steady-state parameters}
 \usage{
 posterior_psi_mean(U, D_mat, Sigma, prior_psi_Omega, post_psi_Omega,
   Y_tilde, prior_psi_mean)
 
 posterior_psi_Omega(U, D_mat, Sigma, prior_psi_Omega)
-
-posterior_psi_Omega_fsv(U, D_mat, idivar, prior_psi_Omega)
 }
 \arguments{
 \item{U}{\eqn{U} matrix, of size \code{(n_vars*n_determ*(n_lags+1)) * (n_vars*n_determ)}. This can be obtained using \code{\link{build_U}}.}
@@ -31,8 +28,6 @@ posterior_psi_Omega_fsv(U, D_mat, idivar, prior_psi_Omega)
 \value{
 The return is:
 \item{psi}{The posterior mean (from \code{\link{posterior_psi_mean}})}
-
-\item{psi_Omega}{The posterior variance (from \code{\link{posterior_psi_Omega}})}
 
 \item{psi_Omega}{The posterior variance (from \code{\link{posterior_psi_Omega}})}
 }

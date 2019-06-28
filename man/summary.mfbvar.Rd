@@ -4,10 +4,10 @@
 \alias{summary.mfbvar}
 \title{Summary method for class mfbvar}
 \usage{
-\method{summary}{mfbvar}(x, ...)
+\method{summary}{mfbvar}(object, ...)
 }
 \arguments{
-\item{x}{object of class \code{mfbvar}}
+\item{object}{object of class \code{mfbvar}}
 
 \item{...}{Currently not in use.}
 }
