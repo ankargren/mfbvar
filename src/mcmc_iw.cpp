@@ -167,12 +167,8 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
   for (arma::uword i = 0; i < n_reps + n_burnin; ++i) {
 
     if (!single_freq) {
-      my.cols(0, n_vars - n_q - 1) = y_in_p.cols(0, n_vars - n_q - 1) - mu_mat.cols(0, n_vars - n_q - 1);
-      mu_long.rows(0, n_Lambda-1) = d1.tail_rows(n_Lambda) * Psi_i.t();
-      mu_long.rows(n_Lambda, n_T+n_Lambda-1) = mu_mat;
-      for (arma::uword j = 0; j < n_T; ++j) {
-        my.row(j).cols(n_vars - n_q - 1, n_vars - 1) = y_in_p.row(j).cols(n_vars - n_q - 1, n_vars - 1) - Lambda_single * mu_long.rows(j, j+n_Lambda-1).cols(n_vars - n_q - 1, n_vars - 1);// Needs fixing
-      }
+      update_demean(my, mu_long, y_in_p, mu_mat, d1, Psi_i, Lambda_single, n_vars,
+                    n_q, n_Lambda, n_T);
     } else {
       // Even if single freq, mZ needs to be updated
       mZ = y_in_p - mu_mat;
@@ -186,8 +182,8 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
       Z_i.rows(n_lags, n_T + n_lags - 1) = mZ + mu_mat;
     }
 
+    Z_i_demean.rows(0, n_lags - 1) = mZ1;
     Z_i_demean.rows(n_lags, n_T + n_lags - 1) = mZ;
-    Z_i.rows(n_lags, n_T + n_lags - 1) = mZ + mu_mat;
 
     mX = create_X_noint(Z_i_demean, n_lags);
     XX = mX.t() * mX;

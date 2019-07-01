@@ -152,8 +152,8 @@ mcmc_sampler.mfbvar_minn_diffuse <- function(x, ...){
 
   ################################################################
   ### Prepare the return object
-  return_obj <- list(Pi = Pi, Sigma = Sigma, psi = NULL, Z = Z, roots = NULL, num_tries = NULL,
-                     Z_fcst = NULL, smoothed_Z = NULL, n_determ = 1,
+  return_obj <- list(Pi = Pi, Sigma = Sigma, psi = NULL, Z = Z,
+                     Z_fcst = NULL, aggregation = x$aggregation, n_determ = 1,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
                      prior_psi_Omega = NULL, prior_psi_mean = NULL, n_reps = n_reps, n_burnin = n_burnin, n_thin = n_thin, Lambda_ = Lambda_, freq = freq,
@@ -356,8 +356,8 @@ mcmc_sampler.mfbvar_dl_diffuse <- function(x, ...){
 
   ################################################################
   ### Prepare the return object
-  return_obj <- list(Pi = Pi, Sigma = Sigma, psi = NULL, Z = Z, roots = NULL, num_tries = NULL,
-                     Z_fcst = NULL, smoothed_Z = NULL, n_determ = 1,
+  return_obj <- list(Pi = Pi, Sigma = Sigma, psi = NULL, Z = Z,
+                     Z_fcst = NULL, aggregation = x$aggregation, n_determ = 1,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
                      prior_psi_Omega = NULL, prior_psi_mean = NULL, n_reps = n_reps, n_burnin = n_burnin, n_thin = n_thin, Lambda_ = Lambda_, freq = freq,
@@ -575,18 +575,23 @@ mcmc_sampler.mfbvar_ss_diffuse <- function(x, ...) {
   Omega_Pi <- matrix(inv_prior_Pi_Omega %*% c(prior_Pi_mean), n_vars*n_lags, n_vars)
 
   # For the posterior of psi
-  inv_prior_psi_Omega <- solve(prior_psi_Omega)
-  inv_prior_psi_Omega_mean <- inv_prior_psi_Omega %*% prior_psi_mean
+  phi_mu <- matrix(0, 1, 1)
+  lambda_mu <- matrix(0, 1, 1)
+  omega <- matrix(diag(prior_psi_Omega), nrow = 1)
+  c0 <- 0
+  c1 <- 0
+  s <- 0
+
   Z_1 <- Z[1:n_pseudolags,, 1]
 
-  mfbvar:::mcmc_ss_diffuse(Y[-(1:n_lags),],Pi,Sigma,psi,Z,Z_fcst,Lambda_,prior_Pi_Omega,Omega_Pi,
-                      D_mat,dt,d1,d_fcst_lags,inv_prior_psi_Omega,inv_prior_psi_Omega_mean,check_roots,Z_1,n_reps,
+  mfbvar:::mcmc_ssng_diffuse(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu, lambda_mu, omega, Z,Z_fcst,Lambda_,prior_Pi_Omega,Omega_Pi,
+                      D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,n_reps,n_burnin,
                       n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose)
 
   ################################################################
   ### Prepare the return object
-  return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z, roots = NULL, num_tries = NULL,
-                     Z_fcst = NULL, smoothed_Z = NULL, n_determ = n_determ,
+  return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z,
+                     Z_fcst = NULL, aggregation = x$aggregation, n_determ = n_determ,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
                      prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, n_burnin = n_burnin, n_thin = n_thin, Lambda_ = Lambda_,
@@ -822,14 +827,6 @@ mcmc_sampler.mfbvar_ssng_diffuse <- function(x, ...) {
   D_mat <- mfbvar:::build_DD(d = d, n_lags = n_lags)
   dt <- d[-(1:n_lags), , drop = FALSE]
   d1 <- d[1:n_lags, , drop = FALSE]
-  psi_i <- psi[1, ]
-  Pi_i <- Pi[,, 1]
-  Sigma_i <- Sigma[,, 1]
-  Z_i <- Z[-(1:n_lags),, 1]
-  mu_mat <- dt %*% t(matrix(psi_i, nrow = n_vars))
-  omega_i <- omega[1, ]
-  phi_mu_i <- phi_mu[1]
-  lambda_mu_i <- lambda_mu[1]
 
 
   # For the posterior of Pi
@@ -838,15 +835,14 @@ mcmc_sampler.mfbvar_ssng_diffuse <- function(x, ...) {
 
   Z_1 <- Z[1:n_pseudolags,, 1]
 
-  mfbvar:::mcmc_ssng_diffuse(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,Lambda_,prior_Pi_Omega,Omega_Pi,
-                        D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,n_reps,
-                        n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose)
+  mfbvar:::mcmc_ss_diffuse(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu, lambda_mu, omega, Z,Z_fcst,Lambda_,prior_Pi_Omega,Omega_Pi,
+                           D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,n_reps,n_burnin,
+                           n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose)
 
   ################################################################
   ### Prepare the return object
   return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z, phi_mu = phi_mu, lambda_mu = lambda_mu, omega = omega,
-                     roots = NULL, num_tries = NULL,
-                     Z_fcst = NULL, smoothed_Z = NULL, n_determ = n_determ,
+                     Z_fcst = NULL, aggregation = x$aggregation, n_determ = n_determ,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
                      prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, n_burnin = n_burnin, n_thin = n_thin, Lambda_ = Lambda_,

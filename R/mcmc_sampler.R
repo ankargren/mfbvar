@@ -234,7 +234,7 @@ mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
   ################################################################
   ### Prepare the return object
   return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z, roots = NULL, num_tries = NULL,
-                     Z_fcst = NULL, smoothed_Z = NULL, n_determ = n_determ,
+                     Z_fcst = NULL, aggregation = x$aggregation, n_determ = n_determ,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      prior_S = prior_S, prior_nu = n_vars+2, post_nu = n_T + n_vars+2, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
                      prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, n_burnin = n_burnin, n_thin = n_thin, Lambda_ = Lambda_,
@@ -493,8 +493,7 @@ mcmc_sampler.mfbvar_ssng_iw <- function(x, ...) {
   ################################################################
   ### Prepare the return object
   return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z, phi_mu = phi_mu, lambda_mu = lambda_mu, omega = omega,
-                     roots = NULL, num_tries = NULL,
-                     Z_fcst = NULL, smoothed_Z = NULL, n_determ = n_determ,
+                     Z_fcst = NULL, aggregation = x$aggregation, n_determ = n_determ,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      prior_S = prior_S, prior_nu = n_vars+2, post_nu = n_T + n_vars+2, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
                      prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, n_burnin = n_burnin, n_thin = n_thin, Lambda_ = Lambda_,
@@ -674,7 +673,7 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
   ################################################################
   ### Prepare the return object
   return_obj <- list(Pi = Pi, Sigma = Sigma, psi = NULL, Z = Z, roots = NULL, num_tries = NULL,
-                     Z_fcst = NULL, smoothed_Z = NULL, n_determ = 1,
+                     Z_fcst = NULL, aggregation = x$aggregation, n_determ = 1,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      prior_S = prior_S, prior_nu = prior_nu, post_nu = prior_nu + n_T_, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
                      prior_psi_Omega = NULL, prior_psi_mean = NULL, n_reps = n_reps, n_burnin = n_burnin, n_thin = n_thin, Lambda_ = Lambda_, freq = freq,

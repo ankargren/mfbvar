@@ -567,6 +567,7 @@ summary.mfbvar_prior <- function(object, ...) {
   cat("----------------------------\n")
   cat("General specification:\n")
   cat("  Y:", ncol(object$Y), "variables,", nrow(object$Y), "time points\n")
+  cat("  aggregation:", object$aggregation, "\n")
   cat(sprintf("  freq: %d monthly and %d quarterly %s\n", sum(object$freq == "m"), sum(object$freq == "q"), ifelse(sum(object$freq == "q") == 1, "variable", "variables")))
   if (length(object$prior_Pi_AR1)<=5) {
     disp_prior_Pi_AR1 <- object$prior_Pi_AR1
@@ -602,7 +603,7 @@ summary.mfbvar_prior <- function(object, ...) {
   cat("----------------------------\n")
   #cat("Dirichlet-Laplace prior:\n")
   #cat("  a:", ifelse(is.null(object[["a"]]), "<missing>", object[["a"]]), "\n")
-  cat("----------------------------\n")
+  #cat("----------------------------\n")
   cat("Common stochastic volatility:\n")
   cat(sprintf("  prior_phi: mean = %g, var = %g", object$prior_phi[1], object$prior_phi[2]), "\n")
   cat(sprintf("  prior_sigma2: mean = %g, df = %d", object$prior_sigma2[1], object$prior_sigma2[2]), "\n")
@@ -1199,7 +1200,7 @@ varplot <- function(x, variables = colnames(x$Y), var_bands = 0.95, nrow_facet =
   }
   if (sv_type == "fsv") {
     n_fac <- x$mfbvar_prior$n_fac
-    variances_fsv(variances, x$latent, x$facload, variables_num, n_fac, n_reps, n_T, n_vars, n_plotvars)
+    variances_fsv(variances, x$h, x$facload, variables_num, n_fac, n_reps, n_T, n_vars, n_plotvars)
   }
   if (sv_type == "csv") {
     variances_csv(variances, x$Sigma, x$f, n_T, n_reps, variables_num)
