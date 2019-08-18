@@ -3,12 +3,16 @@
 #' \code{mdd} estimates the (log) marginal data density.
 #'
 #' This is a generic function. See the methods for more information.
-#' @seealso \code{\link{mdd.mfbvar_ss}}, \code{\link{mdd.mfbvar_minn}}
+#' @seealso \code{\link{mdd.mfbvar_ss_iw}}, \code{\link{mdd.mfbvar_minn_iw}}
 #' @param x argument to dispatch on (of class \code{mfbvar_ss} or \code{mfbvar_minn})
 #' @param ... additional named arguments passed on to the methods
 
 mdd <- function(x, ...) {
   UseMethod("mdd")
+}
+
+mdd.default <- function(x, ...) {
+  stop("The marginal data density can currently only be estimated when inverse Wishart is used for the error covariance matrix.")
 }
 
 #' Marginal data density method for class \code{mfbvar_ss}
@@ -23,8 +27,11 @@ mdd <- function(x, ...) {
 #' @references Fuentes-Albero, C. and Melosi, L. (2013) Methods for Computing Marginal Data Densities from the Gibbs Output.
 #' \emph{Journal of Econometrics}, 175(2), 132-141, \url{https://doi.org/10.1016/j.jeconom.2013.03.002}\cr
 #'  Ankargren, S., Unosson, M., & Yang, Y. (2018) A Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. Working Paper, Department of Statistics, Uppsala University No. 2018:3.
-#' @seealso \code{\link{mdd}}, \code{\link{mdd.mfbvar_minn}}
-mdd.mfbvar_ss <- function(x, method = 1, ...) {
+#' @seealso \code{\link{mdd}}, \code{\link{mdd.mfbvar_minn_iw}}
+mdd.mfbvar_ss_iw <- function(x, method = 1, ...) {
+  if (x$aggregation != "average") {
+    stop("The marginal data density can only be computed using intra-quarterly average aggregation.")
+  }
   if (method == 1) {
     mdd_est <- estimate_mdd_ss_1(x)
   } else if (method == 2) {
@@ -45,8 +52,11 @@ mdd.mfbvar_ss <- function(x, method = 1, ...) {
 #' Schorfheide and Song (2015).
 #' @references
 #' Schorfheide, F., & Song, D. (2015) Real-Time Forecasting With a Mixed-Frequency VAR. \emph{Journal of Business & Economic Statistics}, 33(3), 366--380. \url{http://dx.doi.org/10.1080/07350015.2014.954707}
-#' @seealso \code{\link{mdd}}, \code{\link{mdd.mfbvar_ss}}
-mdd.mfbvar_minn <- function(x, ...) {
+#' @seealso \code{\link{mdd}}, \code{\link{mdd.mfbvar_ss_iw}}
+mdd.mfbvar_minn_iw <- function(x, ...) {
+  if (x$aggregation != "average") {
+    stop("The marginal data density can only be computed using intra-quarterly average aggregation.")
+  }
   quarterly_cols <- which(x$mfbvar_prior$freq == "q")
   estimate_mdd_minn(x, ...)
 }
@@ -98,10 +108,10 @@ estimate_mdd_ss_1 <- function(mfbvar_obj) {
   prior_psi_mean <- mfbvar_obj$prior_psi_mean
 
   freq <- mfbvar_obj$mfbvar_prior$freq
-  Lambda <- build_Lambda(freq, n_lags)
   n_q <- sum(freq == "q")
   T_b <- max(which(!apply(apply(Y[, freq == "m"], 2, is.na), 1, any)))
-  Lambda_ <- build_Lambda(rep("q", n_q), 3)
+  Lambda <- build_Lambda(ifelse(freq == "q", "average", freq), n_lags)
+  Lambda_ <- build_Lambda(rep("average", n_q), 3)
 
   ################################################################
   ### Initialize

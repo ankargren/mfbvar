@@ -1,8 +1,10 @@
 .Rproj.user
 .Rhistory
 .RData
-.Ruserdata
 src/*.o
 src/*.so
 src/*.dll
-autom4te.cache/
+README_cache/
+src/.DS_Store
+doc
+Meta

@@ -1,6 +1,4 @@
-// [[Rcpp::depends(RcppArmadillo)]]
-
-#include <RcppArmadillo.h>
+#include "mfbvar.h"
 
 #define _USE_MATH_DEFINES // for C++
 #include <cmath>
@@ -379,12 +377,6 @@ arma::mat KF_ragged::create_d(int T_end_) {
   arma::mat d = arma::join_rows(trans(Phi.submat(0, n_vars*n_lags, n_vars - 1, n_vars*n_lags)), arma::mat(1, n_vars*n_lags, arma::fill::zeros));
   d = arma::repmat(d, T_end_, 1);
   return d;
-}
-
-arma::mat companion_reshaper(arma::mat obj_, unsigned int n_m_, unsigned int n_q_, unsigned int n_T_, unsigned int n_lags_) {
-  unsigned int n_vars_ = n_m_ + n_q_;
-  arma::mat temp = arma::reshape(obj_, n_vars_*n_T_, n_lags_ + 1);
-  return arma::reshape(temp.rows(n_m_*n_T_, n_vars_*n_T_-1), n_T_, n_q_ * (n_lags_ + 1));
 }
 
 //' @title Kalman filter and smoother

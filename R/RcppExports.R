@@ -10,6 +10,26 @@ build_U_cpp <- function(Pi, n_determ, n_vars, n_lags) {
     .Call(`_mfbvar_build_U_cpp`, Pi, n_determ, n_vars, n_lags)
 }
 
+create_X <- function(y, k) {
+    .Call(`_mfbvar_create_X`, y, k)
+}
+
+create_X_noint <- function(y, k) {
+    .Call(`_mfbvar_create_X_noint`, y, k)
+}
+
+create_X_t <- function(y) {
+    .Call(`_mfbvar_create_X_t`, y)
+}
+
+create_X_t_noint <- function(y) {
+    .Call(`_mfbvar_create_X_t_noint`, y)
+}
+
+dl_reg <- function(y, x, beta, aux, global, local, prior_Pi_Omega, n_reps, a, gig) {
+    invisible(.Call(`_mfbvar_dl_reg`, y, x, beta, aux, global, local, prior_Pi_Omega, n_reps, a, gig))
+}
+
 #' @title Kalman filter and smoother
 #'
 #' @description Kalman filter and smoother (\code{kf_ragged}) and simulation smoother (\code{kf_sim_smooth}) for mixed-frequency data with ragged edges. This function is more computationally efficient than using a companion form representation.
@@ -69,6 +89,102 @@ max_eig_cpp <- function(A) {
     .Call(`_mfbvar_max_eig_cpp`, A)
 }
 
+mcmc_minn_csv <- function(y_in_p, Pi, Sigma, Z, Z_fcst, phi, sigma, f, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose) {
+    invisible(.Call(`_mfbvar_mcmc_minn_csv`, y_in_p, Pi, Sigma, Z, Z_fcst, phi, sigma, f, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose))
+}
+
+mcmc_ssng_csv <- function(y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, phi, sigma, f, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng) {
+    invisible(.Call(`_mfbvar_mcmc_ssng_csv`, y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, phi, sigma, f, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng))
+}
+
+mcmc_minn_diffuse <- function(y_in_p, Pi, Sigma, Z, Z_fcst, aux, global, local, slice, Lambda_comp, prior_Pi_Omega, prior_Pi_mean_vec, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, a, gig) {
+    invisible(.Call(`_mfbvar_mcmc_minn_diffuse`, y_in_p, Pi, Sigma, Z, Z_fcst, aux, global, local, slice, Lambda_comp, prior_Pi_Omega, prior_Pi_mean_vec, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, a, gig))
+}
+
+mcmc_ssng_diffuse <- function(y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, Omega_Pi, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng) {
+    invisible(.Call(`_mfbvar_mcmc_ssng_diffuse`, y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, Omega_Pi, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng))
+}
+
+mcmc_minn_fsv <- function(y_in_p, Pi, Z, Z_fcst, mu, phi, sigma, f, facload, h, aux, global, local, slice, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, a, gig) {
+    invisible(.Call(`_mfbvar_mcmc_minn_fsv`, y_in_p, Pi, Z, Z_fcst, mu, phi, sigma, f, facload, h, aux, global, local, slice, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, a, gig))
+}
+
+mcmc_ssng_fsv <- function(y_in_p, Pi, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, mu, phi, sigma, f, facload, h, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng) {
+    invisible(.Call(`_mfbvar_mcmc_ssng_fsv`, y_in_p, Pi, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, mu, phi, sigma, f, facload, h, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng))
+}
+
+mcmc_minn_iw <- function(y_in_p, Pi, Sigma, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, prior_nu) {
+    invisible(.Call(`_mfbvar_mcmc_minn_iw`, y_in_p, Pi, Sigma, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, prior_nu))
+}
+
+mcmc_ssng_iw <- function(y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng) {
+    invisible(.Call(`_mfbvar_mcmc_ssng_iw`, y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng))
+}
+
+variances_fsv <- function(variances, latent, facload, variables_num, n_fac, n_reps, n_T, n_vars, n_plotvars) {
+    invisible(.Call(`_mfbvar_variances_fsv`, variances, latent, facload, variables_num, n_fac, n_reps, n_T, n_vars, n_plotvars))
+}
+
+variances_csv <- function(variances, Sigma, f, n_T, n_reps, variables_num) {
+    invisible(.Call(`_mfbvar_variances_csv`, variances, Sigma, f, n_T, n_reps, variables_num))
+}
+
+posterior_psi_Omega_fsv <- function(U, D_mat, idivar, inv_prior_psi_Omega) {
+    .Call(`_mfbvar_posterior_psi_Omega_fsv`, U, D_mat, idivar, inv_prior_psi_Omega)
+}
+
+posterior_psi_Omega_csv <- function(U, D_mat, Sigma_chol_inv, exp_sqrt_f, inv_prior_psi_Omega, n_determ, n_vars, n_lags) {
+    .Call(`_mfbvar_posterior_psi_Omega_csv`, U, D_mat, Sigma_chol_inv, exp_sqrt_f, inv_prior_psi_Omega, n_determ, n_vars, n_lags)
+}
+
+posterior_psi_mean_csv <- function(U, D_mat, Sigma_chol_inv, exp_sqrt_f, inv_prior_psi_Omega_mean, post_psi_Omega, Y_tilde) {
+    .Call(`_mfbvar_posterior_psi_mean_csv`, U, D_mat, Sigma_chol_inv, exp_sqrt_f, inv_prior_psi_Omega_mean, post_psi_Omega, Y_tilde)
+}
+
+posterior_psi_csv <- function(psi_i, mu_mat, Pi_i, D_mat, Sigma_chol_inv, exp_sqrt_f, inv_prior_psi_Omega, Z_i, X, inv_prior_psi_Omega_mean, dt, n_determ, n_vars, n_lags) {
+    invisible(.Call(`_mfbvar_posterior_psi_csv`, psi_i, mu_mat, Pi_i, D_mat, Sigma_chol_inv, exp_sqrt_f, inv_prior_psi_Omega, Z_i, X, inv_prior_psi_Omega_mean, dt, n_determ, n_vars, n_lags))
+}
+
+posterior_psi_mean_fsv <- function(U, D_mat, idivar, inv_prior_psi_Omega_mean, post_psi_Omega, Y_tilde) {
+    .Call(`_mfbvar_posterior_psi_mean_fsv`, U, D_mat, idivar, inv_prior_psi_Omega_mean, post_psi_Omega, Y_tilde)
+}
+
+posterior_psi_fsv <- function(psi_i, mu_mat, Pi_i, D_mat, idivar, inv_prior_psi_Omega, Z_i, X, startfacload, startfac, inv_prior_psi_Omega_mean, dt, n_determ, n_vars, n_lags) {
+    invisible(.Call(`_mfbvar_posterior_psi_fsv`, psi_i, mu_mat, Pi_i, D_mat, idivar, inv_prior_psi_Omega, Z_i, X, startfacload, startfac, inv_prior_psi_Omega_mean, dt, n_determ, n_vars, n_lags))
+}
+
+posterior_psi_mean_iw <- function(U, D_mat, Sigma_i, inv_prior_psi_Omega_mean, post_psi_Omega, Y_tilde) {
+    .Call(`_mfbvar_posterior_psi_mean_iw`, U, D_mat, Sigma_i, inv_prior_psi_Omega_mean, post_psi_Omega, Y_tilde)
+}
+
+posterior_psi_Omega_iw <- function(U, D_mat, Sigma_i, inv_prior_psi_Omega) {
+    .Call(`_mfbvar_posterior_psi_Omega_iw`, U, D_mat, Sigma_i, inv_prior_psi_Omega)
+}
+
+posterior_psi_iw <- function(psi_i, mu_mat, Pi_i, D_mat, Sigma_i, inv_prior_psi_Omega, Z_i, X, inv_prior_psi_Omega_mean, dt, n_determ, n_vars, n_lags) {
+    invisible(.Call(`_mfbvar_posterior_psi_iw`, psi_i, mu_mat, Pi_i, D_mat, Sigma_i, inv_prior_psi_Omega, Z_i, X, inv_prior_psi_Omega_mean, dt, n_determ, n_vars, n_lags))
+}
+
+forwardAlg <- function(chol_diag, chol_offdiag, covector, htmp) {
+    invisible(.Call(`_mfbvar_forwardAlg`, chol_diag, chol_offdiag, covector, htmp))
+}
+
+do_rgig1 <- function(lambda, chi, psi) {
+    .Call(`_mfbvar_do_rgig1`, lambda, chi, psi)
+}
+
+rig <- function(mu, lambda) {
+    .Call(`_mfbvar_rig`, mu, lambda)
+}
+
+rmvn <- function(Phi, d, alpha) {
+    .Call(`_mfbvar_rmvn`, Phi, d, alpha)
+}
+
+rmvn_ccm <- function(Phi, d, alpha, c, j) {
+    .Call(`_mfbvar_rmvn_ccm`, Phi, d, alpha, c, j)
+}
+
 #' @rdname dnorminvwish
 #' @keywords internal
 rmatn <- function(M, Q, P) {
@@ -85,6 +201,18 @@ rinvwish <- function(v, S) {
 #' @keywords internal
 rmultn <- function(m, Sigma) {
     .Call(`_mfbvar_rmultn`, m, Sigma)
+}
+
+rsimsm_adaptive_cv <- function(y_, Phi, Sigma_chol, Lambda, Z1, n_q_, T_b) {
+    .Call(`_mfbvar_rsimsm_adaptive_cv`, y_, Phi, Sigma_chol, Lambda, Z1, n_q_, T_b)
+}
+
+rsimsm_adaptive_sv <- function(y_, Phi, Sigma_chol, Lambda, Z1, n_q_, T_b) {
+    .Call(`_mfbvar_rsimsm_adaptive_sv`, y_, Phi, Sigma_chol, Lambda, Z1, n_q_, T_b)
+}
+
+rsimsm_adaptive_univariate <- function(y_, Phi, Sigma, Lambda, Z1, n_q_, T_b, f) {
+    .Call(`_mfbvar_rsimsm_adaptive_univariate`, y_, Phi, Sigma, Lambda, Z1, n_q_, T_b, f)
 }
 
 #' @title Smooth and sample from the smoothed distribution
@@ -108,5 +236,13 @@ rmultn <- function(m, Sigma) {
 #' \item{}{An \code{n_T}-long vector of the log-likelihoods. \code{exp(sum(loglike(...)))} is the likelihood.}
 loglike <- function(Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0) {
     .Call(`_mfbvar_loglike`, Y, Lambda, Pi_comp, Q_comp, n_T, n_vars, n_comp, z0, P0)
+}
+
+update_demean <- function(my, mu_long, y_in_p, mu_mat, d1, Psi_i, Lambda_single, n_vars, n_q, n_Lambda, n_T) {
+    invisible(.Call(`_mfbvar_update_demean`, my, mu_long, y_in_p, mu_mat, d1, Psi_i, Lambda_single, n_vars, n_q, n_Lambda, n_T))
+}
+
+posterior_phi_mu <- function(lambda, phi_mu, omega, nm) {
+    .Call(`_mfbvar_posterior_phi_mu`, lambda, phi_mu, omega, nm)
 }
 

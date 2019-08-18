@@ -1,0 +1,369 @@
+#include "simsm_utils.h"
+
+#ifndef MFBVAR_SIMSM_ADAPTIVE_UNIVARIATE_H
+#define MFBVAR_SIMSM_ADAPTIVE_UNIVARIATE_H
+
+inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::mat Sigma, arma::mat Lambda, arma::mat Z1, arma::uword n_q_, arma::uword T_b, arma::mat f) {
+
+
+  // intercept is first column
+  arma::uword n_vars = y_.n_cols;
+  arma::uword n_lags = Z1.n_rows;
+  arma::uword n_T = y_.n_rows;
+  arma::uword n_q = n_q_;
+  arma::uword n_m = n_vars - n_q;
+
+  // getting missingness
+  arma::uvec obs_vars;
+  arma::uvec t_vec(1);
+
+  // simulation
+  arma::mat Phi_no_c = Phi.cols(1, n_vars * n_lags);
+  arma::mat Phi_c = Phi.col(0);
+  arma::uvec quarterly_indexes = arma::uvec(Lambda.n_cols);
+  arma::mat epsilon = arma::mat(n_T, n_vars, arma::fill::zeros);
+  arma::mat Z_gen = arma::mat(n_T+1, n_vars*n_lags, arma::fill::zeros);
+  arma::mat y_sim = arma::mat(n_T, n_vars).fill(NA_REAL);
+  arma::mat Zt;
+
+  ///////////////////////////////////////////////
+  //               SIMULATING                  //
+  ///////////////////////////////////////////////
+  quarterly_indexes = create_quarterly_indexes(Lambda, n_m, n_q, n_vars);
+
+  // Generating errors
+  std::generate(epsilon.begin(), epsilon.end(), ::norm_rand);
+  epsilon %= Sigma;
+
+  create_sim(Z_gen, y_sim, Phi_no_c, Phi_c, epsilon, y_, Z1, Lambda,
+             quarterly_indexes, n_vars, n_m, n_q, n_T, n_lags);
+
+  ///////////////////////////////////////////////
+  //                 COMPACT                   //
+  ///////////////////////////////////////////////
+  arma::mat y_orig = y_;
+  y_ = y_ - y_sim;
+  arma::mat Z1_orig = Z1;
+  Z1 = arma::mat(arma::size(Z1), arma::fill::zeros);
+  Phi.col(0) = arma::mat(n_vars, 1, arma::fill::zeros);
+  Phi_c = Phi_c.fill(0.0);
+
+
+  ///////////////////////////////////////////////
+  //                 COMPACT                   //
+  ///////////////////////////////////////////////
+  arma::mat y_Tb = y_.rows(0, T_b - 1);
+  arma::mat y = y_Tb;
+
+  arma::mat Phi_mm(n_m, n_m*n_lags);
+  arma::mat Phi_mq(n_m, n_q*n_lags);
+  arma::mat Phi_qm(n_q, n_m*n_lags);
+  arma::mat Phi_qq(n_q, n_q*n_lags);
+
+  arma::mat Z = arma::mat(n_vars, n_q*(n_lags + 1), arma::fill::zeros);
+  arma::mat Tt = arma::mat(n_q*(n_lags + 1), n_q*(n_lags + 1), arma::fill::zeros);
+  arma::mat intercept = arma::mat(1, n_vars, arma::fill::zeros);
+
+  arma::mat W = arma::mat(1, n_m*n_lags + 1, arma::fill::ones);
+  arma::mat d = arma::mat(1, n_q*(n_lags + 1), arma::fill::zeros);
+  arma::mat a1 = arma::mat(n_q*(n_lags+1), 1, arma::fill::zeros);
+  arma::mat Beta_W = arma::mat(n_q, n_m*n_lags+1, arma::fill::zeros);
+
+  create_matrices(Phi_mm, Phi_mq, Phi_qm, Phi_qq, Z, Tt, intercept, a1, W,
+                  d, Beta_W, n_vars, n_m, n_q, n_lags, Lambda, Z1, Phi);
+
+  ////////////////////////////////////////////////////////////////////
+
+  arma::mat G, H, HT;
+  arma::mat X = arma::mat(1, n_m*n_lags, arma::fill::zeros);
+  arma::mat c = arma::mat(1, n_vars, arma::fill::zeros);
+  G = Sigma(arma::span::all, arma::span(0, n_m - 1)).t(); // G contains the sqrt(variances) for the n_m variables
+  H = Sigma(arma::span::all, arma::span(n_m, n_vars - 1)).t(); // H for the n_q variables
+  if (T_b < n_T) { // Only if there are ragged edges do we need HT
+    HT = Sigma.submat(arma::span(T_b, T_b), arma::span(n_m, n_vars - 1));
+  }
+
+  d.cols(0, n_q - 1) += f.submat(0, n_m, 0, n_vars - 1);
+  a1 += d.t();
+  arma::mat P1 = arma::mat(n_q*(n_lags+1), n_q*(n_lags+1), arma::fill::zeros);
+  for (arma::uword j = 0; j < n_q; j++) {
+    P1(j,j) = std::pow(H(j,0), 2.0);
+  }
+
+  ///////////////////////////////////////////////
+  //             COMPACT FILTERING             //
+  ///////////////////////////////////////////////
+  arma::mat r_T;
+  arma::mat a_tt_compact = arma::mat(n_T, n_q*(n_lags+1)).fill(NA_REAL);
+  arma::mat a = arma::mat(n_T, n_q*(n_lags+1)).fill(NA_REAL);
+  arma::mat a_tT = arma::mat(n_T, n_q*(n_lags+1)).fill(NA_REAL);
+  arma::mat Z_tT = arma::mat(n_T, n_vars).fill(NA_REAL);
+
+  arma::mat a_tt_y = y_;
+  arma::mat a_tT_y = y_;
+  arma::mat a_y = arma::mat(arma::size(y_)).fill(NA_REAL);
+
+  arma::mat Gt, M_t, FF_inv_t, K_t, v_t, a_t1, P_t1, P_TT;
+  arma::mat a_t = a1.t();
+  arma::mat P_t = P1;
+
+
+  arma::mat v_FF_inv = arma::mat(n_T, n_vars, arma::fill::zeros);
+  arma::mat v = arma::mat(n_T, n_vars).fill(NA_REAL);
+  arma::mat L, N;
+  arma::mat v_FF_inv_t, F_t;
+
+  arma::cube L_compact = arma::cube(n_q*(n_lags+1), n_q*(n_lags+1), T_b).fill(NA_REAL);
+  arma::cube N_compact = arma::cube(n_q*(n_lags+1), n_q*(n_lags+1), T_b+1).fill(NA_REAL);
+
+  arma::uword n_obs;
+  arma::mat P_tt;
+  arma::cube K_store = arma::cube(n_q*(n_lags+1), n_vars, T_b).fill(NA_REAL);
+  arma::cube P_cmpct = arma::cube(n_q*(n_lags+1), n_q*(n_lags+1), T_b).fill(NA_REAL);
+  arma::mat FF_inv_store = arma::mat(T_b, n_vars, arma::fill::zeros);
+  arma::cube P_t_out = arma::cube(n_q*(n_lags+1), n_q*(n_lags+1), T_b).fill(NA_REAL);
+  arma::cube P_tt_out = arma::cube(n_q*(n_lags+1), n_q*(n_lags+1), T_b).fill(NA_REAL);
+
+  a.row(0) = a_t;
+  P_cmpct.slice(0) = P_t;
+  for (arma::uword t = 0; t < T_b; t++) {
+
+    prepare_filtering_t(obs_vars, t_vec, X, W, c, d, t, y, Z1, Phi_mm, Beta_W,
+                        n_m, n_q, n_lags);
+
+    c.cols(0, n_m - 1) += f.row(t).cols(0, n_m - 1);
+    if (t < n_T - 1) {
+      d.cols(0, n_q - 1) += f.row(t+1).cols(n_m, n_vars - 1);
+    }
+
+    n_obs = obs_vars.n_elem;
+    for (arma::uword i = 0; i < n_obs; i++) {
+      v_t = y(t, obs_vars(i)) - a_t * Z.row(obs_vars(i)).t() - c.col(obs_vars(i)) - intercept.col(obs_vars(i));
+      F_t = (Z.row(obs_vars(i)) * P_t) * Z.row(obs_vars(i)).t();
+      if (i < n_m) {
+        F_t += std::pow(Sigma(t, obs_vars(i)), 2.0);
+      }
+      K_t = P_t * Z.row(obs_vars(i)).t();
+
+      v(t, obs_vars(i)) = arma::as_scalar(v_t);
+      K_store.slice(t).col(obs_vars(i)) = K_t;
+      FF_inv_store(t, obs_vars(i)) = arma::as_scalar(1.0 / F_t);
+
+      a_t += v_t * arma::inv(F_t) * K_t.t();
+      P_t -= K_t * arma::inv(F_t) * K_t.t();
+
+      if (i == (n_obs - 1)) {
+        a_tt_compact.row(t) = a_t;
+        if (t < n_T - 1) {
+          a_t = a_t * Tt.t() + d;
+          P_tt = P_t;
+          P_t = (Tt * P_tt) * Tt.t();
+          for (arma::uword j = 0; j < n_q; j++) {
+            P_t(j,j) += std::pow(H(j, t+1), 2.0);
+          }
+        }
+
+      }
+    }
+
+    if (t < T_b - 1) {
+      a.row(t+1) = a_t;
+      P_cmpct.slice(t+1) = P_t;
+    } else {
+      a_t1 = a_t;
+      if (T_b < n_T) {
+        P_t1 = (Tt * P_tt) * Tt.t();
+        for (arma::uword j = 0; j < n_q; j++) {
+          P_t1(j,j) += std::pow(HT(j), 2.0);
+        }
+        P_TT = P_tt;
+      }
+    }
+    P_t_out.slice(t) = P_t;
+    P_tt_out.slice(t) = P_tt;
+  }
+
+  ///////////////////////////////////////////////
+  //                ADAPTIVE                   //
+  ///////////////////////////////////////////////
+  arma::field<arma::mat> a_tt_out(n_T-T_b, 1);
+  arma::field<arma::mat> L_store(n_T-T_b, 1);
+  arma::field<arma::mat> N_store(n_T-T_b, 1);
+  arma::field<arma::mat> ZFv(n_T-T_b, 1);
+  arma::field<arma::mat> F_out(n_T-T_b, 1);
+  arma::field<arma::mat> Z_out(n_T-T_b, 1);
+  arma::field<arma::mat> P_out(n_T-T_b, 1);
+  arma::field<arma::mat> Tt_out(n_T-T_b, 1);
+
+  arma::mat Phi_umum, Phi_omom, Phi_omu, W_intercept, Phi_uom, y_t, y_tpt, Phi_uu, y_tpt2, f_t, a_tt, Tt_cmpct;
+  arma::uvec obs_m, obs_q, non_obs_m, obs_m2, non_obs_m2;
+  arma::uword n_ovars, n_oq, n_om2;
+  arma::uword n_om = 0;
+  Tt_cmpct = Tt;
+
+  arma::mat a_tt_out2;
+
+  if (T_b < n_T) {
+    update_missing(y_t, obs_vars, obs_q, n_ovars, n_oq, obs_m, n_om, non_obs_m, obs_m2,
+                   n_om2, non_obs_m2, y_tpt, y_tpt2, T_b, y_, n_vars, n_m, n_lags);
+
+    Tt = arma::mat((n_q+n_m-n_om)*(n_lags + 1), (n_q+n_m-n_om2)*(n_lags + 1), arma::fill::zeros);
+    d = arma::mat(1, (n_m-n_om+n_q)*(n_lags + 1), arma::fill::zeros);
+    a_tt = a_tt_compact.row(T_b-1);
+    a_tt_out2 = a_tt;
+
+    Phi_uom = create_Phi_uom(Phi, n_vars, n_q, n_m, n_om, n_om2, n_lags, non_obs_m, obs_m2);
+    Phi_uu = create_Phi_uu(Phi, n_vars, n_q, n_m, n_om, n_om2, n_lags, non_obs_m, non_obs_m2);
+
+    // Update Tt
+    create_Tt_d(Tt, d, Phi_uu, T_b-1, y_, n_m, n_q, n_om,
+                n_om2, n_lags, obs_m2, non_obs_m, y_tpt2, Phi_uom);
+
+    a_t = a_tt * Tt.t() + d;
+    f_t = f.row(T_b);
+    a_t.cols(0, n_m - n_om - 1) += f_t.cols(non_obs_m);
+    a_t.cols(n_m - n_om, n_m - n_om + n_q - 1) += f_t.cols(n_m, n_vars - 1);
+    P_t = Tt * P_TT * Tt.t();
+    if (n_m > n_om) {
+      for (arma::uword i = 0; i < n_m - n_om; i++) {
+        P_t(i,i) += std::pow(Sigma(T_b, non_obs_m(i)), 2.0);
+      }
+    }
+    for (arma::uword i = n_m - n_om; i < n_m - n_om + n_q; i++) {
+      P_t(i,i) += std::pow(Sigma(T_b, i+n_om), 2.0);
+    }
+    store_a(a_y, a_t, T_b, non_obs_m, n_m, n_om, n_q);
+
+    Tt_out(0,0) = Tt;
+
+    for (arma::uword t = T_b; t < n_T; t++) {
+      t_vec(0) = t;
+
+      X = arma::mat(1, n_om*n_lags, arma::fill::ones);
+      X.cols(0, n_om*n_lags - 1) = reshape(trans(flipud(y_tpt.rows(0, n_lags-1))), 1, n_lags*n_om);
+
+      W_intercept = arma::mat(n_m-n_om+n_q, 1);
+      W_intercept.rows(0, n_m-n_om-1) = intercept.cols(non_obs_m).t();
+      W_intercept.rows(n_m-n_om, n_m-n_om+n_q-1) = Phi.col(0).rows(n_m, n_vars - 1);
+
+      Phi_omom = create_Phi_omom(Phi, n_vars, n_om, n_om2, n_lags, obs_m, obs_m2);
+      Phi_omu = create_Phi_omu(Phi, n_vars, n_q, n_m, n_om, n_om2, n_lags, non_obs_m, obs_m, obs_vars);
+
+      c = arma::mat(1, n_ovars, arma::fill::zeros);
+      c.cols(0, n_om - 1) = X * trans(Phi_omom);
+      c.cols(0, n_om - 1) += f.submat(t_vec, obs_m);
+
+      Zt = arma::mat(n_ovars, (n_q+n_m-n_om)*(n_lags+1), arma::fill::zeros);
+      create_Zt(Zt, Phi_omu, Lambda, n_ovars, n_m, n_om, n_om2, n_q, n_oq, n_lags, obs_q);
+
+      v_t = y_.submat(t_vec, obs_vars) - a_t * Zt.t() - c - intercept.cols(obs_vars);
+      M_t = P_t * Zt.t();
+      F_t = Zt * M_t;
+      for (arma::uword j = 0; j < n_om; j++) { // can go to n_m here because all monthly are observed
+        F_t(j,j) += std::pow(G(obs_vars(j), t), 2.0);
+      }
+      F_out(t-T_b,0)=F_t;
+      P_out(t-T_b,0)=P_t;
+      Z_out(t-T_b,0)=Zt;
+      FF_inv_t = arma::inv_sympd(arma::symmatu(F_t));
+      v_FF_inv_t = v_t * FF_inv_t;
+      v_FF_inv.submat(t_vec, obs_vars) = v_FF_inv_t;
+      v.submat(t_vec, obs_vars) = v_t;
+      ZFv(t-T_b, 0) = v_FF_inv_t * Zt;
+
+      if (t < n_T - 1) {
+        update_missing(y_t, obs_vars, obs_q, n_ovars, n_oq, obs_m, n_om, non_obs_m, obs_m2,
+                       n_om2, non_obs_m2, y_tpt, y_tpt2, t+1, y_, n_vars, n_m, n_lags);
+      } else {
+        obs_m2 = obs_m;
+        n_om2 = n_om;
+        non_obs_m2 = non_obs_m;
+      }
+
+      Phi_uom = create_Phi_uom(Phi, n_vars, n_q, n_m, n_om, n_om2, n_lags, non_obs_m, obs_m2);
+      Phi_uu = create_Phi_uu(Phi, n_vars, n_q, n_m, n_om, n_om2, n_lags, non_obs_m, non_obs_m2);
+
+      if (t < n_T - 1) {
+        Tt = arma::mat((n_q+n_m-n_om)*(n_lags + 1), (n_q+n_m-n_om2)*(n_lags + 1));
+        d = arma::mat(1, (n_m-n_om+n_q)*(n_lags + 1), arma::fill::zeros);
+        create_Tt_d(Tt, d, Phi_uu, t, y_, n_m, n_q, n_om,
+                    n_om2, n_lags, obs_m2, non_obs_m, y_tpt2, Phi_uom);
+        K_t = Tt * M_t * FF_inv_t;
+        L = Tt - K_t * Zt;
+        N = P_t * L.t();
+
+        L_store(t-T_b, 0) = L;
+        N_store(t-T_b, 0) = N;
+        Tt_out(t-T_b+1,0) = Tt;
+      }
+
+      a_tt = a_t + v_FF_inv_t * M_t.t();
+      a_tt_out(t-T_b, 0) = a_tt;
+      store_a(a_tt_y, a_tt, t, non_obs_m2, n_m, n_om2, n_q);
+      if (t < n_T - 1) {
+        a_t = a_tt * Tt.t() + d;
+        f_t = f.row(t+1);
+        a_t.cols(0, n_m - n_om - 1) += f_t.cols(non_obs_m);
+        a_t.cols(n_m - n_om, n_m - n_om + n_q - 1) += f_t.cols(n_m, n_vars - 1);
+        //P_t = Tt * P_t * Tt.t() - Tt * P_t * Zt.t() * FF_inv_t * Zt * P_t * Tt.t();
+        P_t = Tt * N;
+        for (arma::uword i = 0; i < n_m - n_om; i++) {
+          P_t(i,i) += std::pow(Sigma(t+1, non_obs_m(i)), 2.0);
+        }
+        for (arma::uword i = n_m - n_om; i < n_m - n_om + n_q; i++) {
+          P_t(i,i) += std::pow(Sigma(t+1, i+n_om), 2.0);
+        }
+        P_t = arma::symmatu(P_t);
+
+        store_a(a_y, a_t, t+1, non_obs_m, n_m, n_om, n_q);
+      }
+    }
+  }
+  ///////////////////////////////////////////////
+  //               SMOOTHING                   //
+  ///////////////////////////////////////////////
+
+  arma::field<arma::mat> r_out(T_b, 1);
+
+  arma::mat r = adaptive_to_compact_smoothing(a_tT_y, a_tt_y, a_tt, a_tt_compact, a_tt_out,
+                                              N_store, L_store, ZFv, y_, a_t1, P_t1, n_vars,
+                                              n_m, n_q, n_T, T_b, n_lags, n_om);
+  r_out(T_b-1,0) = r;
+
+  arma::uword i_obs;
+  arma::mat L_temp;
+
+  r = r * Tt_cmpct;
+  for (int t = T_b-1; t >= 1; t--) {
+    obs_vars = arma::find_finite(y_.row(t));
+    n_obs = obs_vars.n_elem;
+    for (int i = n_obs; i > 0; i--) { //subtract 1 in indexes
+      i_obs = obs_vars(i-1);
+      L_temp = arma::mat(n_q*(n_lags+1), n_q*(n_lags+1), arma::fill::eye);
+      L_temp -= K_store.slice(t).col(i_obs) * FF_inv_store(t, i_obs) * Z.row(i_obs);
+      r = FF_inv_store(t, i_obs) * v(t, i_obs) * Z.row(i_obs)  + r * L_temp;
+    }
+    // Make sure P is ocrrect, compare the 'r's
+    a_tT = a.row(t) + r * P_cmpct.slice(t);
+    a_tT_y.row(t).cols(n_m, n_vars - 1) = a_tT.cols(0, n_q-1);
+    r_out(t-1,0) = r;
+    r = r * Tt_cmpct;
+  }
+  obs_vars = arma::find_finite(y_.row(0));
+  n_obs = obs_vars.n_elem;
+  for (int i = n_obs; i > 0; i--) { //subtract 1 in indexes
+    i_obs = obs_vars(i-1);
+    L_temp = arma::mat(n_q*(n_lags+1), n_q*(n_lags+1), arma::fill::eye);
+    L_temp -= K_store.slice(0).col(i_obs) * FF_inv_store(0, i_obs) * Z.row(i_obs);
+    r = FF_inv_store(0, i_obs) * v(0, i_obs) * Z.row(i_obs)  + r * L_temp;
+  }
+  // Make sure P is ocrrect, compare the 'r's
+  a_tT = a.row(0) + r * P_cmpct.slice(0);
+  a_tT_y.row(0).cols(n_m, n_vars - 1) = a_tT.cols(0, n_q-1);
+
+  arma::mat Z_rand = Z_gen.rows(1, n_T).cols(0, n_vars - 1);
+  arma::mat Z_draw = a_tT_y + Z_rand;
+
+  return Z_draw;
+}
+#endif

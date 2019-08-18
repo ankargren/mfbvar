@@ -1,20 +1,36 @@
 Package: mfbvar
 Type: Package
 Title: Mixed-Frequency Bayesian VAR Models 
-Version: 0.4.1
-Date: 2019-05-09
+Version: 0.5.1.9000
+Date: 2019-06-27
 Authors@R: c(
     person("Sebastian", "Ankargren", email = "sebastian.ankargren@statistics.uu.se", role = c("cre", "aut"), comment = c(ORCID = "0000-0003-4415-8734")),
     person("Yukai", "Yang", email = "yukai.yang@statistics.uu.se", role = c("aut"), comment=c(ORCID="0000-0002-2623-8549")))
-Description: Estimation of mixed-frequency Bayesian vector autoregressive (VAR) models with Minnesota or steady-state priors. The package implements a state space-based VAR model that handles mixed frequencies of the data. The model is estimated using Markov Chain Monte Carlo to numerically approximate the posterior distribution, where the prior can be either the Minnesota prior, as used by Schorfheide and Song (2015) <doi:10.1080/07350015.2014.954707>, or the steady-state prior, as advocated by Ankargren, Unosson and Yang (2018) <http://uu.diva-portal.org/smash/get/diva2:1260262/FULLTEXT01.pdf>.
+Description: Estimation of mixed-frequency Bayesian vector autoregressive (VAR) models. The package implements a state space-based VAR model that handles mixed frequencies of the data. The model is estimated using Markov Chain Monte Carlo to numerically approximate the posterior distribution. Prior distributions that can be used include a Minnesota-style normal prior as used by Schorfheide and Song (2015) <doi:10.1080/07350015.2014.954707> or a steady-state prior with or without a hierarchical specification as used by Ankargren, Unosson and Yang (2019) <arXiv:????.??????>. The model can be estimated allowing for heteroskedasticity using either a common stochastic volatility specification or a factor stochastic volatility model, see Ankargren, Unosson and Yang (2019) <arXiv:??????> for the former and Ankargren and Jonéus (2019) <arXiv:???> for the latter.
 License: GPL-3
 LazyData: TRUE
 URL: https://github.com/ankargren/mfbvar
 BugReports: https://github.com/ankargren/mfbvar/issues
 Imports:
-    Rcpp (>= 0.12.7), ggplot2 (>= 2.2.1), methods, pbapply, utils
+    Rcpp (>= 0.12.7), 
+    ggplot2 (>= 2.2.1), 
+    methods, 
+    lubridate, 
+    GIGrvg, 
+    stochvol (>= 2.0.3), 
+    RcppParallel,
+    dplyr,
+    magrittr,
+    tibble
 LinkingTo:
-    Rcpp, RcppArmadillo
-Depends: R (>= 2.10)
-Suggests: testthat, covr
+    Rcpp, 
+    RcppArmadillo, 
+    RcppProgress, 
+    stochvol (>= 2.0.3), 
+    RcppParallel
+Depends: R (>= 3.0.2)
+Suggests: testthat, covr, knitr, ggridges, alfred, tidyverse
 RoxygenNote: 6.1.1
+Encoding: UTF-8
+SystemRequirements: GNU make
+VignetteBuilder: knitr

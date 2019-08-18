@@ -7,14 +7,11 @@
 mcmc_sampler(x, ...)
 }
 \arguments{
-\item{x}{argument to dispatch on (of class \code{prior_obj} or \code{prior_obj})}
+\item{x}{argument to dispatch on (of class \code{prior_obj})}
 
 \item{...}{additional named arguments passed on to the methods}
 }
 \description{
 \code{mcmc_sampler} is a generic function for deciding which specific MCMC
-algorithm to dispatch to. See the methods for more information.
-}
-\seealso{
-\code{\link{mcmc_sampler.mfbvar_ss}}, \code{\link{mcmc_sampler.mfbvar_minn}}
+algorithm to dispatch to. It is called internally.
 }

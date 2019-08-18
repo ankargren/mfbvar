@@ -53,5 +53,40 @@ prior_Pi_Sigma <- function(lambda1, lambda2, prior_Pi_AR1, Y, n_lags, prior_nu) 
   return(list(prior_Pi_mean = prior_Pi_mean, prior_Pi_Omega = diag(prior_Pi_Omega), prior_S = prior_S))
 }
 
+#' Create the priors for Pi and Sigma
+#'
+#' Creates the prior mean and covariance for Pi given the hyperparameters, and the prior parameters for Sigma.
+#' @param lambda1 overall tightness
+#' @param lambda2 cross-equation tightness
+#' @param lambda3 lag decay
+#' @param prior_Pi_AR1 prior means for AR(1) coefficients
+#' @param Y data
+#' @param n_lags number of lags
+#' @return
+#' \item{prior_Pi_Omega}{The prior covariance matrix for Pi.}
+#' @keywords internal
+create_prior_Pi_Omega <- function(lambda1, lambda2, lambda3, prior_Pi_AR1, Y, n_lags,
+                                  block_exo = NULL) {
+  # lambda1: 1-long vector (overall tightness)
+  # lambda2: 1-long vector (lag decay)
+  # prior_Pi_AR1: p-long vector with prior means for the AR(1) coefficients
+  # Y: Txp matrix with data
+
+  n_vars <- length(prior_Pi_AR1)
+
+  prior_Pi_Omega <- matrix(0, n_vars * n_lags + 1, n_vars)
+  error_variance <- compute_error_variances(Y)
+
+  prior_Pi_Omega[1, ] <- lambda1 * 100 * sqrt(error_variance)
+  for (i in 1:n_vars) {
+    prior_Pi_Omega[-1, i] <- lambda1 * lambda2^((1:n_vars) != i) * sqrt(error_variance[i])/
+      ((rep(1:n_lags, each = n_vars))^(lambda3) * rep(sqrt(error_variance), times = n_lags))
+    if (i %in% block_exo) {
+      prior_Pi_Omega[-1, i] <- prior_Pi_Omega[-1, i] * (1e-06)^(!(1:ncol(Y) %in% block_exo))
+    }
+  }
+
+  return(prior_Pi_Omega = prior_Pi_Omega^2)
+}
 
 

@@ -1,6 +1,4 @@
-// [[Rcpp::depends(RcppArmadillo)]]
-
-#include <RcppArmadillo.h>
+#include "mfbvar.h"
 
 #define _USE_MATH_DEFINES // for C++
 #include <cmath>
