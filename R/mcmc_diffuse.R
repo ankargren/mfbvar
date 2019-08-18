@@ -8,7 +8,7 @@ mcmc_sampler.mfbvar_minn_diffuse <- function(x, ...){
   }
 
   # Diffuse
-  prior_Pi_Omega <- mfbvar:::create_prior_Pi_Omega(lambda1 = x$lambda1, lambda2 = x$lambda2, lambda3 = x$lambda3,
+  prior_Pi_Omega <- create_prior_Pi_Omega(lambda1 = x$lambda1, lambda2 = x$lambda2, lambda3 = x$lambda3,
                                            prior_Pi_AR1 = x$prior_Pi_AR1, Y = x$Y,
                                     n_lags = x$n_lags, block_exo = x$block_exo)
   prior_Pi_mean <- matrix(0, n_vars, n_vars*x$n_lags + 1)
@@ -43,14 +43,17 @@ mcmc_sampler.mfbvar_minn_diffuse <- function(x, ...){
   } else {
     T_b <- nrow(Y)
   }
-  if (n_q > 0) {
-    Lambda_ <- mfbvar:::build_Lambda(rep("q", n_q), 3)
-  } else {
-    Lambda_ <- matrix(0, 1, 3)
-  }
   if (n_q == 0 || n_q == n_vars) {
     complete_quarters <- apply(Y, 1, function(x) !any(is.na(x)))
     Y <- Y[complete_quarters, ]
+  }
+  if (n_q > 0) {
+    if (x$aggregation == "average") {
+      Lambda_ <- build_Lambda(rep("average", n_q), 3)
+    } else {
+      Lambda_ <- build_Lambda(rep("triangular", n_q), 5)}
+  } else {
+    Lambda_ <- matrix(0, 1, 3)
   }
 
   n_pseudolags <- max(c(n_lags, 3))
@@ -102,7 +105,7 @@ mcmc_sampler.mfbvar_minn_diffuse <- function(x, ...){
   # for multiple chains
 
   if (is.null(init_Z)) {
-    Z[,, 1] <- mfbvar:::fill_na(Y)
+    Z[,, 1] <- fill_na(Y)
   } else {
     if (all(dim(Z[,, 1]) == dim(init_Z))) {
       Z[,, 1] <- init_Z
@@ -112,7 +115,7 @@ mcmc_sampler.mfbvar_minn_diffuse <- function(x, ...){
 
   }
 
-  ols_results <- mfbvar:::ols_initialization(z = Z[,, 1], d = d, n_lags = n_lags, n_T = n_T, n_vars = n_vars, n_determ = 1)
+  ols_results <- ols_initialization(z = Z[,, 1], d = d, n_lags = n_lags, n_T = n_T, n_vars = n_vars, n_determ = 1)
 
   if (is.null(init_Pi)) {
     Pi[,, 1]    <- cbind(ols_results$const, ols_results$Pi)
@@ -145,9 +148,16 @@ mcmc_sampler.mfbvar_minn_diffuse <- function(x, ...){
   inv_prior_Pi_Omega <- diag(1/c(prior_Pi_Omega))
   prior_Pi_mean_vec <- c(prior_Pi_mean)
 
-  mfbvar:::mcmc_minn_diffuse(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,Lambda_,prior_Pi_Omega,
-                             prior_Pi_mean_vec,Z_1,n_reps,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,
-                        n_thin,verbose)
+  aux <- matrix(0, 1, 1)
+  global <- c(0)
+  local <- matrix(0, 1, 1)
+  a <- -1
+  slice <- c(0)
+  gig <- TRUE
+
+  mcmc_minn_diffuse(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,aux,global,local,slice,Lambda_,prior_Pi_Omega,
+                             prior_Pi_mean_vec,Z_1,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,
+                             n_thin,verbose,a,gig)
 
 
   ################################################################
@@ -177,7 +187,7 @@ mcmc_sampler.mfbvar_dl_diffuse <- function(x, ...){
   }
 
   # Diffuse
-  prior_Pi_Omega <- mfbvar:::create_prior_Pi_Omega(lambda1 = x$lambda1, lambda2 = x$lambda2, lambda3 = x$lambda3,
+  prior_Pi_Omega <- create_prior_Pi_Omega(lambda1 = x$lambda1, lambda2 = x$lambda2, lambda3 = x$lambda3,
                                                    prior_Pi_AR1 = x$prior_Pi_AR1, Y = x$Y,
                                                    n_lags = x$n_lags, block_exo = x$block_exo)
   prior_Pi_mean <- matrix(0, n_vars, n_vars*x$n_lags + 1)
@@ -189,15 +199,6 @@ mcmc_sampler.mfbvar_dl_diffuse <- function(x, ...){
   verbose <- x$verbose
   n_lags <- x$n_lags
   lambda4 <- x$lambda4
-
-  ## DL
-  if (!("a" %in% names(x))) {
-    a <- 1
-  } else {
-    a <- x$a
-  }
-
-  gig <- ifelse(is.null(x$gig), TRUE, FALSE)
 
   add_args <- list(...)
   n_reps <- x$n_reps
@@ -215,22 +216,24 @@ mcmc_sampler.mfbvar_dl_diffuse <- function(x, ...){
   # n_T_: sample size (reduced sample)
 
   n_q <- sum(freq == "q")
-  if (n_q < n_vars) {
-    T_b <- max(which(!apply(apply(Y[, freq == "m", drop = FALSE], 2, is.na), 1, any)))
-  } else {
-    T_b <- nrow(Y)
-  }
-  if (n_q > 0) {
-    if (x$aggregation == "average") {
-      Lambda_ <- mfbvar:::build_Lambda(rep("average", n_q), 3)
-    } else {
-      Lambda_ <- mfbvar:::build_Lambda(rep("triangular", n_q), 5)}
-  } else {
-    Lambda_ <- matrix(0, 1, 3)
-  }
+  n_m <- sum(freq == "m")
   if (n_q == 0 || n_q == n_vars) {
     complete_quarters <- apply(Y, 1, function(x) !any(is.na(x)))
     Y <- Y[complete_quarters, ]
+  }
+  y_in_p <- Y[-(1:n_lags), ]
+  if (n_q < n_vars) {
+    T_b <- min(apply(y_in_p[,1:n_m,drop=FALSE], 2, function(x) ifelse(any(is.na(x)), min(which(is.na(x))), Inf))-1, nrow(y_in_p))
+  } else {
+    T_b <- nrow(y_in_p)
+  }
+  if (n_q > 0) {
+    if (x$aggregation == "average") {
+      Lambda_ <- build_Lambda(rep("average", n_q), 3)
+    } else {
+      Lambda_ <- build_Lambda(rep("triangular", n_q), 5)}
+  } else {
+    Lambda_ <- matrix(0, 1, 3)
   }
 
   n_pseudolags <- max(c(n_lags, 3))
@@ -282,7 +285,7 @@ mcmc_sampler.mfbvar_dl_diffuse <- function(x, ...){
   # for multiple chains
 
   if (is.null(init_Z)) {
-    Z[,, 1] <- mfbvar:::fill_na(Y)
+    Z[,, 1] <- fill_na(Y)
   } else {
     if (all(dim(Z[,, 1]) == dim(init_Z))) {
       Z[,, 1] <- init_Z
@@ -292,7 +295,7 @@ mcmc_sampler.mfbvar_dl_diffuse <- function(x, ...){
 
   }
 
-  ols_results <- mfbvar:::ols_initialization(z = Z[,, 1], d = d, n_lags = n_lags, n_T = n_T, n_vars = n_vars, n_determ = 1)
+  ols_results <- ols_initialization(z = Z[,, 1], d = d, n_lags = n_lags, n_T = n_T, n_vars = n_vars, n_determ = 1)
 
   if (is.null(init_Pi)) {
     Pi[,, 1]    <- cbind(ols_results$const, ols_results$Pi)
@@ -315,6 +318,15 @@ mcmc_sampler.mfbvar_dl_diffuse <- function(x, ...){
       stop(paste0("The dimension of init_Sigma is ", paste(dim(init_Sigma), collapse = " x "), ", but should be ", paste(dim(Sigma[,,1]), collapse = " x ")))
     }
   }
+
+  ## DL
+  if (!("a" %in% names(x))) {
+    a <- 1
+  } else {
+    a <- x$a
+  }
+
+  gig <- ifelse(is.null(x$gig), TRUE, FALSE)
 
   if (is.null(init$init_global)) {
     init_global <- 0.1
@@ -340,6 +352,11 @@ mcmc_sampler.mfbvar_dl_diffuse <- function(x, ...){
     init_slice <- init$init_slice
   }
 
+  aux <- matrix(init_aux, nrow = n_reps/n_thin, ncol = n_vars*n_vars*n_lags, byrow = TRUE)
+  local <- matrix(init_local, nrow = n_reps/n_thin, ncol = n_vars*n_vars*n_lags, byrow = TRUE)
+  global <- matrix(init_global, n_reps/n_thin, ncol = 1)
+  slice <- matrix(init_slice, nrow = 1, ncol = n_vars*n_vars*n_lags)
+
   ################################################################
   ### Compute terms which do not vary in the sampler
 
@@ -347,11 +364,10 @@ mcmc_sampler.mfbvar_dl_diffuse <- function(x, ...){
 
   # For the posterior of Pi
   inv_prior_Pi_Omega <- diag(1/c(prior_Pi_Omega))
-  Omega_Pi <- matrix(inv_prior_Pi_Omega %*% c(prior_Pi_mean), n_vars*n_lags + 1, n_vars)
-
-  mfbvar:::mcmc_minn_diffuse(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,Lambda_,prior_Pi_Omega,
-                             Omega_Pi,Z_1,n_reps,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,
-                             n_thin,verbose)
+  prior_Pi_mean_vec <- c(prior_Pi_mean)
+  mcmc_minn_diffuse(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,aux,global,local,slice,Lambda_,prior_Pi_Omega,
+                             prior_Pi_mean_vec,Z_1,n_reps,n_burnin,n_q,T_b,n_lags,n_vars,n_T_,n_fcst,
+                             n_thin,verbose,a,gig)
 
 
   ################################################################
@@ -383,7 +399,7 @@ mcmc_sampler.mfbvar_ss_diffuse <- function(x, ...) {
     stop("d_fcst has ", nrow(x$d_fcst), " rows, but n_fcst is ", x$n_fcst, ".")
   }
 
-  prior_Pi_Omega <- mfbvar:::create_prior_Pi_Omega(lambda1 = x$lambda1, lambda2 = x$lambda2, lambda3 = x$lambda3,
+  prior_Pi_Omega <- create_prior_Pi_Omega(lambda1 = x$lambda1, lambda2 = x$lambda2, lambda3 = x$lambda3,
                                                    prior_Pi_AR1 = x$prior_Pi_AR1, Y = x$Y,
                                                    n_lags = x$n_lags, block_exo = x$block_exo)
   prior_Pi_Omega <- prior_Pi_Omega[-1, ]
@@ -427,15 +443,15 @@ mcmc_sampler.mfbvar_ss_diffuse <- function(x, ...) {
   }
   y_in_p <- Y[-(1:n_lags), ]
   if (n_q < n_vars) {
-    T_b <- min(apply(y_in_p[,1:n_m], 2, function(x) ifelse(any(is.na(x)), min(which(is.na(x))), Inf))-1, nrow(y_in_p))
+    T_b <- min(apply(y_in_p[,1:n_m,drop=FALSE], 2, function(x) ifelse(any(is.na(x)), min(which(is.na(x))), Inf))-1, nrow(y_in_p))
   } else {
     T_b <- nrow(y_in_p)
   }
   if (n_q > 0) {
     if (x$aggregation == "average") {
-      Lambda_ <- mfbvar:::build_Lambda(rep("average", n_q), 3)
+      Lambda_ <- build_Lambda(rep("average", n_q), 3)
     } else {
-      Lambda_ <- mfbvar:::build_Lambda(rep("triangular", n_q), 5)}
+      Lambda_ <- build_Lambda(rep("triangular", n_q), 5)}
   } else {
     Lambda_ <- matrix(0, 1, 3)
   }
@@ -497,7 +513,7 @@ mcmc_sampler.mfbvar_ss_diffuse <- function(x, ...) {
   # for multiple chains
 
   if (is.null(init_Z)) {
-    Z[,, 1] <- mfbvar:::fill_na(Y)
+    Z[,, 1] <- fill_na(Y)
   } else {
     if (all(dim(Z[,, 1]) == dim(init_Z))) {
       Z[,, 1] <- init_Z
@@ -507,7 +523,7 @@ mcmc_sampler.mfbvar_ss_diffuse <- function(x, ...) {
 
   }
 
-  ols_results <- tryCatch(mfbvar:::ols_initialization(z = Z[,, 1], d = d, n_lags = n_lags, n_T = n_T, n_vars = n_vars, n_determ = n_determ),
+  ols_results <- tryCatch(ols_initialization(z = Z[,, 1], d = d, n_lags = n_lags, n_T = n_T, n_vars = n_vars, n_determ = n_determ),
                           error = function(cond) NULL)
   if (is.null(ols_results)) {
     ols_results <- list()
@@ -527,8 +543,8 @@ mcmc_sampler.mfbvar_ss_diffuse <- function(x, ...) {
 
   # Compute the maximum eigenvalue of the initial Pi
   if (check_roots == TRUE) {
-    Pi_comp    <- mfbvar:::build_companion(Pi = Pi[,, 1], n_vars = n_vars, n_lags = n_lags)
-    roots[1]   <- mfbvar:::max_eig_cpp(Pi_comp)
+    Pi_comp    <- build_companion(Pi = Pi[,, 1], n_vars = n_vars, n_lags = n_lags)
+    roots[1]   <- max_eig_cpp(Pi_comp)
   }
 
   if (is.null(init_Sigma)) {
@@ -560,7 +576,7 @@ mcmc_sampler.mfbvar_ss_diffuse <- function(x, ...) {
 
   # Create D (does not vary in the sampler), and find roots of Pi
   # if requested
-  D_mat <- mfbvar:::build_DD(d = d, n_lags = n_lags)
+  D_mat <- build_DD(d = d, n_lags = n_lags)
   dt <- d[-(1:n_lags), , drop = FALSE]
   d1 <- d[1:n_lags, , drop = FALSE]
   psi_i <- psi[1, ]
@@ -584,9 +600,9 @@ mcmc_sampler.mfbvar_ss_diffuse <- function(x, ...) {
 
   Z_1 <- Z[1:n_pseudolags,, 1]
 
-  mfbvar:::mcmc_ssng_diffuse(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu, lambda_mu, omega, Z,Z_fcst,Lambda_,prior_Pi_Omega,Omega_Pi,
+  mcmc_ssng_diffuse(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu, lambda_mu, omega, Z,Z_fcst,Lambda_,prior_Pi_Omega,Omega_Pi,
                       D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,n_reps,n_burnin,
-                      n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose)
+                      n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,FALSE)
 
   ################################################################
   ### Prepare the return object
@@ -621,7 +637,7 @@ mcmc_sampler.mfbvar_ssng_diffuse <- function(x, ...) {
     stop("d_fcst has ", nrow(x$d_fcst), " rows, but n_fcst is ", x$n_fcst, ".")
   }
 
-  prior_Pi_Omega <- mfbvar:::create_prior_Pi_Omega(lambda1 = x$lambda1, lambda2 = x$lambda2, lambda3 = x$lambda3,
+  prior_Pi_Omega <- create_prior_Pi_Omega(lambda1 = x$lambda1, lambda2 = x$lambda2, lambda3 = x$lambda3,
                                                    prior_Pi_AR1 = x$prior_Pi_AR1, Y = x$Y,
                                                    n_lags = x$n_lags, block_exo = x$block_exo)
   prior_Pi_Omega <- prior_Pi_Omega[-1, ]
@@ -668,15 +684,15 @@ mcmc_sampler.mfbvar_ssng_diffuse <- function(x, ...) {
   }
   y_in_p <- Y[-(1:n_lags), ]
   if (n_q < n_vars) {
-    T_b <- min(apply(y_in_p[,1:n_m], 2, function(x) ifelse(any(is.na(x)), min(which(is.na(x))), Inf))-1, nrow(y_in_p))
+    T_b <- min(apply(y_in_p[,1:n_m,drop=FALSE], 2, function(x) ifelse(any(is.na(x)), min(which(is.na(x))), Inf))-1, nrow(y_in_p))
   } else {
     T_b <- nrow(y_in_p)
   }
   if (n_q > 0) {
     if (x$aggregation == "average") {
-      Lambda_ <- mfbvar:::build_Lambda(rep("average", n_q), 3)
+      Lambda_ <- build_Lambda(rep("average", n_q), 3)
     } else {
-      Lambda_ <- mfbvar:::build_Lambda(rep("triangular", n_q), 5)}
+      Lambda_ <- build_Lambda(rep("triangular", n_q), 5)}
   } else {
     Lambda_ <- matrix(0, 1, 3)
   }
@@ -741,7 +757,7 @@ mcmc_sampler.mfbvar_ssng_diffuse <- function(x, ...) {
   # for multiple chains
 
   if (is.null(init_Z)) {
-    Z[,, 1] <- mfbvar:::fill_na(Y)
+    Z[,, 1] <- fill_na(Y)
   } else {
     if (all(dim(Z[,, 1]) == dim(init_Z))) {
       Z[,, 1] <- init_Z
@@ -751,7 +767,7 @@ mcmc_sampler.mfbvar_ssng_diffuse <- function(x, ...) {
 
   }
 
-  ols_results <- tryCatch(mfbvar:::ols_initialization(z = Z[,, 1], d = d, n_lags = n_lags, n_T = n_T, n_vars = n_vars, n_determ = n_determ),
+  ols_results <- tryCatch(ols_initialization(z = Z[,, 1], d = d, n_lags = n_lags, n_T = n_T, n_vars = n_vars, n_determ = n_determ),
                           error = function(cond) NULL)
   if (is.null(ols_results)) {
     ols_results <- list()
@@ -771,8 +787,8 @@ mcmc_sampler.mfbvar_ssng_diffuse <- function(x, ...) {
 
   # Compute the maximum eigenvalue of the initial Pi
   if (check_roots == TRUE) {
-    Pi_comp    <- mfbvar:::build_companion(Pi = Pi[,, 1], n_vars = n_vars, n_lags = n_lags)
-    roots[1]   <- mfbvar:::max_eig_cpp(Pi_comp)
+    Pi_comp    <- build_companion(Pi = Pi[,, 1], n_vars = n_vars, n_lags = n_lags)
+    roots[1]   <- max_eig_cpp(Pi_comp)
   }
 
   if (is.null(init_Sigma)) {
@@ -824,7 +840,7 @@ mcmc_sampler.mfbvar_ssng_diffuse <- function(x, ...) {
 
   # Create D (does not vary in the sampler), and find roots of Pi
   # if requested
-  D_mat <- mfbvar:::build_DD(d = d, n_lags = n_lags)
+  D_mat <- build_DD(d = d, n_lags = n_lags)
   dt <- d[-(1:n_lags), , drop = FALSE]
   d1 <- d[1:n_lags, , drop = FALSE]
 
@@ -835,9 +851,9 @@ mcmc_sampler.mfbvar_ssng_diffuse <- function(x, ...) {
 
   Z_1 <- Z[1:n_pseudolags,, 1]
 
-  mfbvar:::mcmc_ss_diffuse(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu, lambda_mu, omega, Z,Z_fcst,Lambda_,prior_Pi_Omega,Omega_Pi,
+  mcmc_ssng_diffuse(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu, lambda_mu, omega, Z,Z_fcst,Lambda_,prior_Pi_Omega,Omega_Pi,
                            D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,n_reps,n_burnin,
-                           n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose)
+                           n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,TRUE)
 
   ################################################################
   ### Prepare the return object

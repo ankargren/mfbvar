@@ -3,19 +3,6 @@
 #include "ss_utils.h"
 #include "update_ng.h"
 #include "update_dl.h"
-//' MCMC Sampler for Minnesota with a Diffuse Error Covariance Prior
-//' @param y_in_p Matrix of data
-//' @param Pi Array for storing regression parameters
-//' @param Sigma Array for storing the error covariance matrix
-//' @param Z Array for storing the data
-//' @param Z_fcst Array for storing the forecasts
-//' @param aux Matrix for storing the auxiliary hyperparameters in the Dirichlet-Laplace prior
-//' @param global Vector for storing the global hyperparameters in the Dirichlet-Laplace prior
-//' @param local Matrix for storing the local hyperparameters in the Dirichlet-Laplace prior
-//' @param slice Vector that will hold the temporary slice variables if slice sampling is used for the Dirichet-Laplace prior
-//' @param Lambda_comp Aggregation matrix
-//' @param prior_Pi_Omega Matrix with prior variances of the regression parameters
-//' @param prior_Pi_mean_vec Vector of prior means of the regression parameters
 // [[Rcpp::export]]
 void mcmc_minn_diffuse(const arma::mat & y_in_p,
                   arma::cube& Pi, arma::cube& Sigma, arma::cube& Z, arma::cube& Z_fcst,
@@ -74,7 +61,7 @@ void mcmc_minn_diffuse(const arma::mat & y_in_p,
   arma::vec prior_Pi_Omega_vec_inv = 1.0 / arma::vectorise(prior_Pi_Omega);
   arma::vec Omega_Pi = prior_Pi_mean_vec % prior_Pi_Omega_vec_inv;
 
-  for (arma::uword i = 0; i < n_reps; ++i) {
+  for (arma::uword i = 0; i < n_reps + n_burnin; ++i) {
     if (!single_freq) {
       y_i = simsm_adaptive_cv(y_in_p, Pi_i, Sigma_chol, Lambda_comp, Z_1, n_q, T_b);
       Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
@@ -194,7 +181,7 @@ void mcmc_ssng_diffuse(const arma::mat & y_in_p,
   double lambda_mu_i = lambda_mu(0);
   double phi_mu_i = phi_mu(0);
   arma::vec omega_i = omega.row(0).t();
-  arma::mat inv_prior_psi_Omega = arma::diagmat(omega_i);
+  arma::mat inv_prior_psi_Omega = arma::diagmat(1.0/omega_i);
   arma::vec inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
   double M, batch = 1.0;
   arma::running_stat<double> stats;
@@ -209,8 +196,7 @@ void mcmc_ssng_diffuse(const arma::mat & y_in_p,
   arma::vec min_vec(2);
   min_vec(0) = 0.01;
 
-  for (arma::uword i = 0; i < n_reps; ++i) {
-
+  for (arma::uword i = 0; i < n_reps + n_burnin; ++i) {
     if (!single_freq) {
       update_demean(my, mu_long, y_in_p, mu_mat, d1, Psi_i, Lambda_single, n_vars,
                     n_q, n_Lambda, n_T);
@@ -309,13 +295,17 @@ void mcmc_ssng_diffuse(const arma::mat & y_in_p,
         }
         Z_fcst.slice((i-n_burnin)/n_thin) = Z_fcst_i.t() + d_fcst_lags * Psi_i.t();
       }
+
       Z.slice((i-n_burnin)/n_thin) = Z_i;
       Sigma.slice((i-n_burnin)/n_thin) = Sigma_i;
       Pi.slice((i-n_burnin)/n_thin) = Pi_i;
       psi.row((i-n_burnin)/n_thin) = psi_i.t();
-      phi_mu((i-n_burnin)/n_thin) = phi_mu_i;
-      lambda_mu((i-n_burnin)/n_thin) = lambda_mu_i;
-      omega.row((i-n_burnin)/n_thin) = omega_i.t();
+      if (ssng) {
+        phi_mu((i-n_burnin)/n_thin) = phi_mu_i;
+        lambda_mu((i-n_burnin)/n_thin) = lambda_mu_i;
+        omega.row((i-n_burnin)/n_thin) = omega_i.t();
+      }
+
     }
     if (verbose) {
       p.increment();

@@ -110,8 +110,8 @@ estimate_mdd_ss_1 <- function(mfbvar_obj) {
   freq <- mfbvar_obj$mfbvar_prior$freq
   n_q <- sum(freq == "q")
   T_b <- max(which(!apply(apply(Y[, freq == "m"], 2, is.na), 1, any)))
-  Lambda <- mfbvar:::build_Lambda(ifelse(freq == "q", "average", freq), n_lags)
-  Lambda_ <- mfbvar:::build_Lambda(rep("average", n_q), 3)
+  Lambda <- build_Lambda(ifelse(freq == "q", "average", freq), n_lags)
+  Lambda_ <- build_Lambda(rep("average", n_q), 3)
 
   ################################################################
   ### Initialize
@@ -130,7 +130,7 @@ estimate_mdd_ss_1 <- function(mfbvar_obj) {
   ### Compute terms which do not vary in the sampler
 
   # Create D (does not vary in the sampler), and find roots of Pi
-  D <- mfbvar:::build_DD(d = d, n_lags = n_lags)
+  D <- build_DD(d = d, n_lags = n_lags)
 
   # For the posterior of Pi
   inv_prior_Pi_Omega <- solve(prior_Pi_Omega)
@@ -148,7 +148,7 @@ estimate_mdd_ss_1 <- function(mfbvar_obj) {
     ################################################################
     ### Pi and Sigma step
     #                             (Z_r1,                 d,     psi_r1,            prior_Pi_mean, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_S, prior_nu, check_roots, n_vars, n_lags, n_T)
-    Pi_Sigma <- mfbvar:::posterior_Pi_Sigma(Z_r1 = Z_red[,, r-1], d = d, psi_r1 = post_psi, prior_Pi_mean, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_S, n_vars+2, check_roots = TRUE, n_vars, n_lags, n_T)
+    Pi_Sigma <- posterior_Pi_Sigma(Z_r1 = Z_red[,, r-1], d = d, psi_r1 = post_psi, prior_Pi_mean, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_S, n_vars+2, check_roots = TRUE, n_vars, n_lags, n_T)
     Pi_red[,,r]      <- Pi_Sigma$Pi_r
     Sigma_red[,,r]   <- Pi_Sigma$Sigma_r
     num_tries[r] <- Pi_Sigma$num_try
@@ -159,7 +159,7 @@ estimate_mdd_ss_1 <- function(mfbvar_obj) {
     #(Y, d, Pi_r,            Sigma_r,               psi_r,                          Z_1, Lambda, n_vars, n_lags, n_T_, smooth_state)
 
     Pi_r <- cbind(Pi_red[,,r], 0)
-    Z_res <- mfbvar:::kf_sim_smooth(mZ, Pi_r, Sigma_red[,,r], Lambda_, demeaned_z0, n_q, T_b)
+    Z_res <- kf_sim_smooth(mZ, Pi_r, Sigma_red[,,r], Lambda_, demeaned_z0, n_q, T_b)
     Z_res <- rbind(demeaned_z0, Z_res) + d_post_psi
     Z_red[,, r] <- Z_res
   }
@@ -171,20 +171,20 @@ estimate_mdd_ss_1 <- function(mfbvar_obj) {
   demeaned_z0 <- Z[1:n_lags,, 1] - d[1:n_lags, ] %*% t(matrix(post_psi, nrow = n_vars))
   h0 <- matrix(t(demeaned_z0), ncol = 1)
   h0 <- h0[(n_vars*n_lags):1,, drop = FALSE] # have to reverse the order
-  Pi_comp <- mfbvar:::build_companion(post_Pi_mean, n_vars = n_vars, n_lags = n_lags)
+  Pi_comp <- build_companion(post_Pi_mean, n_vars = n_vars, n_lags = n_lags)
   Q_comp  <- matrix(0, ncol = n_vars*n_lags, nrow = n_vars*n_lags)
   Q_comp[1:n_vars, 1:n_vars] <- t(chol(post_Sigma))
   P0 <- matrix(0, n_lags*n_vars, n_lags*n_vars)
 
   ################################################################
   ### Final calculations
-  lklhd          <- sum(c(mfbvar:::loglike(Y = as.matrix(mZ), Lambda = Lambda, Pi_comp = Pi_comp, Q_comp = Q_comp, n_T = n_T_, n_vars = n_vars, n_comp = n_lags * n_vars, z0 = h0, P0 = P0)[-1]))
-  eval_prior_Pi_Sigma <- mfbvar:::dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = prior_Pi_mean, P = prior_Pi_Omega, S = prior_S, v = n_vars+2)
-  eval_prior_psi      <- mfbvar:::dmultn(x = post_psi, m = prior_psi_mean, Sigma = prior_psi_Omega)
-  eval_RB_Pi_Sigma    <- log(mean(mfbvar:::eval_Pi_Sigma_RaoBlack(Z_array = Z_red, d = d, post_psi_center = post_psi, post_Pi_center = post_Pi_mean, post_Sigma_center = post_Sigma,
+  lklhd          <- sum(c(loglike(Y = as.matrix(mZ), Lambda = Lambda, Pi_comp = Pi_comp, Q_comp = Q_comp, n_T = n_T_, n_vars = n_vars, n_comp = n_lags * n_vars, z0 = h0, P0 = P0)[-1]))
+  eval_prior_Pi_Sigma <- dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = prior_Pi_mean, P = prior_Pi_Omega, S = prior_S, v = n_vars+2)
+  eval_prior_psi      <- dmultn(x = post_psi, m = prior_psi_mean, Sigma = prior_psi_Omega)
+  eval_RB_Pi_Sigma    <- log(mean(eval_Pi_Sigma_RaoBlack(Z_array = Z_red, d = d, post_psi_center = post_psi, post_Pi_center = post_Pi_mean, post_Sigma_center = post_Sigma,
                                                          post_nu = post_nu, prior_Pi_mean = prior_Pi_mean, prior_Pi_Omega = prior_Pi_Omega, prior_S = prior_S,
                                                          n_vars = n_vars, n_lags = n_lags, n_reps = n_reps)))
-  eval_marg_psi   <- log(mean(mfbvar:::eval_psi_MargPost(Pi_array = Pi, Sigma_array = Sigma, Z_array = Z, post_psi_center = post_psi, prior_psi_mean = prior_psi_mean,
+  eval_marg_psi   <- log(mean(eval_psi_MargPost(Pi_array = Pi, Sigma_array = Sigma, Z_array = Z, post_psi_center = post_psi, prior_psi_mean = prior_psi_mean,
                                                 prior_psi_Omega = prior_psi_Omega, D_mat = D, n_determ = n_determ, n_vars = n_vars, n_lags = n_lags, n_reps = n_reps)))
 
   mdd_estimate <- c(lklhd + eval_prior_Pi_Sigma + eval_prior_psi - (eval_RB_Pi_Sigma + eval_marg_psi))

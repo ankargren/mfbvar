@@ -11,8 +11,9 @@ set_prior(Y, freq, aggregation = "average", prior_Pi_AR1 = rep(0,
   lambda4 = 10000, block_exo = NULL, n_lags, n_fcst = 0,
   n_thin = 1, n_burnin, n_reps, d = NULL, d_fcst = NULL,
   prior_psi_mean = NULL, prior_psi_Omega = NULL, check_roots = FALSE,
-  prior_phi = c(0.9, 0.1), prior_sigma2 = c(0.01, 4), n_fac = NULL,
-  n_cores = 1, a = 1/(ncol(Y)^2 * n_lags), verbose = FALSE, ...)
+  s = -1000, prior_ng = c(0.01, 0.01), prior_phi = c(0.9, 0.1),
+  prior_sigma2 = c(0.01, 4), n_fac = NULL, n_cores = 1,
+  a = 1/(ncol(Y)^2 * n_lags), verbose = FALSE, ...)
 
 update_prior(prior_obj, ...)
 
@@ -57,6 +58,10 @@ term.}
 \item{prior_psi_Omega}{(Steady state only) Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.#'}
 
 \item{check_roots}{Logical, if roots of the companion matrix are to be checked to ensure stationarity.}
+
+\item{s}{(Hierarchical steady state only) scalar giving the tuning parameter for the Metropolis-Hastings proposal for the kurtosis parameter. If \code{s < 0}, then adaptive Metropolis-Hastings targeting an acceptance rate of 0.44 is used, where the scaling factor is restricted to the interval \code{[-abs(s), abs(s)]}}
+
+\item{prior_ng}{(Hierarchical steady state only) vector with two elements giving the parameters \code{c(c0, c1)} of the hyperprior for the global shrinkage parameter}
 
 \item{prior_phi}{(Only used with common stochastic volatility) Vector with two elements \code{c(mean, variance)} for the AR(1) parameter in the log-volatility regression}
 

@@ -21,7 +21,7 @@ test_that("Forecasts (mf)", {
   set.seed(100)
   mod_minn <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", n_fcst = 12)
   expect_equal(predict(mod_minn) %>%
-    filter(variable == "gdp") %>%
+    dplyr::filter(variable == "gdp") %>%
     pull(median),
   c(median(colMeans(mod_minn$Z_fcst[2:4,5,])),
   median(colMeans(mod_minn$Z_fcst[5:7,5,])),
@@ -50,7 +50,7 @@ test_that("Forecasts (monthly)", {
   set.seed(100)
   mod_minn <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", n_fcst = 12)
   expect_equal(predict(mod_minn) %>%
-                 filter(variable == "eti") %>%
+                 dplyr::filter(variable == "eti") %>%
                  pull(median),
                as.numeric(apply(mod_minn$Z_fcst[-(1:4),4,], 1, median)))
 })
@@ -76,7 +76,7 @@ test_that("Forecasts (quarterly)", {
   set.seed(100)
   mod_minn <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", n_fcst = 12)
   expect_equal(predict(mod_minn) %>%
-                 filter(variable == "eti") %>%
+                 dplyr::filter(variable == "eti") %>%
                  pull(median),
                as.numeric(apply(mod_minn$Z_fcst[-(1:4),4,], 1, median)))
 })

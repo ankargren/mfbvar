@@ -6,7 +6,7 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
     stop("Missing elements: ", paste(names(test_sub)[which(test_sub)], collapse = " "))
   }
 
-  prior_Pi_Omega <- mfbvar:::create_prior_Pi_Omega(x$lambda1, x$lambda2, x$lambda3, x$prior_Pi_AR1, x$Y, x$n_lags)
+  prior_Pi_Omega <- create_prior_Pi_Omega(x$lambda1, x$lambda2, x$lambda3, x$prior_Pi_AR1, x$Y, x$n_lags)
   prior_Pi_AR1 <- x$prior_Pi_AR1
   prior_zero_mean <- all(x$prior_Pi_AR1 == 0)
 
@@ -82,9 +82,9 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
   }
   if (n_q > 0) {
     if (x$aggregation == "average") {
-      Lambda_ <- mfbvar:::build_Lambda(rep("average", n_q), 3)
+      Lambda_ <- build_Lambda(rep("average", n_q), 3)
     } else {
-      Lambda_ <- mfbvar:::build_Lambda(rep("triangular", n_q), 5)}
+      Lambda_ <- build_Lambda(rep("triangular", n_q), 5)}
   } else {
     Lambda_ <- matrix(0, 1, 3)
   }
@@ -97,7 +97,7 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
   ## Initials
   init <- add_args$init
   y_in_p <- Y[-(1:n_lags), ]
-  error_variance <- mfbvar:::compute_error_variances(Y)
+  error_variance <- compute_error_variances(Y)
 
   ### Regression parameters
   if (is.null(init$init_Pi)) {
@@ -108,7 +108,7 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
 
   ### Latent high-frequency
   if (is.null(init$init_Z)) {
-    init_Z <- mfbvar:::fill_na(Y)
+    init_Z <- fill_na(Y)
   } else {
     init_Z <- init$init_Z
   }
@@ -204,7 +204,7 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
   slice <- c(0)
   gig <- TRUE
 
-  mfbvar:::mcmc_minn_fsv(Y[-(1:n_lags),],Pi,Z,Z_fcst,mu,phi,sigma,f,facload,h,
+  mcmc_minn_fsv(Y[-(1:n_lags),],Pi,Z,Z_fcst,mu,phi,sigma,f,facload,h,
                          aux,global,local,slice,Lambda_,prior_Pi_Omega,prior_Pi_AR1, Z_1,bmu,Bmu,
                           a0idi,b0idi,a0fac,b0fac,Bsigma,B011inv,B022inv,priorh0,
                           armarestr,armatau2,n_fac,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,
@@ -245,7 +245,7 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
     stop("Missing elements: ", paste(names(test_sub)[which(test_sub)], collapse = " "))
   }
 
-  prior_Pi_Omega <- mfbvar:::create_prior_Pi_Omega(x$lambda1, x$lambda2, x$lambda3, x$prior_Pi_AR1, x$Y, x$n_lags)
+  prior_Pi_Omega <- create_prior_Pi_Omega(x$lambda1, x$lambda2, x$lambda3, x$prior_Pi_AR1, x$Y, x$n_lags)
   prior_Pi_AR1 <- x$prior_Pi_AR1
   prior_zero_mean <- all(x$prior_Pi_AR1 == 0)
 
@@ -306,7 +306,6 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
   gig <- ifelse(is.null(x$gig), TRUE, FALSE)
 
   RcppParallel::setThreadOptions(numThreads = x$n_cores)
-  cat("Number of cores: %s\n", Sys.getenv("RCPP_PARALLEL_NUM_THREADS"))
   ## Initials
 
   add_args <- list(...)
@@ -332,9 +331,9 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
   }
   if (n_q > 0) {
     if (x$aggregation == "average") {
-      Lambda_ <- mfbvar:::build_Lambda(rep("average", n_q), 3)
+      Lambda_ <- build_Lambda(rep("average", n_q), 3)
     } else {
-      Lambda_ <- mfbvar:::build_Lambda(rep("triangular", n_q), 5)}
+      Lambda_ <- build_Lambda(rep("triangular", n_q), 5)}
   } else {
     Lambda_ <- matrix(0, 1, 3)
   }
@@ -347,7 +346,7 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
   ## Initials
   init <- add_args$init
   y_in_p <- Y[-(1:n_lags), ]
-  error_variance <- mfbvar:::compute_error_variances(Y)
+  error_variance <- compute_error_variances(Y)
 
   ### Regression parameters
   if (is.null(init$init_Pi)) {
@@ -358,7 +357,7 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
 
   ### Latent high-frequency
   if (is.null(init$init_Z)) {
-    init_Z <- mfbvar:::fill_na(Y)
+    init_Z <- fill_na(Y)
   } else {
     init_Z <- init$init_Z
   }
@@ -474,7 +473,7 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
   ### Compute terms which do not vary in the sampler
 
   Z_1 <- Z[1:n_pseudolags,, 1]
-  mfbvar:::mcmc_minn_fsv(Y[-(1:n_lags),],Pi,Z,Z_fcst,mu,phi,sigma,f,facload,h,
+  mcmc_minn_fsv(Y[-(1:n_lags),],Pi,Z,Z_fcst,mu,phi,sigma,f,facload,h,
                          aux,global,local,slice,Lambda_,prior_Pi_Omega,prior_Pi_AR1, Z_1,bmu,Bmu,
                          a0idi,b0idi,a0fac,b0fac,Bsigma,B011inv,B022inv,priorh0,
                          armarestr,armatau2,n_fac,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,
@@ -508,7 +507,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
     stop("Missing elements: ", paste(names(test_sub)[which(test_sub)], collapse = " "))
   }
 
-  prior_Pi_Omega <- mfbvar:::create_prior_Pi_Omega(x$lambda1, x$lambda2, x$lambda3, x$prior_Pi_AR1, x$Y, x$n_lags)
+  prior_Pi_Omega <- create_prior_Pi_Omega(x$lambda1, x$lambda2, x$lambda3, x$prior_Pi_AR1, x$Y, x$n_lags)
   prior_Pi_Omega <- prior_Pi_Omega[-1, ]
   prior_Pi_AR1 <- x$prior_Pi_AR1
   prior_zero_mean <- all(x$prior_Pi_AR1 == 0)
@@ -594,9 +593,9 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
   }
   if (n_q > 0) {
     if (x$aggregation == "average") {
-      Lambda_ <- mfbvar:::build_Lambda(rep("average", n_q), 3)
+      Lambda_ <- build_Lambda(rep("average", n_q), 3)
     } else {
-      Lambda_ <- mfbvar:::build_Lambda(rep("triangular", n_q), 5)}
+      Lambda_ <- build_Lambda(rep("triangular", n_q), 5)}
   } else {
     Lambda_ <- matrix(0, 1, 3)
   }
@@ -609,7 +608,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
   ## Initials
   init <- add_args$init
   y_in_p <- Y[-(1:n_lags), ]
-  error_variance <- mfbvar:::compute_error_variances(Y)
+  error_variance <- compute_error_variances(Y)
 
   ### Regression parameters
   if (is.null(init$init_Pi)) {
@@ -620,7 +619,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
 
   ### Steady-states
   if (is.null(init$init_Z)) {
-    init_Z <- mfbvar:::fill_na(Y)
+    init_Z <- fill_na(Y)
   } else {
     init_Z <- init$init_Z
   }
@@ -720,7 +719,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
   ### Compute terms which do not vary in the sampler
 
   Z_1 <- Z[1:n_pseudolags,, 1]
-  D_mat <- mfbvar:::build_DD(d = d, n_lags = n_lags)
+  D_mat <- build_DD(d = d, n_lags = n_lags)
   dt <- d[-(1:n_lags), , drop = FALSE]
   d1 <- d[1:n_lags, , drop = FALSE]
 
@@ -731,7 +730,7 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
   c1 <- 0
   s <- 0
 
-  mfbvar:::mcmc_ssng_fsv(Y[-(1:n_lags),],Pi,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,
+  mcmc_ssng_fsv(Y[-(1:n_lags),],Pi,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,
                          mu,phi,sigma,f,facload,h,
                          Lambda_,prior_Pi_Omega,prior_Pi_AR1,D_mat,dt,d1,
                          d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,bmu,Bmu,
@@ -776,7 +775,7 @@ mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
     stop("Missing elements: ", paste(names(test_sub)[which(test_sub)], collapse = " "))
   }
 
-  prior_Pi_Omega <- mfbvar:::create_prior_Pi_Omega(x$lambda1, x$lambda2, x$lambda3, x$prior_Pi_AR1, x$Y, x$n_lags)
+  prior_Pi_Omega <- create_prior_Pi_Omega(x$lambda1, x$lambda2, x$lambda3, x$prior_Pi_AR1, x$Y, x$n_lags)
   prior_Pi_Omega <- prior_Pi_Omega[-1, ]
   prior_Pi_AR1 <- x$prior_Pi_AR1
   prior_zero_mean <- all(x$prior_Pi_AR1 == 0)
@@ -866,9 +865,9 @@ mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
   }
   if (n_q > 0) {
     if (x$aggregation == "average") {
-      Lambda_ <- mfbvar:::build_Lambda(rep("average", n_q), 3)
+      Lambda_ <- build_Lambda(rep("average", n_q), 3)
     } else {
-      Lambda_ <- mfbvar:::build_Lambda(rep("triangular", n_q), 5)}
+      Lambda_ <- build_Lambda(rep("triangular", n_q), 5)}
   } else {
     Lambda_ <- matrix(0, 1, 3)
   }
@@ -881,7 +880,7 @@ mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
   ## Initials
   init <- add_args$init
   y_in_p <- Y[-(1:n_lags), ]
-  error_variance <- mfbvar:::compute_error_variances(Y)
+  error_variance <- compute_error_variances(Y)
 
   ### Regression parameters
   if (is.null(init$init_Pi)) {
@@ -892,7 +891,7 @@ mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
 
   ### Latent high-frequency
   if (is.null(init$init_Z)) {
-    init_Z <- mfbvar:::fill_na(Y)
+    init_Z <- fill_na(Y)
   } else {
     init_Z <- init$init_Z
   }
@@ -1018,13 +1017,13 @@ mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
   ### Compute terms which do not vary in the sampler
 
   Z_1 <- Z[1:n_pseudolags,, 1]
-  D_mat <- mfbvar:::build_DD(d = d, n_lags = n_lags)
+  D_mat <- build_DD(d = d, n_lags = n_lags)
   dt <- d[-(1:n_lags), , drop = FALSE]
   d1 <- d[1:n_lags, , drop = FALSE]
 
 
 
-  mfbvar:::mcmc_ssng_fsv(Y[-(1:n_lags),],Pi,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,
+  mcmc_ssng_fsv(Y[-(1:n_lags),],Pi,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,
                        mu,phi,sigma,f,facload,h,
                        Lambda_,prior_Pi_Omega,prior_Pi_AR1,D_mat,dt,d1,
                        d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,bmu,Bmu,

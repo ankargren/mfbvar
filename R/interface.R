@@ -333,6 +333,16 @@ check_prior <- function(prior_obj) {
     stop("n_lags: No lag length specified.\n")
   }
 
+  if (prior_obj$aggregation == "triangular") {
+    if (prior_obj$n_lags < 5) {
+      stop("The number of lags must be at least 5 when using triangular aggregation.")
+    }
+  } else if (prior_obj$aggregation == "average") {
+    if (prior_obj$n_lags < 3) {
+      stop("The number of lags must be at least 3 when using intra-quarterly averaging.")
+    }
+  }
+
   if ("n_fcst" %in% prior_obj$supplied_args) {
     if (!is.atomic(prior_obj$n_fcst) || length(prior_obj$n_fcst) > 1) {
       stop("n_fcst must be a vector with a single element.")
@@ -659,51 +669,53 @@ summary.mfbvar_prior <- function(object, ...) {
 #' @param prior either \code{"ss"} (steady-state prior) or \code{"minn"} (Minnesota prior)
 #' @param variance form of the error variance-covariance matrix: \code{"iw"} for the inverse Wishart prior, \code{"diffuse"} for a diffuse prior, \code{"csv"} for common stochastic volatility or \code{"fsv"} for factor stochastic volatility
 #' @param ... additional arguments to \code{update_prior} (if \code{mfbvar_prior} is \code{NULL}, the arguments are passed on to \code{set_prior})
-#' @return An object of class \code{mfbvar}, \code{mfbvar_<prior>} and \code{mfbvar_<prior>_<variance>} containing posterior quantities as well as the prior object
+#' @return
+#'  An object of class \code{mfbvar}, \code{mfbvar_<prior>} and \code{mfbvar_<prior>_<variance>} containing posterior quantities as well as the prior object. For all choices of \code{prior} and \code{variance}, the returned object contains:
+#' \item{Pi}{Array of dynamic coefficient matrices; \code{Pi[,, r]} is the \code{r}th draw}
+#' \item{Z}{Array of monthly processes; \code{Z[,, r]} is the \code{r}th draw}
+#' \item{Z_fcst}{Array of monthly forecasts; \code{Z_fcst[,, r]} is the \code{r}th forecast. The first \code{n_lags}
+#' rows are taken from the data to offer a bridge between observations and forecasts and for computing nowcasts (i.e. with ragged edges).}
+#' \subsection{Steady-state priors}{
+#' If \code{prior = "ss"}, it also includes:
+#' \describe{\item{\code{psi}}{Matrix of steady-state parameter vectors; \code{psi[r,]} is the \code{r}th draw}
+#' \item{\code{roots}}{The maximum eigenvalue of the lag polynomial (if \code{check_roots = TRUE})}}
+#'
+#' If \code{prior = "ssng"}, it also includes:
+#' \describe{
+#' \item{\code{psi}}{Matrix of steady-state parameter vectors; \code{psi[r,]} is the \code{r}th draw}
+#' \item{\code{roots}}{The maximum eigenvalue of the lag polynomial (if \code{check_roots = TRUE})}
+#' \item{\code{lambda_psi}}{Vector of draws of the global hyperparameter in the normal-Gamma prior}
+#' \item{\code{phi_psi}}{Vector of draws of the auxiliary hyperparameter in the normal-Gamma prior}
+#' \item{\code{omega_psi}}{Matrix of draws of the prior variances of psi; \code{omega_psi[r, ]} is the \code{r}th draw, where \code{diag(omega_psi[r, ])} is used as the prior covariance matrix for psi}}}
+#' \subsection{Constant error covariances}{
+#' If \code{variance = "iw"} or \code{variance = "diffuse"}, it also includes:
+#' \describe{\item{\code{Sigma}}{Array of error covariance matrices; \code{Sigma[,, r]} is the \code{r}th draw}}}
+#' \subsection{Time-varying error covariances}{
+#' If \code{variance = "csv"}, it also includes:
+#' \describe{\item{\code{Sigma}}{Array of error covariance matrices; \code{Sigma[,, r]} is the \code{r}th draw}
+#' \item{\code{phi}}{Vector of AR(1) parameters for the log-volatility regression; \code{phi[r]} is the \code{r}th draw}
+#' \item{\code{sigma}}{Vector of error standard deviations for the log-volatility regression; \code{sigma[r]} is the \code{r}th draw}
+#' \item{\code{f}}{Matrix of log-volatilities; \code{f[r, ]} is the \code{r}th draw}}
+#'
+#' If \code{variance = "fsv"}, it also includes:
+#' \describe{\item{\code{facload}}{Array of factor loadings; \code{facload[,, r]} is the \code{r}th draw}
+#' \item{\code{latent}}{Array of latent log-volatilities; \code{latent[,, r]} is the \code{r}th draw}
+#' \item{\code{mu}}{Matrix of means of the log-volatilities; \code{mu[, r]} is the \code{r}th draw}
+#' \item{\code{phi}}{Matrix of AR(1) parameters for the log-volatilities; \code{phi[, r]} is the \code{r}th draw}
+#' \item{\code{sigma}}{Matrix of innovation variances for the log-volatilities; \code{sigma[, r]} is the \code{r}th draw}}}
 #' @seealso \code{\link{set_prior}}, \code{\link{update_prior}}, \code{\link{predict.mfbvar}}, \code{\link{plot.mfbvar_minn}},
 #' \code{\link{plot.mfbvar_ss}}, \code{\link{varplot}}, \code{\link{summary.mfbvar}}
 #' @examples
 #' prior_obj <- set_prior(Y = mf_sweden, freq = c(rep("m", 4), "q"),
 #'                        n_lags = 4, n_burnin = 20, n_reps = 20)
 #' mod_minn <- estimate_mfbvar(prior_obj, prior = "minn")
-#' @return For all choices of \code{prior} and \code{variance}, the returned object contains:
-#' \item{Pi}{Array of dynamic coefficient matrices; \code{Pi[,, r]} is the \code{r}th draw}
-#' \item{Z}{Array of monthly processes; \code{Z[,, r]} is the \code{r}th draw}
-#' \item{Z_fcst}{Array of monthly forecasts; \code{Z_fcst[,, r]} is the \code{r}th forecast. The first \code{n_lags}
-#' rows are taken from the data to offer a bridge between observations and forecasts and for computing nowcasts (i.e. with ragged edges).}
-#'
-#' If \code{prior = "ss"}, it also includes:
-#' \item{psi}{Matrix of steady-state parameter vectors; \code{psi[r,]} is the \code{r}th draw}
-#' \item{roots}{The maximum eigenvalue of the lag polynomial (if \code{check_roots = TRUE})}
-#'
-#' #' If \code{prior = "ssng"}, it also includes:
-#' \item{psi}{Matrix of steady-state parameter vectors; \code{psi[r,]} is the \code{r}th draw}
-#' \item{roots}{The maximum eigenvalue of the lag polynomial (if \code{check_roots = TRUE})}
-#' \item{lambda_psi}{Vector of draws of the global hyperparameter in the normal-Gamma prior}
-#' \item{phi_psi}{Vector of draws of the auxiliary hyperparameter in the normal-Gamma prior}
-#' \item{omega_psi}{Matrix of draws of the prior variances of psi; \code{omega_psi[r, ]} is the \code{r}th draw, where \code(diag(omega_psi[r, ])} is used as the prior covariance matrix for psi}
-#'
-#' If \code{variance = "iw"} or \code{variance = "diffuse"}, it also includes:
-#' \item{Sigma}{Array of error covariance matrices; \code{Sigma[,, r]} is the \code{r}th draw}
-#'
-#' #' If \code{variance = "csv"}, it also includes:
-#' \item{Sigma}{Array of error covariance matrices; \code{Sigma[,, r]} is the \code{r}th draw}
-#' \item{phi}{Vector of AR(1) parameters for the log-volatility regression; \code{phi[r]} is the \code{r}th draw}
-#' \item{sigma}{Vector of error standard deviations for the log-volatility regression; \code{sigma[r]} is the \code{r}th draw}#'
-#' \item{f}{Matrix of log-volatilities; \code{f[r, ]} is the \code{r}th draw}
-#'
-#' If \code{variance = "fsv"}, it also includes:
-#' \item{facload}{Array of factor loadings; \code{facload[,, r]} is the \code{r}th draw}
-#' \item{latent}{Array of latent log-volatilities; \code{latent[,, r]} is the \code{r}th draw}
-#' \item{mu}{Matrix of means of the log-volatilities; \code{mu[, r]} is the \code{r}th draw}
-#' \item{phi}{Matrix of AR(1) parameters for the log-volatilities; \code{phi[, r]} is the \code{r}th draw}
-#' \item{sigma}{Matrix of innovation variances for the log-volatilities; \code{sigma[, r]} is the \code{r}th draw}
 #' @details
 #' Choosing \code{variance %in% c("iw", "csv")} imposes a symmetric prior on the regression parameters. For this reason, \code{prior = "dl"} can only be used together with \code{variance %in% c("diffuse", "fsv")}.
 #' @references
-#' Ankargren, S., Unosson, M., & Yang, Y. (2019) A Flexible Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. arXiv:????, \url{???}.\cr
-#' Ankargren, S., & Jonéus, P. (2019) . arXiv:????, \url{???}.\cr
-#' Kastner, G., & Huber, F. (2019) . arXiv:????, \url{???}.\cr
+#' Ankargren, S., Unosson, M., & Yang, Y. (2019) A Flexible Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. Manuscript.\cr
+#' Ankargren, S., & Jonéus, P. (2019) Simulation Smoothing for Nowcasting with Large Mixed-Frequency VARs. arXiv:1907.01075, \url{http://arxiv.org/abs/1907.01075}.\cr
+#' Ankargren, S., & Jonéus, P. (2019) Estimating Large Mixed-Frequency Bayesian VAR Models. Manuscript.\cr
+#' Kastner, G., & Huber, F. (2018) Sparse Bayesian Vector Autoregressions in Huge Dimensions. arXiv:1704.03239, \url{http://arxiv.org/abs/1704.03239}.\cr
 #' Schorfheide, F., & Song, D. (2015) Real-Time Forecasting With a Mixed-Frequency VAR. \emph{Journal of Business & Economic Statistics}, 33(3), 366--380. \url{http://dx.doi.org/10.1080/07350015.2014.954707}\cr
 
 estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
@@ -916,14 +928,14 @@ plot.mfbvar_ss <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_sta
     }
   }
 
-  plot_range_names <- fcst_start %m+% months(-x$n_T:(-1))
+  plot_range_names <- fcst_start %m+% months(-nrow(x$Y):(-1))
 
   lower <- upper <- value <- NULL
   if (is.null(plot_start)) {
     if (x$n_fcst > 0) {
-      plot_range <- max(x$n_T-x$n_fcst*5, 0):x$n_T
+      plot_range <- max(nrow(x$Y)-x$n_fcst*5, 0):nrow(x$Y)
     }  else {
-      plot_range <- 1:x$n_T
+      plot_range <- 1:nrow(x$Y)
     }
   } else {
     plot_start <- tryCatch(lubridate::as_date(plot_start), error = function(cond) cond)
@@ -931,7 +943,7 @@ plot.mfbvar_ss <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_sta
       if (!(plot_start %in% plot_range_names)) {
         stop(sprintf("The start date, %s, does not match rownames in the data matrix Y.", plot_start))
       }
-      plot_range <- (which(plot_range_names == plot_start)):x$n_T
+      plot_range <- (which(plot_range_names == plot_start)):nrow(x$Y)
     } else {
       stop("Unable to convert plot_start to a date.")
     }
@@ -950,7 +962,7 @@ plot.mfbvar_ss <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_sta
   }
 
   names_col <- if (is.null(x$names_col)) paste0("x", 1:x$n_vars) else x$names_col
-  names_row <- if (is.null(x$names_row)) 1:x$n_T else x$names_row
+  names_row <- if (is.null(x$names_row)) 1:nrow(x$Y) else x$names_row
   p <- ggplot(mapping = aes(x = time))
 
   if (x$n_fcst > 0) {
@@ -1067,14 +1079,14 @@ plot.mfbvar_minn <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_s
     }
   }
 
-  plot_range_names <- fcst_start %m+% months(-x$n_T:(-1))
+  plot_range_names <- fcst_start %m+% months(-nrow(x$Y):(-1))
 
   lower <- upper <- value <- NULL
   if (is.null(plot_start)) {
     if (x$n_fcst > 0) {
-      plot_range <- max(x$n_T-x$n_fcst*5, 0):x$n_T
+      plot_range <- max(nrow(x$Y)-x$n_fcst*5, 0):nrow(x$Y)
     }  else {
-      plot_range <- 1:x$n_T
+      plot_range <- 1:nrow(x$Y)
     }
   } else {
     plot_start <- tryCatch(as_date(plot_start), error = function(cond) cond)
@@ -1082,7 +1094,7 @@ plot.mfbvar_minn <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_s
       if (!(plot_start %in% plot_range_names)) {
         stop(sprintf("The start date, %s, does not match rownames in the data matrix Y.", plot_start))
       }
-      plot_range <- (which(plot_range_names == plot_start)):x$n_T
+      plot_range <- (which(plot_range_names == plot_start)):nrow(x$Y)
     } else {
       stop("Unable to convert plot_start to a date.")
     }

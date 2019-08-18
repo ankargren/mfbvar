@@ -75,7 +75,7 @@ create_prior_Pi_Omega <- function(lambda1, lambda2, lambda3, prior_Pi_AR1, Y, n_
   n_vars <- length(prior_Pi_AR1)
 
   prior_Pi_Omega <- matrix(0, n_vars * n_lags + 1, n_vars)
-  error_variance <- mfbvar:::compute_error_variances(Y)
+  error_variance <- compute_error_variances(Y)
 
   prior_Pi_Omega[1, ] <- lambda1 * 100 * sqrt(error_variance)
   for (i in 1:n_vars) {

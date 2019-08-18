@@ -9,14 +9,6 @@ os:
 r:
   - oldrel
   - release
-  - devel
-
-r_check_args: --as-cran
-
-matrix:
-  exclude:
-    - os: osx
-      r: devel
 
 branches:
   only:

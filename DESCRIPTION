@@ -29,7 +29,8 @@ LinkingTo:
     stochvol (>= 2.0.3), 
     RcppParallel
 Depends: R (>= 3.0.2)
-Suggests: testthat, covr
+Suggests: testthat, covr, knitr, ggridges, alfred, tidyverse
 RoxygenNote: 6.1.1
 Encoding: UTF-8
 SystemRequirements: GNU make
+VignetteBuilder: knitr
