@@ -11,4 +11,3 @@
 * Marginal data densities for more specifications (currently `minn`-`iw` with `average` only), and in C++
 * Enable use of less lags than what the aggregations need
 
-

@@ -300,8 +300,6 @@ check_prior <- function(prior_obj) {
       if (dim(prior_obj$prior_psi_Omega)[1] != length(prior_obj$prior_psi_mean)) {
         stop("The dimension of prior_psi_Omega must correspond to the number of elements in prior_psi_mean.")
       }
-    }
-  }
 
 
   if ("s" %in% prior_obj$supplied_args) {
@@ -1131,7 +1129,8 @@ plot.mfbvar_minn <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_s
                                      fcst_date = preds$fcst_date[1] %m-% months(preds$time[1] - last_pos[i]),
                                      lower = x$Y[last_pos[i], i],
                                      median = x$Y[last_pos[i], i],
-                                     upper  = x$Y[last_pos[i], i]))
+                                     upper  = x$Y[last_pos[i], i]),
+                    fcst)
     }
     fcst <- mutate(fcst, variable = factor(variable, levels = names_col, labels = names_col))
     fcst <- fcst[!duplicated(fcst[, 1:2]), ]
