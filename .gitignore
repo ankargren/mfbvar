@@ -6,5 +6,5 @@ src/*.so
 src/*.dll
 README_cache/
 src/.DS_Store
-doc
 Meta
+.DS_Store

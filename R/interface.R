@@ -300,7 +300,8 @@ check_prior <- function(prior_obj) {
       if (dim(prior_obj$prior_psi_Omega)[1] != length(prior_obj$prior_psi_mean)) {
         stop("The dimension of prior_psi_Omega must correspond to the number of elements in prior_psi_mean.")
       }
-
+    }
+  }
 
   if ("s" %in% prior_obj$supplied_args) {
     if (!is.atomic(prior_obj$s) || length(prior_obj$s) > 1) {
