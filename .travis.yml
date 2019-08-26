@@ -25,6 +25,9 @@ r_binary_packages:
   - roxygen2
   - devtools
 
+before_install:
+  - chmod +x configure
+
 after_success:
   - tar -C .. -xf $PKG_TARBALL
   - Rscript -e 'covr::codecov()'
