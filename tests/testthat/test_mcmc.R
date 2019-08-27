@@ -4,7 +4,7 @@ test_that("Mixed", {
   set.seed(10237)
   Y <- mfbvar::mf_sweden
   prior_obj <- set_prior(Y = Y, freq = c(rep("m", 4), "q"),
-                         n_lags = 4, n_burnin = 100, n_reps = 1000)
+                         n_lags = 4, n_burnin = 10, n_reps = 10)
 
   prior_intervals <- matrix(c( 6,   7,
                                0.1, 0.2,
@@ -18,7 +18,7 @@ test_that("Mixed", {
                             prior_psi_Omega = prior_psi_Omega, n_fcst = 4, n_fac = 1)
 
   testthat::skip_on_cran()
-  set.seed(100)
+  set.seed(10)
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "iw")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "iw")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "iw")
@@ -44,7 +44,7 @@ test_that("Quarterly", {
   set.seed(10237)
   Y <- mfbvar::mf_sweden
   prior_obj <- set_prior(Y = Y[seq(2, nrow(Y), by = 3), ], freq = rep("q", 5),
-                         n_lags = 4, n_burnin = 100, n_reps = 100)
+                         n_lags = 4, n_burnin = 10, n_reps = 10)
 
   prior_intervals <- matrix(c( 6,   7,
                                0.1, 0.2,
@@ -58,7 +58,7 @@ test_that("Quarterly", {
                             prior_psi_Omega = prior_psi_Omega, n_fcst = 4, n_fac = 1)
 
   testthat::skip_on_cran()
-  set.seed(100)
+  set.seed(10)
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "iw")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "iw")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "iw")
@@ -84,7 +84,7 @@ test_that("Monthly", {
   set.seed(10237)
   Y <- mfbvar::mf_sweden
   prior_obj <- set_prior(Y = Y[, -5], freq = rep("m", 4),
-                         n_lags = 4, n_burnin = 100, n_reps = 100)
+                         n_lags = 4, n_burnin = 10, n_reps = 10)
 
   prior_intervals <- matrix(c( 6,   7,
                                0.1, 0.2,
@@ -97,7 +97,7 @@ test_that("Monthly", {
                             prior_psi_Omega = prior_psi_Omega, n_fcst = 4, n_fac = 1)
 
   testthat::skip_on_cran()
-  set.seed(100)
+  set.seed(10)
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "iw")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "iw")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "iw")

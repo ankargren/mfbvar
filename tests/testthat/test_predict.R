@@ -4,7 +4,7 @@ test_that("Forecasts (mf)", {
   set.seed(10237)
   Y <- mfbvar::mf_sweden
   prior_obj <- set_prior(Y = Y, freq = c(rep("m", 4), "q"),
-                         n_lags = 4, n_burnin = 100, n_reps = 100)
+                         n_lags = 4, n_burnin = 10, n_reps = 10)
 
   prior_intervals <- matrix(c( 6,   7,
                                0.1, 0.2,
@@ -18,7 +18,7 @@ test_that("Forecasts (mf)", {
                             prior_psi_Omega = prior_psi_Omega, n_fcst = 4)
 
   testthat::skip_on_cran()
-  set.seed(100)
+  set.seed(10)
   mod_minn <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", n_fcst = 12)
   expect_equal(predict(mod_minn) %>%
     dplyr::filter(variable == "gdp") %>%
@@ -34,7 +34,7 @@ test_that("Forecasts (monthly)", {
   set.seed(10237)
   Y <- mfbvar::mf_sweden
   prior_obj <- set_prior(Y = Y[, -5], freq = rep("m", 4),
-                         n_lags = 4, n_burnin = 100, n_reps = 100)
+                         n_lags = 4, n_burnin = 10, n_reps = 10)
 
   prior_intervals <- matrix(c( 6,   7,
                                0.1, 0.2,
@@ -47,7 +47,7 @@ test_that("Forecasts (monthly)", {
                             prior_psi_Omega = prior_psi_Omega, n_fcst = 4)
 
   testthat::skip_on_cran()
-  set.seed(100)
+  set.seed(10)
   mod_minn <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", n_fcst = 12)
   expect_equal(predict(mod_minn) %>%
                  dplyr::filter(variable == "eti") %>%
@@ -59,7 +59,7 @@ test_that("Forecasts (quarterly)", {
   set.seed(10237)
   Y <- mfbvar::mf_sweden
   prior_obj <- set_prior(Y = Y[seq(2, nrow(Y), by = 3), ], freq = rep("q", 5),
-                         n_lags = 4, n_burnin = 100, n_reps = 100)
+                         n_lags = 4, n_burnin = 10, n_reps = 10)
 
   prior_intervals <- matrix(c( 6,   7,
                                0.1, 0.2,
@@ -73,7 +73,7 @@ test_that("Forecasts (quarterly)", {
                             prior_psi_Omega = prior_psi_Omega, n_fcst = 4)
 
   testthat::skip_on_cran()
-  set.seed(100)
+  set.seed(10)
   mod_minn <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", n_fcst = 12)
   expect_equal(predict(mod_minn) %>%
                  dplyr::filter(variable == "eti") %>%

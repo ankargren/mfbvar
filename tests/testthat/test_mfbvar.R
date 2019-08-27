@@ -4,7 +4,7 @@ test_that("Output correct", {
   set.seed(10237)
   Y <- mfbvar::mf_sweden
   prior_obj <- set_prior(Y = Y, freq = c(rep("m", 4), "q"),
-                                        n_lags = 4, n_burnin = 100, n_reps = 1000)
+                                        n_lags = 4, n_burnin = 100, n_reps = 300)
 
   prior_intervals <- matrix(c( 6,   7,
                                0.1, 0.2,
@@ -55,7 +55,7 @@ test_that("Prior checks correct", {
                                       n_lags = 2, n_burnin = 100, n_reps = 1000))
   # Using update
   prior_obj <- set_prior(Y = Y, freq = c(rep("m", 4), "q"),
-                                        n_lags = 4, n_burnin = 100, n_reps = 1000)
+                                        n_lags = 4, n_burnin = 100, n_reps = 300)
   prior_obj2 <- update_prior(prior_obj, d = "intercept", Y = Y[1:100, ], n_fcst = 4)
   expect_is(prior_obj2$d_fcst, "matrix")
   expect_is(prior_obj2$d, "matrix")
