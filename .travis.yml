@@ -9,6 +9,7 @@ os:
   - osx
 r:
   - release
+  - devel
 
 branches:
   only:
@@ -31,7 +32,7 @@ before_install:
   - chmod +x configure
   - chmod +x cleanup
 
-r_build_args: --ignore-vignettes --no-manual --no-resave-data
+r_build_args: --no-build-vignettes --no-manual --no-resave-data
 r_check_args: --ignore-vignettes --no-manual
 
 
