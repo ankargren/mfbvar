@@ -9,14 +9,13 @@ os:
   - osx
 r:
   - release
-  - devel
 
 branches:
   only:
   - master
 
 r_github_packages:
-  - jimhester/covr
+  - r-lib/covr
 r_binary_packages:
   - Rcpp
   - RcppArmadillo
