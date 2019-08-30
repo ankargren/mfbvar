@@ -3,9 +3,12 @@
 
 #include <RcppArmadillo.h>
 
-// Some constants relating to the approximation of log(chisq) trough
-// normal mixture (from Omori et al., 2007), and
-// corresponding functions related to sampling the indicators
+// Copyright of original code: Gregor Kastner (stochvol package)
+// Copyright of modified code: Sebastian Ankargren (mfbvar package)
+// The following code is a derivative work of the code
+// developed by Gregor Kastner for the stochvol package, which
+// is licensed GPL>=2. This code is therefore licensed under
+// the terms of the GNU Public License, version 3.
 
 const double mix_prob[10] = {.00609, .04775, .13057, .20674, .22715, .18842, .12047, .05591, .01575, .00115};
 
@@ -53,18 +56,15 @@ const double mix_pre[10] = {
 -4.8643822832849297199686589010525494813919067382812500000,
 -7.7642143280080739842219372803810983896255493164062500000};
 
-// Non-normalized posterior probabilities
 void findMixprobs(
     arma::vec& mixprob,
     const arma::vec& datanorm);
 
-// Cumulative sum over columns of a matrix
 void colCumsums(
     arma::vec& x,
     int const nrow,
     int const ncol);
 
-// Combines findMixprobs() and colCumsums() (see above) into one function
 void findMixCDF(
     arma::vec& mixprob,
     const arma::vec& datanorm);

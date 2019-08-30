@@ -1,4 +1,10 @@
 #include "progutils_fsv.h"
+// Copyright of original code: Gregor Kastner (factorstochvol package)
+// Copyright of modified code: Sebastian Ankargren (mfbvar package)
+// The following code is a derivative work of the code
+// developed by Gregor Kastner for the factorstochvol package, which
+// is licensed GPL>=2. This code is therefore licensed under
+// the terms of the GNU Public License, version 3.
 
 double logdnormquot(double x, double y, double mu, double sigma) {
  return ((y-mu)*(y-mu) - (x-mu)*(x-mu)) / (2*sigma*sigma);

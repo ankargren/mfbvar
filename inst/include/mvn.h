@@ -70,6 +70,7 @@ inline arma::vec mvn_rue(const arma::mat & Phi, const arma::vec & d,
 
 #ifndef MFBVAR_MVN_CCM_H
 #define MFBVAR_MVN_CCM_H
+// Previously called mvn_rue_int
 inline arma::vec mvn_ccm(const arma::mat & Phi, const arma::vec & d,
                          const arma::vec & alpha, double c, double j) {
 
