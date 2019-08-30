@@ -1,12 +1,12 @@
 Package: mfbvar
 Type: Package
 Title: Mixed-Frequency Bayesian VAR Models 
-Version: 0.5.1.9000
-Date: 2019-06-27
+Version: 0.5.1
+Date: 2019-08-29
 Authors@R: c(
     person("Sebastian", "Ankargren", email = "sebastian.ankargren@statistics.uu.se", role = c("cre", "aut"), comment = c(ORCID = "0000-0003-4415-8734")),
     person("Yukai", "Yang", email = "yukai.yang@statistics.uu.se", role = c("aut"), comment=c(ORCID="0000-0002-2623-8549")))
-Description: Estimation of mixed-frequency Bayesian vector autoregressive (VAR) models. The package implements a state space-based VAR model that handles mixed frequencies of the data. The model is estimated using Markov Chain Monte Carlo to numerically approximate the posterior distribution. Prior distributions that can be used include a Minnesota-style normal prior as used by Schorfheide and Song (2015) <doi:10.1080/07350015.2014.954707> or a steady-state prior with or without a hierarchical specification as used by Ankargren, Unosson and Yang (2019) <arXiv:????.??????>. The model can be estimated allowing for heteroskedasticity using either a common stochastic volatility specification or a factor stochastic volatility model, see Ankargren, Unosson and Yang (2019) <arXiv:??????> for the former and Ankargren and Jonéus (2019) <arXiv:???> for the latter.
+Description: Estimation of mixed-frequency Bayesian vector autoregressive (VAR) models. The package implements a state space-based VAR model that handles mixed frequencies of the data. The model is estimated using Markov Chain Monte Carlo to numerically approximate the posterior distribution. Prior distributions that can be used include normal-inverse Wishart and normal-diffuse priors as well as steady-state priors. Stochastic volatility can be handled by common or factor stochastic volatility models.
 License: GPL-3
 LazyData: TRUE
 URL: https://github.com/ankargren/mfbvar
@@ -29,7 +29,7 @@ LinkingTo:
     stochvol (>= 2.0.3), 
     RcppParallel
 Depends: R (>= 3.0.2)
-Suggests: testthat, covr, knitr, ggridges, alfred, tidyverse
+Suggests: testthat, covr, knitr, ggridges, alfred, tidyverse, factorstochvol
 RoxygenNote: 6.1.1
 Encoding: UTF-8
 SystemRequirements: GNU make
