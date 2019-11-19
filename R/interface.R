@@ -261,13 +261,13 @@ check_prior <- function(prior_obj) {
       stop("block_exo must be a vector of indexes or names.")
     } else {
       if (is.character(prior_obj$block_exo)) {
-        if (all(prior_obj$block_exo %in% colnames(obj$Y))) {
-          prior_obj$block_exo <- sapply(prior_obj$block_exo, function(x) colnames(obj$Y) == x)
+        if (all(prior_obj$block_exo %in% colnames(prior_obj$Y))) {
+          prior_obj$block_exo <- which(prior_obj$block_exo %in% colnames(prior_obj$Y))
         }
       }
     }
   } else {
-    prior_obj$supplied_args <- c(prior_obj$supplied_args, "lambda4")
+    prior_obj$supplied_args <- c(prior_obj$supplied_args, "block_exo")
   }
 
 
@@ -1520,9 +1520,9 @@ plot.mfbvar_prior <- function(x, nrow_facet = NULL, ...){
 
   if (ss_flag) {
     n_determ <- ncol(x$d)
-    ss_lower  <- x$d %*% t(matrix(qnorm(ss_level[1], x$prior_psi_mean, diag(x$prior_psi_Omega)), ncol = n_determ))
-    ss_median <- x$d %*% t(matrix(qnorm(0.5, x$prior_psi_mean, diag(x$prior_psi_Omega)), ncol = n_determ))
-    ss_upper  <- x$d %*% t(matrix(qnorm(ss_level[2], x$prior_psi_mean, diag(x$prior_psi_Omega)), ncol = n_determ))
+    ss_lower  <- x$d %*% t(matrix(qnorm(ss_level[1], x$prior_psi_mean, sqrt(diag(x$prior_psi_Omega))), ncol = n_determ))
+    ss_median <- x$d %*% t(matrix(qnorm(0.5, x$prior_psi_mean, sqrt(diag(x$prior_psi_Omega))), ncol = n_determ))
+    ss_upper  <- x$d %*% t(matrix(qnorm(ss_level[2], x$prior_psi_mean, sqrt(diag(x$prior_psi_Omega))), ncol = n_determ))
 
     ss <- data.frame(expand.grid(time = as.Date(rownames(x$Y)), variable = names_col), lower = c(ss_lower), median = c(ss_median),
                      upper = c(ss_upper))
