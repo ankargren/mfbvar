@@ -2,7 +2,7 @@ Package: mfbvar
 Type: Package
 Title: Mixed-Frequency Bayesian VAR Models 
 Version: 0.5.2
-Date: 2019-11-13
+Date: 2019-11-20
 Authors@R: c(
     person("Sebastian", "Ankargren", email = "sebastian.ankargren@statistics.uu.se", role = c("cre", "aut"), comment = c(ORCID = "0000-0003-4415-8734")),
     person("Yukai", "Yang", email = "yukai.yang@statistics.uu.se", role = c("aut"), comment=c(ORCID="0000-0002-2623-8549")),
@@ -30,7 +30,7 @@ LinkingTo:
     stochvol (>= 2.0.3), 
     RcppParallel
 Depends: R (>= 3.0.2)
-Suggests: testthat, covr, knitr, ggridges, alfred, tidyverse, factorstochvol
+Suggests: testthat, covr, knitr, ggridges, alfred, factorstochvol, purrr
 RoxygenNote: 6.1.1
 Encoding: UTF-8
 SystemRequirements: GNU make

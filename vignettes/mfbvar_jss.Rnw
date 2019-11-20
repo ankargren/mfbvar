@@ -552,7 +552,9 @@ The functions are available as header files in \code{mfbvar/inst/include} and ca
 \section{Illustration} \label{sec:illustrations}
 To illustrate the basic funcionality of the \pkg{mfbvar} package we here estimate mixed-frequency Bayesian VAR models on US data. The data can be retrieved from the ALFRED database provided by the Federal Reserve Bank of St. Louis through the \pkg{alfred} package \citep{Kleen2018}. The model we will use includes inflation and unemployment, which are published monthly, and GDP growth, which is published quarterly.
 <<message = FALSE>>=
-library("tidyverse")
+library("purrr")
+library("dplyr")
+library("ggplot2")
 library("alfred")
 
 variables <- c("CPIAUCSL", "UNRATE", "GDPC1")

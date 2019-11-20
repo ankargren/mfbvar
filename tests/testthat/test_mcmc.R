@@ -157,7 +157,7 @@ test_that("Block exogenous 1", {
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "fsv")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "fsv")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "fsv")
-  mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "fsv", gig = FALSE)
+  mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "fsv", a = 1/10)
 })
 
 
@@ -199,5 +199,5 @@ test_that("Block exogenous 2", {
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "fsv")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "fsv")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "fsv")
-  mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "fsv", gig = FALSE)
+  mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "fsv", a = 1/10)
 })
