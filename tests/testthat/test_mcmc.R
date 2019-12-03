@@ -22,22 +22,22 @@ test_that("Mixed", {
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "iw")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "iw")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "iw")
-  expect_error(mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "iw"))
+  #expect_error(mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "iw"))
 
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "diffuse")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "diffuse")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "diffuse")
-  mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "diffuse")
+  #mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "diffuse")
 
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "csv")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "csv")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "csv")
-  expect_error(mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "csv"))
+  #expect_error(mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "csv"))
 
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "fsv")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "fsv")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "fsv")
-  mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "fsv")
+  #mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "fsv")
 })
 
 test_that("Quarterly", {
@@ -62,22 +62,22 @@ test_that("Quarterly", {
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "iw")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "iw")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "iw")
-  expect_error(mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl", variance = "iw"))
+  #expect_error(mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl", variance = "iw"))
 
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "csv")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "csv")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "csv")
-  expect_error(mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "csv"))
+  #expect_error(mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "csv"))
 
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "fsv")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "fsv")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "fsv")
-  mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "fsv")
+  #mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "fsv")
 
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "diffuse")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "diffuse")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "diffuse")
-  mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "diffuse")
+  #mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "diffuse")
 })
 
 test_that("Monthly", {
@@ -101,22 +101,22 @@ test_that("Monthly", {
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "iw")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "iw")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "iw")
-  expect_error(mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl", variance = "iw"))
+  #expect_error(mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl", variance = "iw"))
 
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "csv")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "csv")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "csv")
-  expect_error(mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "csv"))
+  #expect_error(mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "csv"))
 
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "fsv")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "fsv")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "fsv")
-  mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "fsv")
+  #mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "fsv")
 
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "diffuse")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "diffuse")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "diffuse")
-  mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "diffuse")
+  #mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "diffuse")
 })
 
 test_that("Block exogenous 1", {
@@ -142,22 +142,22 @@ test_that("Block exogenous 1", {
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "iw")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "iw")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "iw")
-  expect_error(mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "iw"))
+  #expect_error(mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "iw"))
 
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "diffuse")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "diffuse")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "diffuse")
-  mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "diffuse")
+  #mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "diffuse")
 
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "csv")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "csv")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "csv")
-  expect_error(mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "csv"))
+  #expect_error(mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "csv"))
 
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "fsv")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "fsv")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "fsv")
-  mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "fsv", a = 1/10)
+  #mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "fsv", a = 1/10)
 })
 
 
@@ -184,20 +184,20 @@ test_that("Block exogenous 2", {
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "iw")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "iw")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "iw")
-  expect_error(mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "iw"))
+  #expect_error(mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "iw"))
 
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "diffuse")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "diffuse")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "diffuse")
-  mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "diffuse")
+  #mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "diffuse")
 
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "csv")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "csv")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "csv")
-  expect_error(mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "csv"))
+  #expect_error(mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "csv"))
 
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "fsv")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "fsv")
   mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "fsv")
-  mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "fsv", a = 1/10)
+  #mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "fsv", a = 1/10)
 })
