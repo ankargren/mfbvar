@@ -32,6 +32,8 @@
 %% need no \usepackage{Sweave}
 <<preliminaries, echo=FALSE>>=
 options(prompt = "R> ", continue = "+  ", width = 70, useFancyQuotes = FALSE)
+load_data <- TRUE
+store_data <- FALSE
 @
 
 <<setup, include=FALSE, cache=FALSE>>=
@@ -642,18 +644,43 @@ summary(prior)
 \subsection{Estimating the Model}
 The prior is prepared and its necessary components have been provided and so estimation is possible by calling the \code{estimate_mfbvar} function. In calling the function, either \code{prior = "minn"}, \code{prior = "ss"} or \code{prior = "ssng"} should be provided to indicate which regression prior to use. The argument \code{variance} determines the form of the error covariance matrix. We first consider the steady-state prior with and without hierachical shrinkage, and with an inverse Wishart prior for the error covariance matrix.
 
-<<mod_chunk>>=
+<<mod_chunk,eval=FALSE>>=
 mod_ss_iw  <- estimate_mfbvar(prior, prior = "ss", variance = "iw")
 mod_ssng_iw <- estimate_mfbvar(prior, prior = "ssng", variance = "iw")
-
+@
+<<>>=
+if (load_data) {
+  load("mod_ss_iw.RData")
+  load("mod_ssng_iw.RData")
+} else {
+  mod_ss_iw  <- estimate_mfbvar(prior, prior = "ss", variance = "iw")
+  mod_ssng_iw <- estimate_mfbvar(prior, prior = "ssng", variance = "iw")
+  if (store_data) {
+    save(mod_ss_iw, file = "vignettes/mod_ss_iw.RData")
+    save(mod_ssng_iw, file = "vignettes/mod_ssng_iw.RData")
+  }
+}
 @
 
 To estimate models with stochastic volatility, only the \code{variance} argument needs to be changed. For the factor stochastic volatility model, the number of factors must also be provided.
-<<mod_chunk2>>=
+<<mod_chunk2,eval=FALSE>>=
 mod_ss_csv  <- estimate_mfbvar(prior, prior = "ss", variance = "csv")
 mod_ss_fsv <- estimate_mfbvar(prior, prior = "ss", variance = "fsv",
                               n_fac = 1)
-
+@
+<<>>=
+if (load_data) {
+  load("mod_ss_csv.RData")
+  load("mod_ss_fsv.RData")
+} else {
+  mod_ss_csv  <- estimate_mfbvar(prior, prior = "ss", variance = "csv")
+  mod_ss_fsv <- estimate_mfbvar(prior, prior = "ss", variance = "fsv",
+                                n_fac = 1)
+  if (store_data) {
+    save(mod_ss_csv, file = "vignettes/mod_ss_csv.RData")
+    save(mod_ss_fsv, file = "vignettes/mod_ss_fsv.RData")
+  }
+}
 @
 Temporary arguments can be added to the call to \code{estimate_mfbvar}, like \code{n_fac = 1} above. The purpose of first creating a prior object and then estimating the model is illustrated in the preceding code snippet. For two models with different priors but similar settings, we can leverage the same object (i.e., \code{prior}). Estimation of multiple models is thereby simplified as we can reuse the previous settings.
 
