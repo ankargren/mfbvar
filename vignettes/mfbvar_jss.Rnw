@@ -19,7 +19,7 @@
 
 
 \usepackage{rotating}
-
+\usepackage[utf8]{inputenc}
 \usepackage{array}
 
 \newcolumntype{R}{@{\extracolsep{5pt}}c@{\extracolsep{0pt}}}%
@@ -32,8 +32,7 @@
 %% need no \usepackage{Sweave}
 <<preliminaries, echo=FALSE>>=
 options(prompt = "R> ", continue = "+  ", width = 70, useFancyQuotes = FALSE)
-load_data <- TRUE
-store_data <- FALSE
+run_mod <- FALSE
 @
 
 <<setup, include=FALSE, cache=FALSE>>=
@@ -644,23 +643,82 @@ summary(prior)
 \subsection{Estimating the Model}
 The prior is prepared and its necessary components have been provided and so estimation is possible by calling the \code{estimate_mfbvar} function. In calling the function, either \code{prior = "minn"}, \code{prior = "ss"} or \code{prior = "ssng"} should be provided to indicate which regression prior to use. The argument \code{variance} determines the form of the error covariance matrix. We first consider the steady-state prior with and without hierachical shrinkage, and with an inverse Wishart prior for the error covariance matrix.
 
+<<comp_chunk,include=FALSE>>=
+if (run_mod) {
+  mod_ss_iw  <- estimate_mfbvar(prior, prior = "ss", variance = "iw")
+  mod_ssng_iw <- estimate_mfbvar(prior, prior = "ssng", variance = "iw")
+  mod_ss_csv  <- estimate_mfbvar(prior, prior = "ss", variance = "csv")
+  mod_ss_fsv <- estimate_mfbvar(prior, prior = "ss", variance = "fsv",
+                              n_fac = 1)
+
+  predict_example <- predict(mod_ss_iw, pred_bands = 0.8)
+  p1 <- plot(mod_ss_iw, plot_start = "2010-01-01", nrow_facet = 3)
+  p2 <- plot(mod_ssng_iw, plot_start = "2010-01-01", nrow_facet = 3)
+  pred_df <- bind_rows("Inverse Wishart" = predict(mod_ss_iw, pred_bands = NULL),
+                       "Common stochastic volatility" = predict(mod_ss_csv, pred_bands = NULL),
+                       "Factor stochastic volatility" = predict(mod_ss_fsv, pred_bands = NULL),
+                       .id = "Variance") %>%
+    filter(variable == "GDPC1")
+  p3 <- ggplot(pred_df, aes(y = factor(fcst_date), x = fcst, fill = Variance)) +
+  ggridges::stat_density_ridges(quantile_lines = TRUE,
+                                quantiles = 2, alpha = 0.5) +
+  labs(x = "US GDP Growth",
+       y = "Date of Forecast") +
+  coord_cartesian(xlim = c(-5, 10)) +
+  theme_minimal() +
+  scale_fill_brewer(palette = "YlGnBu")
+
+  const_vol <- median(sqrt(mod_ss_iw$Sigma[3, 3, ]))
+
+  p4 <- varplot(mod_ss_fsv, variables = "GDPC1") +
+    geom_hline(yintercept = const_vol ,
+               color = "red", linetype = "dashed") +
+    coord_cartesian(ylim = c(0, 20))
+
+  p5 <- varplot(mod_ss_csv, variables = "GDPC1") +
+    geom_hline(yintercept = const_vol,
+               color = "red", linetype = "dashed") +
+    coord_cartesian(ylim = c(0, 20))
+
+  mdd_example <- mdd(mod_ss_iw)
+
+  library("parallel")
+  par_fun <- function(lambda1, prior) {
+    set.seed(2019)
+    mod_par <- estimate_mfbvar(prior, prior = "ss", variance = "iw",
+                               lambda1 = lambda1, lambda3 = 1)
+    mdd(mod_par)
+  }
+
+  cl <- makeCluster(2)
+  clusterEvalQ(cl, library("mfbvar"))
+  lambda1_seq <- seq(0.05, 1, by = 0.05)
+  result <- parSapply(cl, lambda1_seq,
+                      par_fun, prior = prior)
+  stopCluster(cl)
+  max_val <- tibble(lambda1 = lambda1_seq,
+         mdd = result) %>%
+    filter(mdd == max(mdd)) %>% .$lambda1
+
+
+  save(predict_example, mdd_example, lambda1_seq, result, max_val,
+       file = "vignettes/vignette_data.RData",
+       compress = "xz")
+  ggsave("vignettes/figures/ss_plots-1.pdf", p1, "pdf", width = 5.5, height = 5.5*1.5, units = "in")
+  ggsave("vignettes/figures/ss_plots-2.pdf", p2, "pdf", width = 5.5, height = 5.5*1.5, units = "in")
+  ggsave("vignettes/figures/ridges-1.pdf", p3, "pdf", width = 7, height = 7*0.65, units = "in")
+  ggsave("vignettes/figures/varplot-1.pdf", p4, "pdf", width = 5, height = 5*0.5, units = "in")
+  ggsave("vignettes/figures/varplot-2.pdf", p5, "pdf", width = 5, height = 5*0.5, units = "in")
+} else {
+  load("vignette_data.RData")
+}
+@
+
 <<mod_chunk,eval=FALSE>>=
 mod_ss_iw  <- estimate_mfbvar(prior, prior = "ss", variance = "iw")
 mod_ssng_iw <- estimate_mfbvar(prior, prior = "ssng", variance = "iw")
 @
-<<>>=
-if (load_data) {
-  load("mod_ss_iw.RData")
-  load("mod_ssng_iw.RData")
-} else {
-  mod_ss_iw  <- estimate_mfbvar(prior, prior = "ss", variance = "iw")
-  mod_ssng_iw <- estimate_mfbvar(prior, prior = "ssng", variance = "iw")
-  if (store_data) {
-    save(mod_ss_iw, file = "vignettes/mod_ss_iw.RData")
-    save(mod_ssng_iw, file = "vignettes/mod_ssng_iw.RData")
-  }
-}
-@
+
 
 To estimate models with stochastic volatility, only the \code{variance} argument needs to be changed. For the factor stochastic volatility model, the number of factors must also be provided.
 <<mod_chunk2,eval=FALSE>>=
@@ -668,40 +726,31 @@ mod_ss_csv  <- estimate_mfbvar(prior, prior = "ss", variance = "csv")
 mod_ss_fsv <- estimate_mfbvar(prior, prior = "ss", variance = "fsv",
                               n_fac = 1)
 @
-<<>>=
-if (load_data) {
-  load("mod_ss_csv.RData")
-  load("mod_ss_fsv.RData")
-} else {
-  mod_ss_csv  <- estimate_mfbvar(prior, prior = "ss", variance = "csv")
-  mod_ss_fsv <- estimate_mfbvar(prior, prior = "ss", variance = "fsv",
-                                n_fac = 1)
-  if (store_data) {
-    save(mod_ss_csv, file = "vignettes/mod_ss_csv.RData")
-    save(mod_ss_fsv, file = "vignettes/mod_ss_fsv.RData")
-  }
-}
-@
 Temporary arguments can be added to the call to \code{estimate_mfbvar}, like \code{n_fac = 1} above. The purpose of first creating a prior object and then estimating the model is illustrated in the preceding code snippet. For two models with different priors but similar settings, we can leverage the same object (i.e., \code{prior}). Estimation of multiple models is thereby simplified as we can reuse the previous settings.
 
 \subsection{Processing the Results}
 
 The principle of tidy data \citep{Wickham2014} has been preserved in creating a method for the \code{predict} function.
-<<>>=
+<<eval=FALSE>>=
 predict(mod_ss_iw, pred_bands = 0.8)
+@
+<<echo=FALSE>>=
+predict_example
 @
 The forecasts produced by a mixed-frequency VAR are at the monthly frequency. Because the frequency of interest for quarterly variables is the quarterly frequency, forecasts are aggregated by default in the \code{predict} method. To visualize forecasts and posterior intervals for the steady states (if available), \code{plot} can be called directly on the output of \code{estimate_mfbvar}.
 
-<<ss_plots, fig.cap = "Forecasts and posterior steady-state intervals", fig.subcap= c("Steady-state prior", "Hierarchical steady-state prior"), out.width='0.49\\linewidth', fig.width = 5.5, fig.asp = 1.5>>=
+<<eval=FALSE>>=
 plot(mod_ss_iw, plot_start = "2010-01-01", nrow_facet = 3)
 plot(mod_ssng_iw, plot_start = "2010-01-01", nrow_facet = 3)
 @
-
+\begin{figure}[!htb]
+\subfloat[Steady-state prior\label{fig:ss_plots1}]{\includegraphics[width=0.49\linewidth]{figures/ss_plots-1} }\subfloat[Hierarchical steady-state prior\label{fig:ss_plots2}]{\includegraphics[width=0.49\linewidth]{figures/ss_plots-2} }\caption[Forecasts and posterior steady-state intervals]{Forecasts and posterior steady-state intervals}\label{fig:ss_plots}
+\end{figure}
 Figure \ref{fig:ss_plots} displays the forecasts and posterior steady-state intervals obtained using the steady-state prior with and without hierarchical shrinkage. The posterior intervals are similar, with a narrower interval for unemployment using the hierarchical specification, and with almost indistinguishable differences for inflation and GDP. Because of the similarity between the models, the forecasts from both models in Figure \ref{fig:ss_plots} show that the assessment made by the model is that the economy is in a relatively steady state with a stable rate of growth in the future. Unemployment is expected to rise slowly and return to the steady state in the long run. By default, the plotting method displays the forecasts for the quarterly variables on the quarterly scale, as in the output from \code{predict}.
 
 In order to see the difference between constant and time-varying error covariance matrices, we next compare the distributions of the GDP forecasts. By letting \code{pred_bands = NULL} be an argument to \code{predict}, we obtain the entire set of forecasts from the model. Combining them and plotting the distributions using the \pkg{ggridges} package \citep{Wilke2018} allows us to easily compare the distributions.
 
-<<ridges, fig.asp = 0.65, message = FALSE, fig.cap = "Distributions of forecasts produced using the steady-state prior with constant or time-varying error covariance. The vertical lines represent the medians.">>=
+<<eval=FALSE>>=
 pred_iw <- predict(mod_ss_iw, pred_bands = NULL)
 pred_csv <- predict(mod_ss_csv, pred_bands = NULL)
 pred_fsv <- predict(mod_ss_fsv, pred_bands = NULL)
@@ -719,11 +768,14 @@ ggplot(pred_df, aes(y = factor(fcst_date), x = fcst, fill = Variance)) +
   theme_minimal() +
   scale_fill_brewer(palette = "YlGnBu")
 @
+\begin{figure}[!htb]
+\includegraphics[width=\maxwidth]{figures/ridges-1} \caption[Distributions of forecasts produced using the steady-state prior with constant or time-varying error covariance]{Distributions of forecasts produced using the steady-state prior with constant or time-varying error covariance. The vertical lines represent the medians.}\label{fig:ridges}
+\end{figure}
 Figure \ref{fig:ridges} shows that stochastic volatility leads to narrower predictive distributions for the current forecast. In terms of the central tendencies, however, the differences are negligible. The resemblance is greater between the predictive distributions obtained from the two models using stochastic volatility than between any of the models with stochastic volatility and the model with constant volatility. Thus, the choice of stochastic volatility may be less important than whether to include it at all.
 
 The reason for the somewhat wider distribution obtained using constant volatility is that the error covariance matrix that is obtained is a compromise between regimes of high and low volatility. Using stochastic volatility, there is no need to make this compromise. To see this point more clearly, the error standard deviations implied by the stochastic volatility models can be plotted using the \code{varplot} function.
 
-<<varplot, fig.asp = 0.5, fig.cap = "Standard deviation of the error term in the equation for GDP growth. The black solid and red dashed lines are the medians from the models with factor stochastic and constant volatility, respectively. The bands are obtained from the 95 \\% posterior point-wise intervals.", cache = TRUE, fig.subcap= c("Factor stochastic volatility", "Common stochastic volatility"), out.width='0.49\\linewidth', fig.width = 5>>=
+<<eval=FALSE>>=
 const_vol <- median(sqrt(mod_ss_iw$Sigma[3, 3, ]))
 
 varplot(mod_ss_fsv, variables = "GDPC1") +
@@ -736,36 +788,25 @@ varplot(mod_ss_csv, variables = "GDPC1") +
              color = "red", linetype = "dashed") +
   coord_cartesian(ylim = c(0, 20))
 @
-
+\begin{figure}
+\subfloat[Factor stochastic volatility\label{fig:varplot1}]{\includegraphics[width=0.49\linewidth]{figures/varplot-1} }\subfloat[Common stochastic volatility\label{fig:varplot2}]{\includegraphics[width=0.49\linewidth]{figures/varplot-2} }\caption[Standard deviation of the error term in the equation for GDP growth]{Standard deviation of the error term in the equation for GDP growth. The black solid and red dashed lines are the medians from the models with factor stochastic and constant volatility, respectively. The bands are obtained from the 95 \% posterior point-wise intervals.}\label{fig:varplot}
+\end{figure}
 Figure \ref{fig:varplot} shows that the standard deviation of the GDP error term has varied substantially. Periods of particularly high volatility are evident in the early 1980s, 1990s and 2000s as well as during the recent financial crisis at the end of the 2000s. The estimated volatilities are similar between the two models. They both capture the same peaks with the sole difference being that the model with common stochastic volatility estimated a peak in volatility around 2005 that the model with factor stochastic volatility did not. Volatility has in recent years been lower than usual. The line displaying the standard deviation from the model with constant volatility appears to capture a baseline, which the time-varying volatility is currently deviating somewhat from. For this reason, we see that the distribution of the forecasts in Figure \ref{fig:ridges} is narrower under a stochastic volatility specification.
 
 \subsection{Marginal Data Density}
 
 A generic function \code{mdd()} is provided that facilitates estimation of the marginal data density if the inverse Wishart prior is used for $\Sigma$. The marginal data density for the model using the steady-state prior with constant volatility is
-<<>>=
+<<eval=FALSE>>=
 mdd(mod_ss_iw)
+@
+<<echo=FALSE>>=
+mdd_example
 @
 
 The marginal data density in itself is not particularly informative. One of its roles, however, is that it can be used as a way of selecting hyperparameters. By searching over a grid of values, the pair ($\lambda_1, \lambda_3$) that maximizes the marginal data density can be used. Such a grid search is embarrassingly parallel and can be computed using the \pkg{parallel} package \citep{R2019}.
 
-<<par_chunk, include = FALSE>>=
-library("parallel")
-par_fun <- function(lambda1, prior) {
-  set.seed(2019)
-  mod_par <- estimate_mfbvar(prior, prior = "ss", variance = "iw",
-                             lambda1 = lambda1, lambda3 = 1)
-  mdd(mod_par)
-}
 
-cl <- makeCluster(2)
-clusterEvalQ(cl, library("mfbvar"))
-lambda1_seq <- seq(0.05, 1, by = 0.05)
-result <- parSapply(cl, lambda1_seq,
-                    par_fun, prior = prior)
-stopCluster(cl)
-@
 <<par_chunk2, eval = FALSE>>=
-
 library("parallel")
 par_fun <- function(lambda1, prior) {
   set.seed(2019)
@@ -781,11 +822,7 @@ result <- parSapply(cl, lambda1_seq,
                     par_fun, prior = prior)
 stopCluster(cl)
 @
-<<include=FALSE>>=
-max_val <- tibble(lambda1 = lambda1_seq,
-       mdd = result) %>%
-  filter(mdd == max(mdd)) %>% .$lambda1
-@
+
 
 We are here fixing the lag decay to $\lambda_3=1$ and consider the grid of values $\{0.05, 0.1, \dots, 0.95, 1.00\}$ for $\lambda_1$. Figure \ref{fig:mdd_plot} displays the results.
 

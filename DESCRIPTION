@@ -29,7 +29,7 @@ LinkingTo:
     RcppProgress, 
     stochvol (>= 2.0.3), 
     RcppParallel
-Depends: R (>= 3.0.2)
+Depends: R (>= 3.5.0)
 Suggests: testthat, covr, knitr, ggridges, alfred, factorstochvol, purrr
 RoxygenNote: 6.1.1
 Encoding: UTF-8
