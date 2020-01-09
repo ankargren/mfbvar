@@ -1,22 +1,45 @@
-## Resubmission
-This is a resubmission. In this version I have:
+## Update
+This is a minor update. In this version I 
+ have:
 
-* Explained the acronym in the Description.
+* Added Gregor Kastner as a contributor (due 
+ to some code from stochvol/factorstochvol being 
+ used).
 
-* Added links/references in the Description to the methods used in the package.
+* Fixed a small bug with one of the 
+ arguments to one of the main functions.
 
-## Test environments
-* Local OS X Mojave 10.14.1 install, R 3.5.1
-* win-builder (R 3.5.1, devel)
-* ubuntu 14.04 (on travis-ci), R 3.4.4, 3.5.1, devel
-* OS X El Capitan 10.13.3 (on travis-ci), R 3.4.4, 3.5.1
+* Made 
+ some changes to the vignette so that it will run 
+ faster and pass the CRAN checks on other builds. 
+ There was a problem with the vignette under OpenBLAS 
+ as indicated by the CRAN check page.
 
-## R CMD check results
+## Test 
+ environments
+* Local OS X Mojave 10.14.3, R 3.6.0
+* 
+ win-builder (R 3.5.3, 3.6.1, 4.0.0)
+* ubuntu 14.04 
+ (on travis-ci), R 3.6.2
+* OS X El Capitan 10.13.6 
+ (on travis-ci), R 3.6.2
+
+## R CMD check 
+ results
 There were no ERRORs or WARNINGs. 
 
-There was 1 NOTE:
+On 
+ some test environments, one of two NOTEs may 
+ appear:
 
-* checking CRAN incoming feasibility ... NOTE
-Maintainer: ‘Sebastian Ankargren <sebastian.ankargren@statistics.uu.se>’
-
-New submission
+* checking installed package size ... 
+ NOTE
+ installed size is  5.1Mb
+ sub-directories 
+ of 1Mb or more:
+   libs   4.1Mb
+* checking for GNU 
+ extensions in Makefiles ... NOTE
+GNU make is a 
+ SystemRequirements.
