@@ -879,7 +879,7 @@ summary.mfbvar <- function(object, ...){
 
 #' Plotting methods for posterior mfbvar objects
 #'
-#' Methods for plotting posterior mfbvar objects (\code{mfbvar_minn} and \code{mfbvar_ss}).
+#' Methods for plotting posterior mfbvar objects.
 #' @param x object of class \code{mfbvar_minn} or \code{mfbvar_ss}
 #' @param fcst_start Date of the first forecast; if dates are available for the data used for obtaining \code{x}, these will be used.
 #' @param aggregate_fcst Boolean indicating whether forecasts of the latent monthly series should be aggregated to the quarterly frequency.
@@ -1043,7 +1043,8 @@ plot.mfbvar_ss <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_sta
   p <- p +
     theme_minimal() +
     theme(legend.position="bottom")
-  breaks <- ggplot_build(p)$layout$coord$labels(ggplot_build(p)$layout$panel_params)[[1]]$x.labels
+  breaks <- ggplot_build(p)$layout$panel_params[[1]]$x$breaks
+  breaks <- na.omit(breaks)
   if (any(as.numeric(breaks)>plot_range[length(plot_range)])) {
     break_labels <- c(as.character(plot_range_names[as.numeric(breaks)[as.numeric(breaks)<=plot_range[length(plot_range)]]]),
                       as.character(preds$fcst_date[min(which(preds$time == breaks[as.numeric(breaks)>plot_range[length(plot_range)]]))]))
@@ -1169,7 +1170,8 @@ plot.mfbvar_minn <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_s
   p <- p +
     theme_minimal() +
     theme(legend.position="bottom")
-  breaks <- ggplot_build(p)$layout$coord$labels(ggplot_build(p)$layout$panel_params)[[1]]$x.labels
+  breaks <- ggplot_build(p)$layout$panel_params[[1]]$x$breaks
+  breaks <- na.omit(breaks)
   if (any(as.numeric(breaks)>plot_range[length(plot_range)])) {
     break_labels <- c(as.character(plot_range_names[as.numeric(breaks)[as.numeric(breaks)<=plot_range[length(plot_range)]]]),
                       as.character(preds$fcst_date[min(which(preds$time == breaks[as.numeric(breaks)>plot_range[length(plot_range)]]))]))

@@ -75,8 +75,8 @@ set.seed(100)
 %% - \Keywords{} with LaTeX markup, at least one required
 %% - \Plainkeywords{} without LaTeX markup (if necessary)
 %% - Should be comma-separated and in sentence case.
-\Keywords{vector autoregression, steady-state prior, Minnesota prior, time series, \proglang{R}}
-\Plainkeywords{vector autoregression, steady-state prior, Minnesota prior, stochastic volatility, time series, R}
+\Keywords{vector autoregression, steady-state prior, stochastic volatility, time series, \proglang{R}}
+\Plainkeywords{vector autoregression, steady-state prior, stochastic volatility, stochastic volatility, time series, R}
 
 %% - \Address{} of at least one author
 %% - May contain multiple affiliations for each author

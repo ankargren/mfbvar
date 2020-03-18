@@ -1,3 +1,6 @@
+# mfbvar 0.5.3 (2020-03-18)
+* Fixed a bug caused by the plotting functions
+
 # mfbvar 0.5.1 (2019-08-16)
 * Support for more priors
 * Stochastic volatility models
