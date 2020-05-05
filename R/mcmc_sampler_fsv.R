@@ -209,7 +209,9 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
                           a0idi,b0idi,a0fac,b0fac,Bsigma,B011inv,B022inv,priorh0,
                           armarestr,armatau2,n_fac,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,
                           n_vars,n_T_,n_fcst,n_thin,verbose,a,gig)
-
+  if (verbose) {
+    cat("\n")
+  }
   return_obj <- list(Pi = Pi, Z = Z, Z_fcst = NULL, mu = mu, phi = phi,
                      sigma = sigma, f = f, facload = facload, h = h,
                      Lambda_ = Lambda_, aggregation = x$aggregation, prior_Pi_Omega = prior_Pi_Omega,
@@ -478,7 +480,9 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
                          a0idi,b0idi,a0fac,b0fac,Bsigma,B011inv,B022inv,priorh0,
                          armarestr,armatau2,n_fac,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,
                          n_vars,n_T_,n_fcst,n_thin,verbose,a,gig)
-
+  if (verbose) {
+    cat("\n")
+  }
   return_obj <- list(Pi = Pi, Z = Z, Z_fcst = NULL, mu = mu, phi = phi,
                      sigma = sigma, f = f, facload = facload, h = h,
                      aux = aux, local = local, global = global,
@@ -737,7 +741,9 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
                          a0idi,b0idi,a0fac,b0fac,Bsigma,B011inv,B022inv,priorh0,
                          armarestr,armatau2,n_fac,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,
                          n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,FALSE)
-
+  if (verbose) {
+    cat("\n")
+  }
   return_obj <- list(Pi = Pi, psi = psi, Z = Z, Z_fcst = NULL, mu = mu, phi = phi,
                      sigma = sigma, f = f, facload = facload, h = h,
                      Lambda_ = Lambda_, aggregation = x$aggregation, prior_Pi_Omega = prior_Pi_Omega,
@@ -1030,7 +1036,9 @@ mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
                        a0idi,b0idi,a0fac,b0fac,Bsigma,B011inv,B022inv,priorh0,
                        armarestr,armatau2,n_fac,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,
                        n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,TRUE)
-
+  if (verbose) {
+    cat("\n")
+  }
   return_obj <- list(Pi = Pi, psi = psi, omega = omega, lambda_mu = lambda_mu,
                      phi_mu = phi_mu, Z = Z, Z_fcst = NULL, mu = mu, phi = phi,
                      sigma = sigma, f = f, facload = facload, h = h,

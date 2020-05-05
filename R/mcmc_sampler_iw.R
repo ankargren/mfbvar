@@ -215,7 +215,9 @@ mcmc_sampler.mfbvar_ss_iw <- function(x, ...) {
   mcmc_ssng_iw(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
                prior_S,D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,n_reps,n_burnin,
                n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,FALSE)
-
+  if (verbose) {
+    cat("\n")
+  }
   # mcmc_ssng_iw(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,Lambda_comp,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
   #                     prior_S,D_mat,dt,d1,d_fcst_lags,prior_psi_mean,0.01,0.01,1,check_roots,Z_1,n_reps,
   #                     n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose)
@@ -478,7 +480,9 @@ mcmc_sampler.mfbvar_ssng_iw <- function(x, ...) {
   mcmc_ssng_iw(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
                prior_S,D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,n_reps,n_burnin,
                n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,TRUE)
-
+  if (verbose) {
+    cat("\n")
+  }
   ################################################################
   ### Prepare the return object
   return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z, phi_mu = phi_mu, lambda_mu = lambda_mu, omega = omega,
@@ -657,7 +661,9 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
   mcmc_minn_iw(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,
                Omega_Pi,prior_Pi_mean,prior_S,Z_1,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,
                n_thin,verbose,2)
-
+  if (verbose) {
+    cat("\n")
+  }
 
   ################################################################
   ### Prepare the return object

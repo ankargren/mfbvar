@@ -15,8 +15,7 @@
 Method for printing \code{mfbvar} objects.
 }
 \examples{
-prior_obj <- set_prior(Y = mf_sweden[, 4:5], d = "intercept",
-                       freq = c("m", "q"), n_lags = 4, n_burnin = 20, n_reps = 20)
+prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 20)
 mod_minn <- estimate_mfbvar(prior_obj, prior = "minn")
 mod_minn
 }

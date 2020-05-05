@@ -9,6 +9,7 @@
 //' @templateVar A TRUE
 //' @template man_template
 //' @keywords internal
+//' @noRd
 //' @return The maximum eigenvalue.
 // [[Rcpp::export]]
 double max_eig_cpp(const arma::mat & A) {

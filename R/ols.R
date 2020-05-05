@@ -1,13 +1,11 @@
-#' OLS functions
-#'
-#' Helper functions for multivariate regression and sum of squared error computations
-#'
+#' @title OLS functions
+#' @description Helper functions for multivariate regression and sum of squared error computations
 #' @param X The regressor matrix.
 #' @param Y The dependnet variable matrix.
 #' @keywords internal
+#' @noRd
 #' @return
 #' \item{pi_sample}{Estimated coefficients.}
-
 ols_pi <- function(X, Y) {
   pi_sample <- solve(crossprod(X)) %*% crossprod(X, Y)
   return(pi_sample)
@@ -15,7 +13,8 @@ ols_pi <- function(X, Y) {
 
 #' @rdname ols_pi
 #' @param Pi The estimated coefficients.
-#'  @keywords internal
+#' @keywords internal
+#' @noRd
 #' @return
 #' \item{s_sample}{The sum of squared residuals matrix.}
 ols_s <- function(X, Y, Pi) {
@@ -38,6 +37,7 @@ ols_s <- function(X, Y, Pi) {
 #' \item{S}{Estimated error covariance matrix.}
 #' \item{psi}{The estimated steady-state parameters.}
 #' @keywords internal
+#' @noRd
 
 ols_initialization <- function(z, d, n_lags, n_T, n_vars, n_determ) {
   n_T <- nrow(z)

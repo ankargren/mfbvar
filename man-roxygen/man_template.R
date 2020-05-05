@@ -6,7 +6,7 @@
 #' <%=ifelse(exists("d"), "@param d The matrix of size \\code{(n_T + n_lags) * n_determ} of deterministic terms.", "") %>
 #' <%=ifelse(exists("D_mat"), "@param D_mat The \\code{D} matrix (from \\code{\\link{build_DD}}).", "") %>
 #' <%=ifelse(exists("d_fcst"), "@param d_fcst The deterministic terms for the forecasting period.", "") %>
-#' <%=ifelse(exists("freq"), "@param freq Character vector with elements 'm' (monthly) or 'q' (quarterly) for sampling frequency. Monthly variables must precede all quarterly variables.", "") %>
+#' <%=ifelse(exists("freq"), "@param freq (Only used if \\code{Y} is a matrix) Character vector with elements 'm' (monthly) or 'q' (quarterly) for sampling frequency. Monthly variables must precede all quarterly variables.", "") %>
 #' <%=ifelse(exists("h0"), "@param h0 The initial state (\\code{(n_vars*n_lags)*1}).", "") %>
 #' <%=ifelse(exists("Lambda"), "@param Lambda The Lambda matrix (size \\code{n_vars* (n_vars*n_lags)}).", "") %>
 #' <%=ifelse(exists("lambda1"), "@param lambda1 The overall tightness.", "") %>

@@ -4,6 +4,7 @@
 //' @templateVar n_vars TRUE
 //' @templateVar n_lags TRUE
 //' @keywords internal
+//' @noRd
 //' @template man_template
 // [[Rcpp::export]]
 arma::mat build_U_cpp(const arma::mat & Pi, int n_determ, int n_vars, int n_lags){

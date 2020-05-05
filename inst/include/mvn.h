@@ -2,6 +2,12 @@
 #define MFBVAR_MVN_BCM_H
 inline arma::vec mvn_bcm(const arma::mat & Phi, const arma::vec & d,
                          const arma::vec & alpha) {
+  // Function to sample from a normal posterior in accordance with Bhattacharya,
+  // Chakraborty and Mallick (2016)
+  // Notation following Bhattacharya, Chakraborty and Mallick (2016), doi:10.1093/biomet/asw042
+  // Phi: scaled regressor matrix (n x p)
+  // d: scaled diagonal of the (diagonal) prior covariance matrix
+  // alpha: scaled response variable
   arma::uword n = Phi.n_rows;
   arma::uword p = Phi.n_cols;
 
@@ -27,6 +33,13 @@ inline arma::vec mvn_bcm(const arma::mat & Phi, const arma::vec & d,
 #define MFBVAR_MVN_BCM_EPS_H
 inline arma::vec mvn_bcm_eps(const arma::mat & Phi, const arma::vec & d,
                          const arma::vec & alpha, const arma::vec & eps) {
+  // Function to sample from a normal posterior in accordance with Bhattacharya,
+  // Chakraborty and Mallick (2016) with pregenerated random numbers
+  // Notation following Bhattacharya, Chakraborty and Mallick (2016), doi:10.1093/biomet/asw042
+  // Phi: scaled regressor matrix (n x p)
+  // d: scaled diagonal of the (diagonal) prior covariance matrix
+  // alpha: scaled response variable
+  // eps: vector of iid N(0,1) (n+p)
   arma::uword n = Phi.n_rows;
   arma::uword p = Phi.n_cols;
 
@@ -51,6 +64,11 @@ inline arma::vec mvn_bcm_eps(const arma::mat & Phi, const arma::vec & d,
 #define MFBVAR_MVN_RUE_H
 inline arma::vec mvn_rue(const arma::mat & Phi, const arma::vec & d,
                          const arma::vec & alpha) {
+  // Function to sample from a normal posterior in accordance with Rue (2001)
+  // Notation following Bhattacharya, Chakraborty and Mallick (2016), doi:10.1093/biomet/asw042
+  // Phi: scaled regressor matrix (n x p)
+  // d: scaled diagonal of the (diagonal) prior covariance matrix
+  // alpha: scaled response variable
 
   arma::mat Q = Phi.t() * Phi;
   Q.diag() += pow(d, -1.0);
@@ -70,10 +88,15 @@ inline arma::vec mvn_rue(const arma::mat & Phi, const arma::vec & d,
 
 #ifndef MFBVAR_MVN_CCM_H
 #define MFBVAR_MVN_CCM_H
-// Previously called mvn_rue_int
 inline arma::vec mvn_ccm(const arma::mat & Phi, const arma::vec & d,
                          const arma::vec & alpha, double c, double j) {
-
+  // Function to sample from a normal posterior when one parameter has non-zero prior mean
+  // Notation following Bhattacharya, Chakraborty and Mallick (2016), doi:10.1093/biomet/asw042
+  // Phi: scaled regressor matrix (n x p)
+  // d: scaled diagonal of the (diagonal) prior covariance matrix
+  // alpha: scaled response variable
+  // c: prior mean of the parameter that has non-zero prior mean
+  // j: index of the parameter
   arma::mat Q = Phi.t() * Phi;
   Q.diag() += pow(d, -1.0);
   arma::mat L = arma::chol(Q, "lower");
@@ -94,6 +117,14 @@ inline arma::vec mvn_ccm(const arma::mat & Phi, const arma::vec & d,
 inline arma::vec mvn_rue_eps(const arma::mat & Phi, const arma::vec & d,
                          const arma::vec & alpha, const arma::vec & eps,
                          double c, double j) {
+  // Function to sample from a normal posterior when one parameter has non-zero prior mean
+  // using the Rue (2001) algorithm
+  // Notation following Bhattacharya, Chakraborty and Mallick (2016), doi:10.1093/biomet/asw042
+  // Phi: scaled regressor matrix (n x p)
+  // d: scaled diagonal of the (diagonal) prior covariance matrix
+  // alpha: scaled response variable
+  // c: prior mean of the parameter that has non-zero prior mean
+  // j: index of the parameter
 
   arma::mat Q = Phi.t() * Phi;
   Q.diag() += pow(d, -1.0);

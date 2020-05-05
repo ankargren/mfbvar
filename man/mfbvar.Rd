@@ -3,7 +3,6 @@
 \docType{package}
 \name{mfbvar}
 \alias{mfbvar}
-\alias{mfbvar-package}
 \title{mfbvar: A package for mixed-frequency Bayesian vector autoregressive (VAR) models.}
 \description{
 The mfbvar package makes estimation of Bayesian VARs with a mix of monthly and quarterly data

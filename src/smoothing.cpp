@@ -20,6 +20,7 @@
 //' @templateVar P0 TRUE
 //' @template man_template
 //' @keywords internal
+//' @noRd
 //' @return For \code{loglike}:
 //' \item{}{An \code{n_T}-long vector of the log-likelihoods. \code{exp(sum(loglike(...)))} is the likelihood.}
 // [[Rcpp::export]]

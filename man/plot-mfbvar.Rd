@@ -5,31 +5,42 @@
 \alias{plot.mfbvar_ss}
 \alias{plot.mfbvar_ssng}
 \alias{plot.mfbvar_minn}
-\alias{plot.mfbvar_dl}
 \alias{varplot}
 \title{Plotting methods for posterior mfbvar objects}
 \usage{
-\method{plot}{mfbvar_ss}(x, fcst_start = NULL, aggregate_fcst = TRUE,
-  plot_start = NULL, pred_bands = 0.8, nrow_facet = NULL,
-  ss_bands = 0.95, ...)
+\method{plot}{mfbvar_ss}(
+  x,
+  aggregate_fcst = TRUE,
+  plot_start = NULL,
+  pred_bands = 0.8,
+  nrow_facet = NULL,
+  ss_bands = 0.95,
+  ...
+)
 
-\method{plot}{mfbvar_ssng}(x, fcst_start = NULL, aggregate_fcst = TRUE,
-  plot_start = NULL, pred_bands = 0.8, nrow_facet = NULL,
-  ss_bands = 0.95, ...)
+\method{plot}{mfbvar_ssng}(
+  x,
+  aggregate_fcst = TRUE,
+  plot_start = NULL,
+  pred_bands = 0.8,
+  nrow_facet = NULL,
+  ss_bands = 0.95,
+  ...
+)
 
-\method{plot}{mfbvar_minn}(x, fcst_start = NULL, aggregate_fcst = TRUE,
-  plot_start = NULL, pred_bands = 0.8, nrow_facet = NULL, ...)
+\method{plot}{mfbvar_minn}(
+  x,
+  aggregate_fcst = TRUE,
+  plot_start = NULL,
+  pred_bands = 0.8,
+  nrow_facet = NULL,
+  ...
+)
 
-\method{plot}{mfbvar_dl}(x, fcst_start = NULL, aggregate_fcst = TRUE,
-  plot_start = NULL, pred_bands = 0.8, nrow_facet = NULL, ...)
-
-varplot(x, variables = colnames(x$Y), var_bands = 0.95,
-  nrow_facet = NULL, ...)
+varplot(x, variables = colnames(x$Y), var_bands = 0.95, nrow_facet = NULL, ...)
 }
 \arguments{
 \item{x}{object of class \code{mfbvar_minn} or \code{mfbvar_ss}}
-
-\item{fcst_start}{Date of the first forecast; if dates are available for the data used for obtaining \code{x}, these will be used.}
 
 \item{aggregate_fcst}{Boolean indicating whether forecasts of the latent monthly series should be aggregated to the quarterly frequency.}
 
@@ -48,15 +59,16 @@ varplot(x, variables = colnames(x$Y), var_bands = 0.95,
 \item{var_bands}{(\code{varplot} only) Single number (between \code{0.0} and \code{1.0}) giving the coverage level of posterior intervals for the error standard deviations.}
 }
 \description{
-Methods for plotting posterior mfbvar objects (\code{mfbvar_minn} and \code{mfbvar_ss}).
+Methods for plotting posterior mfbvar objects.
 }
 \examples{
-prior_obj <- set_prior(Y = mf_sweden[, 4:5], d = "intercept",
-                       freq = c("m", "q"), n_lags = 4, n_burnin = 20, n_reps = 20,
+prior_obj <- set_prior(Y = mf_usa, d = "intercept",
+                       n_lags = 4, n_reps = 20,
                        n_fcst = 4, n_fac = 1)
 
-prior_intervals <- matrix(c(-0.1, 0.1,
-                            0.4, 0.6), ncol = 2, byrow = TRUE)
+prior_intervals <- matrix(c(1, 3,
+                            4, 8,
+                            1, 3), ncol = 2, byrow = TRUE)
 psi_moments <- interval_to_moments(prior_intervals)
 prior_psi_mean <- psi_moments$prior_psi_mean
 prior_psi_Omega <- psi_moments$prior_psi_Omega

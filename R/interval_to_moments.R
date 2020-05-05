@@ -4,7 +4,6 @@
 #' @templateVar prior_psi_int TRUE
 #' @param alpha \code{100*(1-alpha)} is the prior probability of the interval
 #' @template man_template
-#' @keywords internal
 #' @return A list with two components:
 #' \item{prior_psi_mean}{The prior mean of psi}
 #' \item{prior_psi_Omega}{The prior covariance matrix of psi}

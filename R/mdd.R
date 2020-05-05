@@ -65,6 +65,7 @@ mdd.mfbvar_minn_iw <- function(x, ...) {
 #'
 #' This function provides the possibility to estimate the log marginal density using the steady-state MF-BVAR.
 #' @keywords internal
+#' @noRd
 #' @return
 #' \code{estimate_mdd_ss_1} returns a list with components (all are currently in logarithms):
 #' \item{lklhd}{The likelihood.}
@@ -199,6 +200,7 @@ estimate_mdd_ss_1 <- function(mfbvar_obj) {
 #' @templateVar p_trunc TRUE
 #' @template man_template
 #' @keywords internal
+#' @noRd
 #' @return
 #' \code{estimate_mdd_ss_1} returns a list with components being \code{n_reps}-long vectors and a scalar (the final estimate).
 #' \item{eval_posterior_Pi_Sigma}{Posterior of Pi and Sigma.}
@@ -313,6 +315,7 @@ estimate_mdd_ss_2 <- function(mfbvar_obj, p_trunc) {
 #' @param quarterly_cols numeric vector with positions of quarterly variables
 #' @templateVar p_trunc TRUE
 #' @keywords internal
+#' @noRd
 #' @return The log marginal data density estimate (bar a constant)
 #'
 estimate_mdd_minn <- function(mfbvar_obj, p_trunc, ...) {

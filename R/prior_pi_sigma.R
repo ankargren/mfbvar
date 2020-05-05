@@ -12,6 +12,7 @@
 #' \item{prior_Pi_Omega}{The prior covariance matrix for Pi.}
 #' \item{prior_s}{The prior for Sigma.}
 #' @keywords internal
+#' @noRd
 prior_Pi_Sigma <- function(lambda1, lambda2, prior_Pi_AR1, Y, n_lags, prior_nu) {
   # lambda1: 1-long vector (overall tightness)
   # lambda2: 1-long vector (lag decay)
@@ -65,6 +66,7 @@ prior_Pi_Sigma <- function(lambda1, lambda2, prior_Pi_AR1, Y, n_lags, prior_nu) 
 #' @return
 #' \item{prior_Pi_Omega}{The prior covariance matrix for Pi.}
 #' @keywords internal
+#' @noRd
 create_prior_Pi_Omega <- function(lambda1, lambda2, lambda3, prior_Pi_AR1, Y, n_lags,
                                   block_exo = NULL) {
   # lambda1: 1-long vector (overall tightness)

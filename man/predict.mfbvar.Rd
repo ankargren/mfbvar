@@ -4,13 +4,10 @@
 \alias{predict.mfbvar}
 \title{Predict method for class \code{mfbvar}}
 \usage{
-\method{predict}{mfbvar}(object, fcst_start = NULL,
-  aggregate_fcst = TRUE, pred_bands = 0.8, ...)
+\method{predict}{mfbvar}(object, aggregate_fcst = TRUE, pred_bands = 0.8, ...)
 }
 \arguments{
 \item{object}{object of class mfbvar}
-
-\item{fcst_start}{The date (\code{YYYY-MM-DD}) of the first forecast. If not provided, dates from the original data is used if available.}
 
 \item{aggregate_fcst}{If forecasts of quarterly variables should be aggregated back to the quarterly frequency.}
 
@@ -25,8 +22,7 @@ Method for predicting \code{mfbvar} objects.
 Note that this requires that forecasts were made in the original \code{mfbvar} call.
 }
 \examples{
-prior_obj <- set_prior(Y = mf_sweden[, 4:5], freq = c("m", "q"),
-                       n_lags = 4, n_burnin = 20, n_reps = 20, n_fcst = 4)
+prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 20, n_fcst = 4)
 mod_minn <- estimate_mfbvar(prior_obj, prior = "minn")
 predict(mod_minn)
 }

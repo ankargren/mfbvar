@@ -3,26 +3,42 @@
 \name{set_prior}
 \alias{set_prior}
 \alias{update_prior}
-\alias{check_prior}
 \title{Set priors for mfbvar}
 \usage{
-set_prior(Y, freq, aggregation = "average", prior_Pi_AR1 = rep(0,
-  ncol(Y)), lambda1 = 0.2, lambda2 = 0.5, lambda3 = 1,
-  lambda4 = 10000, block_exo = NULL, n_lags, n_fcst = 0,
-  n_thin = 1, n_burnin, n_reps, d = NULL, d_fcst = NULL,
-  prior_psi_mean = NULL, prior_psi_Omega = NULL, check_roots = FALSE,
-  s = -1000, prior_ng = c(0.01, 0.01), prior_phi = c(0.9, 0.1),
-  prior_sigma2 = c(0.01, 4), n_fac = NULL, n_cores = 1,
-  a = 1/(ncol(Y)^2 * n_lags), verbose = FALSE, ...)
+set_prior(
+  Y,
+  aggregation = "average",
+  prior_Pi_AR1 = 0,
+  lambda1 = 0.2,
+  lambda2 = 0.5,
+  lambda3 = 1,
+  lambda4 = 10000,
+  block_exo = NULL,
+  n_lags,
+  n_fcst = 0,
+  n_thin = 1,
+  n_reps,
+  n_burnin = n_reps,
+  freq = NULL,
+  d = NULL,
+  d_fcst = NULL,
+  prior_psi_mean = NULL,
+  prior_psi_Omega = NULL,
+  check_roots = FALSE,
+  s = -1000,
+  prior_ng = c(0.01, 0.01),
+  prior_phi = c(0.9, 0.1),
+  prior_sigma2 = c(0.01, 4),
+  n_fac = NULL,
+  n_cores = 1,
+  verbose = FALSE,
+  ...
+)
 
 update_prior(prior_obj, ...)
-
-check_prior(prior_obj)
 }
 \arguments{
-\item{Y}{matrix or data frame with data with quarterly variables stored in the final columns. For full compatibility with plot and predict functions, \code{Y} should contain monthly \code{YYYY-MM-DD} dates, either as a separate column or as row names. Data points for quarterly variables should be stored at the end of each quarter with \code{NA} otherwise.}
-
-\item{freq}{Character vector with elements 'm' (monthly) or 'q' (quarterly) for sampling frequency. Monthly variables must precede all quarterly variables.}
+\item{Y}{data input. Should be a list with components containing regularly spaced time series (that inherit from \code{ts} or \code{zooreg}). If a component contains a single time series, the component itself must be named. If a component contains multiple time series, each time series must be named. Monthly variables can only contain missing values at the end of the sample, and should precede quarterly variables in the list. Matrices in which quarterly variables are padded with \code{NA} and observations stored at the end of each quarter are also accepted, but then the frequency of each variable must be given in the argument \code{freq}.}
 
 \item{aggregation}{the aggregation scheme used for relating latent monthly series to their quarterly observations. The default is \code{"average"} for averaging over the monthly observations within each quarter. The alternative is \code{"triangular"} is to use the Mariano-Murasawa triangular set of weights. See details for more information.}
 
@@ -44,9 +60,11 @@ check_prior(prior_obj)
 
 \item{n_thin}{Store every \code{n_thin}th draw}
 
+\item{n_reps}{The number of replications.}
+
 \item{n_burnin}{The number of burn-in replications.}
 
-\item{n_reps}{The number of replications.}
+\item{freq}{(Only used if \code{Y} is a matrix) Character vector with elements 'm' (monthly) or 'q' (quarterly) for sampling frequency. Monthly variables must precede all quarterly variables.}
 
 \item{d}{(Steady state only) Either a matrix with same number of rows as \code{Y} and \code{n_determ} number of columns containing the deterministic terms or a string \code{"intercept"} for requesting an intercept as the only deterministic
 term.}
@@ -70,8 +88,6 @@ term.}
 \item{n_fac}{(Only used with factor stochastic volatility) Number of factors to use for the factor stochastic volatility model}
 
 \item{n_cores}{(Only used with factor stochastic volatility) Number of cores to use for drawing regression parameters in parallel}
-
-\item{a}{(Only used with the Dirichlet-Laplace prior) Shrinkage hyperparameter a (lower values impose more powerful shrinkage)}
 
 \item{verbose}{Logical, if progress should be printed to the console.}
 
@@ -113,8 +129,7 @@ For modeling stochastic volatility by the factor stochastic volatility model, th
 The function \code{update_prior} can be used to update an existing prior object. See the examples.
 }
 \examples{
-prior_obj <- set_prior(Y = mf_sweden, freq = c(rep("m", 4), "q"),
-                       n_lags = 4, n_burnin = 100, n_reps = 100)
+prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 100)
 prior_obj <- update_prior(prior_obj, n_fcst = 4)
 }
 \seealso{

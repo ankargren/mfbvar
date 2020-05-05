@@ -55,7 +55,7 @@ set.seed(100)
 %% - \Plainauthor{} without affiliations
 %% - Separate authors by \And or \AND (in \author) or by comma (in \Plainauthor).
 %% - \AND starts a new line, \And does not.
-\author{Sebastian Ankargren\\Uppsala University
+\author{Sebastian Ankargren\\Uppsala University, \\ National Institute of Economic Research
    \And Yukai Yang\\Uppsala University, \\Stockholm School of Economics}
 \Plainauthor{Sebastian Ankargren, Yukai Yang}
 
@@ -143,7 +143,7 @@ The implementation of Bayesian VARs in \proglang{R} is not new; the \pkg{BMR} pa
 %%   (For executed code see the next section.)
 \clearpage
 \section{Mixed-Frequency Bayesian VAR models} \label{sec:models}
-Suppose that the system evolves at the monthly frequency. Let $x_t$ be an $n\times 1$ monthly process. Decompose $x_t=(x_{m, t}', x_{q, t}')'$ into $n_m$ monthly variables, and a $n_q$-dimensional latent process for the quarterly observations. By letting $y_t=(y_{m, t}', y_{q, t}')'$ denote observations, it is implied that $y_{m, t}=x_{m, t}$ as the monthly part is always observed. For the remaining quarterly variables, we instead observe a weighted average of $x_q$. There are two common aggregations used in the literature: intra-quarterly averaging and triangular aggregation. The former assumes the relation between observed and latent variables to be
+Suppose that the system evolves at the monthly frequency. Let $x_t$ be an $n\times 1$ monthly process. Decompose $x_t=(x_{m, t}^\top, x_{q, t}^\top)^\top$ into $n_m$ monthly variables, and a $n_q$-dimensional latent process for the quarterly observations. By letting $y_t=(y_{m, t}^\top, y_{q, t}^\top)^\top$ denote observations, it is implied that $y_{m, t}=x_{m, t}$ as the monthly part is always observed. For the remaining quarterly variables, we instead observe a weighted average of $x_q$. There are two common aggregations used in the literature: intra-quarterly averaging and triangular aggregation. The former assumes the relation between observed and latent variables to be
 \begin{align}
 y_{q, t}=\begin{cases}\frac{1}{3}(x_{q, t}+x_{q, t-1}+x_{q, t-2}), &\quad t\in \{\text{Mar}, \text{Jun}, \text{Sep}, \text{Dec}\}\\
 \varnothing, &\quad \text{otherwise},\end{cases}
@@ -159,7 +159,7 @@ As the system is assumed to evolve at the monthly frequency, we specify a VAR($p
 \begin{equation}
 x_t=\phi+\Phi_1 x_{t-1}+\cdots+\Phi_p x_{t-p}+\epsilon_t, \quad \epsilon_t \sim \operatorname{N}(0, \Sigma).\label{eq:original}
 \end{equation}
-The VAR($p$) model can be written in companion form, where we let $z_t=(x_t', x_{t-1}', \dots, x_{t-p+1}')'$. Thus, we obtain
+The VAR($p$) model can be written in companion form, where we let $z_t=(x_t^\top, x_{t-1}^\top, \dots, x_{t-p+1}^\top)^\top$. Thus, we obtain
 \begin{equation}
 z_t=\pi+\Pi z_{t-1}+u_t, \quad u_t \sim \operatorname{N}(0, \Omega), \label{eq:trans}
 \end{equation}
@@ -171,7 +171,7 @@ y_t = M_t\Lambda z_t \label{eq:obs},
 \end{equation}
 where $M_t$ is a deterministic selection matrix and $\Lambda$ an aggregation matrix based on the weighting scheme employed. The $M_t$ matrix in Equation (\ref{eq:obs}) yields a time-varying observation vector by selecting rows corresponding to variables which are observed, whereas $\Lambda$ aggregates the underlying latent process. For more details, see \cite{Schorfheide2015} and \cite{AnkargrenUnossonYang2019}.
 
-The posterior distribution of interest is $p(X, \Theta|Y)$, where $X=(x_1, \dots, x_T)'$, $Y=(y_1, \dots, y_T)'$ and $\Theta$ collects the parameters of the model. This posterior distribution is intractable, but a Gibbs sampler can be employed in order to numerically approximate the posterior. Thus, estimation can be carried out by Markov Chain Monte Carlo (MCMC) and Gibbs sampling. We alternate between drawing from the conditional posterior of $X$ given the parameters and from the conditional posterior of the parameters given $X$. That is, we alternate between drawing from the conditional distributions
+The posterior distribution of interest is $p(X, \Theta|Y)$, where $X=(x_1, \dots, x_T)^\top$, $Y=(y_1, \dots, y_T)^\top$ and $\Theta$ collects the parameters of the model. This posterior distribution is intractable, but a Gibbs sampler can be employed in order to numerically approximate the posterior. Thus, estimation can be carried out by Markov Chain Monte Carlo (MCMC) and Gibbs sampling. We alternate between drawing from the conditional posterior of $X$ given the parameters and from the conditional posterior of the parameters given $X$. That is, we alternate between drawing from the conditional distributions
 \begin{equation}
 \begin{aligned}
 p(X| \Theta, Y)\quad \text{ and }\quad p(\Theta|X).
@@ -190,7 +190,7 @@ The model can be written on matrix form as
 \begin{align}
 X=W \Gamma + E,
 \end{align}
-where $W=(W_1, \dots, W_T)'$ with $W_t=(x_{t-1}', \dots, x_{t-p}', 1)'$, $E=(\epsilon_1, \dots, \epsilon_T)'$, and $\Gamma=(\Phi', \phi)'$. The Minnesota prior for $\Gamma$ takes one of two forms depending on the specification of the error covariance component. We will use the term ``Minnesota prior'' to refer to the prior for the model with intercept in order to more easily contrast it with an alternative specification discussed in a later subsection. It does not, however, refer to the original Minnesota prior with a fixed diagonal error covariance matrix as used by \cite{Litterman1986}; rather, it should be interpreted as a normal prior for the regression parameters---including intercept---based on the Minnesota prior beliefs.
+where $W=(W_1, \dots, W_T)^\top$ with $W_t=(x_{t-1}^\top, \dots, x_{t-p}^\top, 1)^\top$, $E=(\epsilon_1, \dots, \epsilon_T)^\top$, and $\Gamma=(\Phi^\top, \phi)^\top$. The Minnesota prior for $\Gamma$ takes one of two forms depending on the specification of the error covariance component. We will use the term ``Minnesota prior'' to refer to the prior for the model with intercept in order to more easily contrast it with an alternative specification discussed in a later section. It does not, however, refer to the original Minnesota prior with a fixed diagonal error covariance matrix as used by \cite{Litterman1986}; rather, it should be interpreted as a normal prior for the regression parameters---including intercept---based on the Minnesota prior beliefs.
 
 \paragraph{Conditional normal prior}
 A common prior for VAR models is a joint normal inverse Wishart prior for $(\Gamma, \Sigma)$ in which the prior $\Gamma$ is constructed conditionally on the error covariance $\Sigma$. The conditional prior distribution for $\Gamma$ is in this case a multivariate normal distribution of the form
@@ -199,7 +199,7 @@ A common prior for VAR models is a joint normal inverse Wishart prior for $(\Gam
 \end{align}
 where $\underline{\Gamma}, \underline{\Xi}$ are prior parameters specified by the researcher. The \pkg{mfbvar} package follows common practice and specifies the structure of the moments of the prior distribution along the lines of the Minnesota prior beliefs, yielding
 \begin{align}
-\underline{\Gamma}(\underline{\gamma}) &= \begin{pmatrix}\operatorname{diag}(\underline{\gamma}) &  0_{n\times[(p-1)+1]}\end{pmatrix}'\label{eq:gamma}\\
+\underline{\Gamma}(\underline{\gamma}) &= \begin{pmatrix}\operatorname{diag}(\underline{\gamma}) &  0_{n\times[(p-1)+1]}\end{pmatrix}^\top\label{eq:gamma}\\
 \xi_{i} &= \begin{cases}\frac{\lambda_1^2}{(l^{\lambda_3}s_r)^2}, &\text{lag $l$ of variable $r, i =(l-1)n+r$}\label{eq:xi}\\
 \lambda_4^2, &i=np+1\end{cases},
 \end{align}
@@ -210,14 +210,14 @@ The conditional normal prior imposes a symmetry in the prior for $\Gamma$ throug
 \begin{align}\label{eq:independent}
 \operatorname{vec}(\Gamma)\sim \operatorname{N}(\operatorname{vec}(\underline{\Gamma}), \underline{\Omega})
 \end{align}
-where $\underline{\Omega}$ is the $n(np+1)\times n(np+1)$ diagonal matrix containing the prior variances of $\Phi_{l}^{(i,j)}$, i.e. element $(i, j)$ of $\Phi_l$ that relates lag $l$ of variable $j$ to variable $i$, and the vector of intercepts $\phi$.
+where $\underline{\Omega}$ is the $n(np+1)\times n(np+1)$ diagonal matrix containing the prior variances of $\Phi_{l}^{(i,j)}$, i.e., element $(i, j)$ of $\Phi_l$ that relates lag $l$ of variable $j$ to variable $i$, and the vector of intercepts $\phi$.
 
 The prior variances are given by
 \begin{align}
 \VAR(\Phi_l^{(i, j)})=\begin{cases}\frac{\lambda_1^2}{(l^{\lambda_3})^2}, & \text{if } i=j\\
 \frac{\lambda_1^2\lambda_2^2}{(l^{\lambda_3})^2}\frac{s_i^2}{s_j^2}, &\text{otherwise}.\end{cases}\label{eq:uncondprior}
 \end{align}
-The main difference between \eqref{eq:xi} and \eqref{eq:uncondprior} is that the conditional normal prior in \eqref{eq:xi} enforces the restriction of symmetrical shrinkage of parameters in all equations. This restriction is not imposed in \eqref{eq:uncondprior}. The implication is that in \eqref{eq:xi} $\lambda_2$ is implicitly set to $\lambda_2=1$ (i.e. no penalization of terms corresponding to lags of other variables in a given equation), whereas \eqref{eq:uncondprior} allows cross-variable shrinkage to be enforced. The prior variance of the intercept is as before $\VAR(\phi)=10^4 I_n$.
+The main difference between \eqref{eq:xi} and \eqref{eq:uncondprior} is that the conditional normal prior in \eqref{eq:xi} enforces the restriction of symmetrical shrinkage of parameters in all equations. This restriction is not imposed in \eqref{eq:uncondprior}. The implication is that in \eqref{eq:xi} $\lambda_2$ is implicitly set to $\lambda_2=1$ (i.e., no penalization of terms corresponding to lags of other variables in a given equation), whereas \eqref{eq:uncondprior} allows cross-variable shrinkage to be enforced. The prior variance of the intercept is as before $\VAR(\phi)=10^4 I_n$.
 
 \subsubsection{Steady-state prior}
 The steady-state prior proposed by \cite{Villani2009} reformulates \eqref{eq:original} to be on the mean-adjusted form \begin{align}
@@ -301,7 +301,7 @@ where the factor-related volatility processes, $\log \omega_{t,i}^f$, is assumed
 
 The time-varying error covariance matrix is under the factor stochastic volatility model
 \begin{align}
-\Sigma_t=\VAR(\epsilon_t|\Lambda^f, \Omega_t^\nu, \Omega_t^f)=\Lambda^f\Omega_t^f\Lambda^{f'}+\Omega_t^\nu.
+\Sigma_t=\VAR(\epsilon_t|\Lambda^f, \Omega_t^\nu, \Omega_t^f)=\Lambda^f\Omega_t^f\Lambda^{f^\top}+\Omega_t^\nu.
 \end{align}
 The non-diagonal terms are therefore governed by the factor component, whereas the variances are driven by both the common component and the idiosyncratic term.
 
@@ -347,7 +347,7 @@ Equation \eqref{eq:compact} can be generalized into
 \end{equation}
 where $\mathcal{U}_t$ denotes the indexes relating to the set of monthly variables that are unobserved at time $t$, $\mathcal{O}_t$ denotes the set of indexes for the monthly variables that are observed at time $t$, and
 \begin{align}
-y_{\mathcal{O}_{t-1},t-1:t-p}=(y_{\mathcal{O}_{t-1},t-1}', \dots, y_{\mathcal{O}_{t-1},t-p}')'
+y_{\mathcal{O}_{t-1},t-1:t-p}=(y_{\mathcal{O}_{t-1},t-1}^\top, \dots, y_{\mathcal{O}_{t-1},t-p}^\top)^\top
 \end{align}
 with $y_{\mathcal{O}_{t-1},t-j}$ denoting the value at time $t-j$ of the set of monthly variables observed at time $t-1$. The above formulation generalizes \eqref{eq:compact} in that it allows for any number of monthly variables to be missing at time $t$, but only those that are missing data are included in the state vector. As demonstrated by \cite{Ankargren2019}, this approach can lead to large gains when the simulation smoother is used for real-time data featuring an unbalanced dataset. For more details and explicit descriptions of the system matrices in \eqref{eq:adaptive}, see \cite{Ankargren2019}.
 
@@ -366,10 +366,10 @@ If the error covariance matrix is assumed to be constant, then by standard resul
 \subsubsection{Common stochastic volatility}
 Under the common stochastic volatility specification, the VAR can be transformed into a homoskedastic model given the volatility factor. The matrix $\Sigma$ can therefore be sampled from its conditional posterior distribution using standard results with parameters based on the transformed model, see \cite{Carriero2016,AnkargrenUnossonYang2019}.
 
-The posterior distributions of the volatility parameters $(\rho, \sigma^2)$ are truncated normal and inverse gamma, respectively. Sampling of the latent volatility is conducted using the auxiliary mixture approach developed by \cite{Kim1998}, where we use the sampler presented by \cite{McCausland2011} based on an extension of the implementation used in the \pkg{stochvol} package \citep{Kastner2016}.
+The posterior distributions of the volatility parameters $(\rho, \sigma^2)$ are truncated normal and inverse gamma, respectively. Sampling of the latent volatility is conducted using the auxiliary mixture approach developed by \cite{Kim1998}, where we use the sampler presented by \cite{McCausland2011} based on an extension of the implementation used in the \pkg{stochvol} package \citep{Kastner2016,Kastner2019}.
 
 \subsubsection{Factor stochastic volatility}
-If, instead, the factor stochastic volatility model is used to capture time-varying variances in the model, then we use an implementation adapted from the \pkg{factorstochvol} package \citep{Kastner2018} for obtaining a draw from the posterior of the volatilities, factors and the related parameters. The interested reader is referred to \cite{Kastner2017} for a thorough description of the methodology used by the \pkg{factorstochvol} package.
+If, instead, the factor stochastic volatility model is used to capture time-varying variances in the model, then we use an implementation adapted from the \pkg{factorstochvol} package \citep{Kastner2018,Hosszejni2019} for obtaining a draw from the posterior of the volatilities, factors and the related parameters. The interested reader is referred to \cite{Kastner2017} for a thorough description of the methodology used by the \pkg{factorstochvol} package.
 
 \subsubsection{Regression parameters}
 The conditional posterior distribution of the regression parameters is multivariate normal. Under the normal inverse Wishart prior, the covariance matrix of the vector of regression parameters features a Kronecker structure. A procedure that is more efficient than computing the posterior covariance and then sampling from the multivariate normal distribution is to use the matrix-normal form of the matrix of regression parameters directly. See the discussion and samplers in \cite{Karlsson2013,Carriero2016}.
@@ -400,22 +400,22 @@ y_{q, 3}\\
 x_{q, 2}\\
 x_{q, 1}\end{pmatrix}
 \end{align}
-For this reason, we partition $X$ into $(Y, Z)$ where $Z$ collects the \emph{inherently} missing observations, i.e. the first two missing monthly observations per quarter, and $Y$ all observed data. [In the example, $Y_{1:3}=y_{q,3}$ and $Z_{1:3}=(x_{q, 1}, x_{q, 2})$]. The marginal data density estimator derived by \cite{Schorfheide2015} is
+For this reason, we partition $X$ into $(Y, Z)$ where $Z$ collects the \emph{inherently} missing observations, i.e., the first two missing monthly observations per quarter, and $Y$ all observed data. [In the example, $Y_{1:3}=y_{q,3}$ and $Z_{1:3}=(x_{q, 1}, x_{q, 2})$]. The marginal data density estimator derived by \cite{Schorfheide2015} is
 \begin{align}
 \hat{p}(Y;\lambda_1, \lambda_3)=c \left[\frac{1}{R}\sum_{r=1}^R\frac{f(Z^{(r)}; \hat{\mu}_{Z}, \hat{\Sigma}_{Z}, \kappa)}{p(X^{(r)})}\right]^{-1},\label{eq:mddminn}
 \end{align}
 where $c$ is a constant accounting for the change of variables from $p(Y, Z)$ to $p(X)$. If we by $T_{q, i}$ denote the number of observations of the $i$th quarterly variable, then $\log c=\sum_{i=1}^{n_q}T_{q, i}\log(3)$. Furthermore, the density $f$ is a truncated normal distribution given as
 \begin{multline}
 f(x; \mu_x, \Sigma_x, \kappa)\\
-=\frac{1}{\kappa}\frac{|\Sigma_x|^{-1/2}}{2\pi^{n_x/2}}\exp\left\{-\frac{1}{2}(x-\hat{\mu}_x)'\Sigma_x^{-1}(x-\hat{\mu}_x)\right\}\\
-\times{I}\left\{(x-\hat{\mu}_x)'\Sigma_x^{-1}(x-\hat{\mu}_x) \leq \chi^2_{n_x}(\kappa)\right\}\label{eq:f},
+=\frac{1}{\kappa}\frac{|\Sigma_x|^{-1/2}}{2\pi^{n_x/2}}\exp\left\{-\frac{1}{2}(x-\hat{\mu}_x)^\top\Sigma_x^{-1}(x-\hat{\mu}_x)\right\}\\
+\times{I}\left\{(x-\hat{\mu}_x)^\top\Sigma_x^{-1}(x-\hat{\mu}_x) \leq \chi^2_{n_x}(\kappa)\right\}\label{eq:f},
 \end{multline}
 for $x$ a vector with $n_x$ elements and $\kappa\in(0, 1]$. The moments in the numerator term in \eqref{eq:mddminn} are
 \begin{align}
 \hat{\mu}_{Z}&=\frac{1}{R}\sum_{r=1}^R Z^{(r)}\\
-\hat{\Sigma}_{Z}&=\frac{1}{R}\sum_{r=1}^R Z^{(r)}Z^{(r)'}-\hat{\mu}_{Z}\hat{\mu}_{Z}'.
+\hat{\Sigma}_{Z}&=\frac{1}{R}\sum_{r=1}^R Z^{(r)}Z^{(r)^\top}-\hat{\mu}_{Z}\hat{\mu}_{Z}^\top.
 \end{align}
-The denominator term in \eqref{eq:mddminn} is the density of a matrix $t$ distribution with parameters $\operatorname{Mt}(W^{(r)}\underline{\Gamma},(I_T+ W^{(r)} \underline{\Xi}W^{(r)'})^{-1},\underline{S},\underline{\nu})$ (see \citealp{Karlsson2013} for the density and more details).
+The denominator term in \eqref{eq:mddminn} is the density of a matrix $t$ distribution with parameters $\operatorname{Mt}(W^{(r)}\underline{\Gamma},(I_T+ W^{(r)} \underline{\Xi}W^{(r)^\top})^{-1},\underline{S},\underline{\nu})$ (see \citealp{Karlsson2013} for the density and more details).
 
 Note that the marginal data density in \eqref{eq:mddminn} is a function of $(\lambda_1, \lambda_3)$ through the draws of $\Phi^{(r)}$, which in turn affect all other draws.
 
@@ -459,12 +459,11 @@ using draws $\{\Phi^{(r)}, \Sigma^{(r)}, X^{(r)}\}_{r=1}^R$ from the full Gibbs 
 The workflow promoted by the \pkg{mfbvar} package consists of three main steps. First, an object containing data, hyperparameters and settings is constructed. Second, the prior object is used as input to the main estimation function. Third, the results are processed. The purpose for disentangling the first and second steps is to separate specification from estimation, thereby making the calls in \proglang{R} easier to decipher.
 
 \subsection{Specification}
-
+\label{sec:spec}
 The main function for performing the first step is \code{set_prior}. Its arguments are listed in Table \ref{tab:overview}. The most important arguments are described below.
 \begin{itemize}
-\item \code{Y}: a matrix, data frame or tibble with the data. Quarterly variables should be in the final columns of \code{Y} and store quarterly observations in the final month of each quarter (and \code{NA} in the remaining cells). For full compatibility with plotting and post-processing functions, the column names should be meaningful variable names. Row names should be monthly dates formatted as \code{YYYY-MM-DD}. If \code{Y} is a data frame, a single non-numeric column is allowed to be included, which is then assumed to include the dates. The \pkg{mfbvar} package provides some support for single-frequency models in which no observations are missing; in this case, \code{freq} must be specified accordingly.
+\item \code{Y}: data input. Should be a list with components containing regularly spaced time series (that inherit from \code{ts} or \code{zooreg}). Names of variables are collected from the names of components that contain single time series. If a component stores multiple time series in a multivariate \code{ts} or \code{zooreg} object, then the names are instead collected from the corresponding column names. Monthly variables can only contain missing values at the end of the sample, and should precede quarterly variables in the list. Matrices in which quarterly variables are padded with \code{NA} and observations stored at the end of each quarter are also accepted, but then the frequency of each variable must be given in the argument \code{freq}. Tibbles and data frames can also be given as input, but require the same use of the \code{freq} argument. Both matrices and data frames should store dates (\code{YYYY-MM-DD}) as row names, or, for data frames, as a separate column. If the data input does not contain mixed frequencies, the \pkg{mfbvar} package provides some, but limited, support if no observations are missing.
 \item \code{aggregation}: the aggregation scheme, either \code{``average''} for the intra-quarterly average, or \code{``triangular''} for the triangular weighting used by \cite{Mariano2003}. The latter is typically used for modeling growth rates, and the former for log-levels; our experience, however, indicates that results tend to be relatively indifferent to the choice.
-\item \code{freq}: a character vector indicating the sampling frequency. Either \code{"m"} for monthly variables or \code{"q"} for quarterly variables.
 \item \code{prior_Pi_AR1}: a numeric vector providing the prior mean for the AR(1) parameters ($\underline{\gamma}$).
 \item \code{lambda1, lambda2, lambda3, lambda4}: one-dimensional numeric vectors providing the hyperparameters for overall tightness, cross-variable tightness, lag decay and intercept variance. The defaults are 0.2, 0.5, 1, and $10^4$, respectively. Note that \code{lambda2} is only used in the independent normal specification for $\Gamma$, which is only employed if the diffuse prior or a factor stochastic volatility model is used for $\Sigma$. The prior variance for the intercept, \code{lambda4}, is only used if the steady-state prior is not used.
 \item \code{prior_psi_mean, prior_psi_Omega}: numeric vector and matrix giving the prior mean and covariance of the steady-state parameters. If the deterministic component of the model includes more terms than a constant, the prior moments are for $\psi=\operatorname{vec}(\Psi)$ and this order should be respected. The package includes a helper function, \code{interval_to_moments}, for simplifying the specification of priors for the steady states. The function \code{interval_to_moments} takes a matrix of prior $100*(1-\alpha)$ \% intervals and returns the mean vector and covariance matrix needed for \code{set_prior}.
@@ -481,7 +480,6 @@ Category&Argument & Description & Default & \code{``minn''} & \code{``ss''} & \c
 \hline
 General&\code{Y} & data & & \checkmark&\checkmark & \checkmark&\checkmark&\checkmark&\checkmark & \checkmark\\
 &\code{aggregation} & aggregation scheme & \code{``average''} & \checkmark&\checkmark & \checkmark&\checkmark&\checkmark & \checkmark&\checkmark\\
-&\code{freq} & frequencies of variables & &\checkmark&\checkmark & \checkmark&\checkmark&\checkmark & \checkmark&\checkmark \\
 &\code{prior_Pi_AR1} & $\underline{\gamma}$ in \eqref{eq:gamma} & 0 & \checkmark&\checkmark & \checkmark&\checkmark&\checkmark & \checkmark&\checkmark\\
 &\code{lambda1} & overall tightness; $\lambda_1$ in \eqref{eq:xi} & 0.2 & \checkmark&\checkmark & \checkmark&\checkmark&\checkmark & \checkmark&\checkmark\\
 &\code{lambda2} & cross-var shrinkage; $\lambda_2$ in \eqref{eq:xi} & 0.5 & \checkmark&\checkmark&\checkmark &&\checkmark & &\checkmark\\
@@ -491,8 +489,9 @@ General&\code{Y} & data & & \checkmark&\checkmark & \checkmark&\checkmark&\check
 &\code{n_lags} & number of lags ($p$) & & \checkmark&\checkmark & \checkmark&\checkmark&\checkmark & \checkmark&\checkmark\\
 &\code{n_fcst} & number of forecasts & 0 &\checkmark&\checkmark&\checkmark&\checkmark &\checkmark & \checkmark&\checkmark\\
 &\code{n\_thin} & thinning frequency & 1&\checkmark&\checkmark&\checkmark&\checkmark &\checkmark & \checkmark&\checkmark\\
-&\code{n_burnin} & burn-in draws & & \checkmark&\checkmark& \checkmark&\checkmark&\checkmark & \checkmark&\checkmark\\
 &\code{n_reps} & main draws & & \checkmark&\checkmark&\checkmark&\checkmark&\checkmark & \checkmark&\checkmark\\
+&\code{n_burnin} & burn-in draws & \code{n_reps} & \checkmark&\checkmark& \checkmark&\checkmark&\checkmark & \checkmark&\checkmark\\
+&\code{freq} & frequencies of variables (if \code{Y} is matrix) & yes, if \code{Y} is list &\checkmark&\checkmark & \checkmark&\checkmark&\checkmark & \checkmark&\checkmark \\
 &\code{verbose}&progress bar in console & \code{FALSE}&\checkmark&\checkmark&\checkmark&\checkmark&\checkmark & \checkmark&\checkmark\\
 \hline
 SS & \code{d} & deterministc term && & \checkmark&\checkmark&\checkmark&\checkmark & \checkmark&\checkmark\\
@@ -541,10 +540,10 @@ The computational burden can be large for mixed-frequency VARs and special care 
 \begin{itemize}
 \item \code{simsm_adaptive}, \code{simsm_adaptive_univariate}: the adaptive simulation smoother presented by \cite{Ankargren2019}, and its extension with univariate filtering suggested by \cite{Ankargren2019b}
 \item \code{mvn_rue}, \code{mvn_rue_int}, \code{mvn_bcm}: procedures for sampling from multivariate normal posterior distributions using the algorithm by \cite{Rue2001}, the \cite{Rue2001} algorithm including non-zero means for the AR(1) parameters, and the \cite{Bhattacharya2016} algorithm
-\item \code{update\_csv}, \code{update\_fsv}, \code{update\_ssng}: functions for the sampling steps required for common stochastic volatility, factor stochastic volatility, and the hierarchical steady-state prior
+\item \code{update\_csv}, \code{update\_fsv}, \code{update\_ng}: functions for the sampling steps required for common stochastic volatility, factor stochastic volatility, and the hierarchical steady-state prior
 \end{itemize}
 
-The functions are available as header files in \code{mfbvar/inst/include} and can therefore easily be imported by other packages, see e.g. \citet[chap.~10]{Wickham2015}.
+The functions are available as header files in \code{mfbvar/inst/include} and can therefore easily be imported by other packages, see e.g., \citet[chap.~10]{Wickham2015}.
 
 
 
@@ -553,36 +552,52 @@ The functions are available as header files in \code{mfbvar/inst/include} and ca
 \section{Illustration} \label{sec:illustrations}
 To illustrate the basic funcionality of the \pkg{mfbvar} package we here estimate mixed-frequency Bayesian VAR models on US data. The data can be retrieved from the ALFRED database provided by the Federal Reserve Bank of St. Louis through the \pkg{alfred} package \citep{Kleen2018}. The model we will use includes inflation and unemployment, which are published monthly, and GDP growth, which is published quarterly.
 <<message = FALSE>>=
-library("purrr")
 library("dplyr")
 library("ggplot2")
 library("alfred")
 
 variables <- c("CPIAUCSL", "UNRATE", "GDPC1")
-out <- map(variables, get_alfred_series,
+out <- lapply(variables, get_alfred_series,
            observation_start = "1980-01-01",
            observation_end = "2018-11-01",
            realtime_start = "2018-12-10",
            realtime_end = "2018-12-10")
+
 @
 
-The data start in January 1980 and we retrieve the vintage available on December 10, 2018. The \pkg{mfbvar} package expects data to be provided in a data frame or a matrix. Each row represents a month, and quarterly variables should store observations on the final month of each quarter and \code{NA} elsewhere. The data obtained from FRED needs two adjustments before being used by \pkg{mfbvar}. First, quarterly GDP is stored on the first month of each quarter and needs to be moved to the end of the quarter for compatibility with \pkg{mfbvar}. The observed date of GDP is therefore shifted by two months.
+The data start in January 1980 and we retrieve the vintage available on December 10, 2018. For correctly identifying monthly and quarterly data, the \pkg{mfbvar} package expects data to be provided in a list. Each component should contain regularly spaced time series that inherit from class \code{ts} \citep{R2019} or \code{zooreg} \citep{Zeileis2005}, see Section \ref{sec:spec}. Multiple time series sampled at the same frequency can either be stored together in a single component, or separately in individual components. 
+
+To transform the data obtained from \pkg{alfred} into a form compatible with \pkg{mfbvar}, we create a helper function to aid in preparing the time series:
 <<>>=
-out[[3]]$date <- out[[3]]$date + months(2)
-@
-Second, consumer price index and real GDP need to be transformed into annualized growth rates.
-<<>>=
-log_diff <- function(x, lag = 1) {
-  c(rep(NA, lag), 1200/lag * diff(log(x), lag = lag))
+alfred_to_ts <- function(x, freq) {
+  ts(x[, 3],
+     start = c(1980, 1),
+     frequency = freq)
 }
 
-mf_df <- reduce(out, full_join, by = c("date", "realtime_period")) %>%
-  mutate(CPIAUCSL = log_diff(CPIAUCSL),
-         GDPC1 = log_diff(GDPC1, lag = 3)) %>%
-  filter(date >= "1980-04-01") %>%
-  select(-realtime_period)
+mf_list <- mapply(alfred_to_ts, x = out, freq = c(12, 12, 4))
+names(mf_list) <- variables
+@
+The list \code{mf\_list} is now of a form that \pkg{mfbvar} understands. However, the steady-state prior requires a stable VAR model, and so we need to transform consumer price index and real GDP into growth rates. To this end, we use the annualized log-difference of the variables.
+<<>>=
+log_diff <- function(x) {
+  freq <- frequency(x)
+  100 * freq * diff(log(x))
+}
 
-tail(mf_df)
+mf_list[c("CPIAUCSL", "GDPC1")] <- 
+  lapply(mf_list[c("CPIAUCSL", "GDPC1")], log_diff)
+@
+
+Finally, we trim the beginning of the sample so that the series do not start with missing values.
+<<>>=
+mf_list <- mapply(window, x = mf_list, 
+                  start = list(c(1980, 4), c(1980, 4), c(1980, 2)))
+@
+
+The data object provided to \pkg{mfbvar} is thus a list of three \code{ts} time series of different frequencies and lengths.
+<<>>=
+str(mf_list, vec.len = 2)
 @
 
 With the data in place, the workflow of the package next requires the user to first specify an object containing all the prior information, and then calling the main function to estimate the model.
@@ -591,8 +606,7 @@ With the data in place, the workflow of the package next requires the user to fi
 To create an initial, minimal prior we call \code{set_prior()} with the following arguments:
 <<>>=
 library("mfbvar")
-prior <- set_prior(Y = mf_df, freq = c("m", "m", "q"),
-                   n_lags = 4, n_burnin = 1000, n_reps = 1000)
+prior <- set_prior(Y = mf_list, n_lags = 4, n_reps = 1000)
 @
 
 The \code{print} method for the prior displays what model specifications can be used with the provided information.
@@ -629,7 +643,7 @@ The argument \code{d} should generally be a matrix, but because intercept-only a
 plot(prior)
 @
 
-We will next make forecasts 24 months ahead and must therefore update the prior to accomodate this request. The argument \code{n_fcst} takes the number of forecasts desired in terms of months, i.e. \code{n_fcst = 24} corresponds to two years.
+We will next make forecasts 24 months ahead and must therefore update the prior to accomodate this request. The argument \code{n_fcst} takes the number of forecasts desired in terms of months, i.e., \code{n_fcst = 24} corresponds to two years.
 <<>>=
 prior <- update_prior(prior, n_fcst = 24)
 @

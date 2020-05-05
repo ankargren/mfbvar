@@ -5,7 +5,7 @@
 #'
 #' @param x argument to dispatch on (of class \code{prior_obj})
 #' @param ... additional named arguments passed on to the methods
-
+#' @noRd
 mcmc_sampler <- function(x, ...) {
   UseMethod("mcmc_sampler")
 }

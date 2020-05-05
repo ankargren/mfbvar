@@ -37,8 +37,6 @@ test_that("Forecasts (minn)", {
   mod_minn <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", n_fcst = 12,
                               Y = Y)
   expect_error(plot(mod_minn))
-  expect_error(plot(mod_minn, fcst_start = "2016-01-01"), NA)
-  expect_error(plot(mod_minn, fcst_start = "2016-01-01", plot_start = "2013-07-01"), NA)
 })
 
 test_that("Forecasts (ss)", {
@@ -76,8 +74,6 @@ test_that("Forecasts (ss)", {
   set.seed(10)
   mod_ss <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss", Y = Y)
   expect_error(plot(mod_ss))
-  expect_error(plot(mod_ss, fcst_start = "2016-01-01"), NA)
-  expect_error(plot(mod_ss, fcst_start = "2016-01-01", plot_start = "2013-07-01"), NA)
 })
 
 test_that("Prior", {

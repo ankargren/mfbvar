@@ -15,6 +15,7 @@
 #' @templateVar n_reps TRUE
 #' @template man_template
 #' @keywords internal
+#' @noRd
 #' @return The return is:
 #' \item{evals}{A vector with the evaulations.}
 #'
@@ -70,6 +71,7 @@ eval_Pi_Sigma_RaoBlack <- function(Z_array, d, post_psi_center, post_Pi_center, 
 #' @templateVar n_reps TRUE
 #' @template man_template
 #' @keywords internal
+#' @noRd
 #' @return The return is:
 #' \item{evals}{A vector with the evaulations.}
 #'

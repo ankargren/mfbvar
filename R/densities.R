@@ -9,6 +9,7 @@
 #' @templateVar S TRUE
 #' @templateVar v TRUE
 #' @keywords internal
+#' @noRd
 #' @template man_template
 #' @return
 #' For \code{dnorminvwish}: the evaluated density.\\n
@@ -32,6 +33,7 @@ dnorminvwish <- function(X, Sigma, M, P, S, v) {
 #' @template man_template
 #' @inherit dnorminvwish
 #' @keywords internal
+#' @noRd
 #' @return
 #' For \code{dmultn}: the evaluated density.\\n
 #' For \code{rmultn}: \eqn{p} random numbers.
@@ -49,6 +51,7 @@ dmultn <- function(x, m, Sigma) {
 #' @templateVar chisq_val TRUE
 #' @template man_template
 #' @keywords internal
+#' @noRd
 #' @inherit dmultn
 dnorm_trunc <- function(x, m, V_inv, d, p_trunc, chisq_val) {
   qf <- t(x - m) %*% V_inv %*% (x - m)
@@ -65,6 +68,7 @@ dnorm_trunc <- function(x, m, V_inv, d, p_trunc, chisq_val) {
 #' @param v degrees of freedom
 #' @keywords internal
 #' @inherit dmultn
+#' @noRd
 #' @references Karlsson, S. (2013) Forecasting with Bayesian Vector Autoregression.
 #' In Elliott, G. and Timmermann, A., editors, \emph{Handbook of Economic Forecasting},
 #' volume 2, chapter 15, pp. 791-897. Elsevier B.V.

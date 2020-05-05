@@ -9,7 +9,7 @@ estimate_mfbvar(mfbvar_prior = NULL, prior, variance = "iw", ...)
 \arguments{
 \item{mfbvar_prior}{a \code{mfbvar_prior} object}
 
-\item{prior}{either \code{"ss"} (steady-state prior) or \code{"minn"} (Minnesota prior)}
+\item{prior}{either \code{"ss"} (steady-state prior), \code{"ssng"} (hierarchical steady-state prior with normal-gamma shrinkage) or \code{"minn"} (Minnesota prior)}
 
 \item{variance}{form of the error variance-covariance matrix: \code{"iw"} for the inverse Wishart prior, \code{"diffuse"} for a diffuse prior, \code{"csv"} for common stochastic volatility or \code{"fsv"} for factor stochastic volatility}
 
@@ -54,14 +54,13 @@ If \code{variance = "fsv"}, it also includes:
 The main function for estimating a mixed-frequency BVAR.
 }
 \examples{
-prior_obj <- set_prior(Y = mf_sweden, freq = c(rep("m", 4), "q"),
-                       n_lags = 4, n_burnin = 20, n_reps = 20)
+prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 20)
 mod_minn <- estimate_mfbvar(prior_obj, prior = "minn")
 }
 \references{
-Ankargren, S., Unosson, M., & Yang, Y. (2019) A Flexible Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. Manuscript.\cr
+Ankargren, S., Unosson, M., & Yang, Y. (2019) A Flexible Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. arXiv:1911.09151, \url{https://arxiv.org/abs/1911.09151}.\cr
 Ankargren, S., & Jonéus, P. (2019) Simulation Smoothing for Nowcasting with Large Mixed-Frequency VARs. arXiv:1907.01075, \url{http://arxiv.org/abs/1907.01075}.\cr
-Ankargren, S., & Jonéus, P. (2019) Estimating Large Mixed-Frequency Bayesian VAR Models. Manuscript.\cr
+Ankargren, S., & Jonéus, P. (2019) Estimating Large Mixed-Frequency Bayesian VAR Models. arXiv:1912.02231, \url{https://arxiv.org/abs/1912.02231}.\cr
 Kastner, G., & Huber, F. (2018) Sparse Bayesian Vector Autoregressions in Huge Dimensions. arXiv:1704.03239, \url{http://arxiv.org/abs/1704.03239}.\cr
 Schorfheide, F., & Song, D. (2015) Real-Time Forecasting With a Mixed-Frequency VAR. \emph{Journal of Business & Economic Statistics}, 33(3), 366--380. \url{http://dx.doi.org/10.1080/07350015.2014.954707}\cr
 }

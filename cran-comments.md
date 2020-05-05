@@ -8,9 +8,10 @@ This is a minor update. In this version I
  environments
 * Local OS X Mojave 10.14.3, R 3.6.0
 * ubuntu 14.04 
- (on travis-ci), R 3.6.2
+ (on travis-ci), R 3.6.3
 * OS X El Capitan 10.13.6 
- (on travis-ci), R 3.6.2
+ (on travis-ci), R 3.6.3
+ * win-builder (R devel)
 
 ## R CMD check results
 There were no ERRORs or WARNINGs. 

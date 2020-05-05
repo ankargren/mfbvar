@@ -2,8 +2,7 @@
 #'
 #' The function creates an object storing all information needed for estimating a mixed-frequency BVAR. The object includes data as well as details for the model and its priors.
 #'
-#' @param Y matrix or data frame with data with quarterly variables stored in the final columns. For full compatibility with plot and predict functions, \code{Y} should contain monthly \code{YYYY-MM-DD} dates, either as a separate column or as row names. Data points for quarterly variables should be stored at the end of each quarter with \code{NA} otherwise.
-#' @templateVar freq TRUE
+#' @param Y data input. Should be a list with components containing regularly spaced time series (that inherit from \code{ts} or \code{zooreg}). If a component contains a single time series, the component itself must be named. If a component contains multiple time series, each time series must be named. Monthly variables can only contain missing values at the end of the sample, and should precede quarterly variables in the list. Matrices in which quarterly variables are padded with \code{NA} and observations stored at the end of each quarter are also accepted, but then the frequency of each variable must be given in the argument \code{freq}.
 #' @param aggregation the aggregation scheme used for relating latent monthly series to their quarterly observations. The default is \code{"average"} for averaging over the monthly observations within each quarter. The alternative is \code{"triangular"} is to use the Mariano-Murasawa triangular set of weights. See details for more information.
 #' @templateVar prior_Pi_AR1 TRUE
 #' @templateVar lambda1 TRUE
@@ -18,6 +17,7 @@
 #' @templateVar n_reps TRUE
 #' @param d (Steady state only) Either a matrix with same number of rows as \code{Y} and \code{n_determ} number of columns containing the deterministic terms or a string \code{"intercept"} for requesting an intercept as the only deterministic
 #' term.
+#' @templateVar freq TRUE
 #' @param d_fcst (Steady state only) The deterministic terms for the forecasting period (not used if \code{d = "intercept"}).
 #' @param prior_psi_mean (Steady state only) Vector of length \code{n_determ*n_vars} with the prior means of the steady-state parameters.
 #' @param prior_psi_Omega (Steady state only) Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.#'
@@ -28,7 +28,6 @@
 #' @param prior_sigma2 (Only used with common stochastic volatility) Vector with two elements \code{c(mean, df)} for the innovation variance of the log-volatility regression
 #' @param n_fac (Only used with factor stochastic volatility) Number of factors to use for the factor stochastic volatility model
 #' @param n_cores (Only used with factor stochastic volatility) Number of cores to use for drawing regression parameters in parallel
-#' @param a (Only used with the Dirichlet-Laplace prior) Shrinkage hyperparameter a (lower values impose more powerful shrinkage)
 #' @param ... (Only used with factor stochastic volatility) Arguments to pass along to \code{\link[factorstochvol]{fsvsample}}. See details.
 #' @templateVar verbose TRUE
 #' @template man_template
@@ -63,18 +62,17 @@
 #'
 
 #' @examples
-#' prior_obj <- set_prior(Y = mf_sweden, freq = c(rep("m", 4), "q"),
-#'                        n_lags = 4, n_burnin = 100, n_reps = 100)
+#' prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 100)
 #' prior_obj <- update_prior(prior_obj, n_fcst = 4)
 #' @seealso \code{\link{estimate_mfbvar}}, \code{\link{update_prior}}, \code{\link{interval_to_moments}}, \code{\link{print.mfbvar_prior}}, \code{\link{summary.mfbvar_prior}}, \code{\link[factorstochvol]{fsvsample}}
-set_prior <- function(Y, freq, aggregation = "average", prior_Pi_AR1 = rep(0, ncol(Y)), lambda1 = 0.2,
+set_prior <- function(Y, aggregation = "average", prior_Pi_AR1 = 0, lambda1 = 0.2,
                       lambda2 = 0.5, lambda3 = 1, lambda4 = 10000, block_exo = NULL, n_lags,
-                      n_fcst = 0, n_thin = 1, n_burnin, n_reps, d = NULL, d_fcst = NULL,
+                      n_fcst = 0, n_thin = 1, n_reps, n_burnin = n_reps, freq = NULL, d = NULL, d_fcst = NULL,
                       prior_psi_mean = NULL, prior_psi_Omega = NULL, check_roots = FALSE,
                       s = -1000, prior_ng = c(0.01, 0.01),
                       prior_phi = c(0.9, 0.1),
                       prior_sigma2 = c(0.01, 4), n_fac = NULL,
-                      n_cores = 1, a = 1/(ncol(Y)^2*n_lags), verbose = FALSE, ...) {
+                      n_cores = 1, verbose = FALSE, ...) {
   prior_call <- mget(names(formals())[names(formals()) != "..."], sys.frame(sys.nframe()))
   prior_call$supplied_args <- names(as.list(match.call()))[-1]
   ellipsis <- list(...)
@@ -90,7 +88,6 @@ set_prior <- function(Y, freq, aggregation = "average", prior_Pi_AR1 = rep(0, nc
   return(ret)
 }
 #' @rdname set_prior
-#'
 #' @param prior_obj an object of class \code{mfbvar_prior}
 update_prior <- function(prior_obj, ...) {
   if(!inherits(prior_obj, "mfbvar_prior")) {
@@ -108,13 +105,14 @@ update_prior <- function(prior_obj, ...) {
   return(prior_obj)
 }
 
-
-#' @rdname set_prior
 check_prior <- function(prior_obj) {
   if (!is.matrix(prior_obj$Y)) {
-    if (!is.data.frame(prior_obj$Y)) {
-      stop(paste0("Y is of class ", class(prior_obj$Y), ", but must be matrix or data frame."))
-    } else {
+    if (inherits(prior_obj$Y, "list")) {
+      list_conv <- list_to_matrix(prior_obj$Y)
+      prior_obj$Y <- list_conv[[1]]
+      prior_obj$freq <- list_conv[[2]]
+      prior_obj$supplied_args <- c(prior_obj$supplied_args, "freq")
+    } else if (is.data.frame(prior_obj$Y)) {
       col_class <- sapply(prior_obj$Y, class)
       if (all(col_class == "numeric")) {
         prior_obj$Y <- as.matrix(prior_obj$Y)
@@ -136,6 +134,8 @@ check_prior <- function(prior_obj) {
       else {
         stop(sprintf("The data frame contains %d non-numeric columns. Please include at most one non-numeric column that can be coerced to dates.", sum(!(col_class == "numeric"))))
       }
+    } else {
+      stop(paste0("Y is of class ", class(prior_obj$Y), ", but must be matrix, data frame/tibble or a list of ts or zooreg objects."))
     }
   } else {
     if (is.null(rownames(prior_obj$Y))) {
@@ -360,21 +360,18 @@ check_prior <- function(prior_obj) {
     }
   }
 
-
-  if ("n_burnin" %in% prior_obj$supplied_args) {
-    if (!is.atomic(prior_obj$n_burnin) || length(prior_obj$n_burnin) > 1) {
-      stop("n_burnin must be a vector with a single element.")
-    }
-  } else {
-    stop("n_burnin: Number of burn-in draws to use not specified.\n")
-  }
-
   if ("n_reps" %in% prior_obj$supplied_args) {
     if (!is.atomic(prior_obj$n_reps) || length(prior_obj$n_reps) > 1) {
       stop("n_reps must be a vector with a single element.")
     }
   } else {
     stop("n_reps: Number of draws to use in main chain not specified.\n")
+  }
+
+  if (!is.atomic(prior_obj$n_burnin) || length(prior_obj$n_burnin) > 1) {
+    stop("n_burnin must be a vector with a single element.")
+  } else if (!("n_burnin" %in% prior_obj$supplied_args)) {
+    prior_obj$supplied_args <- c(prior_obj$supplied_args, "n_burnin")
   }
 
   if (!is.logical(prior_obj$check_roots)) {
@@ -508,8 +505,7 @@ check_prior <- function(prior_obj) {
 #'   requires additional information).
 #' @seealso \code{\link{set_prior}}, \code{\link{update_prior}}, \code{\link{estimate_mfbvar}}, \code{\link{summary.mfbvar_prior}}
 #' @examples
-#' prior_obj <- set_prior(Y = mf_sweden, freq = c(rep("m", 4), "q"),
-#'                        n_lags = 4, n_burnin = 100, n_reps = 100)
+#' prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 100)
 #' print(prior_obj)
 print.mfbvar_prior <- function(x, ...) {
   cat("The following elements of the prior object have not been set: \n", names(sapply(x, is.null))[sapply(x, is.null)])
@@ -558,6 +554,8 @@ print.mfbvar_prior <- function(x, ...) {
   } else {
     cat("FALSE\n Missing element: n_fac \n\n")
   }
+
+  cat("\n")
 }
 
 #' Summary method for mfbvar_prior
@@ -568,8 +566,7 @@ print.mfbvar_prior <- function(x, ...) {
 #' @param ... additional arguments (currently unused)
 #' @seealso \code{\link{set_prior}}, \code{\link{update_prior}}, \code{\link{estimate_mfbvar}}, \code{\link{print.mfbvar_prior}}
 #' @examples
-#' prior_obj <- set_prior(Y = mf_sweden, freq = c(rep("m", 4), "q"),
-#'                        n_lags = 4, n_burnin = 100, n_reps = 100)
+#' prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 100)
 #' summary(prior_obj)
 summary.mfbvar_prior <- function(object, ...) {
   cat("PRIOR SUMMARY\n")
@@ -665,7 +662,7 @@ summary.mfbvar_prior <- function(object, ...) {
 #' The main function for estimating a mixed-frequency BVAR.
 #'
 #' @param mfbvar_prior a \code{mfbvar_prior} object
-#' @param prior either \code{"ss"} (steady-state prior) or \code{"minn"} (Minnesota prior)
+#' @param prior either \code{"ss"} (steady-state prior), \code{"ssng"} (hierarchical steady-state prior with normal-gamma shrinkage) or \code{"minn"} (Minnesota prior)
 #' @param variance form of the error variance-covariance matrix: \code{"iw"} for the inverse Wishart prior, \code{"diffuse"} for a diffuse prior, \code{"csv"} for common stochastic volatility or \code{"fsv"} for factor stochastic volatility
 #' @param ... additional arguments to \code{update_prior} (if \code{mfbvar_prior} is \code{NULL}, the arguments are passed on to \code{set_prior})
 #' @return
@@ -705,11 +702,8 @@ summary.mfbvar_prior <- function(object, ...) {
 #' @seealso \code{\link{set_prior}}, \code{\link{update_prior}}, \code{\link{predict.mfbvar}}, \code{\link{plot.mfbvar_minn}},
 #' \code{\link{plot.mfbvar_ss}}, \code{\link{varplot}}, \code{\link{summary.mfbvar}}
 #' @examples
-#' prior_obj <- set_prior(Y = mf_sweden, freq = c(rep("m", 4), "q"),
-#'                        n_lags = 4, n_burnin = 20, n_reps = 20)
+#' prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 20)
 #' mod_minn <- estimate_mfbvar(prior_obj, prior = "minn")
-#' @details
-#' Choosing \code{variance %in% c("iw", "csv")} imposes a symmetric prior on the regression parameters. For this reason, \code{prior = "dl"} can only be used together with \code{variance %in% c("diffuse", "fsv")}.
 #' @references
 #' Ankargren, S., Unosson, M., & Yang, Y. (2019) A Flexible Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. arXiv:1911.09151, \url{https://arxiv.org/abs/1911.09151}.\cr
 #' Ankargren, S., & Jonéus, P. (2019) Simulation Smoothing for Nowcasting with Large Mixed-Frequency VARs. arXiv:1907.01075, \url{http://arxiv.org/abs/1907.01075}.\cr
@@ -748,7 +742,7 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
     stop("The Dirichlet-Laplace prior (dl) can only be used with variance specifications fsv and diffuse.")
   }
 
-  class(mfbvar_prior) <- c(class(mfbvar_prior), sprintf("mfbvar_%s_%s", prior, variance), sprintf("mfbvar_%s", prior), sprintf("mfbvar_%s", variance))
+  class(mfbvar_prior) <- c(sprintf("mfbvar_%s_%s", prior, variance), sprintf("mfbvar_%s", prior), sprintf("mfbvar_%s", variance), class(mfbvar_prior))
 
   time_out <- c(time_out, Sys.time())
   main_run <-  mcmc_sampler(mfbvar_prior)
@@ -839,8 +833,7 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
 #' @param ... Currently not in use.
 #' @template man_template
 #' @examples
-#' prior_obj <- set_prior(Y = mf_sweden[, 4:5], d = "intercept",
-#'                        freq = c("m", "q"), n_lags = 4, n_burnin = 20, n_reps = 20)
+#' prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 20)
 #' mod_minn <- estimate_mfbvar(prior_obj, prior = "minn")
 #' mod_minn
 
@@ -858,6 +851,7 @@ print.mfbvar <- function(x, ...){
              x$n_lags, " lags\n",
              nrow(x$Y), " time periods", ifelse(!is.null(x$names_row), paste0(" (", x$names_row[1], " - ", x$names_row[length(x$names_row)], ")"), " "), "\n", ifelse(is.null(x$n_fcst), "0", x$n_fcst), " periods forecast\n",
              x$n_reps, " draws used in main chain"))
+  cat("\n")
 }
 
 #' Summary method for class mfbvar
@@ -868,8 +862,7 @@ print.mfbvar <- function(x, ...){
 #' @param ... Currently not in use.
 #' @template man_template
 #' @examples
-#' prior_obj <- set_prior(Y = mf_sweden[, 4:5], d = "intercept",
-#'                        freq = c("m", "q"), n_lags = 4, n_burnin = 20, n_reps = 20)
+#' prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 20)
 #' mod_minn <- estimate_mfbvar(prior_obj, prior = "minn")
 #' summary(mod_minn)
 
@@ -881,7 +874,6 @@ summary.mfbvar <- function(object, ...){
 #'
 #' Methods for plotting posterior mfbvar objects.
 #' @param x object of class \code{mfbvar_minn} or \code{mfbvar_ss}
-#' @param fcst_start Date of the first forecast; if dates are available for the data used for obtaining \code{x}, these will be used.
 #' @param aggregate_fcst Boolean indicating whether forecasts of the latent monthly series should be aggregated to the quarterly frequency.
 #' @param plot_start Time period (date or number) to start plotting from. Default is to to use \code{5*n_fcst} time periods if \code{n_fcst} exists, otherwise the entire sample.
 #' @param variables Vector of names or positions of variables to include in the plot of variances
@@ -892,12 +884,13 @@ summary.mfbvar <- function(object, ...){
 #' @param ... Currently not in use.
 #' @name plot-mfbvar
 #' @examples
-#' prior_obj <- set_prior(Y = mf_sweden[, 4:5], d = "intercept",
-#'                        freq = c("m", "q"), n_lags = 4, n_burnin = 20, n_reps = 20,
+#' prior_obj <- set_prior(Y = mf_usa, d = "intercept",
+#'                        n_lags = 4, n_reps = 20,
 #'                        n_fcst = 4, n_fac = 1)
 #'
-#' prior_intervals <- matrix(c(-0.1, 0.1,
-#'                             0.4, 0.6), ncol = 2, byrow = TRUE)
+#' prior_intervals <- matrix(c(1, 3,
+#'                             4, 8,
+#'                             1, 3), ncol = 2, byrow = TRUE)
 #' psi_moments <- interval_to_moments(prior_intervals)
 #' prior_psi_mean <- psi_moments$prior_psi_mean
 #' prior_psi_Omega <- psi_moments$prior_psi_Omega
@@ -910,22 +903,16 @@ summary.mfbvar <- function(object, ...){
 #' varplot(mod_ss)
 
 #' @rdname plot-mfbvar
-plot.mfbvar_ss <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_start = NULL,
+plot.mfbvar_ss <- function(x, aggregate_fcst = TRUE, plot_start = NULL,
                            pred_bands = 0.8, nrow_facet = NULL, ss_bands = 0.95, ...){
 
 
-  if (is.null(fcst_start)) {
-    row_names <- tryCatch(as.Date(rownames(x$Y)), error = function(cond) cond)
-    if (inherits(row_names, "error")) {
-      stop("To plot the forecasts, either fcst_start must be supplied or the rownames of Y be dates (YYYY-MM-DD).")
-    }
-    fcst_start <- lubridate::as_date(rownames(x$Y)[nrow(x$Y)]) %m+% months(1)
-  } else {
-    fcst_start <- tryCatch(as.Date(fcst_start), error = function(cond) cond)
-    if (inherits(fcst_start, "error")) {
-      stop("Unable to convert fcst_start to a date.")
-    }
+  row_names <- tryCatch(as.Date(rownames(x$Y)), error = function(cond) cond)
+  if (inherits(row_names, "error")) {
+    stop("To plot the forecasts, proper dates must be provided in the input data.")
   }
+  fcst_start <- lubridate::as_date(rownames(x$Y)[nrow(x$Y)]) %m+% months(1)
+
 
   plot_range_names <- fcst_start %m+% months(-nrow(x$Y):(-1))
 
@@ -988,7 +975,7 @@ plot.mfbvar_ss <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_sta
       geom_line(data = na.omit(ss), aes(y = value))
   }
   if (x$n_fcst > 0) {
-    preds <- predict(x, aggregate_fcst = aggregate_fcst, fcst_start = fcst_start, pred_bands = pred_bands)
+    preds <- predict(x, aggregate_fcst = aggregate_fcst, pred_bands = pred_bands)
     fcst <- preds
     last_pos <- apply(x$Y, 2, function(yy) max(which(!is.na(yy))))
     for (i in seq_along(last_pos)) {
@@ -1057,27 +1044,22 @@ plot.mfbvar_ss <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_sta
 }
 
 #' @rdname plot-mfbvar
-plot.mfbvar_ssng <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_start = NULL,
+plot.mfbvar_ssng <- function(x, aggregate_fcst = TRUE, plot_start = NULL,
                            pred_bands = 0.8, nrow_facet = NULL, ss_bands = 0.95, ...) {
-  plot.mfbvar_ss(x, fcst_start = fcst_start, aggregate_fcst = aggregate_fcst, plot_start = plot_start,
+  plot.mfbvar_ss(x, aggregate_fcst = aggregate_fcst, plot_start = plot_start,
                  pred_bands = pred_bands, nrow_facet = nrow_facet, ss_bands = ss_bands, ...)
 }
 
 #' @rdname plot-mfbvar
-plot.mfbvar_minn <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_start = NULL,
+plot.mfbvar_minn <- function(x, aggregate_fcst = TRUE, plot_start = NULL,
                              pred_bands = 0.8, nrow_facet = NULL, ...){
-  if (is.null(fcst_start)) {
-    row_names <- tryCatch(as.Date(rownames(x$Y)), error = function(cond) cond)
-    if (inherits(row_names, "error")) {
-      stop("To plot the forecasts, either fcst_start must be supplied or the rownames of Y be dates (YYYY-MM-DD).")
-    }
-    fcst_start <-lubridate::as_date(rownames(x$Y)[nrow(x$Y)]) %m+% months(1)
-  } else {
-    fcst_start <- tryCatch(as.Date(fcst_start), error = function(cond) cond)
-    if (inherits(fcst_start, "error")) {
-      stop("Unable to convert fcst_start to a date.")
-    }
+
+  row_names <- tryCatch(as.Date(rownames(x$Y)), error = function(cond) cond)
+  if (inherits(row_names, "error")) {
+    stop("To plot the forecasts, proper dates must be provided in the input data.")
   }
+  fcst_start <-lubridate::as_date(rownames(x$Y)[nrow(x$Y)]) %m+% months(1)
+
 
   plot_range_names <- fcst_start %m+% months(-nrow(x$Y):(-1))
 
@@ -1089,7 +1071,7 @@ plot.mfbvar_minn <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_s
       plot_range <- 1:nrow(x$Y)
     }
   } else {
-    plot_start <- tryCatch(as_date(plot_start), error = function(cond) cond)
+    plot_start <- tryCatch(lubridate::as_date(plot_start), error = function(cond) cond)
     if (!inherits(plot_start, "error")) {
       if (!(plot_start %in% plot_range_names)) {
         stop(sprintf("The start date, %s, does not match rownames in the data matrix Y.", plot_start))
@@ -1122,7 +1104,7 @@ plot.mfbvar_minn <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_s
     geom_line(data = na.omit(ss), aes(y = value))
 
   if (x$n_fcst > 0) {
-    preds <- predict(x, aggregate_fcst = aggregate_fcst, fcst_start = fcst_start, pred_bands = pred_bands)
+    preds <- predict(x, aggregate_fcst = aggregate_fcst, pred_bands = pred_bands)
     fcst <- preds
     last_pos <- apply(x$Y, 2, function(yy) max(which(!is.na(yy))))
     for (i in seq_along(last_pos)) {
@@ -1183,10 +1165,9 @@ plot.mfbvar_minn <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_s
     theme(axis.text.x=element_text(angle=45, hjust=1))
 }
 
-#' @rdname plot-mfbvar
-plot.mfbvar_dl <- function(x, fcst_start = NULL, aggregate_fcst = TRUE, plot_start = NULL,
+plot.mfbvar_dl <- function(x, aggregate_fcst = TRUE, plot_start = NULL,
                            pred_bands = 0.8, nrow_facet = NULL, ...) {
-  plot.mfbvar_minn(x, fcst_start = fcst_start, aggregate_fcst = aggregate_fcst, plot_start = plot_start,
+  plot.mfbvar_minn(x, aggregate_fcst = aggregate_fcst, plot_start = plot_start,
                    pred_bands = pred_bands, nrow_facet = nrow_facet, ...)
 }
 
@@ -1256,39 +1237,30 @@ varplot <- function(x, variables = colnames(x$Y), var_bands = 0.95, nrow_facet =
 #' Method for predicting \code{mfbvar} objects.
 #'
 #' @param object object of class mfbvar
-#' @param fcst_start The date (\code{YYYY-MM-DD}) of the first forecast. If not provided, dates from the original data is used if available.
 #' @param aggregate_fcst If forecasts of quarterly variables should be aggregated back to the quarterly frequency.
 #' @param pred_bands The level of the probability bands for the forecasts.
 #' @param ... Currently not in use.
 #' @details Note that this requires that forecasts were made in the original \code{mfbvar} call.
 #' @examples
-#' prior_obj <- set_prior(Y = mf_sweden[, 4:5], freq = c("m", "q"),
-#'                        n_lags = 4, n_burnin = 20, n_reps = 20, n_fcst = 4)
+#' prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 20, n_fcst = 4)
 #' mod_minn <- estimate_mfbvar(prior_obj, prior = "minn")
 #' predict(mod_minn)
-predict.mfbvar <- function(object, fcst_start = NULL, aggregate_fcst = TRUE, pred_bands = 0.8, ...) {
+predict.mfbvar <- function(object, aggregate_fcst = TRUE, pred_bands = 0.8, ...) {
 
   end_month <- FALSE
   if (object$n_fcst==0) {
     stop("No forecasts exist in the provided object.")
   }
-  if (!is.null(fcst_start)) {
-    fcst_start <- as.Date(fcst_start)
-    if (lubridate::days_in_month(fcst_start) == lubridate::day(fcst_start)) {
-      end_month <- TRUE
-    }
-  }
+
   if (object$n_fcst > 0) {
-    if (!inherits(fcst_start, "Date")) {
-      tmp <- tryCatch(lubridate::ymd(rownames(object$Y)[nrow(object$Y)]), warning = function(cond) cond)
-      if (inherits(tmp, "warning")) {
-        stop("To summarize the forecasts, either fcst_start must be supplied or the rownames of Y be dates (YYYY-MM-DD).")
-      } else {
-        final_est <- lubridate::ymd(rownames(object$Y)[nrow(object$Y)])
-        fcst_start <- final_est %m+% months(1)
-        if (lubridate::days_in_month(final_est) == lubridate::day(final_est)) {
-          end_month <- TRUE
-        }
+    tmp <- tryCatch(lubridate::ymd(rownames(object$Y)[nrow(object$Y)]), warning = function(cond) cond)
+    if (inherits(tmp, "warning")) {
+      stop("To summarize the forecasts, proper dates must be provided in the input data.")
+    } else {
+      final_est <- lubridate::ymd(rownames(object$Y)[nrow(object$Y)])
+      fcst_start <- final_est %m+% months(1)
+      if (lubridate::days_in_month(final_est) == lubridate::day(final_est)) {
+        end_month <- TRUE
       }
     }
   }
@@ -1411,33 +1383,25 @@ predict.mfbvar <- function(object, fcst_start = NULL, aggregate_fcst = TRUE, pre
   return(fcst_collapsed)
 }
 
-predict.sfbvar <- function(object, fcst_start = NULL, pred_bands = 0.8, ...) {
+predict.sfbvar <- function(object, pred_bands = 0.8, ...) {
   end_period <- FALSE
   sf_type <- unique(object$mfbvar_prior$freq)
   if (object$n_fcst==0) {
     stop("No forecasts exist in the provided object.")
   }
-  if (!is.null(fcst_start)) {
-    fcst_start <- as.Date(fcst_start)
-    if (lubridate::days_in_month(fcst_start) == lubridate::day(fcst_start)) {
-      end_period <- TRUE
-    }
-  }
   if (object$n_fcst > 0) {
-    if (!inherits(fcst_start, "Date")) {
-      tmp <- tryCatch(lubridate::ymd(rownames(object$Y)[nrow(object$Y)]), warning = function(cond) cond)
-      if (inherits(tmp, "warning")) {
-        stop("To summarize the forecasts, either fcst_start must be supplied or the rownames of Y be dates (YYYY-MM-DD).")
+    tmp <- tryCatch(lubridate::ymd(rownames(object$Y)[nrow(object$Y)]), warning = function(cond) cond)
+    if (inherits(tmp, "warning")) {
+      stop("To summarize the forecasts, proper dates must be provided in the input data.")
+    } else {
+      final_est <- lubridate::ymd(rownames(object$Y)[nrow(object$Y)])
+      if (sf_type == "m") {
+        fcst_start <- final_est %m+% months(1)
       } else {
-        final_est <- lubridate::ymd(rownames(object$Y)[nrow(object$Y)])
-        if (sf_type == "m") {
-          fcst_start <- final_est %m+% months(1)
-        } else {
-          fcst_start <- final_est %m+% months(3)
-        }
-        if (lubridate::days_in_month(final_est) == lubridate::day(final_est)) {
-          end_period <- TRUE
-        }
+        fcst_start <- final_est %m+% months(3)
+      }
+      if (lubridate::days_in_month(final_est) == lubridate::day(final_est)) {
+        end_period <- TRUE
       }
     }
   }
@@ -1498,8 +1462,7 @@ predict.sfbvar <- function(object, fcst_start = NULL, pred_bands = 0.8, ...) {
 #' @param ... Currently not in use.
 #' @details The function plots the data. If the prior moments for the steady-state parameters are available in \code{x}, these are included.
 #' @examples
-#' prior_obj <- set_prior(Y = mf_sweden[, 4:5], freq = c("m", "q"),
-#'                        n_lags = 4, n_burnin = 20, n_reps = 20, n_fcst = 4)
+#' prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 20, n_fcst = 4)
 #' plot(prior_obj)
 plot.mfbvar_prior <- function(x, nrow_facet = NULL, ...){
 

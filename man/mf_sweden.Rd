@@ -3,15 +3,17 @@
 \docType{data}
 \name{mf_sweden}
 \alias{mf_sweden}
-\title{Real-time data set.}
-\format{A mixed-frequency data set of five Swedish macroeconomic variables.
+\title{Real-time data set for Sweden.}
+\format{
+A mixed-frequency data set of five Swedish macroeconomic variables.
 \describe{
   \item{unemp}{harmonized unemployment rate (source: OECD)}
   \item{infl}{inflation rate (source: OECD)}
   \item{ip}{industrial production (source: OECD)}
   \item{eti}{economic tendency indicator (source: National Institute of Economic Research)}
   \item{gdp}{GDP growth (source: Statistics Sweden)}
-}}
+}
+}
 \usage{
 mf_sweden
 }

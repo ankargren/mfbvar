@@ -13,5 +13,6 @@ void update_csv(
     const double phi_meaninvvar,
     const double prior_sigma2,
     const double prior_df);
+
 #endif
 

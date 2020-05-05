@@ -21,8 +21,8 @@ void update_fsv(arma::mat & armafacload, arma::mat & armaf, arma::mat & armah,
                 const double a0fac, const double b0fac, const Rcpp::NumericVector & Bsigma,
                 const double B011inv, const double B022inv,
                 const Rcpp::NumericVector & priorh0, const arma::imat & armarestr) {
-
-
+  // The function uses a subset of what is used in factorstochvol, see its
+  // documentation for what each variable represents
 
   bool Gammaprior = true;
   bool truncnormal = false;

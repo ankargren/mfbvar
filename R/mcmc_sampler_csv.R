@@ -182,7 +182,9 @@ mcmc_sampler.mfbvar_minn_csv <- function(x, ...){
   mcmc_minn_csv(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,phi,sigma,f,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,
                         Omega_Pi,prior_Pi_mean,prior_S,Z_1,10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,
                         n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,n_thin,verbose)
-
+  if (verbose) {
+    cat("\n")
+  }
   return_obj <- list(Pi = Pi, Sigma = Sigma, Z = Z, phi = phi, sigma = sigma, f = f,
                      Z_fcst = NULL, aggregation = x$aggregation, n_lags = n_lags, n_vars = n_vars,
                      n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega,
@@ -439,7 +441,9 @@ mcmc_sampler.mfbvar_ss_csv <- function(x, ...) {
                        prior_S,D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,
                        10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,n_reps,n_burnin,n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,
                        verbose,FALSE)
-
+  if (verbose) {
+    cat("\n")
+  }
   return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z, phi = phi, sigma = sigma, f = f, roots = NULL, num_tries = NULL,
                      Z_fcst = NULL, aggregation = x$aggregation, n_determ = n_determ,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
@@ -718,7 +722,9 @@ mcmc_sampler.mfbvar_ssng_csv <- function(x, ...) {
   mcmc_ssng_csv(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,phi,sigma,f,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
                        prior_S,D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,
                        10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,n_reps,n_burnin,n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,TRUE)
-
+  if (verbose) {
+    cat("\n")
+  }
   return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z, phi_mu = phi_mu, lambda_mu = lambda_mu, omega = omega,
                      phi = phi, sigma = sigma, f = f, Z_fcst = NULL, aggregation = x$aggregation, n_determ = n_determ,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
