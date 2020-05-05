@@ -158,7 +158,9 @@ mcmc_sampler.mfbvar_minn_diffuse <- function(x, ...){
   mcmc_minn_diffuse(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,aux,global,local,slice,Lambda_,prior_Pi_Omega,
                              prior_Pi_mean_vec,Z_1,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,
                              n_thin,verbose,a,gig)
-
+  if (verbose) {
+    cat("\n")
+  }
 
   ################################################################
   ### Prepare the return object
@@ -368,7 +370,9 @@ mcmc_sampler.mfbvar_dl_diffuse <- function(x, ...){
   mcmc_minn_diffuse(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,aux,global,local,slice,Lambda_,prior_Pi_Omega,
                              prior_Pi_mean_vec,Z_1,n_reps,n_burnin,n_q,T_b,n_lags,n_vars,n_T_,n_fcst,
                              n_thin,verbose,a,gig)
-
+  if (verbose) {
+    cat("\n")
+  }
 
   ################################################################
   ### Prepare the return object
@@ -603,7 +607,9 @@ mcmc_sampler.mfbvar_ss_diffuse <- function(x, ...) {
   mcmc_ssng_diffuse(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu, lambda_mu, omega, Z,Z_fcst,Lambda_,prior_Pi_Omega,Omega_Pi,
                       D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,n_reps,n_burnin,
                       n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,FALSE)
-
+  if (verbose) {
+    cat("\n")
+  }
   ################################################################
   ### Prepare the return object
   return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z,
@@ -854,7 +860,9 @@ mcmc_sampler.mfbvar_ssng_diffuse <- function(x, ...) {
   mcmc_ssng_diffuse(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu, lambda_mu, omega, Z,Z_fcst,Lambda_,prior_Pi_Omega,Omega_Pi,
                            D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,n_reps,n_burnin,
                            n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,TRUE)
-
+  if (verbose) {
+    cat("\n")
+  }
   ################################################################
   ### Prepare the return object
   return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z, phi_mu = phi_mu, lambda_mu = lambda_mu, omega = omega,
