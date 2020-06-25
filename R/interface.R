@@ -184,19 +184,33 @@ check_prior <- function(prior_obj) {
   if ("freq" %in% prior_obj$supplied_args) {
     if (!(is.atomic(prior_obj$freq) && is.character(prior_obj$freq))) {
       stop("freq is of class ", class(prior_obj$freq), ", but it must be a character vector.")
-    } else if (!all(prior_obj$freq %in% c("m", "q"))) {
-      stop("Elements of freq must be 'm' or 'q'.")
+    } else if (!all(prior_obj$freq %in% c("w", "m", "q"))) {
+      stop("Elements of freq must be 'w', 'm' or 'q'.")
     } else if (length(prior_obj$freq) != ncol(prior_obj$Y)) {
       stop("The length of freq is ", length(prior_obj$freq), ", but Y has ", ncol(prior_obj$Y), " columns.")
-    } else if (which.max(prior_obj$freq == "m") > which.max(prior_obj$freq == "q")) {
-      stop("Monthly variables must be placed before quarterly variables.")
+    } else {
+
+      freq_pos <- c(
+        ifelse(any(prior_obj$freq == "q"), which.max(prior_obj$freq == "q"), NA),
+        ifelse(any(prior_obj$freq == "m"), which.max(prior_obj$freq == "m"), NA),
+        ifelse(any(prior_obj$freq == "w"), which.max(prior_obj$freq == "w"), NA)
+      )
+      freqs <- c("q", "m", "w")
+      freqs <- freqs[!is.na(freq_pos)]
+      if (length(freqs)>2) {
+        stop("mfbvar can currently only handle a mix of two frequencies.")
+      }
+      prior_obj$freqs <- freqs
+      if (diff(freq_pos[!is.na(freq_pos)])>0) {
+        stop("Variables must be placed in weekly-monthly-quarterly order.")
+      }
     }
   } else {
     stop("freq: must be supplied.")
   }
 
-  if ("m" %in% prior_obj$freq) {
-    if (min(unlist(apply(prior_obj$Y[, prior_obj$freq == "m", drop = FALSE], 2, function(x) Position(is.na, x, nomatch = 9999999999)))) == 1) {
+  if (freqs[-1] %in% prior_obj$freq) {
+    if (min(unlist(apply(prior_obj$Y[, prior_obj$freq %in% freqs[-1], drop = FALSE], 2, function(x) Position(is.na, x, nomatch = 9999999999)))) == 1) {
       stop("Y: monthly variables are NA at the beginning of the sample.")
     }
   }

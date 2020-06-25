@@ -1,3 +1,6 @@
+# mfbvar 0.5.4 (2020-05-14)
+* Changes to the main interface. Data can (and should) now be given as a list of `zooreg` or `ts` objects.
+
 # mfbvar 0.5.3 (2020-03-18)
 * Fixed a bug caused by the plotting functions
 

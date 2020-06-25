@@ -526,6 +526,7 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
   verbose <- x$verbose
   n_lags <- x$n_lags
   lambda4 <- x$lambda4
+  freqs <- x$freqs
 
   # Add terms for constant
   prior_Pi_Omega <- diag(c(x$lambda1^2*lambda4^2, diag(prior_Pi_Omega)))
@@ -546,9 +547,9 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
   # n_T: sample size (full sample)
   # n_T_: sample size (reduced sample)
 
-  n_q <- sum(freq == "q")
+  n_q <- sum(freq == freqs[1])
   if (n_q < n_vars) {
-    T_b <- max(which(!apply(apply(Y[, freq == "m", drop = FALSE], 2, is.na), 1, any)))
+    T_b <- max(which(!apply(apply(Y[, freq == freqs[2], drop = FALSE], 2, is.na), 1, any)))
   } else {
     T_b <- nrow(Y)
   }
@@ -556,13 +557,16 @@ mcmc_sampler.mfbvar_minn_iw <- function(x, ...){
     complete_quarters <- apply(Y, 1, function(x) !any(is.na(x)))
     Y <- Y[complete_quarters, ]
   }
-  if (n_q > 0) {
+  if (n_q > 0 && freqs[1] == "q") {
     if (x$aggregation == "average") {
       Lambda_ <- build_Lambda(rep("average", n_q), 3)
     } else {
       Lambda_ <- build_Lambda(rep("triangular", n_q), 5)}
-  } else {
+  } else if (n_q == 0) {
     Lambda_ <- matrix(0, 1, 3)
+  } else if (freqs[1] == "m") {
+    Lambda_ <- matrix(0.25, 1, 4)
+    Lambda_ <- kronecker(Lambda_, diag(n_q))
   }
 
   n_pseudolags <- max(c(n_lags, ncol(Lambda_)/nrow(Lambda_)))
