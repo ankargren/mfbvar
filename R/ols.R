@@ -7,7 +7,18 @@
 #' @return
 #' \item{pi_sample}{Estimated coefficients.}
 ols_pi <- function(X, Y) {
-  pi_sample <- solve(crossprod(X)) %*% crossprod(X, Y)
+  ridge <- 1e-6
+  error_count <- 0
+  fail <- TRUE
+  while (fail) {
+    pi_sample <- tryCatch({solve(crossprod(X)+diag(ridge, ncol(X))) %*% crossprod(X, Y)},
+                          error = function(cond) {cond})
+    if (!inherits(pi_sample, "error")) {
+      fail <- FALSE
+    } else {
+      ridge <- ridge*10
+    }
+  }
   return(pi_sample)
 }
 
