@@ -201,7 +201,7 @@ check_prior <- function(prior_obj) {
         stop("mfbvar can currently only handle a mix of two frequencies.")
       }
       prior_obj$freqs <- freqs
-      if (diff(freq_pos[!is.na(freq_pos)])>0) {
+      if (length(freq_pos[!is.na(freq_pos)])>1 && diff(freq_pos[!is.na(freq_pos)])>0) {
         stop("Variables must be placed in weekly-monthly-quarterly order.")
       }
     }
@@ -209,11 +209,16 @@ check_prior <- function(prior_obj) {
     stop("freq: must be supplied.")
   }
 
-  if (freqs[-1] %in% prior_obj$freq) {
-    if (min(unlist(apply(prior_obj$Y[, prior_obj$freq %in% freqs[-1], drop = FALSE], 2, function(x) Position(is.na, x, nomatch = 9999999999)))) == 1) {
-      stop("Y: monthly variables are NA at the beginning of the sample.")
-    }
+  if (length(freqs)>1) {
+      if (min(unlist(apply(prior_obj$Y[, prior_obj$freq %in% freqs[-1], drop = FALSE], 2, function(x) Position(is.na, x, nomatch = 9999999999)))) == 1) {
+        stop("Y: high-frequency variables are NA at the beginning of the sample.")
+      }
+  } else {
+      if (min(unlist(apply(prior_obj$Y, 2, function(x) Position(is.na, x, nomatch = 9999999999)))) == 1) {
+        stop("Y: monthly variables are NA at the beginning of the sample.")
+      }
   }
+
 
   if ("aggregation" %in% prior_obj$supplied_args) {
     if (is.atomic(prior_obj$aggregation)) {

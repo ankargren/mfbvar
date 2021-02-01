@@ -18,7 +18,7 @@ list_to_matrix <- function(Y_in) {
 
           }
         } else {
-          stop("The data must only include monthly and/or quarterly time series.")
+          stop("Time series objects can only include monthly and/or quarterly time series.")
         }
       }
 
@@ -37,7 +37,7 @@ list_to_matrix <- function(Y_in) {
             zoo::zoo(as.matrix(x), as.Date(zoo::as.Date(zoo::index(x))))
           }
         } else {
-          stop("The data must only include monthly and/or quarterly time series.")
+          stop("Time series objects can only include monthly and/or quarterly time series.")
         }
       }
     }
@@ -83,7 +83,7 @@ list_to_matrix <- function(Y_in) {
     if (all(zoolistfreq %in% c(4, 12))) {
       freq <- ifelse(zoolistfreq == 4, "q", "m")
     } else {
-      stop("Only monthly and quarterly frequencies are allowed.")
+      stop("Only monthly and quarterly frequencies are allowed as time series objects.")
     }
   } else {
 

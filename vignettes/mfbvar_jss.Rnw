@@ -551,7 +551,7 @@ The functions are available as header files in \code{mfbvar/inst/include} and ca
 
 \section{Illustration} \label{sec:illustrations}
 To illustrate the basic funcionality of the \pkg{mfbvar} package we here estimate mixed-frequency Bayesian VAR models on US data. The data can be retrieved from the ALFRED database provided by the Federal Reserve Bank of St. Louis through the \pkg{alfred} package \citep{Kleen2018}. The model we will use includes inflation and unemployment, which are published monthly, and GDP growth, which is published quarterly.
-<<message = FALSE>>=
+<<message = FALSE, eval = FALSE>>=
 library("dplyr")
 library("ggplot2")
 library("alfred")
@@ -565,7 +565,17 @@ out <- lapply(variables, get_alfred_series,
 
 @
 
-The data start in January 1980 and we retrieve the vintage available on December 10, 2018. For correctly identifying monthly and quarterly data, the \pkg{mfbvar} package expects data to be provided in a list. Each component should contain regularly spaced time series that inherit from class \code{ts} \citep{R2019} or \code{zooreg} \citep{Zeileis2005}, see Section \ref{sec:spec}. Multiple time series sampled at the same frequency can either be stored together in a single component, or separately in individual components. 
+<<message = FALSE, include = FALSE>>=
+library("dplyr")
+library("ggplot2")
+library("alfred")
+
+variables <- c("CPIAUCSL", "UNRATE", "GDPC1")
+load("alfred_data.RData")
+
+@
+
+The data start in January 1980 and we retrieve the vintage available on December 10, 2018. For correctly identifying monthly and quarterly data, the \pkg{mfbvar} package expects data to be provided in a list. Each component should contain regularly spaced time series that inherit from class \code{ts} \citep{R2019} or \code{zooreg} \citep{Zeileis2005}, see Section \ref{sec:spec}. Multiple time series sampled at the same frequency can either be stored together in a single component, or separately in individual components.
 
 To transform the data obtained from \pkg{alfred} into a form compatible with \pkg{mfbvar}, we create a helper function to aid in preparing the time series:
 <<>>=
@@ -585,13 +595,13 @@ log_diff <- function(x) {
   100 * freq * diff(log(x))
 }
 
-mf_list[c("CPIAUCSL", "GDPC1")] <- 
+mf_list[c("CPIAUCSL", "GDPC1")] <-
   lapply(mf_list[c("CPIAUCSL", "GDPC1")], log_diff)
 @
 
 Finally, we trim the beginning of the sample so that the series do not start with missing values.
 <<>>=
-mf_list <- mapply(window, x = mf_list, 
+mf_list <- mapply(window, x = mf_list,
                   start = list(c(1980, 4), c(1980, 4), c(1980, 2)))
 @
 
