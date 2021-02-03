@@ -70,23 +70,17 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
   # n_T: sample size (full sample)
   # n_T_: sample size (reduced sample)
 
-  n_q <- sum(freq == "q")
+  freqs <- x$freqs
+  Lambda_ <- x$Lambda_
+  n_q <- sum(freq == freqs[1])
   if (n_q < n_vars) {
-    T_b <- max(which(!apply(apply(Y[, freq == "m", drop = FALSE], 2, is.na), 1, any)))
+    T_b <- max(which(!apply(apply(Y[, freq == freqs[2], drop = FALSE], 2, is.na), 1, any)))
   } else {
     T_b <- nrow(Y)
   }
   if (n_q == 0 || n_q == n_vars) {
     complete_quarters <- apply(Y, 1, function(x) !any(is.na(x)))
     Y <- Y[complete_quarters, ]
-  }
-  if (n_q > 0) {
-    if (x$aggregation == "average") {
-      Lambda_ <- build_Lambda(rep("average", n_q), 3)
-    } else {
-      Lambda_ <- build_Lambda(rep("triangular", n_q), 5)}
-  } else {
-    Lambda_ <- matrix(0, 1, 3)
   }
 
 
@@ -321,9 +315,11 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
   # n_T: sample size (full sample)
   # n_T_: sample size (reduced sample)
 
-  n_q <- sum(freq == "q")
+  freqs <- x$freqs
+  Lambda_ <- x$Lambda_
+  n_q <- sum(freq == freqs[1])
   if (n_q < n_vars) {
-    T_b <- max(which(!apply(apply(Y[, freq == "m", drop = FALSE], 2, is.na), 1, any)))
+    T_b <- max(which(!apply(apply(Y[, freq == freqs[2], drop = FALSE], 2, is.na), 1, any)))
   } else {
     T_b <- nrow(Y)
   }
@@ -331,15 +327,6 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
     complete_quarters <- apply(Y, 1, function(x) !any(is.na(x)))
     Y <- Y[complete_quarters, ]
   }
-  if (n_q > 0) {
-    if (x$aggregation == "average") {
-      Lambda_ <- build_Lambda(rep("average", n_q), 3)
-    } else {
-      Lambda_ <- build_Lambda(rep("triangular", n_q), 5)}
-  } else {
-    Lambda_ <- matrix(0, 1, 3)
-  }
-
 
   n_pseudolags <- max(c(n_lags, ncol(Lambda_)/nrow(Lambda_)))
   n_T <- dim(Y)[1]# - n_lags
@@ -583,9 +570,12 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
   # n_T: sample size (full sample)
   # n_T_: sample size (reduced sample)
 
-  n_q <- sum(freq == "q")
+  freqs <- x$freqs
+  Lambda_ <- x$Lambda_
+
+  n_q <- sum(freq == freqs[1])
   if (n_q < n_vars) {
-    T_b <- max(which(!apply(apply(Y[, freq == "m", drop = FALSE], 2, is.na), 1, any)))
+    T_b <- max(which(!apply(apply(Y[, freq == freqs[2], drop = FALSE], 2, is.na), 1, any)))
   } else {
     T_b <- nrow(Y)
   }
@@ -595,15 +585,6 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
     d_fcst <- rbind(d[!complete_quarters, , drop = FALSE], d_fcst)
     d <- d[complete_quarters, , drop = FALSE]
   }
-  if (n_q > 0) {
-    if (x$aggregation == "average") {
-      Lambda_ <- build_Lambda(rep("average", n_q), 3)
-    } else {
-      Lambda_ <- build_Lambda(rep("triangular", n_q), 5)}
-  } else {
-    Lambda_ <- matrix(0, 1, 3)
-  }
-
 
   n_pseudolags <- max(c(n_lags, ncol(Lambda_)/nrow(Lambda_)))
   n_T <- dim(Y)[1]# - n_lags
@@ -857,9 +838,12 @@ mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
   # n_T: sample size (full sample)
   # n_T_: sample size (reduced sample)
 
-  n_q <- sum(freq == "q")
+  freqs <- x$freqs
+  Lambda_ <- x$Lambda_
+
+  n_q <- sum(freq == freqs[1])
   if (n_q < n_vars) {
-    T_b <- max(which(!apply(apply(Y[, freq == "m", drop = FALSE], 2, is.na), 1, any)))
+    T_b <- max(which(!apply(apply(Y[, freq == freqs[2], drop = FALSE], 2, is.na), 1, any)))
   } else {
     T_b <- nrow(Y)
   }
@@ -869,15 +853,6 @@ mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
     d_fcst <- rbind(d[!complete_quarters, , drop = FALSE], d_fcst)
     d <- d[complete_quarters, , drop = FALSE]
   }
-  if (n_q > 0) {
-    if (x$aggregation == "average") {
-      Lambda_ <- build_Lambda(rep("average", n_q), 3)
-    } else {
-      Lambda_ <- build_Lambda(rep("triangular", n_q), 5)}
-  } else {
-    Lambda_ <- matrix(0, 1, 3)
-  }
-
 
   n_pseudolags <- max(c(n_lags, ncol(Lambda_)/nrow(Lambda_)))
   n_T <- dim(Y)[1]# - n_lags

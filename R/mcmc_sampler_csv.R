@@ -47,23 +47,17 @@ mcmc_sampler.mfbvar_minn_csv <- function(x, ...){
   # n_T: sample size (full sample)
   # n_T_: sample size (reduced sample)
 
-  n_q <- sum(freq == "q")
+  freqs <- x$freqs
+  Lambda_ <- x$Lambda_
+  n_q <- sum(freq == freqs[1])
   if (n_q < n_vars) {
-    T_b <- max(which(!apply(apply(Y[, freq == "m", drop = FALSE], 2, is.na), 1, any)))
+    T_b <- max(which(!apply(apply(Y[, freq == freqs[2], drop = FALSE], 2, is.na), 1, any)))
   } else {
     T_b <- nrow(Y)
   }
   if (n_q == 0 || n_q == n_vars) {
     complete_quarters <- apply(Y, 1, function(x) !any(is.na(x)))
     Y <- Y[complete_quarters, ]
-  }
-  if (n_q > 0) {
-    if (x$aggregation == "average") {
-      Lambda_ <- build_Lambda(rep("average", n_q), 3)
-    } else {
-      Lambda_ <- build_Lambda(rep("triangular", n_q), 5)}
-  } else {
-    Lambda_ <- matrix(0, 1, 3)
   }
 
 
@@ -258,27 +252,21 @@ mcmc_sampler.mfbvar_ss_csv <- function(x, ...) {
   # n_T_: sample size (reduced sample)
   n_vars <- dim(Y)[2]
   n_lags <- prod(dim(as.matrix(prior_Pi_mean)))/n_vars^2
-  n_q <- sum(freq == "q")
-  n_m <- sum(freq == "m")
+  freqs <- x$freqs
+  Lambda_ <- x$Lambda_
+
+  n_q <- sum(freq == freqs[1])
+  n_m <- n_vars - n_q
+  if (n_q < n_vars) {
+    T_b <- max(which(!apply(apply(Y[, freq == freqs[2], drop = FALSE], 2, is.na), 1, any)))
+  } else {
+    T_b <- nrow(Y)
+  }
   if (n_q == 0 || n_q == n_vars) {
     complete_quarters <- apply(Y, 1, function(x) !any(is.na(x)))
     Y <- Y[complete_quarters, ]
     d_fcst <- rbind(d[!complete_quarters, , drop = FALSE], d_fcst)
     d <- d[complete_quarters, , drop = FALSE]
-  }
-  y_in_p <- Y[-(1:n_lags), ]
-  if (n_q < n_vars) {
-    T_b <- min(apply(y_in_p[,1:n_m,drop=FALSE], 2, function(x) ifelse(any(is.na(x)), min(which(is.na(x))), Inf))-1, nrow(y_in_p))
-  } else {
-    T_b <- nrow(y_in_p)
-  }
-  if (n_q > 0) {
-    if (x$aggregation == "average") {
-      Lambda_ <- build_Lambda(rep("average", n_q), 3)
-    } else {
-      Lambda_ <- build_Lambda(rep("triangular", n_q), 5)}
-  } else {
-    Lambda_ <- matrix(0, 1, 3)
   }
 
 
@@ -439,7 +427,7 @@ mcmc_sampler.mfbvar_ss_csv <- function(x, ...) {
 
   mcmc_ssng_csv(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,phi,sigma,f,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
                        prior_S,D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,
-                       10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,n_reps,n_burnin,n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,
+                       10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,
                        verbose,FALSE)
   if (verbose) {
     cat("\n")
@@ -518,29 +506,22 @@ mcmc_sampler.mfbvar_ssng_csv <- function(x, ...) {
   # n_T_: sample size (reduced sample)
   n_vars <- dim(Y)[2]
   n_lags <- prod(dim(as.matrix(prior_Pi_mean)))/n_vars^2
-  n_q <- sum(freq == "q")
-  n_m <- sum(freq == "m")
+  freqs <- x$freqs
+  Lambda_ <- x$Lambda_
+
+  n_q <- sum(freq == freqs[1])
+  n_m <- n_vars - n_q
+  if (n_q < n_vars) {
+    T_b <- max(which(!apply(apply(Y[, freq == freqs[2], drop = FALSE], 2, is.na), 1, any)))
+  } else {
+    T_b <- nrow(Y)
+  }
   if (n_q == 0 || n_q == n_vars) {
     complete_quarters <- apply(Y, 1, function(x) !any(is.na(x)))
     Y <- Y[complete_quarters, ]
     d_fcst <- rbind(d[!complete_quarters, , drop = FALSE], d_fcst)
     d <- d[complete_quarters, , drop = FALSE]
   }
-  y_in_p <- Y[-(1:n_lags), ]
-  if (n_q < n_vars) {
-    T_b <- min(apply(y_in_p[,1:n_m,drop=FALSE], 2, function(x) ifelse(any(is.na(x)), min(which(is.na(x))), Inf))-1, nrow(y_in_p))
-  } else {
-    T_b <- nrow(y_in_p)
-  }
-  if (n_q > 0) {
-    if (x$aggregation == "average") {
-      Lambda_ <- build_Lambda(rep("average", n_q), 3)
-    } else {
-      Lambda_ <- build_Lambda(rep("triangular", n_q), 5)}
-  } else {
-    Lambda_ <- matrix(0, 1, 3)
-  }
-
 
   n_pseudolags <- max(c(n_lags, ncol(Lambda_)/nrow(Lambda_)))
   n_determ <- dim(d)[2]
@@ -721,7 +702,7 @@ mcmc_sampler.mfbvar_ssng_csv <- function(x, ...) {
 
   mcmc_ssng_csv(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,phi,sigma,f,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
                        prior_S,D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,
-                       10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,n_reps,n_burnin,n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,TRUE)
+                       10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,TRUE)
   if (verbose) {
     cat("\n")
   }

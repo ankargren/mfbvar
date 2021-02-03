@@ -200,6 +200,9 @@ check_prior <- function(prior_obj) {
       if (length(freqs)>2) {
         stop("mfbvar can currently only handle a mix of two frequencies.")
       }
+      if (length(freqs)>1 && freqs[1]=="q" && freqs[2] == "w") {
+        stop("mfbvar can currently only handle weekly-monthly or monthly-quarterly mixes.")
+      }
       prior_obj$freqs <- freqs
       if (length(freq_pos[!is.na(freq_pos)])>1 && diff(freq_pos[!is.na(freq_pos)])>0) {
         stop("Variables must be placed in weekly-monthly-quarterly order.")
@@ -221,13 +224,39 @@ check_prior <- function(prior_obj) {
 
 
   if ("aggregation" %in% prior_obj$supplied_args) {
-    if (is.atomic(prior_obj$aggregation)) {
+    if (is.atomic(prior_obj$aggregation) || is.matrix(prior_obj$aggregation)) {
     } else {
-      stop("aggregation must be a vector, but is now of class ", class(prior_obj$aggregation), ".")
+      stop("aggregation must be a character vector or a matrix, but is now of class ", class(prior_obj$aggregation), ".")
     }
   } else {
     prior_obj$aggregation <- "average"
   }
+
+  if (is.matrix(prior_obj$aggregation)) {
+    prior_obj$Lambda <- prior_obj$aggregation
+    prior_obj$aggregation <- "custom"
+  } else {
+    freq <- prior_obj$freq
+    freqs <- prior_obj$freqs
+    n_l <- ifelse(length(freqs)>1, sum(freq == freqs[1]), 0)
+    n_h <- ifelse(length(freqs)>1, sum(freq == freqs[2]), length(freq))
+    if (n_l > 0 && freqs[1] == "q") {
+      if (prior_obj$aggregation == "average") {
+        prior_obj$Lambda_ <- build_Lambda(rep("average", n_l), 3)
+      } else {
+        prior_obj$Lambda_ <- build_Lambda(rep("triangular", n_l), 5)}
+    } else if (n_l == 0) {
+      prior_obj$Lambda_ <- matrix(0, 1, 3)
+    } else if (freqs[1] == "m") {
+      if (prior_obj$aggregation == "triangular") {
+        stop("Triangular aggregation not supported for weekly data.")
+      } else {
+        prior_obj$Lambda_ <- matrix(0.25, 1, 4)
+        prior_obj$Lambda_ <- kronecker(prior_obj$Lambda_, diag(n_l))
+      }
+    }
+  }
+
 
   if ("prior_Pi_AR1" %in% prior_obj$supplied_args) {
     if (is.atomic(prior_obj$prior_Pi_AR1)) {
@@ -593,7 +622,17 @@ summary.mfbvar_prior <- function(object, ...) {
   cat("General specification:\n")
   cat("  Y:", ncol(object$Y), "variables,", nrow(object$Y), "time points\n")
   cat("  aggregation:", object$aggregation, "\n")
-  cat(sprintf("  freq: %d monthly and %d quarterly %s\n", sum(object$freq == "m"), sum(object$freq == "q"), ifelse(sum(object$freq == "q") == 1, "variable", "variables")))
+  freq_count <- vapply(object$freqs, function(x, freq) sum(x == freq), numeric(1), freq = object$freq)
+  freqs <- object$freqs
+  freqs <- replace(freqs, freqs == "w", "weekly")
+  freqs <- replace(freqs, freqs == "m", "monthly")
+  freqs <- replace(freqs, freqs == "q", "quarterly")
+  if (length(freq_count) == 1) {
+    freq_cat <- sprintf("  freq: %d %s variables\n", freq_count, freqs)
+  } else {
+    freq_cat <- sprintf("  freq: %s variables\n", paste(sprintf("%d %s", rev(freq_count), rev(freqs)), collapse = ", "))
+  }
+  cat(freq_cat)
   if (length(object$prior_Pi_AR1)<=5) {
     disp_prior_Pi_AR1 <- object$prior_Pi_AR1
   } else {
@@ -1271,22 +1310,10 @@ predict.mfbvar <- function(object, aggregate_fcst = TRUE, pred_bands = 0.8, ...)
     stop("No forecasts exist in the provided object.")
   }
 
-  if (object$n_fcst > 0) {
-    tmp <- tryCatch(lubridate::ymd(rownames(object$Y)[nrow(object$Y)]), warning = function(cond) cond)
-    if (inherits(tmp, "warning")) {
-      stop("To summarize the forecasts, proper dates must be provided in the input data.")
-    } else {
-      final_est <- lubridate::ymd(rownames(object$Y)[nrow(object$Y)])
-      fcst_start <- final_est %m+% months(1)
-      if (lubridate::days_in_month(final_est) == lubridate::day(final_est)) {
-        end_month <- TRUE
-      }
-    }
-  }
-  final_m <- c(unlist(apply(object$Y, 2, function(x) Position(is.na, x, nomatch = nrow(object$Y)+1)))[object$mfbvar_prior$freq == "m"])-1
-  final_q <- min(apply(object$Y[,object$mfbvar_prior$freq == "q", drop = FALSE], 2, function(x) max(which(!is.na(x)))))
-  final_non_na <- min(c(final_m,
-                      final_q))
+  final_h <- c(unlist(apply(object$Y, 2, function(x) Position(is.na, x, nomatch = nrow(object$Y)+1)))[object$mfbvar_prior$freq == object$mfbvar_prior$freqs[2]])-1
+  final_l <- min(apply(object$Y[,object$mfbvar_prior$freq == object$mfbvar_prior$freqs[1], drop = FALSE], 2, function(x) max(which(!is.na(x)))))
+  final_non_na <- min(c(final_h,
+                        final_l))
   final_fcst <- object$n_lags - (nrow(object$Y)-final_non_na)+1
   if (final_fcst >= 1) {
     incl_fcst <- final_fcst:(object$n_lags + object$n_fcst)
@@ -1294,111 +1321,152 @@ predict.mfbvar <- function(object, aggregate_fcst = TRUE, pred_bands = 0.8, ...)
     incl_fcst <- 1:(object$n_lags + object$n_fcst)
   }
 
+  n_h <- sum(object$mfbvar_prior$freq == object$mfbvar_prior$freqs[2])
+  n_l <- sum(object$mfbvar_prior$freq == object$mfbvar_prior$freqs[1])
+  n_vars <- n_h + n_l
 
-  ret_names <- fcst_start %m+% months((-(length(incl_fcst)-object$n_fcst)):(object$n_fcst-1))
-  ret_names_q <- fcst_start %m+% months((-(object$n_lags)):(object$n_fcst-1))
+  tmp <- tryCatch(lubridate::ymd(rownames(object$Y)[nrow(object$Y)]), warning = function(cond) cond)
 
-  if (end_month) {
-    ret_names <- lubridate::ceiling_date(ret_names, unit = "months") - lubridate::days(1)
-    ret_names_q <- lubridate::ceiling_date(ret_names_q, unit = "months") - lubridate::days(1)
-  }
+  if (!("w" %in% object$freq) && !inherits(tmp, "warning")) {
+    final_est <- lubridate::ymd(rownames(object$Y)[nrow(object$Y)])
+    fcst_start <- final_est %m+% months(1)
+    if (lubridate::days_in_month(final_est) == lubridate::day(final_est)) {
+      end_month <- TRUE
+    }
 
-  n_m <- sum(object$mfbvar_prior$freq == "m")
-  n_q <- sum(object$mfbvar_prior$freq == "q")
-  n_vars <- n_m + n_q
-  fcst_collapsed <- tibble(variable = rep(rep(object$names_col[1:n_m], each = length(incl_fcst)), object$n_reps/object$n_thin),
-                           iter = rep(1:(object$n_reps/object$n_thin), each = n_m*length(incl_fcst)),
-                           fcst = c(object$Z_fcst[incl_fcst,1:n_m,]),
-                           fcst_date = rep(as.Date(as.character(ret_names)), n_m*object$n_reps/object$n_thin),
-                           freq = rep(rep(rep("m", n_m), each = length(incl_fcst)), object$n_reps/object$n_thin),
-                           time = rep(nrow(object$Y)+object$n_fcst-max(incl_fcst)+incl_fcst, n_m*object$n_reps/object$n_thin)
-                           ) %>%
-    transmute(variable = variable,
-              iter = iter,
-              year = year(fcst_date),
-              quarter = quarter(fcst_date),
-              fcst_date = fcst_date,
-              fcst = fcst,
-              freq = freq,
-              time = time)
-  if (aggregate_fcst) {
-    n_Lambda <- ncol(object$Lambda_)/nrow(object$Lambda_)
-    fcst_agg_required <- final_q+3-n_Lambda+1
-    fcst_included <- nrow(object$Y)-object$n_lags+1
-    fcst_agg_missing <- max(c(fcst_included - fcst_agg_required, 0))
-    fcst_q <- array(0, dim = c(dim(object$Z_fcst)[1]+max(c(fcst_agg_missing, 0)), n_q, object$n_reps/object$n_thin))
-    if (fcst_agg_required < fcst_included) {
-      ret_names_q <- c(ret_names_q[1] %m+% months((-fcst_agg_missing):(-1)),
-                     ret_names_q)
-      fcst_q[1:fcst_agg_missing, ,] <- object$Z[fcst_agg_required:(fcst_included-1), object$mfbvar_prior$freq == "q", , drop = FALSE]
-    } else {
-      if (nrow(fcst_q) > length(ret_names_q)) {
-        ret_names_q <- c(ret_names_q[1] %m+% months((-(nrow(fcst_q)-length(ret_names_q))):(-1)),
-                       ret_names_q)
+    ret_names <- fcst_start %m+% months((-(length(incl_fcst)-object$n_fcst)):(object$n_fcst-1))
+    ret_names_q <- fcst_start %m+% months((-(object$n_lags)):(object$n_fcst-1))
+
+    if (end_month) {
+      ret_names <- lubridate::ceiling_date(ret_names, unit = "months") - lubridate::days(1)
+      ret_names_q <- lubridate::ceiling_date(ret_names_q, unit = "months") - lubridate::days(1)
+    }
+  } else {
+    final_est <- nrow(object$Y)
+    fcst_start <- final_est + 1
+
+    ret_names <- fcst_start + (-(length(incl_fcst)-object$n_fcst)):(object$n_fcst-1)
+
+
+    if (aggregate_fcst) {
+      if ("w" %in% object$freq) {
+        warning("Because of ambiguities, forecasts are not aggregated when weekly data are included.")
+      } else {
+        stop("Dates must be provided to aggregate latent monthly forecasts to the quarterly frequency.")
       }
     }
-    fcst_q[(fcst_agg_missing+1):nrow(fcst_q), , ] <- object$Z_fcst[, object$mfbvar_prior$freq == "q", , drop = FALSE]
-    rownames(fcst_q) <- as.character(ret_names_q)
+  }
 
-    end_of_quarter <- which(lubridate::month(ret_names_q) %% 3 == 0)
-    end_of_quarter <- end_of_quarter[end_of_quarter >= n_Lambda]
-    agg_fun <- function(fcst_q, Lambda_, end_of_quarter) {
-      fcst_q_agg <- array(0, dim = c(length(end_of_quarter), dim(fcst_q)[2:3]))
-      for (i in 1:(object$n_reps/object$n_thin)) {
-        Z_i <- matrix(fcst_q[,,i], nrow = nrow(fcst_q), ncol = ncol(fcst_q))
-        for (j in 1:length(end_of_quarter)) {
-          Z_ij <- matrix(t(Z_i[(((-n_Lambda+1):0)+end_of_quarter[j]), , drop = FALSE]), ncol = 1)
-          fcst_q_agg[j, , i] <- Lambda_ %*% Z_ij
+
+
+  if (!aggregate_fcst) {
+    fcst_collapsed <- tibble(variable = rep(rep(as.character(object$names_col), each = length(incl_fcst)), object$n_reps/object$n_thin),
+                             iter = rep(1:(object$n_reps/object$n_thin), each = n_vars*length(incl_fcst)),
+                             fcst = c(object$Z_fcst[incl_fcst,,]),
+                             fcst_date = rep(ret_names, n_vars*object$n_reps/object$n_thin),
+                             freq = rep(rep(object$freq, each = length(incl_fcst)), object$n_reps/object$n_thin),
+                             time = rep(nrow(object$Y)+object$n_fcst-max(incl_fcst)+incl_fcst, n_vars*object$n_reps/object$n_thin)
+    )
+  } else {
+
+    fcst_collapsed <- tibble(variable = rep(rep(object$names_col[1:n_h], each = length(incl_fcst)), object$n_reps/object$n_thin),
+                             iter = rep(1:(object$n_reps/object$n_thin), each = n_h*length(incl_fcst)),
+                             fcst = c(object$Z_fcst[incl_fcst,1:n_h,]),
+                             fcst_date = rep(as.Date(as.character(ret_names)), n_h*object$n_reps/object$n_thin),
+                             freq = rep(rep(rep(object$mfbvar_prior$freqs[2], n_h), each = length(incl_fcst)), object$n_reps/object$n_thin),
+                             time = rep(nrow(object$Y)+object$n_fcst-max(incl_fcst)+incl_fcst, n_h*object$n_reps/object$n_thin)
+                             ) %>%
+      transmute(variable = variable,
+                iter = iter,
+                year = year(fcst_date),
+                quarter = quarter(fcst_date),
+                fcst_date = fcst_date,
+                fcst = fcst,
+                freq = freq,
+                time = time)
+    if (aggregate_fcst) {
+      n_Lambda <- ncol(object$Lambda_)/nrow(object$Lambda_)
+      fcst_agg_required <- final_l+3-n_Lambda+1
+      fcst_included <- nrow(object$Y)-object$n_lags+1
+      fcst_agg_missing <- max(c(fcst_included - fcst_agg_required, 0))
+      fcst_q <- array(0, dim = c(dim(object$Z_fcst)[1]+max(c(fcst_agg_missing, 0)), n_l, object$n_reps/object$n_thin))
+      if (fcst_agg_required < fcst_included) {
+        ret_names_q <- c(ret_names_q[1] %m+% months((-fcst_agg_missing):(-1)),
+                       ret_names_q)
+        fcst_q[1:fcst_agg_missing, ,] <- object$Z[fcst_agg_required:(fcst_included-1), object$mfbvar_prior$freq == object$mfbvar_prior$freqs[1], , drop = FALSE]
+      } else {
+        if (nrow(fcst_q) > length(ret_names_q)) {
+          ret_names_q <- c(ret_names_q[1] %m+% months((-(nrow(fcst_q)-length(ret_names_q))):(-1)),
+                         ret_names_q)
         }
       }
-      return(fcst_q_agg)
+      fcst_q[(fcst_agg_missing+1):nrow(fcst_q), , ] <- object$Z_fcst[, object$mfbvar_prior$freq == object$mfbvar_prior$freqs[1], , drop = FALSE]
+      rownames(fcst_q) <- as.character(ret_names_q)
+
+      end_of_quarter <- which(lubridate::month(ret_names_q) %% 3 == 0)
+      end_of_quarter <- end_of_quarter[end_of_quarter >= n_Lambda]
+      agg_fun <- function(fcst_q, Lambda_, end_of_quarter) {
+        fcst_q_agg <- array(0, dim = c(length(end_of_quarter), dim(fcst_q)[2:3]))
+        for (i in 1:(object$n_reps/object$n_thin)) {
+          Z_i <- matrix(fcst_q[,,i], nrow = nrow(fcst_q), ncol = ncol(fcst_q))
+          for (j in 1:length(end_of_quarter)) {
+            Z_ij <- matrix(t(Z_i[(((-n_Lambda+1):0)+end_of_quarter[j]), , drop = FALSE]), ncol = 1)
+            fcst_q_agg[j, , i] <- Lambda_ %*% Z_ij
+          }
+        }
+        return(fcst_q_agg)
+      }
+
+      fcst_q_agg <- agg_fun(fcst_q, object$Lambda_, end_of_quarter)
+
+      fcst_quarterly <- tibble(variable = rep(rep(object$names_col[(n_h+1):n_vars], each = nrow(fcst_q_agg)), object$n_reps/object$n_thin),
+             iter = rep(1:(object$n_reps/object$n_thin), each = n_l*nrow(fcst_q_agg)),
+             fcst = c(fcst_q_agg),
+             fcst_date = rep(ret_names_q[end_of_quarter], n_l*object$n_reps/object$n_thin),
+             freq = rep(rep(rep(object$mfbvar_prior$freqs[1], n_l), each = nrow(fcst_q_agg)), object$n_reps/object$n_thin),
+             time = rep(seq(final_l+3, by = 3, length.out = nrow(fcst_q_agg)), n_l*object$n_reps/object$n_thin)
+      ) %>%
+        transmute(variable = variable,
+                  iter = iter,
+                  year = year(fcst_date),
+                  quarter = quarter(fcst_date),
+                  fcst_date = fcst_date,
+                  fcst = fcst,
+                  freq = freq,
+                  time = time)
+
+    } else {
+      fcst_quarterly <- tibble(variable = rep(rep(object$names_col[(n_h+1):n_vars], each = length(incl_fcst)), object$n_reps/object$n_thin),
+                               iter = rep(1:(object$n_reps/object$n_thin), each = n_l*length(incl_fcst)),
+                               fcst = c(object$Z_fcst[incl_fcst,(n_h+1):n_vars,]),
+                               fcst_date = rep(ret_names, n_l*object$n_reps/object$n_thin),
+                               freq = rep(rep(rep(object$mfbvar_prior$freqs[1], n_l), each = length(incl_fcst)), object$n_reps/object$n_thin),
+                               time = rep(nrow(object$Y)+object$n_fcst-max(incl_fcst)+incl_fcst, n_l*object$n_reps/object$n_thin)
+      ) %>%
+        transmute(variable = variable,
+                  iter = iter,
+                  year = year(fcst_date),
+                  quarter = quarter(fcst_date),
+                  fcst_date = fcst_date,
+                  fcst = fcst,
+                  freq = freq,
+                  time = time)
     }
 
-    fcst_q_agg <- agg_fun(fcst_q, object$Lambda_, end_of_quarter)
+    fcst_collapsed <- bind_rows(fcst_collapsed, fcst_quarterly)
 
-    fcst_quarterly <- tibble(variable = rep(rep(object$names_col[(n_m+1):n_vars], each = nrow(fcst_q_agg)), object$n_reps/object$n_thin),
-           iter = rep(1:(object$n_reps/object$n_thin), each = n_q*nrow(fcst_q_agg)),
-           fcst = c(fcst_q_agg),
-           fcst_date = rep(ret_names_q[end_of_quarter], n_q*object$n_reps/object$n_thin),
-           freq = rep(rep(rep("q", n_q), each = nrow(fcst_q_agg)), object$n_reps/object$n_thin),
-           time = rep(seq(final_q+3, by = 3, length.out = nrow(fcst_q_agg)), n_q*object$n_reps/object$n_thin)
-    ) %>%
-      transmute(variable = variable,
-                iter = iter,
-                year = year(fcst_date),
-                quarter = quarter(fcst_date),
-                fcst_date = fcst_date,
-                fcst = fcst,
-                freq = freq,
-                time = time)
-
-  } else {
-    fcst_quarterly <- tibble(variable = rep(rep(object$names_col[(n_m+1):n_vars], each = length(incl_fcst)), object$n_reps/object$n_thin),
-                             iter = rep(1:(object$n_reps/object$n_thin), each = n_q*length(incl_fcst)),
-                             fcst = c(object$Z_fcst[incl_fcst,(n_m+1):n_vars,]),
-                             fcst_date = rep(as.Date(as.character(ret_names)), n_q*object$n_reps/object$n_thin),
-                             freq = rep(rep(rep("q", n_q), each = length(incl_fcst)), object$n_reps/object$n_thin),
-                             time = rep(nrow(object$Y)+object$n_fcst-max(incl_fcst)+incl_fcst, n_q*object$n_reps/object$n_thin)
-    ) %>%
-      transmute(variable = variable,
-                iter = iter,
-                year = year(fcst_date),
-                quarter = quarter(fcst_date),
-                fcst_date = fcst_date,
-                fcst = fcst,
-                freq = freq,
-                time = time)
   }
 
-  fcst_collapsed <- bind_rows(fcst_collapsed, fcst_quarterly)
   if (!is.null(pred_bands) && !is.na(pred_bands)) {
     pred_quantiles <- c(0.5-pred_bands/2, 0.5, 0.5+pred_bands/2)
     fcst_collapsed <- group_by(fcst_collapsed, variable, time, fcst_date) %>%
-      summarize(lower = quantile(fcst, prob = pred_quantiles[1]),
-                median = quantile(fcst, prob = pred_quantiles[2]),
-                upper = quantile(fcst, prob = pred_quantiles[3])) %>%
+      summarize(lower = quantile(fcst, prob = pred_quantiles[1], names = FALSE),
+                median = quantile(fcst, prob = pred_quantiles[2], names = FALSE),
+                upper = quantile(fcst, prob = pred_quantiles[3], names = FALSE),
+                .groups = "keep") %>%
       ungroup()
   }
+
   return(fcst_collapsed)
 }
 
@@ -1462,9 +1530,9 @@ predict.sfbvar <- function(object, pred_bands = 0.8, ...) {
   if (!is.null(pred_bands) && !is.na(pred_bands)) {
     pred_quantiles <- c(0.5-pred_bands/2, 0.5, 0.5+pred_bands/2)
     fcst_collapsed <- group_by(fcst_collapsed, variable, time, fcst_date) %>%
-      summarize(lower = quantile(fcst, prob = pred_quantiles[1]),
-                median = quantile(fcst, prob = pred_quantiles[2]),
-                upper = quantile(fcst, prob = pred_quantiles[3])) %>%
+      summarize(lower = quantile(fcst, prob = pred_quantiles[1], names = FALSE),
+                median = quantile(fcst, prob = pred_quantiles[2], names = FALSE),
+                upper = quantile(fcst, prob = pred_quantiles[3], names = FALSE)) %>%
       ungroup()
   }
 

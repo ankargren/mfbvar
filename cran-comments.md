@@ -1,5 +1,5 @@
 ## Update
-In this update I have made some changes to the interface:
+In this update I have removed an attempt to download data from the internet in the vignette, fixing a warning reported by the CRAN package checks. I have also extended the ability of the package to handle mixed-frequency data to now also include weekly-monthly data.
 
 * Data can now be supplied as a list of ts/zooreg objects. 
 
