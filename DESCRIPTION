@@ -32,7 +32,7 @@ LinkingTo:
     RcppParallel
 Depends: R (>= 3.5.0)
 Suggests: testthat, covr, knitr, ggridges, alfred, factorstochvol
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1
 Encoding: UTF-8
 SystemRequirements: GNU make
 VignetteBuilder: knitr

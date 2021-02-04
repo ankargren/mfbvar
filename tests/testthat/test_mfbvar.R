@@ -160,6 +160,6 @@ test_that("List as input, no names", {
                              prior_psi_Omega = prior_psi_Omega, n_fcst = 4)
   set.seed(10)
   mod_minn2 <- estimate_mfbvar(mfbvar_prior = prior_obj2, prior = "minn", n_fcst = 12)
-  predict(mod_minn2)
+  expect_error(predict(mod_minn2), NA)
 
 })

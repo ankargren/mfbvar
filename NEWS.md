@@ -1,6 +1,6 @@
 # mfbvar 0.5.6 (2021-02-03)
 * Removed use of internet connection in vignette
-* Enabled use of weekly data
+* Enabled use of weekly-monthly frequency mix
 
 # mfbvar 0.5.4 (2020-05-14)
 * Changes to the main interface. Data can (and should) now be given as a list of `zooreg` or `ts` objects.

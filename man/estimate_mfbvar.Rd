@@ -58,11 +58,11 @@ prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 20)
 mod_minn <- estimate_mfbvar(prior_obj, prior = "minn")
 }
 \references{
-Ankargren, S., Unosson, M., & Yang, Y. (2019) A Flexible Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. arXiv:1911.09151, \url{https://arxiv.org/abs/1911.09151}.\cr
-Ankargren, S., & Jonéus, P. (2019) Simulation Smoothing for Nowcasting with Large Mixed-Frequency VARs. arXiv:1907.01075, \url{http://arxiv.org/abs/1907.01075}.\cr
+Ankargren, S., Unosson, M., & Yang, Y. (2020) A Flexible Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. \emph{Journal of Time Series Econometrics}, 12(2), \doi{10.1515/jtse-2018-0034}.\cr
+Ankargren, S., & Jonéus, P. (2020) Simulation Smoothing for Nowcasting with Large Mixed-Frequency VARs. \emph{Econometrics and Statistics}, \doi{10.1016/j.ecosta.2020.05.007}.\cr
 Ankargren, S., & Jonéus, P. (2019) Estimating Large Mixed-Frequency Bayesian VAR Models. arXiv:1912.02231, \url{https://arxiv.org/abs/1912.02231}.\cr
-Kastner, G., & Huber, F. (2018) Sparse Bayesian Vector Autoregressions in Huge Dimensions. arXiv:1704.03239, \url{http://arxiv.org/abs/1704.03239}.\cr
-Schorfheide, F., & Song, D. (2015) Real-Time Forecasting With a Mixed-Frequency VAR. \emph{Journal of Business & Economic Statistics}, 33(3), 366--380. \url{http://dx.doi.org/10.1080/07350015.2014.954707}\cr
+Kastner, G., & Huber, F. (2020) Sparse Bayesian Vector Autoregressions in Huge Dimensions. \emph{Journal of Forecasting}, 39, 1142--1165. \doi{10.1002/for.2680}.\cr
+Schorfheide, F., & Song, D. (2015) Real-Time Forecasting With a Mixed-Frequency VAR. \emph{Journal of Business & Economic Statistics}, 33(3), 366--380. \doi{10.1080/07350015.2014.954707}\cr
 }
 \seealso{
 \code{\link{set_prior}}, \code{\link{update_prior}}, \code{\link{predict.mfbvar}}, \code{\link{plot.mfbvar_minn}},

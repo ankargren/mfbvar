@@ -38,9 +38,9 @@ set_prior(
 update_prior(prior_obj, ...)
 }
 \arguments{
-\item{Y}{data input. Should be a list with components containing regularly spaced time series (that inherit from \code{ts} or \code{zooreg}). If a component contains a single time series, the component itself must be named. If a component contains multiple time series, each time series must be named. Monthly variables can only contain missing values at the end of the sample, and should precede quarterly variables in the list. Matrices in which quarterly variables are padded with \code{NA} and observations stored at the end of each quarter are also accepted, but then the frequency of each variable must be given in the argument \code{freq}.}
+\item{Y}{data input. For monthly-quarterly data, should be a list with components containing regularly spaced time series (that inherit from \code{ts} or \code{zooreg}). If a component contains a single time series, the component itself must be named. If a component contains multiple time series, each time series must be named. Monthly variables can only contain missing values at the end of the sample, and should precede quarterly variables in the list. Matrices in which quarterly variables are padded with \code{NA} and observations stored at the end of each quarter are also accepted, but then the frequency of each variable must be given in the argument \code{freq}. Weekly-monthly mixes can be provided using the matrix way, see examples.}
 
-\item{aggregation}{the aggregation scheme used for relating latent monthly series to their quarterly observations. The default is \code{"average"} for averaging over the monthly observations within each quarter. The alternative is \code{"triangular"} is to use the Mariano-Murasawa triangular set of weights. See details for more information.}
+\item{aggregation}{the aggregation scheme used for relating latent high-frequency series to their low-frequency observations. The default is \code{"average"} for averaging within each low-frequency period (e.g., quarterly observations are averages of the constituent monthly observations). The alternative \code{"triangular"} can be used for monthly-quarterly mixes, and uses the Mariano-Murasawa triangular set of weights. See details for more information.}
 
 \item{prior_Pi_AR1}{The prior means for the AR(1) coefficients.}
 
@@ -129,8 +129,15 @@ For modeling stochastic volatility by the factor stochastic volatility model, th
 The function \code{update_prior} can be used to update an existing prior object. See the examples.
 }
 \examples{
+# Standard list-based way
 prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 100)
 prior_obj <- update_prior(prior_obj, n_fcst = 4)
+
+# Weekly-monthly mix of data, four weeks per month
+Y <- matrix(rnorm(400), 100, 4)
+Y[setdiff(1:100,seq(4, 100, by = 4)), 4] <- NA
+prior_obj <- set_prior(Y = Y, freq = c(rep("w", 3), "m"),
+                       n_lags = 4, n_reps = 10)
 }
 \seealso{
 \code{\link{estimate_mfbvar}}, \code{\link{update_prior}}, \code{\link{interval_to_moments}}, \code{\link{print.mfbvar_prior}}, \code{\link{summary.mfbvar_prior}}, \code{\link[factorstochvol]{fsvsample}}

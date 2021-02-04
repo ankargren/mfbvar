@@ -121,3 +121,30 @@ test_that("varplot", {
   mod_ss <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss", Y = Y, variance = "fsv")
   expect_error(varplot(mod_ss, variables = 1), NA)
 })
+
+test_that("Weekly-Monthly plots", {
+  set.seed(10237)
+  Y <- matrix(rnorm(400), 100, 4)
+  Y[setdiff(1:100,seq(4, 100, by = 4)), 4] <- NA
+
+  prior_obj <- set_prior(Y = Y, freq = c(rep("w", 3), "m"),
+                         n_lags = 4, n_reps = 10)
+
+  prior_intervals <- matrix(c(
+    -0.5, 0.5,
+    -0.5, 0.5,
+    -0.5, 0.5,
+    -0.5, 0.5), ncol = 2, byrow = TRUE)
+  psi_moments <- interval_to_moments(prior_intervals)
+  prior_psi_mean <- psi_moments$prior_psi_mean
+  prior_psi_Omega <- psi_moments$prior_psi_Omega
+  prior_obj <- update_prior(prior_obj, d = "intercept", prior_psi_mean = prior_psi_mean,
+                            prior_psi_Omega = prior_psi_Omega, n_fcst = 4)
+
+  testthat::skip_on_cran()
+  set.seed(10)
+  mod_ss <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss", variance = "csv")
+  expect_error(varplot(mod_ss, variables = 1), NA)
+  expect_error(plot(mod_ss))
+})
+

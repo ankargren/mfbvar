@@ -158,7 +158,7 @@ test_that("Forecasts (weekly-monthly)", {
   Y[setdiff(1:100,seq(4, 100, by = 4)), 4] <- NA
 
   prior_obj <- set_prior(Y = Y, freq = c(rep("w", 3), "m"),
-                         n_lags = 4, n_burnin = 10, n_reps = 10)
+                         n_lags = 4, n_reps = 10)
 
   prior_intervals <- matrix(c(
     -0.5, 0.5,

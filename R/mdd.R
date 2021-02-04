@@ -25,7 +25,7 @@ mdd.default <- function(x, ...) {
 #' Fuentes-Albero and Melosi (2013) and Ankargren, Unosson and Yang (2018).
 #' @return The logarithm of the marginal data density.
 #' @references Fuentes-Albero, C. and Melosi, L. (2013) Methods for Computing Marginal Data Densities from the Gibbs Output.
-#' \emph{Journal of Econometrics}, 175(2), 132-141, \url{https://doi.org/10.1016/j.jeconom.2013.03.002}\cr
+#' \emph{Journal of Econometrics}, 175(2), 132-141, \doi{10.1016/j.jeconom.2013.03.002}\cr
 #'  Ankargren, S., Unosson, M., & Yang, Y. (2018) A Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. Working Paper, Department of Statistics, Uppsala University No. 2018:3.
 #' @seealso \code{\link{mdd}}, \code{\link{mdd.mfbvar_minn_iw}}
 mdd.mfbvar_ss_iw <- function(x, method = 1, ...) {
@@ -51,7 +51,7 @@ mdd.mfbvar_ss_iw <- function(x, method = 1, ...) {
 #' @details The method used for estimating the marginal data density is the proposal made by
 #' Schorfheide and Song (2015).
 #' @references
-#' Schorfheide, F., & Song, D. (2015) Real-Time Forecasting With a Mixed-Frequency VAR. \emph{Journal of Business & Economic Statistics}, 33(3), 366--380. \url{http://dx.doi.org/10.1080/07350015.2014.954707}
+#' Schorfheide, F., & Song, D. (2015) Real-Time Forecasting With a Mixed-Frequency VAR. \emph{Journal of Business & Economic Statistics}, 33(3), 366--380. \doi{10.1080/07350015.2014.954707}
 #' @seealso \code{\link{mdd}}, \code{\link{mdd.mfbvar_ss_iw}}
 mdd.mfbvar_minn_iw <- function(x, ...) {
   if (x$aggregation != "average") {

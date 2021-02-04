@@ -2,8 +2,8 @@
 #'
 #' The function creates an object storing all information needed for estimating a mixed-frequency BVAR. The object includes data as well as details for the model and its priors.
 #'
-#' @param Y data input. Should be a list with components containing regularly spaced time series (that inherit from \code{ts} or \code{zooreg}). If a component contains a single time series, the component itself must be named. If a component contains multiple time series, each time series must be named. Monthly variables can only contain missing values at the end of the sample, and should precede quarterly variables in the list. Matrices in which quarterly variables are padded with \code{NA} and observations stored at the end of each quarter are also accepted, but then the frequency of each variable must be given in the argument \code{freq}.
-#' @param aggregation the aggregation scheme used for relating latent monthly series to their quarterly observations. The default is \code{"average"} for averaging over the monthly observations within each quarter. The alternative is \code{"triangular"} is to use the Mariano-Murasawa triangular set of weights. See details for more information.
+#' @param Y data input. For monthly-quarterly data, should be a list with components containing regularly spaced time series (that inherit from \code{ts} or \code{zooreg}). If a component contains a single time series, the component itself must be named. If a component contains multiple time series, each time series must be named. Monthly variables can only contain missing values at the end of the sample, and should precede quarterly variables in the list. Matrices in which quarterly variables are padded with \code{NA} and observations stored at the end of each quarter are also accepted, but then the frequency of each variable must be given in the argument \code{freq}. Weekly-monthly mixes can be provided using the matrix way, see examples.
+#' @param aggregation the aggregation scheme used for relating latent high-frequency series to their low-frequency observations. The default is \code{"average"} for averaging within each low-frequency period (e.g., quarterly observations are averages of the constituent monthly observations). The alternative \code{"triangular"} can be used for monthly-quarterly mixes, and uses the Mariano-Murasawa triangular set of weights. See details for more information.
 #' @templateVar prior_Pi_AR1 TRUE
 #' @templateVar lambda1 TRUE
 #' @param lambda2 (Only if \code{variance} is one of \code{c("diffuse", "fsv")} The cross-variable tightness
@@ -62,8 +62,15 @@
 #'
 
 #' @examples
+#' # Standard list-based way
 #' prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 100)
 #' prior_obj <- update_prior(prior_obj, n_fcst = 4)
+#'
+#' # Weekly-monthly mix of data, four weeks per month
+#' Y <- matrix(rnorm(400), 100, 4)
+#' Y[setdiff(1:100,seq(4, 100, by = 4)), 4] <- NA
+#' prior_obj <- set_prior(Y = Y, freq = c(rep("w", 3), "m"),
+#'                        n_lags = 4, n_reps = 10)
 #' @seealso \code{\link{estimate_mfbvar}}, \code{\link{update_prior}}, \code{\link{interval_to_moments}}, \code{\link{print.mfbvar_prior}}, \code{\link{summary.mfbvar_prior}}, \code{\link[factorstochvol]{fsvsample}}
 set_prior <- function(Y, aggregation = "average", prior_Pi_AR1 = 0, lambda1 = 0.2,
                       lambda2 = 0.5, lambda3 = 1, lambda4 = 10000, block_exo = NULL, n_lags,
@@ -763,11 +770,11 @@ summary.mfbvar_prior <- function(object, ...) {
 #' prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 20)
 #' mod_minn <- estimate_mfbvar(prior_obj, prior = "minn")
 #' @references
-#' Ankargren, S., Unosson, M., & Yang, Y. (2019) A Flexible Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. arXiv:1911.09151, \url{https://arxiv.org/abs/1911.09151}.\cr
-#' Ankargren, S., & Jonéus, P. (2019) Simulation Smoothing for Nowcasting with Large Mixed-Frequency VARs. arXiv:1907.01075, \url{http://arxiv.org/abs/1907.01075}.\cr
+#' Ankargren, S., Unosson, M., & Yang, Y. (2020) A Flexible Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. \emph{Journal of Time Series Econometrics}, 12(2), \doi{10.1515/jtse-2018-0034}.\cr
+#' Ankargren, S., & Jonéus, P. (2020) Simulation Smoothing for Nowcasting with Large Mixed-Frequency VARs. \emph{Econometrics and Statistics}, \doi{10.1016/j.ecosta.2020.05.007}.\cr
 #' Ankargren, S., & Jonéus, P. (2019) Estimating Large Mixed-Frequency Bayesian VAR Models. arXiv:1912.02231, \url{https://arxiv.org/abs/1912.02231}.\cr
-#' Kastner, G., & Huber, F. (2018) Sparse Bayesian Vector Autoregressions in Huge Dimensions. arXiv:1704.03239, \url{http://arxiv.org/abs/1704.03239}.\cr
-#' Schorfheide, F., & Song, D. (2015) Real-Time Forecasting With a Mixed-Frequency VAR. \emph{Journal of Business & Economic Statistics}, 33(3), 366--380. \url{http://dx.doi.org/10.1080/07350015.2014.954707}\cr
+#' Kastner, G., & Huber, F. (2020) Sparse Bayesian Vector Autoregressions in Huge Dimensions. \emph{Journal of Forecasting}, 39, 1142--1165. \doi{10.1002/for.2680}.\cr
+#' Schorfheide, F., & Song, D. (2015) Real-Time Forecasting With a Mixed-Frequency VAR. \emph{Journal of Business & Economic Statistics}, 33(3), 366--380. \doi{10.1080/07350015.2014.954707}\cr
 
 estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
   time_out <- Sys.time()
