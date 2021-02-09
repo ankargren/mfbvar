@@ -1,10 +1,7 @@
 mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
+
+  check_required_params(x, "Y", "n_lags", "n_burnin", "n_reps")
   n_vars <- ncol(x$Y)
-  if (!(!is.null(x$Y) && !is.null(x$n_lags) && !is.null(x$n_burnin) && !is.null(x$n_reps))) {
-    test_all <- sapply(x, is.null)
-    test_sub <- test_all[c("Y", "n_lags", "n_burnin", "n_reps")]
-    stop("Missing elements: ", paste(names(test_sub)[which(test_sub)], collapse = " "))
-  }
 
   prior_Pi_Omega <- create_prior_Pi_Omega(x$lambda1, x$lambda2, x$lambda3, x$prior_Pi_AR1, x$Y, x$n_lags)
   prior_Pi_AR1 <- x$prior_Pi_AR1
@@ -234,12 +231,9 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
 }
 
 mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
+
+  check_required_params(x, "Y", "n_lags", "n_burnin", "n_reps")
   n_vars <- ncol(x$Y)
-  if (!(!is.null(x$Y) && !is.null(x$n_lags) && !is.null(x$n_burnin) && !is.null(x$n_reps))) {
-    test_all <- sapply(x, is.null)
-    test_sub <- test_all[c("Y", "n_lags", "n_burnin", "n_reps")]
-    stop("Missing elements: ", paste(names(test_sub)[which(test_sub)], collapse = " "))
-  }
 
   prior_Pi_Omega <- create_prior_Pi_Omega(x$lambda1, x$lambda2, x$lambda3, x$prior_Pi_AR1, x$Y, x$n_lags)
   prior_Pi_AR1 <- x$prior_Pi_AR1
@@ -491,12 +485,9 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
 }
 
 mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
+
+  check_required_params(x, "Y", "d", "prior_psi_mean", "prior_psi_Omega", "n_lags", "n_burnin", "n_reps")
   n_vars <- ncol(x$Y)
-  if (!(!is.null(x$Y) && !is.null(x$n_lags) && !is.null(x$n_burnin) && !is.null(x$n_reps))) {
-    test_all <- sapply(x, is.null)
-    test_sub <- test_all[c("Y", "n_lags", "n_burnin", "n_reps")]
-    stop("Missing elements: ", paste(names(test_sub)[which(test_sub)], collapse = " "))
-  }
 
   prior_Pi_Omega <- create_prior_Pi_Omega(x$lambda1, x$lambda2, x$lambda3, x$prior_Pi_AR1, x$Y, x$n_lags)
   prior_Pi_Omega <- prior_Pi_Omega[-1, ]
@@ -755,12 +746,9 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
 }
 
 mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
+
+  check_required_params(x, "Y", "d", "prior_psi_mean", "n_lags", "n_burnin", "n_reps")
   n_vars <- ncol(x$Y)
-  if (!(!is.null(x$Y) && !is.null(x$n_lags) && !is.null(x$n_burnin) && !is.null(x$n_reps))) {
-    test_all <- sapply(x, is.null)
-    test_sub <- test_all[c("Y", "n_lags", "n_burnin", "n_reps")]
-    stop("Missing elements: ", paste(names(test_sub)[which(test_sub)], collapse = " "))
-  }
 
   prior_Pi_Omega <- create_prior_Pi_Omega(x$lambda1, x$lambda2, x$lambda3, x$prior_Pi_AR1, x$Y, x$n_lags)
   prior_Pi_Omega <- prior_Pi_Omega[-1, ]

@@ -20,3 +20,11 @@ compute_error_variances <- function(Y) {
   }
   return(error_variance)
 }
+
+check_required_params <- function(x, ...) {
+  required_params <- unlist(list(...))
+  test <- vapply(x[required_params], is.null, logical(1))
+  if (any(test)) {
+    stop("Missing elements: ", paste(required_params[which(test)], collapse = " "))
+  }
+}

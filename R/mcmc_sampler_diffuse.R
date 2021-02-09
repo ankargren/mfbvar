@@ -1,11 +1,8 @@
 mcmc_sampler.mfbvar_minn_diffuse <- function(x, ...){
 
+  check_required_params(x, "Y", "n_lags", "n_burnin", "n_reps")
+
   n_vars <- ncol(x$Y)
-  if (!(!is.null(x$Y) && !is.null(x$n_lags) && !is.null(x$n_burnin) && !is.null(x$n_reps))) {
-    test_all <- sapply(x, is.null)
-    test_sub <- test_all[c("Y", "n_lags", "n_burnin", "n_reps")]
-    stop("Missing elements: ", paste(names(test_sub)[which(test_sub)], collapse = " "))
-  }
 
   # Diffuse
   prior_Pi_Omega <- create_prior_Pi_Omega(lambda1 = x$lambda1, lambda2 = x$lambda2, lambda3 = x$lambda3,
@@ -175,12 +172,9 @@ mcmc_sampler.mfbvar_minn_diffuse <- function(x, ...){
 
 mcmc_sampler.mfbvar_dl_diffuse <- function(x, ...){
 
+  check_required_params(x, "Y", "n_lags", "n_burnin", "n_reps")
+
   n_vars <- ncol(x$Y)
-  if (!(!is.null(x$Y) && !is.null(x$n_lags) && !is.null(x$n_burnin) && !is.null(x$n_reps))) {
-    test_all <- sapply(x, is.null)
-    test_sub <- test_all[c("Y", "n_lags", "n_burnin", "n_reps")]
-    stop("Missing elements: ", paste(names(test_sub)[which(test_sub)], collapse = " "))
-  }
 
   # Diffuse
   prior_Pi_Omega <- create_prior_Pi_Omega(lambda1 = x$lambda1, lambda2 = x$lambda2, lambda3 = x$lambda3,
@@ -380,12 +374,9 @@ mcmc_sampler.mfbvar_dl_diffuse <- function(x, ...){
 
 mcmc_sampler.mfbvar_ss_diffuse <- function(x, ...) {
 
+  check_required_params(x, "Y", "d", "prior_psi_mean", "prior_psi_Omega", "n_lags", "n_burnin", "n_reps")
   n_vars <- ncol(x$Y)
-  if (!(!is.null(x$Y) && !is.null(x$d) && !is.null(x$prior_psi_mean) && !is.null(x$prior_psi_Omega) && !is.null(x$n_lags) && !is.null(x$n_burnin) && !is.null(x$n_reps))) {
-    test_all <- sapply(x, is.null)
-    test_sub <- test_all[c("Y", "d", "prior_psi_mean", "prior_psi_Omega", "n_lags", "n_burnin", "n_reps")]
-    stop("Missing elements: ", paste(names(test_sub)[which(test_sub)], collapse = " "))
-  }
+
   if (x$n_fcst > 0 && nrow(x$d_fcst) != x$n_fcst) {
     stop("d_fcst has ", nrow(x$d_fcst), " rows, but n_fcst is ", x$n_fcst, ".")
   }
@@ -614,12 +605,9 @@ mcmc_sampler.mfbvar_ss_diffuse <- function(x, ...) {
 
 mcmc_sampler.mfbvar_ssng_diffuse <- function(x, ...) {
 
+  check_required_params(x, "Y", "d", "prior_psi_mean", "n_lags", "n_burnin", "n_reps")
   n_vars <- ncol(x$Y)
-  if (!(!is.null(x$Y) && !is.null(x$d) && !is.null(x$prior_psi_mean) && !is.null(x$n_lags) && !is.null(x$n_burnin) && !is.null(x$n_reps))) {
-    test_all <- sapply(x, is.null)
-    test_sub <- test_all[c("Y", "d", "prior_psi_mean", "n_lags", "n_burnin", "n_reps")]
-    stop("Missing elements: ", paste(names(test_sub)[which(test_sub)], collapse = " "))
-  }
+
   if (x$n_fcst > 0 && nrow(x$d_fcst) != x$n_fcst) {
     stop("d_fcst has ", nrow(x$d_fcst), " rows, but n_fcst is ", x$n_fcst, ".")
   }
