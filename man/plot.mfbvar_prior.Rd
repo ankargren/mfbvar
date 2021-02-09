@@ -13,6 +13,9 @@
 
 \item{...}{Currently not in use.}
 }
+\value{
+A \code{\link[ggplot2]{ggplot}}.
+}
 \description{
 Method for plotting \code{mfbvar_prior} objects.
 }

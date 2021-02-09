@@ -15,6 +15,19 @@
 
 \item{...}{Currently not in use.}
 }
+\value{
+A \code{\link[tibble]{tibble}} with columns:
+\describe{\item{\code{variable}}{Name of variable}
+\item{\code{time}}{Time index}
+\item{\code{fcst_date}}{Date of forecast}}
+If the argument \code{pred_bands} is given as a numeric value between 0 and 1, the returned tibble also includes columns:
+\describe{\item{\code{lower}}{The \code{(1-pred_bands)/2} lower quantiles of the predictive distributions}
+\item{\code{median}}{The medians of the predictive distributions}
+\item{\code{upper}}{The \code{(1+pred_bands)/2} upper quantiles of the predictive distributions}}
+If \code{pred_bands} \code{NULL} or \code{NA}, the returned tibble also includes the columns:
+\describe{\item{\code{fcst}}{MCMC samples from the predictive distributions}
+\item{\code{iter}}{Iteration indexes for the MCMC samples}}
+}
 \description{
 Method for predicting \code{mfbvar} objects.
 }

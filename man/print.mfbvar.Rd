@@ -11,6 +11,9 @@
 
 \item{...}{Currently not in use.}
 }
+\value{
+No return value, called for side effects.
+}
 \description{
 Method for printing \code{mfbvar} objects.
 }

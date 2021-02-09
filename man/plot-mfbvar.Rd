@@ -58,6 +58,9 @@ varplot(x, variables = colnames(x$Y), var_bands = 0.95, nrow_facet = NULL, ...)
 
 \item{var_bands}{(\code{varplot} only) Single number (between \code{0.0} and \code{1.0}) giving the coverage level of posterior intervals for the error standard deviations.}
 }
+\value{
+A \code{\link[ggplot2]{ggplot}}.
+}
 \description{
 Methods for plotting posterior mfbvar objects.
 }

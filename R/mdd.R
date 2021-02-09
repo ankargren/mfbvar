@@ -6,6 +6,8 @@
 #' @seealso \code{\link{mdd.mfbvar_ss_iw}}, \code{\link{mdd.mfbvar_minn_iw}}
 #' @param x argument to dispatch on (of class \code{mfbvar_ss} or \code{mfbvar_minn})
 #' @param ... additional named arguments passed on to the methods
+#' @return The logarithm of the marginal data density.
+#' @details The marginal data density is also known as the marginal likelihood.
 
 mdd <- function(x, ...) {
   UseMethod("mdd")

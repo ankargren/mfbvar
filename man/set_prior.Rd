@@ -95,11 +95,14 @@ term.}
 
 \item{prior_obj}{an object of class \code{mfbvar_prior}}
 }
+\value{
+An object of class \code{mfbvar_prior} that is used as input to \code{estimate_mfbvar}.
+}
 \description{
 The function creates an object storing all information needed for estimating a mixed-frequency BVAR. The object includes data as well as details for the model and its priors.
 }
 \details{
-Some support is provided for single-frequency data sets, where \code{Y} contains only monthly or only quarterly variables. The vector of frequencies given to \code{freq} should be set accordingly.
+Some support is provided for single-frequency data sets, where \code{Y} contains variables sampled with the same frequency.
 
 The aggregation weights that can be used for \code{aggregation} are intra-quarterly averages (\code{aggregation = "average"}), where the quarterly observations \eqn{y_{q,t}} are assumed to relate to the underlying monthly series \eqn{z_{q,,t}} through:
 \deqn{y_{q,t} = \frac{1}{3}(z_{q,,t} + z_{q,,t-1} + z_{q,, t-2})}

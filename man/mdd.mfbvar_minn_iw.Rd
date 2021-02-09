@@ -22,7 +22,7 @@ The method used for estimating the marginal data density is the proposal made by
 Schorfheide and Song (2015).
 }
 \references{
-Schorfheide, F., & Song, D. (2015) Real-Time Forecasting With a Mixed-Frequency VAR. \emph{Journal of Business & Economic Statistics}, 33(3), 366--380. \url{http://dx.doi.org/10.1080/07350015.2014.954707}
+Schorfheide, F., & Song, D. (2015) Real-Time Forecasting With a Mixed-Frequency VAR. \emph{Journal of Business & Economic Statistics}, 33(3), 366--380. \doi{10.1080/07350015.2014.954707}
 }
 \seealso{
 \code{\link{mdd}}, \code{\link{mdd.mfbvar_ss_iw}}

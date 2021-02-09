@@ -11,6 +11,9 @@
 
 \item{...}{additional arguments (currently unused)}
 }
+\value{
+No return value, called for side effects.
+}
 \description{
 Printing method for object of class mfbvar_prior, checking if information
 in the prior is sufficient for estimating models.

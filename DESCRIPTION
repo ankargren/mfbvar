@@ -2,12 +2,12 @@ Package: mfbvar
 Type: Package
 Title: Mixed-Frequency Bayesian VAR Models 
 Version: 0.5.6
-Date: 2021-02-03
+Date: 2021-02-09
 Authors@R: c(
     person("Sebastian", "Ankargren", email = "sebastian.ankargren@statistics.uu.se", role = c("cre", "aut"), comment = c(ORCID = "0000-0003-4415-8734")),
     person("Yukai", "Yang", email = "yukai.yang@statistics.uu.se", role = c("aut"), comment=c(ORCID="0000-0002-2623-8549")),
     person("Gregor", "Kastner", role = "ctb", comment = c(ORCID="0000-0002-8237-8271")))
-Description: Estimation of mixed-frequency Bayesian vector autoregressive (VAR) models. The package implements a state space-based VAR model that handles mixed frequencies of the data. The model is estimated using Markov Chain Monte Carlo to numerically approximate the posterior distribution. Prior distributions that can be used include normal-inverse Wishart and normal-diffuse priors as well as steady-state priors. Stochastic volatility can be handled by common or factor stochastic volatility models.
+Description: Functions and tools for estimation of mixed-frequency Bayesian vector autoregressive (VAR) models. The package implements a state space-based VAR model that handles mixed frequencies of the data as proposed by Schorfheide and Song (2015) <doi:10.1080/07350015.2014.954707>, and extensions thereof developed by Ankargren, Unosson and Yang (2020) <doi:10.1515/jtse-2018-0034>, Ankargren and Joneus (2019) <arXiv:1912.02231>, and Ankargren and Joneus (2020) <doi:10.1016/j.ecosta.2020.05.007>. The models are estimated using Markov Chain Monte Carlo to numerically approximate the posterior distribution. Prior distributions that can be used include normal-inverse Wishart and normal-diffuse priors as well as steady-state priors. Stochastic volatility can be handled by common or factor stochastic volatility models.
 License: GPL-3
 LazyData: TRUE
 URL: https://github.com/ankargren/mfbvar

@@ -31,7 +31,7 @@
 #' @param ... (Only used with factor stochastic volatility) Arguments to pass along to \code{\link[factorstochvol]{fsvsample}}. See details.
 #' @templateVar verbose TRUE
 #' @template man_template
-#' @details Some support is provided for single-frequency data sets, where \code{Y} contains only monthly or only quarterly variables. The vector of frequencies given to \code{freq} should be set accordingly.
+#' @details Some support is provided for single-frequency data sets, where \code{Y} contains variables sampled with the same frequency.
 #'
 #' The aggregation weights that can be used for \code{aggregation} are intra-quarterly averages (\code{aggregation = "average"}), where the quarterly observations \eqn{y_{q,t}} are assumed to relate to the underlying monthly series \eqn{z_{q,,t}} through:
 #' \deqn{y_{q,t} = \frac{1}{3}(z_{q,,t} + z_{q,,t-1} + z_{q,, t-2})}
@@ -60,7 +60,7 @@
 #'
 #' The function \code{update_prior} can be used to update an existing prior object. See the examples.
 #'
-
+#' @return An object of class \code{mfbvar_prior} that is used as input to \code{estimate_mfbvar}.
 #' @examples
 #' # Standard list-based way
 #' prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 100)
@@ -559,6 +559,7 @@ check_prior <- function(prior_obj) {
 #'   checks for estimation and not forecasting (for which the steady-state prior
 #'   requires additional information).
 #' @seealso \code{\link{set_prior}}, \code{\link{update_prior}}, \code{\link{estimate_mfbvar}}, \code{\link{summary.mfbvar_prior}}
+#' @return  No return value, called for side effects.
 #' @examples
 #' prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 100)
 #' print(prior_obj)
@@ -897,6 +898,7 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
 #' @param x object of class \code{mfbvar}
 #' @param ... Currently not in use.
 #' @template man_template
+#' @return No return value, called for side effects.
 #' @examples
 #' prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 20)
 #' mod_minn <- estimate_mfbvar(prior_obj, prior = "minn")
@@ -947,6 +949,7 @@ summary.mfbvar <- function(object, ...){
 #' @param var_bands (\code{varplot} only) Single number (between \code{0.0} and \code{1.0}) giving the coverage level of posterior intervals for the error standard deviations.
 #' @param nrow_facet an integer giving the number of rows to use in the facet
 #' @param ... Currently not in use.
+#' @return A \code{\link[ggplot2]{ggplot}}.
 #' @name plot-mfbvar
 #' @examples
 #' prior_obj <- set_prior(Y = mf_usa, d = "intercept",
@@ -1306,6 +1309,17 @@ varplot <- function(x, variables = colnames(x$Y), var_bands = 0.95, nrow_facet =
 #' @param pred_bands The level of the probability bands for the forecasts.
 #' @param ... Currently not in use.
 #' @details Note that this requires that forecasts were made in the original \code{mfbvar} call.
+#' @return A \code{\link[tibble]{tibble}} with columns:
+#' \describe{\item{\code{variable}}{Name of variable}
+#' \item{\code{time}}{Time index}
+#' \item{\code{fcst_date}}{Date of forecast}}
+#' If the argument \code{pred_bands} is given as a numeric value between 0 and 1, the returned tibble also includes columns:
+#' \describe{\item{\code{lower}}{The \code{(1-pred_bands)/2} lower quantiles of the predictive distributions}
+#' \item{\code{median}}{The medians of the predictive distributions}
+#' \item{\code{upper}}{The \code{(1+pred_bands)/2} upper quantiles of the predictive distributions}}
+#' If \code{pred_bands} \code{NULL} or \code{NA}, the returned tibble also includes the columns:
+#' \describe{\item{\code{fcst}}{MCMC samples from the predictive distributions}
+#' \item{\code{iter}}{Iteration indexes for the MCMC samples}}
 #' @examples
 #' prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 20, n_fcst = 4)
 #' mod_minn <- estimate_mfbvar(prior_obj, prior = "minn")
@@ -1472,6 +1486,8 @@ predict.mfbvar <- function(object, aggregate_fcst = TRUE, pred_bands = 0.8, ...)
                 upper = quantile(fcst, prob = pred_quantiles[3], names = FALSE),
                 .groups = "keep") %>%
       ungroup()
+  } else {
+    fcst_collapsed <- fcst_collapsed[, c("variable", "time", "fcst_date", "fcst", "iter")]
   }
 
   return(fcst_collapsed)
@@ -1555,6 +1571,7 @@ predict.sfbvar <- function(object, pred_bands = 0.8, ...) {
 #' @param nrow_facet number of rows in facet
 #' @param ... Currently not in use.
 #' @details The function plots the data. If the prior moments for the steady-state parameters are available in \code{x}, these are included.
+#' @return A \code{\link[ggplot2]{ggplot}}.
 #' @examples
 #' prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 20, n_fcst = 4)
 #' plot(prior_obj)

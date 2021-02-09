@@ -11,11 +11,16 @@ mdd(x, ...)
 
 \item{...}{additional named arguments passed on to the methods}
 }
+\value{
+The logarithm of the marginal data density.
+}
 \description{
 \code{mdd} estimates the (log) marginal data density.
 }
 \details{
 This is a generic function. See the methods for more information.
+
+The marginal data density is also known as the marginal likelihood.
 }
 \seealso{
 \code{\link{mdd.mfbvar_ss_iw}}, \code{\link{mdd.mfbvar_minn_iw}}
