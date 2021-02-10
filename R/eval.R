@@ -15,6 +15,7 @@
 #' @templateVar n_reps TRUE
 #' @template man_template
 #' @keywords internal
+#' @noRd
 #' @return The return is:
 #' \item{evals}{A vector with the evaulations.}
 #'
@@ -28,7 +29,7 @@ eval_Pi_Sigma_RaoBlack <- function(Z_array, d, post_psi_center, post_Pi_center, 
   for (i in 1:length(evals)) {
     # Demean z, create Z_array (companion form version)
     demeaned_z <- Z_array[,,i+1] - d %*% post_psi_center
-    demeaned_Z <- build_Z(z = demeaned_z, n_lags = n_lags)
+    demeaned_Z <- mfbvar:::build_Z(z = demeaned_z, n_lags = n_lags)
     XX <- demeaned_Z[-nrow(demeaned_Z), ]
     YY <- demeaned_Z[-1, 1:n_vars]
     XXt.XX <- crossprod(XX)
@@ -47,7 +48,7 @@ eval_Pi_Sigma_RaoBlack <- function(Z_array, d, post_psi_center, post_Pi_center, 
     post_s_i <- prior_S + s_sample + t(Pi_diff) %*% chol2inv(chol(prior_Pi_Omega + XXt.XX.inv)) %*% Pi_diff
 
     # Evaluate
-    evals[i] <- exp(dnorminvwish(X = t(post_Pi_center), Sigma = post_Sigma_center, M = post_Pi_i, P = post_Pi_Omega_i, S = post_s_i, v = post_nu))
+    evals[i] <- dnorminvwish(X = t(post_Pi_center), Sigma = post_Sigma_center, M = post_Pi_i, P = post_Pi_Omega_i, S = post_s_i, v = post_nu)
   }
 
   return(evals)
@@ -70,6 +71,7 @@ eval_Pi_Sigma_RaoBlack <- function(Z_array, d, post_psi_center, post_Pi_center, 
 #' @templateVar n_reps TRUE
 #' @template man_template
 #' @keywords internal
+#' @noRd
 #' @return The return is:
 #' \item{evals}{A vector with the evaulations.}
 #'

@@ -1,0 +1,61 @@
+## citHeader("To cite package mfbvar in publications use:")
+
+## R >= 2.8.0 passes package metadata to citation().
+if(!exists("meta") || is.null(meta)) meta <- packageDescription("mfbvar")
+year <- sub("-.*", "", meta$Packaged)
+note <- sprintf("R package version %s", meta$Version)
+
+bibentry(bibtype = "article",
+        header       = "To cite mfbvar in publications use:",
+        title        = "Mixed-Frequency {B}ayesian {VAR} Models in {R}: the {mfbvar} package",
+        author       = personList(
+          person(given = "Sebastian",
+                 family = "Ankargren",
+                 email = "sebastian.ankargren@konj.se"),
+          person(given = "Yukai",
+                 family = "Yang",
+                 email = "yukai.yang@statistics.uu.se")),
+        journal      = "R package vignette",
+        year         = "2021",
+        textVersion  =
+          paste("Ankargren, Sebastian and Yang, Yukai (2021).",
+                "Mixed-Frequency Bayesian VAR Models in R: the mfbvar package.",
+                "R package vignette.",
+                "URL: https://CRAN.R-project.org/package=mfbvar/vignettes/mfbvar_jss.pdf")
+)
+
+citEntry(header = "For the adaptive simulation smoother, please cite:",
+         entry = "article",
+         title = "Simulation Smoothing for Nowcasting with Large Mixed-Frequency {VAR}s",
+         author = personList(as.person("Sebastian Ankargren"),
+                             as.person("Paulina Jon\\\'{e}us")),
+         journal = "Econometrics and Statistics",
+         year = "2020",
+         doi = "10.1016/j.ecosta.2020.05.007",
+         textVersion = "Ankargren, Sebastian and Jonéus, Paulina (2020). Simulation Smoothing for Nowcasting with Large Mixed-Frequency VARs. Econometrics and Statistics. https://doi.org/10.1016/j.ecosta.2020.05.007"
+)
+
+citEntry(header = "For the steady-state mixed-frequency BVAR, please cite:",
+         entry = "article",
+         title = "A Flexible Mixed-Frequency Vector Autoregression with a Steady-State Prior",
+         author = personList(as.person("Sebastian Ankargren"),
+                             as.person("Måns Unosson"),
+                             as.person("Yukai Yang")),
+         journal = "Journal of Time Series Econometrics",
+         volume = "12",
+         number = "2",
+         year = "2020",
+         doi = "10.1515/jtse-2018-0034",
+         textVersion = "Ankargren, Sebastian, Måns Unosson and Yukai Yang (2020). A Flexible Mixed-Frequency Vector Autoregression with a Steady-State Prior. Journal of Time Series Econometrics, 12(2). https://doi.org/10.1515/jtse-2018-0034"
+)
+
+citEntry(header = "For the mixed-frequency BVAR with factor stochastic volatility, please cite:",
+         entry = "article",
+         title = "Estimating Large Mixed-Frequency Bayesian VAR Models",
+         author = personList(as.person("Sebastian Ankargren"),
+                             as.person("Paulina Jon\\\'{e}us")),
+         journal = "arXiv",
+         year = "2019",
+         url = "https://arxiv.org/abs/1912.02231",
+         textVersion = "Ankargren, Sebastian and Paulina Jonéus (2019). Estimating Large Mixed-Frequency Bayesian VAR Models. arXiv, https://arxiv.org/abs/1912.02231"
+)

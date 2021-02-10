@@ -4,17 +4,29 @@
 \alias{predict.mfbvar}
 \title{Predict method for class \code{mfbvar}}
 \usage{
-\method{predict}{mfbvar}(object, fcst_start = NULL,
-  aggregate_fcst = TRUE, pred_bands = 0.8, ...)
+\method{predict}{mfbvar}(object, aggregate_fcst = TRUE, pred_bands = 0.8, ...)
 }
 \arguments{
 \item{object}{object of class mfbvar}
 
+\item{aggregate_fcst}{If forecasts of quarterly variables should be aggregated back to the quarterly frequency.}
+
+\item{pred_bands}{The level of the probability bands for the forecasts.}
+
 \item{...}{Currently not in use.}
-
-\item{pred_quantiles}{The quantiles of the posterior predictive distribution to use.}
-
-\item{tidy}{If results should be tidy or not.}
+}
+\value{
+A \code{\link[tibble]{tibble}} with columns:
+\describe{\item{\code{variable}}{Name of variable}
+\item{\code{time}}{Time index}
+\item{\code{fcst_date}}{Date of forecast}}
+If the argument \code{pred_bands} is given as a numeric value between 0 and 1, the returned tibble also includes columns:
+\describe{\item{\code{lower}}{The \code{(1-pred_bands)/2} lower quantiles of the predictive distributions}
+\item{\code{median}}{The medians of the predictive distributions}
+\item{\code{upper}}{The \code{(1+pred_bands)/2} upper quantiles of the predictive distributions}}
+If \code{pred_bands} \code{NULL} or \code{NA}, the returned tibble also includes the columns:
+\describe{\item{\code{fcst}}{MCMC samples from the predictive distributions}
+\item{\code{iter}}{Iteration indexes for the MCMC samples}}
 }
 \description{
 Method for predicting \code{mfbvar} objects.
@@ -23,9 +35,7 @@ Method for predicting \code{mfbvar} objects.
 Note that this requires that forecasts were made in the original \code{mfbvar} call.
 }
 \examples{
-prior_obj <- set_prior(Y = mf_sweden[, 4:5], freq = c("m", "q"),
-                       n_lags = 4, n_burnin = 20, n_reps = 20, n_fcst = 4)
+prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 20, n_fcst = 4)
 mod_minn <- estimate_mfbvar(prior_obj, prior = "minn")
 predict(mod_minn)
-predict(mod_minn, pred_quantiles = 0.5, tidy = TRUE)
 }

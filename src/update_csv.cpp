@@ -21,6 +21,18 @@ void update_csv(
     const double phi_meaninvvar,
     const double prior_sigma2,
     const double prior_df) {
+  // data: data matrix
+  // phi: AR(1) parameter
+  // sigma: standard deviation of log-volatility innovation
+  // h: vector of log volatilities
+  // h0: log volatility initial value
+  // mixprob: mixture probabilities for Kim, Shephard, Chib (1998) algorithm
+  // r: mixture indicators for KSC (1998) algorithm
+  // priorlatent0: prior variance for initial value of log volatility
+  // phi_invvar: inverse of prior variance for AR(1) parameter
+  // phi_meaninvvar: prior mean of AR(1) parameter times phi_invvar
+  // prior_sigma2: prior mean of variance of innovation
+  // prior_df: prior degrees of freedom for variance of innovation
   int T = data.n_rows;
   int n = data.n_cols;
 

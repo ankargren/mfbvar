@@ -6,13 +6,12 @@ compute_error_variances <- function(Y) {
   for (i in 1:n_vars) {
     success <- NULL
     init_order <- 4
-    while(is.null(success)) {
-      error_variance[i] <- tryCatch(arima(na.omit(Y[,i]), order = c(init_order, 0, 0), method = "ML")$sigma2,
+    for (ar_order in init_order:1) {
+      error_variance[i] <- tryCatch(arima(na.omit(Y[,i]), order = c(ar_order, 0, 0), method = "ML")$sigma2,
                                     error = function(cond) NA)
       if (!is.na(error_variance[i])) {
-        success <- 1
+        break
       } else {
-        init_order <- init_order - 1
         if (init_order < 1) {
           error_variance[i] <- var(na.omit(Y[,i]))
         }

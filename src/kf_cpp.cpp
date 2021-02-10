@@ -183,6 +183,7 @@ arma::vec KF::loglike() {
 //' @param n_q_ number of quarterly variables
 //' @param T_b_ final time period where all monthly variables are observed
 //' @keywords internal
+//' @noRd
 //' @return For \code{kf_ragged}, a list with elements:
 //' \item{a}{The one-step predictions (for the compact form)}
 //' \item{a_tt}{The filtered estimates (for the compact form)}
@@ -380,7 +381,6 @@ arma::mat KF_ragged::create_d(int T_end_) {
 }
 
 //' @title Kalman filter and smoother
-//'
 //' @description Kalman filter and smoother (\code{kf_ragged}) and simulation smoother (\code{kf_sim_smooth}) for mixed-frequency data with ragged edges. This function is more computationally efficient than using a companion form representation.
 //' @param y_ matrix with the data
 //' @param Phi_ matrix with the autoregressive parameters, where the last column is the intercept
@@ -389,6 +389,7 @@ arma::mat KF_ragged::create_d(int T_end_) {
 //' @param n_q_ number of quarterly variables
 //' @param T_b_ final time period where all monthly variables are observed
 //' @keywords internal
+//' @noRd
 //' @return For \code{kf_ragged}, a list with elements:
 //' \item{a}{The one-step predictions (for the compact form)}
 //' \item{a_tt}{The filtered estimates (for the compact form)}

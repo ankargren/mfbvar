@@ -4,6 +4,7 @@
 #' @templateVar Y TRUE
 #' @template man_template
 #' @keywords internal
+#' @noRd
 #' @return A matrix with no \code{NA}s.
 fill_na <- function(Y) {
   apply(Y, 2, function(x) {

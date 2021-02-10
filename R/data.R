@@ -1,4 +1,4 @@
-#' Real-time data set.
+#' Real-time data set for Sweden.
 #'
 #' A dataset containing real-time data for mixed and quarterly frequencies.
 #'
@@ -16,3 +16,15 @@
 #' Statistics Sweden (2016) Revisions, expenditure approach and hours worked at each release.
 #'
 "mf_sweden"
+
+#' US Macroeconomic Data Set
+#'
+#' A dataset containing mixed-frequency data from FRED for three US macroeconomic variables.
+#'
+#' @format A list with components:
+#' \describe{
+#'   \item{CPIAUCSL}{inflation rate}
+#'   \item{UNRATE}{unemployment rate}
+#'   \item{GDPC1}{GDP growth rate}
+#' }
+"mf_usa"

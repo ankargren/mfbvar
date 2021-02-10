@@ -3,41 +3,68 @@
 \name{set_prior}
 \alias{set_prior}
 \alias{update_prior}
-\alias{check_prior}
-\title{Set priors for an mfbvar model}
+\title{Set priors for mfbvar}
 \usage{
-set_prior(Y, freq, prior_Pi_AR1 = rep(0, ncol(Y)), lambda1 = 0.2,
-  lambda2 = 0.5, lambda3 = 1, lambda4 = 10000, n_lags, n_fcst = 0,
-  thin = 1, n_burnin, n_reps, d = NULL, d_fcst = NULL,
-  prior_psi_mean = NULL, prior_psi_Omega = NULL, n_fac = NULL,
-  cl = NULL, verbose = FALSE, check_roots = FALSE, ...)
+set_prior(
+  Y,
+  aggregation = "average",
+  prior_Pi_AR1 = 0,
+  lambda1 = 0.2,
+  lambda2 = 0.5,
+  lambda3 = 1,
+  lambda4 = 10000,
+  block_exo = NULL,
+  n_lags,
+  n_fcst = 0,
+  n_thin = 1,
+  n_reps,
+  n_burnin = n_reps,
+  freq = NULL,
+  d = NULL,
+  d_fcst = NULL,
+  prior_psi_mean = NULL,
+  prior_psi_Omega = NULL,
+  check_roots = FALSE,
+  s = -1000,
+  prior_ng = c(0.01, 0.01),
+  prior_phi = c(0.9, 0.1),
+  prior_sigma2 = c(0.01, 4),
+  n_fac = NULL,
+  n_cores = 1,
+  verbose = FALSE,
+  ...
+)
 
 update_prior(prior_obj, ...)
-
-check_prior(prior_obj)
 }
 \arguments{
-\item{Y}{The data matrix of size \code{(n_T + n_lags) * n_vars} with \code{NA} representing missingness. All monthly variables must be placed before quarterly variables.}
+\item{Y}{data input. For monthly-quarterly data, should be a list with components containing regularly spaced time series (that inherit from \code{ts} or \code{zooreg}). If a component contains a single time series, the component itself must be named. If a component contains multiple time series, each time series must be named. Monthly variables can only contain missing values at the end of the sample, and should precede quarterly variables in the list. Matrices in which quarterly variables are padded with \code{NA} and observations stored at the end of each quarter are also accepted, but then the frequency of each variable must be given in the argument \code{freq}. Weekly-monthly mixes can be provided using the matrix way, see examples.}
 
-\item{freq}{Character vector with elements 'm' (monthly) or 'q' (quarterly) for sampling frequency. Monthly variables must precede all quarterly variables.}
+\item{aggregation}{the aggregation scheme used for relating latent high-frequency series to their low-frequency observations. The default is \code{"average"} for averaging within each low-frequency period (e.g., quarterly observations are averages of the constituent monthly observations). The alternative \code{"triangular"} can be used for monthly-quarterly mixes, and uses the Mariano-Murasawa triangular set of weights. See details for more information.}
 
 \item{prior_Pi_AR1}{The prior means for the AR(1) coefficients.}
 
 \item{lambda1}{The overall tightness.}
 
+\item{lambda2}{(Only if \code{variance} is one of \code{c("diffuse", "fsv")} The cross-variable tightness}
+
 \item{lambda3}{The tightness of the intercept prior variance.}
 
 \item{lambda4}{(Minnesota only) Prior variance of the intercept.}
+
+\item{block_exo}{(Only if \code{variance} is one of \code{c("diffuse", "fsv")}) Vector of indexes/names of variables to be treated as block exogenous}
 
 \item{n_lags}{The number of lags.}
 
 \item{n_fcst}{The number of periods to forecast.}
 
-\item{thin}{Store every \code{thin}th draw}
+\item{n_thin}{Store every \code{n_thin}th draw}
+
+\item{n_reps}{The number of replications.}
 
 \item{n_burnin}{The number of burn-in replications.}
 
-\item{n_reps}{The number of replications.}
+\item{freq}{(Only used if \code{Y} is a matrix) Character vector with elements 'm' (monthly) or 'q' (quarterly) for sampling frequency. Monthly variables must precede all quarterly variables.}
 
 \item{d}{(Steady state only) Either a matrix with same number of rows as \code{Y} and \code{n_determ} number of columns containing the deterministic terms or a string \code{"intercept"} for requesting an intercept as the only deterministic
 term.}
@@ -46,39 +73,52 @@ term.}
 
 \item{prior_psi_mean}{(Steady state only) Vector of length \code{n_determ*n_vars} with the prior means of the steady-state parameters.}
 
-\item{prior_psi_Omega}{(Steady state only) Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.}
+\item{prior_psi_Omega}{(Steady state only) Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.#'}
+
+\item{check_roots}{Logical, if roots of the companion matrix are to be checked to ensure stationarity.}
+
+\item{s}{(Hierarchical steady state only) scalar giving the tuning parameter for the Metropolis-Hastings proposal for the kurtosis parameter. If \code{s < 0}, then adaptive Metropolis-Hastings targeting an acceptance rate of 0.44 is used, where the scaling factor is restricted to the interval \code{[-abs(s), abs(s)]}}
+
+\item{prior_ng}{(Hierarchical steady state only) vector with two elements giving the parameters \code{c(c0, c1)} of the hyperprior for the global shrinkage parameter}
+
+\item{prior_phi}{(Only used with common stochastic volatility) Vector with two elements \code{c(mean, variance)} for the AR(1) parameter in the log-volatility regression}
+
+\item{prior_sigma2}{(Only used with common stochastic volatility) Vector with two elements \code{c(mean, df)} for the innovation variance of the log-volatility regression}
 
 \item{n_fac}{(Only used with factor stochastic volatility) Number of factors to use for the factor stochastic volatility model}
 
-\item{cl}{(Only used with factor stochastic volatility) Cluster object to use for drawing regression parameters in parallel}
+\item{n_cores}{(Only used with factor stochastic volatility) Number of cores to use for drawing regression parameters in parallel}
 
 \item{verbose}{Logical, if progress should be printed to the console.}
-
-\item{check_roots}{Logical, if roots of the companion matrix are to be checked to ensure stationarity.}
 
 \item{...}{(Only used with factor stochastic volatility) Arguments to pass along to \code{\link[factorstochvol]{fsvsample}}. See details.}
 
 \item{prior_obj}{an object of class \code{mfbvar_prior}}
-
-\item{(Only}{if \code{variance != "iw"}) The cross-variable tightness}
-
-\item{...}{named arguments for prior attributes to update}
+}
+\value{
+An object of class \code{mfbvar_prior} that is used as input to \code{estimate_mfbvar}.
 }
 \description{
-Create an object storing all information needed for estimation, including data as well as model and prior specifications for both a Minnesota or steady-state prior.
+The function creates an object storing all information needed for estimating a mixed-frequency BVAR. The object includes data as well as details for the model and its priors.
 }
 \details{
-The first arguments (\code{Y} through \code{n_reps}) must be set for the model to be estimated irrespective of the choice
-of prior, but some have default values.
+Some support is provided for single-frequency data sets, where \code{Y} contains variables sampled with the same frequency.
 
-For the Minnesota prior, \code{lambda4} must also be set, but it too has a default that it relies on if not specified.
+The aggregation weights that can be used for \code{aggregation} are intra-quarterly averages (\code{aggregation = "average"}), where the quarterly observations \eqn{y_{q,t}} are assumed to relate to the underlying monthly series \eqn{z_{q,,t}} through:
+\deqn{y_{q,t} = \frac{1}{3}(z_{q,,t} + z_{q,,t-1} + z_{q,, t-2})}
 
-For the steady-state prior, the deterministic matrix needs to be supplied, or a string indicating that the intercept should be
-the only deterministic term. If the latter, also \code{d_fcst} is set to be intercept only. Otherwise, if forecasts are requested
-(\code{n_fcst > 0}) also \code{d_fcst} needs to be provided. Finally, the prior moments for the steady-state parameters must also be
-provided.
+If \code{aggregation = "triangular"}, then instead
+\deqn{y_{q,t} = \frac{1}{9}(z_{q,,t} + 2z_{q,,t-1} + 3z_{q,, t-2}) + 2z_{q,, t-3}) + z_{q,, t-4})}
 
-For modeling stochastic volatility by the factor stochastic volatility model, the number of factors to use must be supplied. Further arguments can be passed along to \code{\link[factorstochvol]{fsvsample}}. If arguments are not given, the defaults used are as follows (see \code{\link[factorstochvol]{fsvsample}} for descriptions):
+The latter is typically used when modeling growth rates, and the former when working with log-levels.
+
+If the steady-state prior is to be used, the deterministic matrix needs to be supplied, or a string indicating that the intercept should be the only deterministic term (\code{d = "intercept"}). If the latter, \code{d_fcst} is automatically set to be intercept only. Otherwise, if forecasts are requested
+(\code{n_fcst > 0}) also \code{d_fcst} must be provided. Finally, the prior means of the steady-state parameters must (at the very minimum) also be
+provided in \code{prior_psi_mean}. The steady-state prior involves inverting the lag polynomial. For this reason, draws in which the largest eigenvalue
+(in absolute value) of the lag polynomial is greater than 1 are discarded and new draws are made if \code{check_roots = TRUE}. The maximum number of
+attempts is 1,000.
+
+For modeling stochastic volatility by the factor stochastic volatility model, the number of factors to use must be supplied. Further arguments can be passed along, but are not included as formal arguments. If the default settings are not overriden, the defaults used are as follows (see \code{\link[factorstochvol]{fsvsample}} for descriptions):
 \itemize{
   \item{\code{priormu}}{\code{ = c(0, 10)}}
   \item{\code{priorphiidi}}{\code{ = c(10, 3)}}
@@ -86,23 +126,22 @@ For modeling stochastic volatility by the factor stochastic volatility model, th
   \item{\code{priorsigmaidi}}{\code{ = 1}}
   \item{\code{priorsigmafac}}{\code{ = 1}}
   \item{\code{priorfacload}}{\code{ = 1}}
-  \item{\code{priorng}}{\code{ = c(1, 1)}}
-  \item{\code{columnwise}}{\code{ = FALSE}}
   \item{\code{restrict}}{\code{ = "none"}}
-  \item{\code{heteroskedastic}}{\code{ = TRUE}}
-  \item{\code{priorhomoskedastic}}{\code{ = NA}}
 }
 
-The steady-state prior involves inverting the lag polynomial. For this reason, draws in which the largest eigenvalue
-(in absolute value) of the lag polynomial is greater than 1 are discarded and new draws are made. The maximum number of
-attempts is 1,000. The components in the output named \code{roots} and \code{num_tries} contain the largest roots and the
-number of attempts, respectively, if \code{check_roots = TRUE} (the default).
+The function \code{update_prior} can be used to update an existing prior object. See the examples.
 }
 \examples{
-prior_obj <- set_prior(Y = mf_sweden, freq = c(rep("m", 4), "q"),
-                       n_lags = 4, n_burnin = 100, n_reps = 100)
+# Standard list-based way
+prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 100)
 prior_obj <- update_prior(prior_obj, n_fcst = 4)
+
+# Weekly-monthly mix of data, four weeks per month
+Y <- matrix(rnorm(400), 100, 4)
+Y[setdiff(1:100,seq(4, 100, by = 4)), 4] <- NA
+prior_obj <- set_prior(Y = Y, freq = c(rep("w", 3), "m"),
+                       n_lags = 4, n_reps = 10)
 }
 \seealso{
-\code{\link{interval_to_moments}}, \code{\link{print.mfbvar_prior}}, \code{\link{summary.mfbvar_prior}}, \code{\link{estimate_mfbvar}}, \code{\link[factorstochvol]{fsvsample}}
+\code{\link{estimate_mfbvar}}, \code{\link{update_prior}}, \code{\link{interval_to_moments}}, \code{\link{print.mfbvar_prior}}, \code{\link{summary.mfbvar_prior}}, \code{\link[factorstochvol]{fsvsample}}
 }

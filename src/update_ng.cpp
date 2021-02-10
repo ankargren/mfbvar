@@ -13,6 +13,16 @@ double posterior_phi_mu(const double lambda, const double phi_mu, const arma::ve
 void update_ng(double & phi_mu, double & lambda_mu, arma::vec & omega, arma::uword nm,
                const double c0, const double c1, double s,
                const arma::vec & psi_i, const arma::vec & prior_psi_mean, double & accept) {
+  // phi_mu: the shrinkage parameter phi_mu
+  // lambda_mu: the shrinkage parameter lambda_mu
+  // omega: the idiosyncratic shrinkage parameters omega
+  // nm: n_vars * n_determ (number of parameters)
+  // c0: hyperparameter c0
+  // c1: hyperparameter c1
+  // s: scale of proposal
+  // psi_i: the steady-state parameters
+  // prior_psi_mean: the prior means of psi_i
+  // accept: indicator for whether the proposal is accepted or not
 
   // Update omega
   double gig_lambda = phi_mu-0.5;
@@ -26,9 +36,8 @@ void update_ng(double & phi_mu, double & lambda_mu, arma::vec & omega, arma::uwo
     //omega(i) = do_rgig1(gig_lambda, gig_chi, gig_psi(i));
     omega(i) = do_rgig1(gig_lambda, gig_chi(i), gig_psi);
   }
-
   // Update lambda
-  lambda_mu = R::rgamma((double)nm * phi_mu + c0, 1.0/(0.5 * phi_mu * arma::accu(omega) + c1)); // Check parametrization
+  lambda_mu = R::rgamma((double)nm * phi_mu + c0, 1.0/(0.5 * phi_mu * arma::accu(omega) + c1));
 
   // Update phi
   double phi_mu_proposal = phi_mu * std::exp(R::rnorm(0.0, s));

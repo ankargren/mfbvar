@@ -13,6 +13,9 @@
 
 \item{...}{Currently not in use.}
 }
+\value{
+A \code{\link[ggplot2]{ggplot}}.
+}
 \description{
 Method for plotting \code{mfbvar_prior} objects.
 }
@@ -20,7 +23,6 @@ Method for plotting \code{mfbvar_prior} objects.
 The function plots the data. If the prior moments for the steady-state parameters are available in \code{x}, these are included.
 }
 \examples{
-prior_obj <- set_prior(Y = mf_sweden[, 4:5], freq = c("m", "q"),
-                       n_lags = 4, n_burnin = 20, n_reps = 20, n_fcst = 4)
+prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 20, n_fcst = 4)
 plot(prior_obj)
 }

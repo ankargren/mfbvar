@@ -96,7 +96,6 @@ void posterior_psi_fsv(arma::vec & psi_i, arma::mat & mu_mat,
   arma::mat U = build_U_cpp(Pi_i, n_determ, n_vars, n_lags);
   arma::mat post_psi_Omega = posterior_psi_Omega_fsv(U, D_mat, idivar, inv_prior_psi_Omega);
   arma::mat Y_tilde = Z_i - X * Pi_i.t() - arma::trans(startfacload * startfac);
-
   arma::mat post_psi = posterior_psi_mean_fsv(U, D_mat, idivar, inv_prior_psi_Omega_mean,
                                               post_psi_Omega, Y_tilde);
   psi_i = rmultn(post_psi, post_psi_Omega);

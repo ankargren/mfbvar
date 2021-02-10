@@ -1,29 +1,21 @@
 # R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
 
 language: R
-sudo: false
+sudo: true
 cache: packages
+warnings_are_errors: true
 os:
   - linux
   - osx
 r:
-  - oldrel
   - release
-  - devel
-
-r_check_args: --as-cran
-
-matrix:
-  exclude:
-    - os: osx
-      r: devel
 
 branches:
   only:
   - master
 
 r_github_packages:
-  - jimhester/covr
+  - r-lib/covr
 r_binary_packages:
   - Rcpp
   - RcppArmadillo
@@ -32,6 +24,16 @@ r_binary_packages:
   - testthat
   - roxygen2
   - devtools
+  - factorstochvol
+  - tinytex
+
+before_install:
+  - chmod +x configure
+  - chmod +x cleanup
+
+r_build_args: --no-build-vignettes --no-manual --no-resave-data
+r_check_args: --ignore-vignettes --no-manual
+
 
 after_success:
   - tar -C .. -xf $PKG_TARBALL

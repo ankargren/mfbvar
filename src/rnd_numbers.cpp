@@ -2,6 +2,7 @@
 
 //' @rdname dnorminvwish
 //' @keywords internal
+//' @noRd
 // [[Rcpp::export]]
 arma::mat rmatn(const arma::mat & M, const arma::mat & Q, const arma::mat & P){
 /*-------------------------------------------------------
@@ -19,6 +20,7 @@ arma::mat rmatn(const arma::mat & M, const arma::mat & Q, const arma::mat & P){
 
 //' @rdname dnorminvwish
 //' @keywords internal
+//' @noRd
 // [[Rcpp::export]]
 arma::mat rinvwish(int v, const arma::mat & S){
   int p = S.n_rows;
@@ -42,6 +44,7 @@ arma::mat rinvwish(int v, const arma::mat & S){
 
 //' @rdname dmultn
 //' @keywords internal
+//' @noRd
 // [[Rcpp::export]]
 arma::vec rmultn(const arma::vec & m, const arma::mat & Sigma){
   /*-------------------------------------------------------

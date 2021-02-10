@@ -16,6 +16,7 @@
 #' @templateVar n_T TRUE
 #' @template man_template
 #' @keywords internal
+#' @noRd
 #' @return \code{posterior_Pi_Sigma} returns a list with:
 #' \item{Pi_r}{The draw of \code{Pi}.}
 #' \item{Sigma_r}{The draw of \code{Sigma}.}
@@ -88,6 +89,7 @@ posterior_Pi_Sigma <- function(Z_r1, d, psi_r1, prior_Pi_mean, prior_Pi_Omega, i
 #' @templateVar n_determ TRUE
 #' @template man_template
 #' @keywords internal
+#' @noRd
 #' @return \code{posterior_psi} returns:
 #' \item{psi_r}{The draw of \code{psi}.}
 posterior_psi <- function(Pi_r, Sigma_r, Z_r1, prior_psi_mean, prior_psi_Omega, D_mat, n_vars, n_lags, n_determ) {
@@ -115,6 +117,7 @@ posterior_psi <- function(Pi_r, Sigma_r, Z_r1, prior_psi_mean, prior_psi_Omega, 
 #' @templateVar prior_psi_mean TRUE
 #' @template man_template
 #' @keywords internal
+#' @noRd
 #' @return The return is:
 #' \item{psi}{The posterior mean (from \code{\link{posterior_psi_mean}})}
 posterior_psi_mean <- function(U, D_mat, Sigma, prior_psi_Omega, post_psi_Omega, Y_tilde, prior_psi_mean) {
@@ -125,6 +128,7 @@ posterior_psi_mean <- function(U, D_mat, Sigma, prior_psi_Omega, post_psi_Omega,
 
 #' @rdname posterior_psi_mean
 #' @keywords internal
+#' @noRd
 #' @return \item{psi_Omega}{The posterior variance (from \code{\link{posterior_psi_Omega}})}
 posterior_psi_Omega <- function(U, D_mat, Sigma, prior_psi_Omega) {
   psi_Omega <- chol2inv(chol(t(U) %*% (kronecker(crossprod(D_mat), chol2inv(chol(Sigma)))) %*% U + chol2inv(chol(prior_psi_Omega))))

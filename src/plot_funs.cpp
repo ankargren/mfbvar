@@ -10,8 +10,9 @@ void variances_fsv(arma::cube & variances, const arma::cube & latent, const arma
       fac_i = latent.slice(i).row(tt).cols(n_vars, n_vars+n_fac-1);
       idi_i = latent.slice(i).row(tt);
       idi_i = idi_i.cols(variables_num-1);
-      variance_i = facload_i * arma::diagmat(arma::exp(fac_i)) * facload_i.t() + arma::exp(idi_i);
-      variances.slice(i).row(tt) = arma::sqrt(variance_i.diag());
+      variance_i = facload_i * arma::diagmat(arma::exp(fac_i)) * facload_i.t();
+      variance_i.diag() += arma::exp(idi_i);
+      variances.slice(i).row(tt) = arma::sqrt(variance_i.diag().t());
     }
   }
 }

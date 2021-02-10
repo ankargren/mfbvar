@@ -11,6 +11,9 @@
 
 \item{...}{additional arguments (currently unused)}
 }
+\value{
+No return value, called for side effects.
+}
 \description{
 Printing method for object of class mfbvar_prior, checking if information
 in the prior is sufficient for estimating models.
@@ -23,8 +26,7 @@ The print method checks whether the steady-state and Minnesota
   requires additional information).
 }
 \examples{
-prior_obj <- set_prior(Y = mf_sweden, freq = c(rep("m", 4), "q"),
-                       n_lags = 4, n_burnin = 100, n_reps = 100)
+prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 100)
 print(prior_obj)
 }
 \seealso{

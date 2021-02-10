@@ -7,7 +7,7 @@ mcmc_sampler.mfbvar_minn_csv <- function(x, ...){
   }
 
   prior_nu <- n_vars + 2
-  priors <- mfbvar:::prior_Pi_Sigma(lambda1 = x$lambda1, lambda2 = x$lambda3, prior_Pi_AR1 = x$prior_Pi_AR1, Y = x$Y,
+  priors <- prior_Pi_Sigma(lambda1 = x$lambda1, lambda2 = x$lambda3, prior_Pi_AR1 = x$prior_Pi_AR1, Y = x$Y,
                                     n_lags = x$n_lags, prior_nu = prior_nu)
   prior_Pi_mean <- priors$prior_Pi_mean
   prior_Pi_Omega <- priors$prior_Pi_Omega
@@ -30,8 +30,9 @@ mcmc_sampler.mfbvar_minn_csv <- function(x, ...){
   prior_df <- x$prior_sigma2[2]
 
   add_args <- list(...)
-  n_reps <- add_args$n_reps
-  n_thin <- ifelse(!is.null(add_args$n_thin), add_args$n_thin, ifelse(!is.null(x$n_thin), x$n_thin, 1))
+  n_reps <- x$n_reps
+  n_burnin <- x$n_burnin
+  n_thin <- ifelse(is.null(x$n_thin), 1, x$n_thin)
   init <- add_args$init
   init_Pi <- init$init_Pi
   init_Sigma <- init$init_Sigma
@@ -46,23 +47,17 @@ mcmc_sampler.mfbvar_minn_csv <- function(x, ...){
   # n_T: sample size (full sample)
   # n_T_: sample size (reduced sample)
 
-  n_q <- sum(freq == "q")
+  freqs <- x$freqs
+  Lambda_ <- x$Lambda_
+  n_q <- sum(freq == freqs[1])
   if (n_q < n_vars) {
-    T_b <- max(which(!apply(apply(Y[, freq == "m", drop = FALSE], 2, is.na), 1, any)))
+    T_b <- max(which(!apply(apply(Y[, freq == freqs[2], drop = FALSE], 2, is.na), 1, any)))
   } else {
     T_b <- nrow(Y)
   }
   if (n_q == 0 || n_q == n_vars) {
     complete_quarters <- apply(Y, 1, function(x) !any(is.na(x)))
     Y <- Y[complete_quarters, ]
-  }
-  if (n_q > 0) {
-    if (x$aggregation == "average") {
-      Lambda_ <- mfbvar:::build_Lambda(rep("average", n_q), 3)
-    } else {
-      Lambda_ <- mfbvar:::build_Lambda(rep("triangular", n_q), 5)}
-  } else {
-    Lambda_ <- matrix(0, 1, 3)
   }
 
 
@@ -117,7 +112,7 @@ mcmc_sampler.mfbvar_minn_csv <- function(x, ...){
   # for multiple chains
 
   if (is.null(init_Z)) {
-    Z[,, 1] <- mfbvar:::fill_na(Y)
+    Z[,, 1] <- fill_na(Y)
   } else {
     if (all(dim(Z[,, 1]) == dim(init_Z))) {
       Z[,, 1] <- init_Z
@@ -127,7 +122,7 @@ mcmc_sampler.mfbvar_minn_csv <- function(x, ...){
 
   }
 
-  ols_results <- mfbvar:::ols_initialization(z = Z[,, 1], d = d, n_lags = n_lags, n_T = n_T, n_vars = n_vars, n_determ = 1)
+  ols_results <- ols_initialization(z = Z[,, 1], d = d, n_lags = n_lags, n_T = n_T, n_vars = n_vars, n_determ = 1)
 
   if (is.null(init_Pi)) {
     Pi[,, 1]    <- cbind(ols_results$const, ols_results$Pi)
@@ -178,17 +173,18 @@ mcmc_sampler.mfbvar_minn_csv <- function(x, ...){
   inv_prior_Pi_Omega <- chol2inv(chol(prior_Pi_Omega))
   Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi_mean
 
-  set.seed(1)
-  mfbvar:::mcmc_minn_csv(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,phi,sigma,f,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,
+  mcmc_minn_csv(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,phi,sigma,f,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,
                         Omega_Pi,prior_Pi_mean,prior_S,Z_1,10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,
-                        n_reps,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,n_thin,verbose)
-
+                        n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,n_thin,verbose)
+  if (verbose) {
+    cat("\n")
+  }
   return_obj <- list(Pi = Pi, Sigma = Sigma, Z = Z, phi = phi, sigma = sigma, f = f,
-                     Z_fcst = NULL, n_lags = n_lags, n_vars = n_vars,
+                     Z_fcst = NULL, aggregation = x$aggregation, n_lags = n_lags, n_vars = n_vars,
                      n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega,
                      prior_Pi_mean = prior_Pi_mean, prior_S = prior_S,
                      prior_nu = n_vars+2, post_nu = n_T + n_vars+2, d = d, Y = Y,
-                     n_T = n_T, n_T_ = n_T_, n_reps = n_reps, Lambda_ = Lambda_,
+                     n_T = n_T, n_T_ = n_T_, n_reps = n_reps, n_burnin = n_burnin, n_thin = n_thin, Lambda_ = Lambda_,
                      init = list(init_Pi = Pi[,, n_reps/n_thin],
                                  init_Sigma = Sigma[,, n_reps/n_thin],
                                  init_Z = Z[,, n_reps/n_thin],
@@ -215,7 +211,7 @@ mcmc_sampler.mfbvar_ss_csv <- function(x, ...) {
     stop("d_fcst has ", nrow(x$d_fcst), " rows, but n_fcst is ", x$n_fcst, ".")
   }
 
-  priors <- mfbvar:::prior_Pi_Sigma(lambda1 = x$lambda1, lambda2 = x$lambda3, prior_Pi_AR1 = x$prior_Pi_AR1, Y = x$Y,
+  priors <- prior_Pi_Sigma(lambda1 = x$lambda1, lambda2 = x$lambda3, prior_Pi_AR1 = x$prior_Pi_AR1, Y = x$Y,
                                     n_lags = x$n_lags, prior_nu = n_vars + 2)
   prior_Pi_mean <- priors$prior_Pi_mean
   prior_Pi_Omega <- priors$prior_Pi_Omega
@@ -237,8 +233,9 @@ mcmc_sampler.mfbvar_ss_csv <- function(x, ...) {
   prior_df <- x$prior_sigma2[2]
 
   add_args <- list(...)
-  n_reps <- add_args$n_reps
-  n_thin <- ifelse(is.null(add_args$n_thin),1,add_args$n_thin)
+  n_reps <- x$n_reps
+  n_burnin <- x$n_burnin
+  n_thin <- ifelse(is.null(x$n_thin), 1, x$n_thin)
   init <- add_args$init
   init_Pi <- init$init_Pi
   init_Sigma <- init$init_Sigma
@@ -255,27 +252,21 @@ mcmc_sampler.mfbvar_ss_csv <- function(x, ...) {
   # n_T_: sample size (reduced sample)
   n_vars <- dim(Y)[2]
   n_lags <- prod(dim(as.matrix(prior_Pi_mean)))/n_vars^2
-  n_q <- sum(freq == "q")
-  n_m <- sum(freq == "m")
+  freqs <- x$freqs
+  Lambda_ <- x$Lambda_
+
+  n_q <- sum(freq == freqs[1])
+  n_m <- n_vars - n_q
+  if (n_q < n_vars) {
+    T_b <- max(which(!apply(apply(Y[, freq == freqs[2], drop = FALSE], 2, is.na), 1, any)))
+  } else {
+    T_b <- nrow(Y)
+  }
   if (n_q == 0 || n_q == n_vars) {
     complete_quarters <- apply(Y, 1, function(x) !any(is.na(x)))
     Y <- Y[complete_quarters, ]
     d_fcst <- rbind(d[!complete_quarters, , drop = FALSE], d_fcst)
     d <- d[complete_quarters, , drop = FALSE]
-  }
-  y_in_p <- Y[-(1:n_lags), ]
-  if (n_q < n_vars) {
-    T_b <- min(apply(y_in_p[,1:n_m], 2, function(x) ifelse(any(is.na(x)), min(which(is.na(x))), Inf))-1, nrow(y_in_p))
-  } else {
-    T_b <- nrow(y_in_p)
-  }
-  if (n_q > 0) {
-    if (x$aggregation == "average") {
-      Lambda_ <- mfbvar:::build_Lambda(rep("average", n_q), 3)
-    } else {
-      Lambda_ <- mfbvar:::build_Lambda(rep("triangular", n_q), 5)}
-  } else {
-    Lambda_ <- matrix(0, 1, 3)
   }
 
 
@@ -334,7 +325,7 @@ mcmc_sampler.mfbvar_ss_csv <- function(x, ...) {
   # for multiple chains
 
   if (is.null(init_Z)) {
-    Z[,, 1] <- mfbvar:::fill_na(Y)
+    Z[,, 1] <- fill_na(Y)
   } else {
     if (all(dim(Z[,, 1]) == dim(init_Z))) {
       Z[,, 1] <- init_Z
@@ -344,7 +335,7 @@ mcmc_sampler.mfbvar_ss_csv <- function(x, ...) {
 
   }
 
-  ols_results <- tryCatch(mfbvar:::ols_initialization(z = Z[,, 1], d = d, n_lags = n_lags, n_T = n_T, n_vars = n_vars, n_determ = n_determ),
+  ols_results <- tryCatch(ols_initialization(z = Z[,, 1], d = d, n_lags = n_lags, n_T = n_T, n_vars = n_vars, n_determ = n_determ),
                           error = function(cond) NULL)
   if (is.null(ols_results)) {
     ols_results <- list()
@@ -365,8 +356,8 @@ mcmc_sampler.mfbvar_ss_csv <- function(x, ...) {
 
   # Compute the maximum eigenvalue of the initial Pi
   if (check_roots == TRUE) {
-    Pi_comp    <- mfbvar:::build_companion(Pi = Pi[,, 1], n_vars = n_vars, n_lags = n_lags)
-    roots[1]   <- mfbvar:::max_eig_cpp(Pi_comp)
+    Pi_comp    <- build_companion(Pi = Pi[,, 1], n_vars = n_vars, n_lags = n_lags)
+    roots[1]   <- max_eig_cpp(Pi_comp)
   }
 
   if (is.null(init_Sigma)) {
@@ -416,7 +407,7 @@ mcmc_sampler.mfbvar_ss_csv <- function(x, ...) {
 
   # Create D (does not vary in the sampler), and find roots of Pi
   # if requested
-  D_mat <- mfbvar:::build_DD(d = d, n_lags = n_lags)
+  D_mat <- build_DD(d = d, n_lags = n_lags)
   dt <- d[-(1:n_lags), , drop = FALSE]
   d1 <- d[1:n_lags, , drop = FALSE]
 
@@ -425,19 +416,27 @@ mcmc_sampler.mfbvar_ss_csv <- function(x, ...) {
   Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi_mean
 
   # For the posterior of psi
-  inv_prior_psi_Omega <- solve(prior_psi_Omega)
-  inv_prior_psi_Omega_mean <- inv_prior_psi_Omega %*% prior_psi_mean
   Z_1 <- Z[1:n_pseudolags,, 1]
 
-  mfbvar:::mcmc_ss_csv(Y[-(1:n_lags),],Pi,Sigma,psi,Z,Z_fcst,phi,sigma,f,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
-                       prior_S,D_mat,dt,d1,d_fcst_lags,inv_prior_psi_Omega,inv_prior_psi_Omega_mean,check_roots,Z_1,
-                       10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,n_reps,n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose)
+  phi_mu <- matrix(0, 1, 1)
+  lambda_mu <- matrix(0, 1, 1)
+  omega <- matrix(diag(prior_psi_Omega), nrow = 1)
+  c0 <- 0
+  c1 <- 0
+  s <- 0
 
+  mcmc_ssng_csv(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,phi,sigma,f,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
+                       prior_S,D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,
+                       10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,
+                       verbose,FALSE)
+  if (verbose) {
+    cat("\n")
+  }
   return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z, phi = phi, sigma = sigma, f = f, roots = NULL, num_tries = NULL,
-                     Z_fcst = NULL, smoothed_Z = NULL, n_determ = n_determ,
+                     Z_fcst = NULL, aggregation = x$aggregation, n_determ = n_determ,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      prior_S = prior_S, prior_nu = n_vars+2, post_nu = n_T + n_vars+2, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
-                     prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, Lambda_ = Lambda_,
+                     prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, n_burnin = n_burnin, n_thin = n_thin, Lambda_ = Lambda_,
                      init = list(init_Pi = Pi[,, n_reps/n_thin], init_Sigma = Sigma[,, n_reps/n_thin], init_psi = psi[n_reps/n_thin, ], init_Z = Z[,, n_reps/n_thin], init_phi = phi[n_reps/n_thin], init_sigma = sigma[n_reps/n_thin], init_f = f[n_reps/n_thin,]))
 
   if (check_roots == TRUE) {
@@ -463,7 +462,7 @@ mcmc_sampler.mfbvar_ssng_csv <- function(x, ...) {
     stop("d_fcst has ", nrow(x$d_fcst), " rows, but n_fcst is ", x$n_fcst, ".")
   }
 
-  priors <- mfbvar:::prior_Pi_Sigma(lambda1 = x$lambda1, lambda2 = x$lambda3, prior_Pi_AR1 = x$prior_Pi_AR1, Y = x$Y,
+  priors <- prior_Pi_Sigma(lambda1 = x$lambda1, lambda2 = x$lambda3, prior_Pi_AR1 = x$prior_Pi_AR1, Y = x$Y,
                                     n_lags = x$n_lags, prior_nu = n_vars + 2)
   prior_Pi_mean <- priors$prior_Pi_mean
   prior_Pi_Omega <- priors$prior_Pi_Omega
@@ -485,8 +484,9 @@ mcmc_sampler.mfbvar_ssng_csv <- function(x, ...) {
   prior_df <- x$prior_sigma2[2]
 
   add_args <- list(...)
-  n_reps <- add_args$n_reps
-  n_thin <- ifelse(is.null(add_args$n_thin),1,add_args$n_thin)
+  n_reps <- x$n_reps
+  n_burnin <- x$n_burnin
+  n_thin <- ifelse(is.null(x$n_thin), 1, x$n_thin)
   init <- add_args$init
   init_Pi <- init$init_Pi
   init_Sigma <- init$init_Sigma
@@ -506,29 +506,22 @@ mcmc_sampler.mfbvar_ssng_csv <- function(x, ...) {
   # n_T_: sample size (reduced sample)
   n_vars <- dim(Y)[2]
   n_lags <- prod(dim(as.matrix(prior_Pi_mean)))/n_vars^2
-  n_q <- sum(freq == "q")
-  n_m <- sum(freq == "m")
+  freqs <- x$freqs
+  Lambda_ <- x$Lambda_
+
+  n_q <- sum(freq == freqs[1])
+  n_m <- n_vars - n_q
+  if (n_q < n_vars) {
+    T_b <- max(which(!apply(apply(Y[, freq == freqs[2], drop = FALSE], 2, is.na), 1, any)))
+  } else {
+    T_b <- nrow(Y)
+  }
   if (n_q == 0 || n_q == n_vars) {
     complete_quarters <- apply(Y, 1, function(x) !any(is.na(x)))
     Y <- Y[complete_quarters, ]
     d_fcst <- rbind(d[!complete_quarters, , drop = FALSE], d_fcst)
     d <- d[complete_quarters, , drop = FALSE]
   }
-  y_in_p <- Y[-(1:n_lags), ]
-  if (n_q < n_vars) {
-    T_b <- min(apply(y_in_p[,1:n_m], 2, function(x) ifelse(any(is.na(x)), min(which(is.na(x))), Inf))-1, nrow(y_in_p))
-  } else {
-    T_b <- nrow(y_in_p)
-  }
-  if (n_q > 0) {
-    if (x$aggregation == "average") {
-      Lambda_ <- mfbvar:::build_Lambda(rep("average", n_q), 3)
-    } else {
-      Lambda_ <- mfbvar:::build_Lambda(rep("triangular", n_q), 5)}
-  } else {
-    Lambda_ <- matrix(0, 1, 3)
-  }
-
 
   n_pseudolags <- max(c(n_lags, ncol(Lambda_)/nrow(Lambda_)))
   n_determ <- dim(d)[2]
@@ -537,8 +530,8 @@ mcmc_sampler.mfbvar_ssng_csv <- function(x, ...) {
 
 
 
-  c0 <- ifelse(is.null(x$c0), 0.01, x$c0)
-  c1 <- ifelse(is.null(x$c1), 0.01, x$c1)
+  c0 <- ifelse(is.null(x$prior_ng), 0.01, x$prior_ng[1])
+  c1 <- ifelse(is.null(x$prior_ng), 0.01, x$prior_ng[2])
   s <- ifelse(is.null(x[["s"]]), -10, x$s)
   ################################################################
   ### Preallocation
@@ -593,7 +586,7 @@ mcmc_sampler.mfbvar_ssng_csv <- function(x, ...) {
   # for multiple chains
 
   if (is.null(init_Z)) {
-    Z[,, 1] <- mfbvar:::fill_na(Y)
+    Z[,, 1] <- fill_na(Y)
   } else {
     if (all(dim(Z[,, 1]) == dim(init_Z))) {
       Z[,, 1] <- init_Z
@@ -603,7 +596,7 @@ mcmc_sampler.mfbvar_ssng_csv <- function(x, ...) {
 
   }
 
-  ols_results <- tryCatch(mfbvar:::ols_initialization(z = Z[,, 1], d = d, n_lags = n_lags, n_T = n_T, n_vars = n_vars, n_determ = n_determ),
+  ols_results <- tryCatch(ols_initialization(z = Z[,, 1], d = d, n_lags = n_lags, n_T = n_T, n_vars = n_vars, n_determ = n_determ),
                           error = function(cond) NULL)
   if (is.null(ols_results)) {
     ols_results <- list()
@@ -624,8 +617,8 @@ mcmc_sampler.mfbvar_ssng_csv <- function(x, ...) {
 
   # Compute the maximum eigenvalue of the initial Pi
   if (check_roots == TRUE) {
-    Pi_comp    <- mfbvar:::build_companion(Pi = Pi[,, 1], n_vars = n_vars, n_lags = n_lags)
-    roots[1]   <- mfbvar:::max_eig_cpp(Pi_comp)
+    Pi_comp    <- build_companion(Pi = Pi[,, 1], n_vars = n_vars, n_lags = n_lags)
+    roots[1]   <- max_eig_cpp(Pi_comp)
   }
 
   if (is.null(init_Sigma)) {
@@ -697,7 +690,7 @@ mcmc_sampler.mfbvar_ssng_csv <- function(x, ...) {
 
   # Create D (does not vary in the sampler), and find roots of Pi
   # if requested
-  D_mat <- mfbvar:::build_DD(d = d, n_lags = n_lags)
+  D_mat <- build_DD(d = d, n_lags = n_lags)
   dt <- d[-(1:n_lags), , drop = FALSE]
   d1 <- d[1:n_lags, , drop = FALSE]
 
@@ -707,13 +700,14 @@ mcmc_sampler.mfbvar_ssng_csv <- function(x, ...) {
 
   Z_1 <- Z[1:n_pseudolags,, 1]
 
-  mfbvar:::mcmc_ssng_csv(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,phi,sigma,f,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
+  mcmc_ssng_csv(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,phi,sigma,f,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
                        prior_S,D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,
-                       10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,n_reps,n_q,T_b,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose)
-
+                       10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,TRUE)
+  if (verbose) {
+    cat("\n")
+  }
   return_obj <- list(Pi = Pi, Sigma = Sigma, psi = psi, Z = Z, phi_mu = phi_mu, lambda_mu = lambda_mu, omega = omega,
-                     phi = phi, sigma = sigma, f = f, roots = NULL, num_tries = NULL,
-                     Z_fcst = NULL, smoothed_Z = NULL, n_determ = n_determ,
+                     phi = phi, sigma = sigma, f = f, Z_fcst = NULL, aggregation = x$aggregation, n_determ = n_determ,
                      n_lags = n_lags, n_vars = n_vars, n_fcst = n_fcst, prior_Pi_Omega = prior_Pi_Omega, prior_Pi_mean = prior_Pi_mean,
                      prior_S = prior_S, prior_nu = n_vars+2, post_nu = n_T + n_vars+2, d = d, Y = Y, n_T = n_T, n_T_ = n_T_,
                      prior_psi_Omega = prior_psi_Omega, prior_psi_mean = prior_psi_mean, n_reps = n_reps, Lambda_ = Lambda_,

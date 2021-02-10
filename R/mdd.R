@@ -6,6 +6,8 @@
 #' @seealso \code{\link{mdd.mfbvar_ss_iw}}, \code{\link{mdd.mfbvar_minn_iw}}
 #' @param x argument to dispatch on (of class \code{mfbvar_ss} or \code{mfbvar_minn})
 #' @param ... additional named arguments passed on to the methods
+#' @return The logarithm of the marginal data density.
+#' @details The marginal data density is also known as the marginal likelihood.
 
 mdd <- function(x, ...) {
   UseMethod("mdd")
@@ -25,10 +27,13 @@ mdd.default <- function(x, ...) {
 #' Fuentes-Albero and Melosi (2013) and Ankargren, Unosson and Yang (2018).
 #' @return The logarithm of the marginal data density.
 #' @references Fuentes-Albero, C. and Melosi, L. (2013) Methods for Computing Marginal Data Densities from the Gibbs Output.
-#' \emph{Journal of Econometrics}, 175(2), 132-141, \url{https://doi.org/10.1016/j.jeconom.2013.03.002}\cr
+#' \emph{Journal of Econometrics}, 175(2), 132-141, \doi{10.1016/j.jeconom.2013.03.002}\cr
 #'  Ankargren, S., Unosson, M., & Yang, Y. (2018) A Mixed-Frequency Bayesian Vector Autoregression with a Steady-State Prior. Working Paper, Department of Statistics, Uppsala University No. 2018:3.
 #' @seealso \code{\link{mdd}}, \code{\link{mdd.mfbvar_minn_iw}}
 mdd.mfbvar_ss_iw <- function(x, method = 1, ...) {
+  if (x$aggregation != "average") {
+    stop("The marginal data density can only be computed using intra-quarterly average aggregation.")
+  }
   if (method == 1) {
     mdd_est <- estimate_mdd_ss_1(x)
   } else if (method == 2) {
@@ -48,9 +53,12 @@ mdd.mfbvar_ss_iw <- function(x, method = 1, ...) {
 #' @details The method used for estimating the marginal data density is the proposal made by
 #' Schorfheide and Song (2015).
 #' @references
-#' Schorfheide, F., & Song, D. (2015) Real-Time Forecasting With a Mixed-Frequency VAR. \emph{Journal of Business & Economic Statistics}, 33(3), 366--380. \url{http://dx.doi.org/10.1080/07350015.2014.954707}
+#' Schorfheide, F., & Song, D. (2015) Real-Time Forecasting With a Mixed-Frequency VAR. \emph{Journal of Business & Economic Statistics}, 33(3), 366--380. \doi{10.1080/07350015.2014.954707}
 #' @seealso \code{\link{mdd}}, \code{\link{mdd.mfbvar_ss_iw}}
 mdd.mfbvar_minn_iw <- function(x, ...) {
+  if (x$aggregation != "average") {
+    stop("The marginal data density can only be computed using intra-quarterly average aggregation.")
+  }
   quarterly_cols <- which(x$mfbvar_prior$freq == "q")
   estimate_mdd_minn(x, ...)
 }
@@ -59,6 +67,7 @@ mdd.mfbvar_minn_iw <- function(x, ...) {
 #'
 #' This function provides the possibility to estimate the log marginal density using the steady-state MF-BVAR.
 #' @keywords internal
+#' @noRd
 #' @return
 #' \code{estimate_mdd_ss_1} returns a list with components (all are currently in logarithms):
 #' \item{lklhd}{The likelihood.}
@@ -102,10 +111,10 @@ estimate_mdd_ss_1 <- function(mfbvar_obj) {
   prior_psi_mean <- mfbvar_obj$prior_psi_mean
 
   freq <- mfbvar_obj$mfbvar_prior$freq
-  Lambda <- build_Lambda(freq, n_lags)
   n_q <- sum(freq == "q")
   T_b <- max(which(!apply(apply(Y[, freq == "m"], 2, is.na), 1, any)))
-  Lambda_ <- build_Lambda(rep("q", n_q), 3)
+  Lambda <- build_Lambda(ifelse(freq == "q", "average", freq), n_lags)
+  Lambda_ <- build_Lambda(rep("average", n_q), 3)
 
   ################################################################
   ### Initialize
@@ -172,14 +181,34 @@ estimate_mdd_ss_1 <- function(mfbvar_obj) {
 
   ################################################################
   ### Final calculations
-  lklhd          <- sum(c(loglike(Y = as.matrix(mZ), Lambda = Lambda, Pi_comp = Pi_comp, Q_comp = Q_comp, n_T = n_T_, n_vars = n_vars, n_comp = n_lags * n_vars, z0 = h0, P0 = P0)[-1]))
-  eval_prior_Pi_Sigma <- dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = prior_Pi_mean, P = prior_Pi_Omega, S = prior_S, v = n_vars+2)
-  eval_prior_psi      <- dmultn(x = post_psi, m = prior_psi_mean, Sigma = prior_psi_Omega)
-  eval_RB_Pi_Sigma    <- log(mean(eval_Pi_Sigma_RaoBlack(Z_array = Z_red, d = d, post_psi_center = post_psi, post_Pi_center = post_Pi_mean, post_Sigma_center = post_Sigma,
-                                                         post_nu = post_nu, prior_Pi_mean = prior_Pi_mean, prior_Pi_Omega = prior_Pi_Omega, prior_S = prior_S,
-                                                         n_vars = n_vars, n_lags = n_lags, n_reps = n_reps)))
-  eval_marg_psi   <- log(mean(eval_psi_MargPost(Pi_array = Pi, Sigma_array = Sigma, Z_array = Z, post_psi_center = post_psi, prior_psi_mean = prior_psi_mean,
-                                                prior_psi_Omega = prior_psi_Omega, D_mat = D, n_determ = n_determ, n_vars = n_vars, n_lags = n_lags, n_reps = n_reps)))
+  lklhd          <- sum(c(loglike(Y = as.matrix(mZ), Lambda = Lambda,
+                                  Pi_comp = Pi_comp, Q_comp = Q_comp, n_T = n_T_,
+                                  n_vars = n_vars, n_comp = n_lags * n_vars,
+                                  z0 = h0, P0 = P0)[-1]))
+  eval_prior_Pi_Sigma <- dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma,
+                                      M = prior_Pi_mean, P = prior_Pi_Omega,
+                                      S = prior_S, v = n_vars+2)
+  eval_prior_psi      <- dmultn(x = post_psi, m = prior_psi_mean,
+                                Sigma = prior_psi_Omega)
+  eval_log_RB <- eval_Pi_Sigma_RaoBlack(Z_array = Z_red, d = d,
+                                        post_psi_center = post_psi,
+                                        post_Pi_center = post_Pi_mean,
+                                        post_Sigma_center = post_Sigma,
+                                        post_nu = post_nu,
+                                        prior_Pi_mean = prior_Pi_mean,
+                                        prior_Pi_Omega = prior_Pi_Omega,
+                                        prior_S = prior_S, n_vars = n_vars,
+                                        n_lags = n_lags, n_reps = n_reps)
+  const <- median(eval_log_RB)
+  eval_RB_Pi_Sigma    <- log(mean(exp(eval_log_RB-const))) + const
+  eval_marg_psi   <- log(mean(eval_psi_MargPost(Pi_array = Pi, Sigma_array = Sigma,
+                                                Z_array = Z,
+                                                post_psi_center = post_psi,
+                                                prior_psi_mean = prior_psi_mean,
+                                                prior_psi_Omega = prior_psi_Omega,
+                                                D_mat = D, n_determ = n_determ,
+                                                n_vars = n_vars, n_lags = n_lags,
+                                                n_reps = n_reps)))
 
   mdd_estimate <- c(lklhd + eval_prior_Pi_Sigma + eval_prior_psi - (eval_RB_Pi_Sigma + eval_marg_psi))
 
@@ -193,6 +222,7 @@ estimate_mdd_ss_1 <- function(mfbvar_obj) {
 #' @templateVar p_trunc TRUE
 #' @template man_template
 #' @keywords internal
+#' @noRd
 #' @return
 #' \code{estimate_mdd_ss_1} returns a list with components being \code{n_reps}-long vectors and a scalar (the final estimate).
 #' \item{eval_posterior_Pi_Sigma}{Posterior of Pi and Sigma.}
@@ -307,6 +337,7 @@ estimate_mdd_ss_2 <- function(mfbvar_obj, p_trunc) {
 #' @param quarterly_cols numeric vector with positions of quarterly variables
 #' @templateVar p_trunc TRUE
 #' @keywords internal
+#' @noRd
 #' @return The log marginal data density estimate (bar a constant)
 #'
 estimate_mdd_minn <- function(mfbvar_obj, p_trunc, ...) {

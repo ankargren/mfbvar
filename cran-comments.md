@@ -1,22 +1,36 @@
-## Resubmission
-This is a resubmission. In this version I have:
+## Re-submission of archived package
+This is a resubmission of the mfbvar package that was archived on 2021-02-05 because check problems were not corrected in time. This version thus:
+ * Fixes the check problems. The observed warnings came from the vignette, which attempted to download data. This has now been removed; vignette does no longer use an active internet connection (as per the CRAN policy).
+ * I have also extended the ability of the package to handle mixed-frequency data to now also include weekly-monthly data.
+ * .Rd files now include \value, as per Gregor Seyer's request on 2021-02-09.
+ * DESCRIPTION has been extended to include references. 
 
-* Explained the acronym in the Description.
-
-* Added links/references in the Description to the methods used in the package.
 
 ## Test environments
-* Local OS X Mojave 10.14.1 install, R 3.5.1
-* win-builder (R 3.5.1, devel)
-* ubuntu 14.04 (on travis-ci), R 3.4.4, 3.5.1, devel
-* OS X El Capitan 10.13.3 (on travis-ci), R 3.4.4, 3.5.1
+ * win-builder (R devel, R 4.0.2, R 3.6.3)
+ * Local Mac OS X 10.14.3 (R 4.0.3)
 
 ## R CMD check results
 There were no ERRORs or WARNINGs. 
 
-There was 1 NOTE:
+On some test environments, one of two NOTEs may appear:
 
+* checking for GNU extensions in Makefiles ... NOTE
+  GNU make is a SystemRequirements.
 * checking CRAN incoming feasibility ... NOTE
-Maintainer: ‘Sebastian Ankargren <sebastian.ankargren@statistics.uu.se>’
+  Maintainer: ‘Sebastian Ankargren <sebastian.ankargren@statistics.uu.se>’
 
-New submission
+  New submission
+
+  Package was archived on CRAN
+  
+  Possibly mis-spelled words in DESCRIPTION:
+  Ankargren (10:324, 10:389, 10:441)
+  Joneus (10:403, 10:455)
+  Schorfheide (10:224)
+  Unosson (10:335)
+
+  CRAN repository db overrides:
+    X-CRAN-Comment: Archived on 2021-02-05 as check problems were not
+      corrected in time.
+

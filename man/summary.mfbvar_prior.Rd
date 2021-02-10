@@ -16,8 +16,7 @@ summary method for object of class mfbvar_prior, showing some basic
 information regarding the contents of the prior.
 }
 \examples{
-prior_obj <- set_prior(Y = mf_sweden, freq = c(rep("m", 4), "q"),
-                       n_lags = 4, n_burnin = 100, n_reps = 100)
+prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 100)
 summary(prior_obj)
 }
 \seealso{

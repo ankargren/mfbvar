@@ -1,0 +1,900 @@
+\documentclass[article,nojss]{jss}
+
+%% -- LaTeX packages and custom commands ---------------------------------------
+
+%% recommended packages
+\usepackage{thumbpdf,lmodern}
+\usepackage{amsmath}
+\usepackage{amssymb}
+%% another package (only for this demo article)
+\usepackage{framed}
+\usepackage{mathtools}
+\usepackage{subfig}
+
+\mathtoolsset{showonlyrefs}
+
+%% new custom commands
+\newcommand{\class}[1]{`\code{#1}'}
+\newcommand{\fct}[1]{\code{#1()}}
+
+
+\usepackage{rotating}
+\usepackage[utf8]{inputenc}
+\usepackage{array}
+
+\newcolumntype{R}{@{\extracolsep{5pt}}c@{\extracolsep{0pt}}}%
+
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{Bayesian Mixed-Frequency VARs}
+\newcommand{\GG}[1]{}
+
+%% For Sweave-based articles about R packages:
+%% need no \usepackage{Sweave}
+<<preliminaries, echo=FALSE>>=
+options(prompt = "R> ", continue = "+  ", width = 70, useFancyQuotes = FALSE)
+run_mod <- FALSE
+@
+
+<<setup, include=FALSE, cache=FALSE>>=
+library(knitr)
+render_sweave()
+local({
+  hook_error = knit_hooks$get('warning')
+  knit_hooks$set(warning = function(x, options) {
+    x <- gsub("Warning:", "Warning:\n  ", x)
+    hook_error(x, options)
+  })
+})
+set.seed(100)
+@
+
+
+%% -- Article metainformation (author, title, ...) -----------------------------
+
+%% - \author{} with primary affiliation
+%% - \Plainauthor{} without affiliations
+%% - Separate authors by \And or \AND (in \author) or by comma (in \Plainauthor).
+%% - \AND starts a new line, \And does not.
+\author{Sebastian Ankargren\\Uppsala University, \\ National Institute of Economic Research
+   \And Yukai Yang\\Uppsala University, \\Stockholm School of Economics}
+\Plainauthor{Sebastian Ankargren, Yukai Yang}
+
+%% - \title{} in title case
+%% - \Plaintitle{} without LaTeX markup (if any)
+%% - \Shorttitle{} with LaTeX markup (if any), used as running title
+\title{Mixed-Frequency Bayesian VAR Models in \proglang{R}: the \pkg{mfbvar} package}
+\Plaintitle{Mixed-Frequency Bayesian VAR Models in R: the mfbvar package}
+\Shorttitle{Mixed-Frequency Bayesian VAR Models in \proglang{R}}
+
+%% - \Abstract{} almost as usual
+\Abstract{
+  Time series are often sampled at different frequencies, which leads to mixed-frequency data. Mixed frequencies are often neglected in applications as high-frequency series are aggregated to lower frequencies. In the \pkg{mfbvar} package, we introduce the possibility to estimate Bayesian vector autoregressive (VAR) models when the set of included time series consists of monthly and quarterly variables. The package implements several common prior distributions as well as stochastic volatility methods. The mixed-frequency nature of the data is handled by assuming that quarterly variables are weighted averages of unobserved monthly observations. We provide a user-friendly interface for model estimation and forecasting. The capabilities of the package are illustrated in an application.
+}
+
+
+%% - \Keywords{} with LaTeX markup, at least one required
+%% - \Plainkeywords{} without LaTeX markup (if necessary)
+%% - Should be comma-separated and in sentence case.
+\Keywords{vector autoregression, steady-state prior, stochastic volatility, time series, \proglang{R}}
+\Plainkeywords{vector autoregression, steady-state prior, stochastic volatility, stochastic volatility, time series, R}
+
+%% - \Address{} of at least one author
+%% - May contain multiple affiliations for each author
+%%   (in extra lines, separated by \emph{and}\\).
+%% - May contain multiple authors for the same affiliation
+%%   (in the same first line, separated by comma).
+\Address{
+  Sebastian Ankargren, Yukai Yang\\
+  Department of Statistics\\
+  Uppsala University\\
+  P.O. Box 513, 751 20 Uppsala\\
+  Sweden\\
+  E-mail: \email{sebastian.ankargren@statistics.uu.se}\\
+  URL: \url{http://ankargren.github.io/}\\
+  \emph{and}\\
+  Yukai Yang\\
+  Center for Data Analytics\\
+  Stockholm School of Economics\\
+  P.O. Box 6501, 113 83 Stockholm\\
+  Sweden\\
+  E-mail: \email{yukai.yang@statistics.uu.se}\\
+  URL: \url{http://yukai-yang.github.io/}\\
+}
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\begin{document}
+
+%% -- Introduction -------------------------------------------------------------
+
+%% - In principle "as usual".
+%% - But should typically have some discussion of both _software_ and _methods_.
+%% - Use \proglang{}, \pkg{}, and \code{} markup throughout the manuscript.
+%% - If such markup is in (sub)section titles, a plain text version has to be
+%%   added as well.
+%% - All software mentioned should be properly \cite-d.
+%% - All abbreviations should be introduced.
+%% - Unless the expansions of abbreviations are proper names (like "Journal
+%%   of Statistical Software" above) they should be in sentence case (like
+%%   "generalized linear models" below).
+
+\section{Introduction} \label{sec:intro}
+Vector autoregressive (VAR) models constitute an important tool for multivariate time series analysis. They are, in their original form, easy to fit and to use and have hence been used for various types of policy analyses as well as for forecasting purposes. A major obstacle in applied VAR modeling is the curse of dimensionality: the number of parameters grows quadratically in the number of variables, and having several hundred or even thousands of parameters is not uncommon. Thus, VAR models estimated by maximum likelihood are usually associated with bad precision. As a remedy, Bayesian estimation has become widely popular following \cite{Litterman1986} and the so-called Minnesota prior, which regularizes the estimation such that the parameters are shrunk towards a stylized view of macroeconomic time series. In the traditional Minnesota prior, the prior belief is that the time series are independent random walks. The prior puts prior densities more tightly around zero for higher-order lags, thus implying that recent lags should be relatively more important than more distant lags. The Minnesota prior, and variations thereof, has been successful in forecasting; for examples, the reader is referred to \cite{Banbura2010} and \cite{Karlsson2013} and the references therein. For an accessible introduction to VAR modeling in macroeconomics, see \cite{Stock2001}.
+
+Another prior that has shown promising results with respect to forecasting is the steady-state prior proposed by \cite{Villani2009}. In the Minnesota prior, common practice is to put a loose prior on the intercept in the VAR model. The steady-state prior employs an alternative parametrization of the model in which the unconditional mean (the steady state) is present. Thus, one can put a prior distribution on the steady states, for which there are often beliefs, rather than on the constant term. Numerous applications of Bayesian VARs with this prior exist in the literature, see for instance \cite{Jarocinski2008,Osterholm2010,Clark2011,Ankargren2016}.
+
+In most applications, researchers use single-frequency aggregated data in order to effortlessly be able to estimate the models. A common situation in macroeconomics is to include both the rate of inflation and GDP growth in a model. The inflation rate is typically published monthly, whereas GDP growth is published quarterly. Thus, a necessary first step in order to use traditional approaches is to aggregate the monthly inflation rate to the quarterly frequency.
+
+By using newer techniques, there is no need to aggregate to the lowest common frequency. Mixed data sampling (MIDAS) methods allow for various frequencies of the data to co-exist in the model \citep{Ghysels2007}. Moreover, bridge methods can be used to tackle the mixed-frequency problem \citep{Baffigi2004}. \cite{Foroni2013} provided a survey of mixed-frequency methods.
+
+The approach that the \pkg{mfbvar} package implements is a state-space based approach in which it is assumed that low-frequency variables are observed linear combinations of underlying high-frequency processes. This implies that there is a latent monthly process for GDP growth that is unobserved, and what is observed is a weighted average of said latent process. By assuming such a structure, the model can be estimated by extending the single-frequency Bayesian VAR model estimation techniques with an auxiliary step that draws from the posterior distribution of the latent process.
+
+The state-space-based mixed-frequency Bayesian VAR was proposed by \cite{Schorfheide2015} using a Minnesota-style normal inverse Wishart prior. In \cite{AnkargrenUnossonYang2019}, a similar model was presented but with a steady-state prior. The \pkg{mfbvar} package implements the mixed-frequency VAR with Minnesota and steady-state priors and stochastic volatility in a user-friendly way.
+
+The implementation of Bayesian VARs in \proglang{R} is not new; the \pkg{BMR} package \citep{OHara2017} presents the possibility to estimate single-frequency BVARs with either the Minnesota or steady-state prior. The BEAR toolbox \citep{Dieppe2016}, developed at the European Central Bank, provides the same functionality and more for \proglang{MATLAB} users. Moreover, various Bayesian VARs can also be estimated in \proglang{EViews}. However, none of these alternatives provide mixed-frequency estimation. The existing implementations of mixed-frequency estimation closest to ours is the \proglang{MATLAB} code accompanying the paper by \cite{Schorfheide2015} and the \pkg{midasr} package \citep{Ghysels2016b} implementing MIDAS regression in \proglang{R.}
+
+%% -- Manuscript ---------------------------------------------------------------
+
+%% - In principle "as usual" again.
+%% - When using equations (e.g., {equation}, {eqnarray}, {align}, etc.
+%%   avoid empty lines before and after the equation (which would signal a new
+%%   paragraph.
+%% - When describing longer chunks of code that are _not_ meant for execution
+%%   (e.g., a function synopsis or list of arguments), the environment {Code}
+%%   is recommended. Alternatively, a plain {verbatim} can also be used.
+%%   (For executed code see the next section.)
+\clearpage
+\section{Mixed-Frequency Bayesian VAR models} \label{sec:models}
+Suppose that the system evolves at the monthly frequency. Let $x_t$ be an $n\times 1$ monthly process. Decompose $x_t=(x_{m, t}^\top, x_{q, t}^\top)^\top$ into $n_m$ monthly variables, and a $n_q$-dimensional latent process for the quarterly observations. By letting $y_t=(y_{m, t}^\top, y_{q, t}^\top)^\top$ denote observations, it is implied that $y_{m, t}=x_{m, t}$ as the monthly part is always observed. For the remaining quarterly variables, we instead observe a weighted average of $x_q$. There are two common aggregations used in the literature: intra-quarterly averaging and triangular aggregation. The former assumes the relation between observed and latent variables to be
+\begin{align}
+y_{q, t}=\begin{cases}\frac{1}{3}(x_{q, t}+x_{q, t-1}+x_{q, t-2}), &\quad t\in \{\text{Mar}, \text{Jun}, \text{Sep}, \text{Dec}\}\\
+\varnothing, &\quad \text{otherwise},\end{cases}
+\end{align}
+and was used by e.g. \cite{Schorfheide2015} for modeling data in log-levels. The second alternative is the triangular weighting scheme employed by \cite{Mariano2003}, where
+\begin{align}
+y_{q, t}=\begin{cases}\frac{1}{9}(x_{q, t}+2x_{q, t-1}+3x_{q, t-2}+2x_{q,t-3}+x_{q,t-4}), &t\in \left\{\begin{matrix}\text{Mar},& \text{Jun}\\\text{Sep}, &\text{Dec}\end{matrix}\right\}\\
+\varnothing, &\text{otherwise}.\end{cases}
+\end{align}
+Intra-quarterly averaging is recommended when the dataset consists of series in log-levels, whereas the triangular weighting scheme is appropriate when the data enter the model as growth rates. In practice, the difference is often negligible.
+
+As the system is assumed to evolve at the monthly frequency, we specify a VAR($p$) model for $x_t$:
+\begin{equation}
+x_t=\phi+\Phi_1 x_{t-1}+\cdots+\Phi_p x_{t-p}+\epsilon_t, \quad \epsilon_t \sim \operatorname{N}(0, \Sigma).\label{eq:original}
+\end{equation}
+The VAR($p$) model can be written in companion form, where we let $z_t=(x_t^\top, x_{t-1}^\top, \dots, x_{t-p+1}^\top)^\top$. Thus, we obtain
+\begin{equation}
+z_t=\pi+\Pi z_{t-1}+u_t, \quad u_t \sim \operatorname{N}(0, \Omega), \label{eq:trans}
+\end{equation}
+where $\pi$, $\Pi$ and $\Omega$ are the corresponding companion form matrices constructed from $(\phi, \Phi_1, \dots, \Phi_p, \Sigma)$; see \cite{Hamilton1994}.
+
+It is now possible to specify the observation equation as
+\begin{equation}
+y_t = M_t\Lambda z_t \label{eq:obs},
+\end{equation}
+where $M_t$ is a deterministic selection matrix and $\Lambda$ an aggregation matrix based on the weighting scheme employed. The $M_t$ matrix in Equation (\ref{eq:obs}) yields a time-varying observation vector by selecting rows corresponding to variables which are observed, whereas $\Lambda$ aggregates the underlying latent process. For more details, see \cite{Schorfheide2015} and \cite{AnkargrenUnossonYang2019}.
+
+The posterior distribution of interest is $p(X, \Theta|Y)$, where $X=(x_1, \dots, x_T)^\top$, $Y=(y_1, \dots, y_T)^\top$ and $\Theta$ collects the parameters of the model. This posterior distribution is intractable, but a Gibbs sampler can be employed in order to numerically approximate the posterior. Thus, estimation can be carried out by Markov Chain Monte Carlo (MCMC) and Gibbs sampling. We alternate between drawing from the conditional posterior of $X$ given the parameters and from the conditional posterior of the parameters given $X$. That is, we alternate between drawing from the conditional distributions
+\begin{equation}
+\begin{aligned}
+p(X| \Theta, Y)\quad \text{ and }\quad p(\Theta|X).
+\end{aligned}
+\end{equation}
+ The two equations \eqref{eq:trans} and \eqref{eq:obs} constitute the transition and measurement equations of a state-space model. By conditioning on the parameters and the data, one can make a draw from the conditional posterior $p(X| \Theta, Y)$ by use of a simulation smoother \citep{Durbin2002}. Given $X$, the parameters are conditionally independent of $Y$ and a draw from $p(\Theta|X)$ can be made as in the familiar single-frequency case with the data being $X$.
+
+The preceding description of the VAR model assumes a constant error covariance matrix. In recent years, there has been a growing interest in relaxing this assumption and modeling heteroskedasticity by use of stochastic volatility models. Seminal work include \cite{Primiceri2005} and \cite{Cogley2005}, who used VARs with time-varying parameters and stochastic volatilities and have had large influence ever since. For forecasting, allowing for stochastic volatility often improves the predictive ability, in particular when the forecasting performance is evaluated with respect to density forecasts. Important work in this regard include \cite{Clark2011,DAgostino2013,Clark2015}, whose results demonstrate the usefulness of stochastic volatilities. In the \pkg{mfbvar} package, a time-varying error covariance matrix can be modeled using either the common stochastic volatility model by \cite{Carriero2016} or using the factor stochastic volatility model based on the work by \cite{Kastner2017}.
+
+In the remainder of this section, we describe the prior distributions available in \pkg{mfbvar} and discuss some aspects of the implementations for sampling from the posterior distribution.
+
+\subsection{Priors for Regression Parameters}
+
+\subsubsection{Minnesota-style priors}
+The model can be written on matrix form as
+\begin{align}
+X=W \Gamma + E,
+\end{align}
+where $W=(W_1, \dots, W_T)^\top$ with $W_t=(x_{t-1}^\top, \dots, x_{t-p}^\top, 1)^\top$, $E=(\epsilon_1, \dots, \epsilon_T)^\top$, and $\Gamma=(\Phi^\top, \phi)^\top$. The Minnesota prior for $\Gamma$ takes one of two forms depending on the specification of the error covariance component. We will use the term ``Minnesota prior'' to refer to the prior for the model with intercept in order to more easily contrast it with an alternative specification discussed in a later section. It does not, however, refer to the original Minnesota prior with a fixed diagonal error covariance matrix as used by \cite{Litterman1986}; rather, it should be interpreted as a normal prior for the regression parameters---including intercept---based on the Minnesota prior beliefs.
+
+\paragraph{Conditional normal prior}
+A common prior for VAR models is a joint normal inverse Wishart prior for $(\Gamma, \Sigma)$ in which the prior $\Gamma$ is constructed conditionally on the error covariance $\Sigma$. The conditional prior distribution for $\Gamma$ is in this case a multivariate normal distribution of the form
+\begin{align}
+\operatorname{vec}(\Gamma)|\Sigma \sim \operatorname{N}(\operatorname{vec}(\underline{\Gamma}), \Sigma\otimes\underline{\Xi}),\label{eq:prior}
+\end{align}
+where $\underline{\Gamma}, \underline{\Xi}$ are prior parameters specified by the researcher. The \pkg{mfbvar} package follows common practice and specifies the structure of the moments of the prior distribution along the lines of the Minnesota prior beliefs, yielding
+\begin{align}
+\underline{\Gamma}(\underline{\gamma}) &= \begin{pmatrix}\operatorname{diag}(\underline{\gamma}) &  0_{n\times[(p-1)+1]}\end{pmatrix}^\top\label{eq:gamma}\\
+\xi_{i} &= \begin{cases}\frac{\lambda_1^2}{(l^{\lambda_3}s_r)^2}, &\text{lag $l$ of variable $r, i =(l-1)n+r$}\label{eq:xi}\\
+\lambda_4^2, &i=np+1\end{cases},
+\end{align}
+where $\xi_i$ are the diagonal elements of $\underline{\Xi}$, and $s_j^2$ for $j=1, \dots, p$ are obtained as the residual variances from AR(4) regressions. As is customary, the prior means of all regression parameters are set to zero, except the AR(1) parameters ($\underline{\gamma}$).
+
+\paragraph{Independent normal prior}
+The conditional normal prior imposes a symmetry in the prior for $\Gamma$ through the Kronecker structure. An alternative specification is to assume $\Gamma$ to be independent of the error covariance a priori. The prior is
+\begin{align}\label{eq:independent}
+\operatorname{vec}(\Gamma)\sim \operatorname{N}(\operatorname{vec}(\underline{\Gamma}), \underline{\Omega})
+\end{align}
+where $\underline{\Omega}$ is the $n(np+1)\times n(np+1)$ diagonal matrix containing the prior variances of $\Phi_{l}^{(i,j)}$, i.e., element $(i, j)$ of $\Phi_l$ that relates lag $l$ of variable $j$ to variable $i$, and the vector of intercepts $\phi$.
+
+The prior variances are given by
+\begin{align}
+\VAR(\Phi_l^{(i, j)})=\begin{cases}\frac{\lambda_1^2}{(l^{\lambda_3})^2}, & \text{if } i=j\\
+\frac{\lambda_1^2\lambda_2^2}{(l^{\lambda_3})^2}\frac{s_i^2}{s_j^2}, &\text{otherwise}.\end{cases}\label{eq:uncondprior}
+\end{align}
+The main difference between \eqref{eq:xi} and \eqref{eq:uncondprior} is that the conditional normal prior in \eqref{eq:xi} enforces the restriction of symmetrical shrinkage of parameters in all equations. This restriction is not imposed in \eqref{eq:uncondprior}. The implication is that in \eqref{eq:xi} $\lambda_2$ is implicitly set to $\lambda_2=1$ (i.e., no penalization of terms corresponding to lags of other variables in a given equation), whereas \eqref{eq:uncondprior} allows cross-variable shrinkage to be enforced. The prior variance of the intercept is as before $\VAR(\phi)=10^4 I_n$.
+
+\subsubsection{Steady-state prior}
+The steady-state prior proposed by \cite{Villani2009} reformulates \eqref{eq:original} to be on the mean-adjusted form \begin{align}
+\Phi(L)(x_t-\Psi d_t)=\epsilon_t,\label{eq:meanadj}
+\end{align}
+where $\Phi(L)=(I_{n}-\Phi_1 L -\cdots - \Phi_p L^p)$ is an invertible lag polynomial. The intercept $\phi$ in \eqref{eq:original} can be replaced by the more general deterministic term $\Phi_0d_t$, where $\Phi_0$ is $n\times m$ and $d_t$ is $m\times 1$. The steady-state parameters $\Psi$ in \eqref{eq:meanadj} relate to $\Phi_0$ through $\Psi=[\Phi(L)]^{-1}\Phi_0$. By the reformulation, we obtain parameters $\Psi$ that immediately yield the unconditional mean of $x_t$---the steady state. The rationale is that while it is potentially difficult to express prior beliefs about $\Phi_0$, eliciting prior beliefs about $\Psi$ is often easier.
+
+\paragraph{Original steady-state prior}
+
+In the original steady-state prior proposed by \cite{Villani2009}, the prior for $\psi = \operatorname{vec}(\Psi)$ is given by $\psi \sim \operatorname{N}(\underline{\psi}, \underline{\Omega}_{\psi})$. The prior distribution for $\Phi$ in \pkg{mfbvar} is either of the conditional or independent normal priors in \eqref{eq:prior} and \eqref{eq:independent}, respectively.  The only modification is that the constant column of $\Gamma$ is excluded.
+
+\paragraph{Hierarchical steady-state prior}
+
+\cite{Louzis2019} suggested an extension of the steady-state prior that utilizes a hierarchical specification based on the hierarchical normal-gamma shrinkage prior proposed by \cite{Griffin2010}; see also \cite{Huber2019} for an application of the normal-gamma prior to VAR models. There are two main reasons that justify the hierarchical steady-state prior. First, the normal-gamma prior induces a heavy-tailed unconditional prior for the steady-state parameters, which means that the prior generally pulls the posterior distribution towards the prior means, but with the possibility of larger deviations due to the excess kurtosis of the prior. Second, \cite{Louzis2019} relied on default values for the hyperpriors following the suggestion by \cite{Huber2019}. The consequence is that only prior means must be specified. It is oftentimes easier to have a reasonable prior belief for the means of the steady-state parameters than for the variances, and the issue of specifying the prior is therefore simplified. The structure of the prior is
+\begin{equation}
+\begin{aligned}
+\psi_j|\omega_{\psi ,j}&\sim \operatorname{N}(\underline{\psi}_j, \omega_{\psi, j})\\
+\omega_{\psi, j}|\phi_\psi, \lambda_\psi &\sim \operatorname{G}(\phi_\psi, 0.5\phi_\psi\lambda_\psi)\\
+\phi_\psi &\sim \operatorname{Exp}(1)\\
+\lambda_\psi &\sim \operatorname{G}(c_0, c_1)\\
+j&=1, \dots, nm
+\end{aligned}\label{eq:hss}
+\end{equation}
+where $\operatorname{G}(a,b)$ denotes the gamma distribution with shape-rate parametrization, and $\operatorname{Exp}(c)$ denotes the exponential distribution. \cite{AnkargrenUnossonYang2019} employed both types of steady-state priors in mixed-frequency BVARs and found that the hierarchical prior performed well.
+
+\subsection{Error Covariance Priors}
+The \pkg{mfbvar} package includes both homoskedastic and heteroskedastic specifications, which are described next.
+\subsubsection{Constant volatility}
+Two of the more common priors for $(\Gamma, \Sigma)$ that are used for homoskedastic VAR models are the normal inverse Wishart and normal-diffuse priors. The former combines the conditional normal prior for $\Gamma$ with an inverse Wishart prior for $\Sigma$, and the latter uses the independent normal prior for $\Gamma$ in conjunction with a diffuse Jeffreys' prior for $\Sigma$. For this reason, the two alternatives for a homoskedastic $\Sigma$ in \pkg{mfbvar} are the inverse Wishart and diffuse priors.
+\paragraph{Inverse Wishart prior}
+The inverse Wishart prior is specified as
+\begin{equation}
+\begin{aligned}
+\Sigma & \sim \operatorname{iW}(\underline{S}, \underline{\nu})\\
+\underline{S}&=(\underline{\nu}-n-1)\operatorname{diag}(s_1^2, \dots, s_n^2)\\
+\underline{\nu}&= n+2
+\end{aligned}\label{eq:iw}
+\end{equation}
+where $s_i^2$ are $n$ residual variances from auxiliary AR(4) regressions. The degrees of freedom is fixed to $n+2$ to ensure that the prior variance exists. The inverse Wishart prior for $\Sigma$ is in \pkg{mfbvar} always used with a conditional normal prior for the regression parameters---with or without a separate steady-state prior---to yield a standard normal inverse Wishart prior.
+
+\paragraph{Diffuse prior}
+The diffuse prior for $\Sigma$ is the Jeffreys' prior given by
+\begin{align}
+p(\Sigma )\propto |\Sigma|^{-(n+1)/2}.
+\end{align}
+The \pkg{mfbvar} package uses the diffuse prior only in combination with the independent normal prior for the regression parameters---possibly with an additional prior for the steady-state parameters---so that the standard normal-diffuse prior is obtained.
+
+\subsubsection{Stochastic volatility}
+The \pkg{mfbvar} package also includes two methods that relax the usual assumption of the error covariance matrix being constant over time. These two methods are common stochastic volatility, proposed by \cite{Carriero2016}, and factor stochastic volatility using the methodology developed by \cite{Kastner2017}.
+\paragraph{Common stochastic volatility}
+The common stochastic volatility specification presented by \cite{Carriero2016} assumes that the covariance structure in the model is constant over time, but adds a factor that enables time-dependent scaling of the error covariance matrix. More specifically, it is assumed that
+\begin{align}
+\VAR(\epsilon_t|f_t, \Sigma)=f_t\Sigma,
+\end{align}
+where $f_t$ is a scalar, $\Sigma$ is inverse Wishart as in \eqref{eq:iw}, and
+\begin{equation}
+\begin{aligned}
+\log f_t&=\rho\log f_{t-1}+v_t\\
+v_t&\sim \operatorname{N}(0, \sigma^2)\\
+\rho&\sim \operatorname{N}(\underline{\mu}_\rho, \underline{\Omega}_\rho; |\rho|<1)\\
+\sigma^2&\sim \operatorname{IG}(\underline{d}\cdot\underline{\sigma}^2, \, \underline{d}),
+\end{aligned}\label{eq:csv}
+\end{equation}
+where $\operatorname{N}(a, b; |x|<c)$ denotes the truncated normal distribution with support $(-c, c)$, and $\operatorname{IG}(a,b)$ is the inverse gamma distribution with parameters $(a, b)$.
+
+The common stochastic volatility model for the error covariance matrix further requires the conditional normal prior in \eqref{eq:prior} for $\Gamma$. The computational benefits associated with the normal inverse Wishart prior, which are due to its symmetry and Kronecker factorization, still apply under the common stochastic volatility framework, and the method therefore offers a simple and parsimonious way of coping with changing volatility with relatively little effort. This form of volatility was used by \cite{Gotz2018,AnkargrenUnossonYang2019} who documented improved forecasts compared to the standard prior with constant volatility.
+\paragraph{Factor stochastic volatility}
+
+The \pkg{mfbvar} package also allows for relaxing the assumption of a constant error covariance matrix by modeling the time-varying error covariance matrix using a factor stochastic volatility model. This line of modeling VAR models has previously been pursued by \cite{KastnerHuber2018} for single-frequency VAR models, and \cite{Ankargren2019b} have discussed its advantages for estimating large-scale mixed-frequency VARs. The factor stochastic volatility model in \pkg{mfbvar} is based on the approach taken by \cite{Kastner2017}, see also \cite{Aguilar2000}, which decomposes the error term in \eqref{eq:original} as
+\begin{align}
+\epsilon_t&=\Lambda^f f_t + \nu_t\\
+f_t&\sim \operatorname{N}(0, \Omega_t^f)\\
+\nu_t&\sim \operatorname{N}(0, \Omega_t^\nu)
+\end{align}
+where $\Lambda^f$ ($n\times r$) is a matrix of factor loadings, $f_t$ ($r\times 1$) a vector of latent factors and $\nu_t$ ($n\times 1$) is a vector of idiosyncratic error terms. Both $\Omega_t^f$ and $\Omega_t^\nu$ are diagonal with elements $\omega_{t,i}^f$ and $\omega_{t,j}^\nu$ for $i=1, \dots, r$ and $j=1,\dots,n$. The diagonal elements, in turn, evolve as geometric AR(1) processes given by
+\begin{align}
+\log\omega_{t,i}^f&=\phi_i^f\log\omega^f_{t-1,i}+\sigma_i^f\epsilon_{t,i}^f, \quad \epsilon_{t,i}^f\sim \operatorname{N}(0,1)\\
+\log\omega_{t,j}^\nu&=\mu_j^\nu+\phi_i^\nu(\log\omega_{t-1,j}^\nu-\mu_j^\nu)+\sigma_j^\nu\epsilon_{t,j}^\nu, \quad \epsilon_{t,j}^\nu\sim \operatorname{N}(0,1)
+\end{align}
+where the factor-related volatility processes, $\log \omega_{t,i}^f$, is assumed to have zero mean for identification purposes (see \citealp{Kastner2017} for more information).
+
+The time-varying error covariance matrix is under the factor stochastic volatility model
+\begin{align}
+\Sigma_t=\VAR(\epsilon_t|\Lambda^f, \Omega_t^\nu, \Omega_t^f)=\Lambda^f\Omega_t^f\Lambda^{f^\top}+\Omega_t^\nu.
+\end{align}
+The non-diagonal terms are therefore governed by the factor component, whereas the variances are driven by both the common component and the idiosyncratic term.
+
+The prior distributions for the parameters relating to the factor stochastic volatility model, as well as the procedure for sampling from the posterior, follow \cite{Kastner2014,Kastner2017}. The factor loadings are given independent normal priors $\Lambda_{ij}^f\sim \operatorname{N}(0,B_\Lambda)$. The unconditional mean for the idiosyncratic volatility processes are equipped with normal priors $\mu_j^\nu\sim \operatorname{N}(b_\mu, B_\mu)$. The autoregressive parameters are given the prior distribution $(\phi_i^f+1)/2\sim \operatorname{Beta}(a_0, b_0)$ and $(\phi_j^\nu+1)/2\sim \operatorname{Beta}(a_0, b_0)$, which ensures that the log volatility processes are stationary. Finally, the prior distribution for the variance parameters is $(\sigma_i^f)^2, (\sigma_j^\nu)^2\sim \operatorname{G}(0.5, 0.5B_\sigma^{-1})$. While the common stochastic volatility approach hinges on the use of the symmetric normal inverse Wishart prior, a VAR with a factor stochastic volatility model instead uses the less restrictive independent normal prior in \eqref{eq:independent}.
+
+
+
+
+\subsection{Implementation of Posterior Sampling}
+
+Gibbs sampling is employed to obtain draws from the posterior distribution of the latent processes and the parameters. Estimation of mixed-frequency Bayesian VARs can be time-consuming and computationally intensive. For this reason, all of the MCMC algorithms employed are fully implemented in \proglang{C++} using the \pkg{Armadillo} library \citep{Sanderson2016} through the use of \pkg{Rcpp} and \pkg{RcppArmadillo} \citep{Eddelbuettel2011,Eddelbuettel2014}. We describe the main blocks of the MCMC algorithms used in some more detail in what follows. Because the outstanding feature of mixed-frequency VARs, as opposed to standard single-frequency VARs, is the simulation smoothing step conducted to sample from the posterior of the high-frequency latent processes, we describe this step more carefully.
+
+\subsubsection{Simulation smoother}
+The state-space model in \eqref{eq:trans}--\eqref{eq:obs} is simple to implement in existing software as it fits into the standard framework for state-space models with no correlation between equations. \cite{Tusell2011} provides an overview of available packages in \proglang{R} for Kalman filtering and smoothing, which could be used for this purpose. However, this naive implementation does not constitute a viable option as dimensions grow---it will involve a large number of operations on matrices of size $np\times np$ which will be infeasibly time consuming even for moderate $n$ and $p$.
+
+The simulation smoother implemented in \pkg{mfbvar} is based on the suggestions by \cite{Schorfheide2015} and \cite{Ankargren2019} that employ a compact form to reduce the computational burden. To see how this can alleviate the problem, first decompose
+\begin{align}
+\phi=\begin{pmatrix}\phi_m, \\ \phi_q\end{pmatrix}, \quad \Phi_i=\begin{pmatrix}\Phi_{i, mm} & \Phi_{i, mq}\\ \Phi_{i, qm} & \Phi_{i, qq}\end{pmatrix}
+\end{align}
+and let $\Phi_{j} = (\Phi_{1, j},  \dots,  \Phi_{p, j})$ where $j\in\{mm, mq, qm, qq\}$. The idea is now to exploit the fact that for some $T_0\leq T$, all monthly variables are observed for all $t=1, \dots, T_0$. This fact suggests that the monthly variables can be omitted from the state equation and instead enter the system through the exogenous terms in a state-space model. The reformulation, however, implies that the state and measurement errors will be correlated, which thus requires the use of an algorithm based on a state-space model with between-equation correlation.
+
+Let now $\epsilon_t=Le_t$ with $e_t\sim \operatorname{N}(0, I_n)$ and $L$ being the lower triangular Cholesky factor of $\Sigma$, and let the exogenous terms be given by $c_{m, t}=\phi_m+\sum_{i=1}\Phi_{i, mm}y_{m, t-i}$ and  $d_{q, t}=\phi_q+\sum_{i=1}\Phi_{i, qm}y_{m, t-i}$. The compact state-space model is then specified as
+\begin{equation}
+\begin{aligned}
+\begin{pmatrix}y_{m, t}\\y_{q, t}\end{pmatrix}&=\begin{pmatrix}c_{m,t}\\M_{q,t}0_{n_q}\end{pmatrix}+\begin{pmatrix} 0_{n_m} & \Phi_{mq}\\
+M_{q, t}\Lambda & 0_{n_q}\end{pmatrix}\begin{pmatrix}x_{q, t}\\z_{q, t-1}\end{pmatrix} +\begin{pmatrix} I_{n_m}&0_{n_m\times n_q}\\\multicolumn{2}{c}{M_{q,t}0_{n_q\times n}}\end{pmatrix}Le_t\\
+\begin{pmatrix}x_{q, t}\\
+z_{q, t-1}\end{pmatrix}&=\begin{pmatrix}d_{q, t}\\ 0_{pn_q}\end{pmatrix} + \begin{pmatrix}\Phi_{qq} & 0_{n_q} \\
+I_{pn_q} & 0_{n_q}\end{pmatrix}\begin{pmatrix}x_{q, t-1}\\
+z_{q, t-2}\end{pmatrix}+\begin{pmatrix}0_{n_q\times n_m}& I_{n_q} \\\multicolumn{2}{c}{0_{pn_q\times n}}\end{pmatrix}Le_t,
+\end{aligned}\label{eq:compact}
+\end{equation}
+where $M_{q,t}$ refers to the quarterly rows of $M_t$. From \eqref{eq:compact}, one can deduce the system matrices for a state-space model with between-equation correlation. See \cite{Schorfheide2015} for more information.
+
+The dimension of the state vector in \eqref{eq:compact} is $n_q(p+1)$ compared to $np$ in \eqref{eq:trans} and thus offers a substantial reduction when $n_q$ is relatively small. The drawback of the compact representation is that it is only applicable for $t=1, \dots, T_0$; for $t = T_0, \dots, T$, when only a subset of the monthly variables is observed, it is no longer an alternative. The typical pattern in many macroeconomic datasets constructed in real time is that some variables, usually interest rates and stock market variables, are available immediately when a month has ended. Macroeconomic variables are, on the other hand, often available with a lag of one or two months. The speed of the simulation smoother can be notably improved by exploiting that not all of the monthly variables are missing at the end of the sample. To handle the final part of the sample, the \pkg{mfbvar} package uses the adaptive algorithm proposed by \cite{Ankargren2019}. The algorithm is adaptive in the sense that it augments the state vector in \eqref{eq:compact} with variables that are missing at the end; this feature is in contrast to the procedure used by \cite{Schorfheide2015}, which instead moves to the full companion form defined in \eqref{eq:trans}.
+
+Equation \eqref{eq:compact} can be generalized into
+\begin{equation}
+\begin{aligned}
+\begin{pmatrix}y_{m,t}\\y_{q,t}\end{pmatrix}&=Z_t\begin{pmatrix}x_{\mathcal{U}_t,t}\\x_{q,t} \\\vdots \\ x_{\mathcal{U}_t, t-p}\\x_{q,t-p}\end{pmatrix}+C_t \begin{pmatrix}y_{\mathcal{O}_{t-1},t-1:t-p}\\ 1\end{pmatrix}+G_te_t\\
+\begin{pmatrix}x_{\mathcal{U}_t,t}\\x_{q,t} \\\vdots \\ x_{\mathcal{U}_t, t-p}\\x_{q,t-p}\end{pmatrix}&=T_t\begin{pmatrix}x_{\mathcal{U}_{t-1},t-1}\\x_{q,t} \\\vdots \\ x_{\mathcal{U}_{t-1}, t-p-1}\\x_{q,t-p-1}\end{pmatrix}+D_t\begin{pmatrix}y_{\mathcal{O}_{t-1},t-1:t-p}\\ 1\end{pmatrix}+H_te_t.
+\end{aligned}\label{eq:adaptive}
+\end{equation}
+where $\mathcal{U}_t$ denotes the indexes relating to the set of monthly variables that are unobserved at time $t$, $\mathcal{O}_t$ denotes the set of indexes for the monthly variables that are observed at time $t$, and
+\begin{align}
+y_{\mathcal{O}_{t-1},t-1:t-p}=(y_{\mathcal{O}_{t-1},t-1}^\top, \dots, y_{\mathcal{O}_{t-1},t-p}^\top)^\top
+\end{align}
+with $y_{\mathcal{O}_{t-1},t-j}$ denoting the value at time $t-j$ of the set of monthly variables observed at time $t-1$. The above formulation generalizes \eqref{eq:compact} in that it allows for any number of monthly variables to be missing at time $t$, but only those that are missing data are included in the state vector. As demonstrated by \cite{Ankargren2019}, this approach can lead to large gains when the simulation smoother is used for real-time data featuring an unbalanced dataset. For more details and explicit descriptions of the system matrices in \eqref{eq:adaptive}, see \cite{Ankargren2019}.
+
+
+To generate a draw from the posterior distribution $p(X|\Theta, Y)$, we employ Algorithm 2 in \cite{Durbin2002}:
+\begin{enumerate}
+\item Generate an artifical sample $\{x_t^+, y_t^+\}_{t=1}^T$ using the recursions in \eqref{eq:original} and \eqref{eq:obs}
+\item Create $y_t^*=y_t-y_t^+$ and smooth to obtain $\hat{x}^*_t=\E(x_t^*|\Theta, Y^*)$
+\item Take $\{x^+_t+\hat{x}^*_t\}_{t=1}^T$ as the draw from $p(X|\Theta, Y)$
+\end{enumerate}
+To initialize, we condition on the first $p$ observations indexed by $t=-p+1, \dots, 0$. For the quarterly observations, missing observations in the pre-sample are replaced by the preceding observation. In addition, as is discussed by \cite{Jarocinski2015}, when smoothing based on $y_t^*$ we set constant terms to zero.
+
+\subsubsection{Constant error covariance matrix}
+If the error covariance matrix is assumed to be constant, then by standard results the error covariance matrix can easily be sampled from an inverse Wishart posterior distribution, see \cite{Karlsson2013} for these results described in detail.
+
+\subsubsection{Common stochastic volatility}
+Under the common stochastic volatility specification, the VAR can be transformed into a homoskedastic model given the volatility factor. The matrix $\Sigma$ can therefore be sampled from its conditional posterior distribution using standard results with parameters based on the transformed model, see \cite{Carriero2016,AnkargrenUnossonYang2019}.
+
+The posterior distributions of the volatility parameters $(\rho, \sigma^2)$ are truncated normal and inverse gamma, respectively. Sampling of the latent volatility is conducted using the auxiliary mixture approach developed by \cite{Kim1998}, where we use the sampler presented by \cite{McCausland2011} based on an extension of the implementation used in the \pkg{stochvol} package \citep{Kastner2016,Kastner2019}.
+
+\subsubsection{Factor stochastic volatility}
+If, instead, the factor stochastic volatility model is used to capture time-varying variances in the model, then we use an implementation adapted from the \pkg{factorstochvol} package \citep{Kastner2018,Hosszejni2019} for obtaining a draw from the posterior of the volatilities, factors and the related parameters. The interested reader is referred to \cite{Kastner2017} for a thorough description of the methodology used by the \pkg{factorstochvol} package.
+
+\subsubsection{Regression parameters}
+The conditional posterior distribution of the regression parameters is multivariate normal. Under the normal inverse Wishart prior, the covariance matrix of the vector of regression parameters features a Kronecker structure. A procedure that is more efficient than computing the posterior covariance and then sampling from the multivariate normal distribution is to use the matrix-normal form of the matrix of regression parameters directly. See the discussion and samplers in \cite{Karlsson2013,Carriero2016}.
+
+When factor stochastic volatility is used in the model, the computational effort required for sampling from the conditional posterior of the regression parameters is reduced. Conditional on $\Lambda^f f_t$, the equations in the VAR are independent. The independence enables independent sampling of the parameters in each equation. There is, therefore, no need to compute the Cholesky decomposition of the covariance matrix of all parameters, which would otherwise be prohibitive even for models that are relatively moderate in size. Note that under the normal inverse Wishart prior, Cholesky decomposing the full covariance matrix is also avoided, albeit for a different reason.
+
+The actual sampling of regression parameters when the factor stochastic volatility model is assumed is conducted using one of two algorithms. Both algorithms exploit that the posterior is on the form $\operatorname{N}(A^{-1}b, A^{-1})$, where there is an intimate connection between the first and second moments. The first algorithm, described in \cite{Rue2001}, has complexity $O(n^3p^3)$ for sampling each equation's parameters, and is used when the number of parameters in each equation is less than the sample size $T$. When the sample size exceeds the number of parameters in each equation, the algorithm proposed by \cite{Bhattacharya2016} is used. The latter algorithm has complexity $O(T^2np)$ and is the faster alternative when $T<np$. Further speed improvements can be obtained by sampling the parameters in each equation in parallel. The package allows for doing so when the factor stochastic volatility model is employed using the \pkg{RcppParallel} package \citep{Allaire2019}.
+
+\subsubsection{Steady-state parameters}
+The conditional posterior distribution of the steady-state parameters is normal and low-dimensional and therefore easily sampled from. The conditional posterior of the hierarchical prior's global shrinkage parameter $\lambda_\psi$ is a gamma distribution, whereas the kurtosis parameter $\phi_\psi$ has no known conditional posterior distribution. The \pkg{mfbvar} package implements a Metropolis-Hastings sampler with a random walk proposal on the log-scale, where the scale of the proposal distribution is either fixed or updated adaptively as in \cite{Roberts2009}. The conditional posterior distributions of the local shrinkage parameters $\omega_{\psi, j}$ are generalized inverse Gaussian, which we sample from using the \pkg{GIGrvg} package implementing the methods developed by \cite{Hormann2014}.
+
+\subsection{Marginal Data Density Estimators}
+The hyperparameters of the prior distributions are crucial for good perfomance of the models. For the Minnesota and steady-state priors that use the normal inverse Wishart specification, the priors are parametrized by the hyperparameters $\lambda_1$ and $\lambda_3$. In the literature, a standard choice has become $\lambda_1=0.2$ and $\lambda_3=1$, but in many applications it is plausible that this choice is subpar. One method of selecting values of the hyperparameters is to compute the marginal data density over a range of values for $\lambda_1$ and $\lambda_3$ and selecting the maximizing pair. The \pkg{mfbvar} package allows the marginal data density to be estimated when the normal inverse Wishart prior is used employing the estimators suggested by \cite{Schorfheide2015} and \cite{Ankargren2018}.\footnote{The marginal data density is also known as the marginal likelihood. We use the former term so that our terminology is in line with \cite{Schorfheide2015,Ankargren2018}.}
+
+\subsubsection{Minnesota prior} In the case of a Minnesota prior, marginal data density estimation follows \cite{Schorfheide2015}. Consider a single quarterly observation under the intra-quarterly average aggregation scheme, $y_{q, 3}=\frac{1}{3}(x_{q, 3}+x_{q, 2}+x_{q, 1})$, and its relation to $x_{q, 3}$. Given $y_{q, 3}$, $x_{q, 2}$ and $x_{q, 1}$, $x_{q, 3}$ is known. Hence, we can write
+\begin{align}
+\begin{pmatrix}
+x_{q, 3}\\
+x_{q, 2}\\
+x_{q, 1}\end{pmatrix}
+=
+\begin{pmatrix}
+3 & -1 & -1\\
+0 & 1 & 0\\
+0 & 0 & 1\end{pmatrix}
+\begin{pmatrix}
+y_{q, 3}\\
+x_{q, 2}\\
+x_{q, 1}\end{pmatrix}
+\end{align}
+For this reason, we partition $X$ into $(Y, Z)$ where $Z$ collects the \emph{inherently} missing observations, i.e., the first two missing monthly observations per quarter, and $Y$ all observed data. [In the example, $Y_{1:3}=y_{q,3}$ and $Z_{1:3}=(x_{q, 1}, x_{q, 2})$]. The marginal data density estimator derived by \cite{Schorfheide2015} is
+\begin{align}
+\hat{p}(Y;\lambda_1, \lambda_3)=c \left[\frac{1}{R}\sum_{r=1}^R\frac{f(Z^{(r)}; \hat{\mu}_{Z}, \hat{\Sigma}_{Z}, \kappa)}{p(X^{(r)})}\right]^{-1},\label{eq:mddminn}
+\end{align}
+where $c$ is a constant accounting for the change of variables from $p(Y, Z)$ to $p(X)$. If we by $T_{q, i}$ denote the number of observations of the $i$th quarterly variable, then $\log c=\sum_{i=1}^{n_q}T_{q, i}\log(3)$. Furthermore, the density $f$ is a truncated normal distribution given as
+\begin{multline}
+f(x; \mu_x, \Sigma_x, \kappa)\\
+=\frac{1}{\kappa}\frac{|\Sigma_x|^{-1/2}}{2\pi^{n_x/2}}\exp\left\{-\frac{1}{2}(x-\hat{\mu}_x)^\top\Sigma_x^{-1}(x-\hat{\mu}_x)\right\}\\
+\times{I}\left\{(x-\hat{\mu}_x)^\top\Sigma_x^{-1}(x-\hat{\mu}_x) \leq \chi^2_{n_x}(\kappa)\right\}\label{eq:f},
+\end{multline}
+for $x$ a vector with $n_x$ elements and $\kappa\in(0, 1]$. The moments in the numerator term in \eqref{eq:mddminn} are
+\begin{align}
+\hat{\mu}_{Z}&=\frac{1}{R}\sum_{r=1}^R Z^{(r)}\\
+\hat{\Sigma}_{Z}&=\frac{1}{R}\sum_{r=1}^R Z^{(r)}Z^{(r)^\top}-\hat{\mu}_{Z}\hat{\mu}_{Z}^\top.
+\end{align}
+The denominator term in \eqref{eq:mddminn} is the density of a matrix $t$ distribution with parameters $\operatorname{Mt}(W^{(r)}\underline{\Gamma},(I_T+ W^{(r)} \underline{\Xi}W^{(r)^\top})^{-1},\underline{S},\underline{\nu})$ (see \citealp{Karlsson2013} for the density and more details).
+
+Note that the marginal data density in \eqref{eq:mddminn} is a function of $(\lambda_1, \lambda_3)$ through the draws of $\Phi^{(r)}$, which in turn affect all other draws.
+
+\subsubsection{Steady-state prior} If the steady-state prior is used in conjunction with the normal inverse Wishart prior, the marginal density computation follows \cite{Ankargren2018} and is
+\begin{align}
+\hat{p}(Y; \lambda_1, \lambda_3) = \frac{p(Y|\bar{\Phi}, \bar{\Sigma}, \bar{\psi})p(\bar{\Phi}, \bar{\Sigma})}{\hat{p}(\bar{\Phi}, \bar{\Sigma}|\bar{\psi}, Y)}\frac{p(\bar{\psi})}{\hat{p}(\bar{\psi}|Y)},
+\end{align}
+where bars represent posterior means. As in the Minnesota case, $(\lambda_1, \lambda_3)$ have a direct effect on $\Phi^{(r)}$ and, consequently, an indirect effect on the other draws.
+
+The likelihood $p(Y|\bar{\Phi}, \bar{\Sigma}, \bar{\psi})$ and the priors $p(\bar{\Phi}, \bar{\Sigma})$ and $p(\bar{\psi})$ are known and can be evaluated exactly, whereas $\hat{p}(\bar{\Phi}, \bar{\Sigma}|\bar{\psi}, Y)$ is a numerical approximation from an auxiliary Gibbs sampler and $\hat{p}(\bar{\psi}|Y)$ is a 'Rao-Blackwellized' estimate \citep{Gelfand1992}. Specifically, we compute
+\begin{align}
+\hat{p}(\bar{\Phi}, \bar{\Sigma}|\bar{\psi}, Y)=\frac{1}{R}\sum_{r=1}^R p(\bar{\Phi}, \bar{\Sigma}|\bar{\psi}, X^{(r)}, Y),
+\end{align}
+where $\{\Phi^{(r)}, \Sigma^{(r)}, X^{(r)}\}_{r=1}^R$ is obtained from a reduced Gibbs step \citep{Chib1995,FuentesAlbero2013} where we approximate $p(\Phi, \Sigma, X|\bar{\psi}, Y)$ by drawing from the conditional posteriors
+\begin{align}
+p(\Phi, \Sigma|\bar{\psi}, X) \quad \text{ and } \quad p(X|\Phi, \Sigma, \bar{\psi}, Y).
+\end{align}
+
+The Rao-Blackwellized estimate of $p(\bar{\psi}|Y)$ is
+\begin{align}
+\hat{p}(\bar{\psi}|Y) = \frac{1}{R}\sum_{r=1}^Rp(\bar{\psi}|\Phi^{(r)}, \Sigma^{(r)}, X^{(r)}, Y)
+\end{align}
+using draws $\{\Phi^{(r)}, \Sigma^{(r)}, X^{(r)}\}_{r=1}^R$ from the full Gibbs sampler.
+%% -- Illustrations ------------------------------------------------------------
+
+%% - Virtually all JSS manuscripts list source code along with the generated
+%%   output. The style files provide dedicated environments for this.
+%% - In R, the environments {Sinput} and {Soutput} - as produced by Sweav\E() or
+%%   or knitr using the render_sweav\E() hook - are used (without the need to
+%%   load Sweave.sty).
+%% - Equivalently, {CodeInput} and {CodeOutput} can be used.
+%% - The code input should use "the usual" command prompt in the respective
+%%   software system.
+%% - For R code, the prompt "R> " should be used with "+  " as the
+%%   continuation prompt.
+%% - Comments within the code chunks should be avoided - these should be made
+%%   within the regular LaTeX text.
+
+\section[The R Package mfbvar]{The \proglang{R} Package \pkg{mfbvar}}
+
+The workflow promoted by the \pkg{mfbvar} package consists of three main steps. First, an object containing data, hyperparameters and settings is constructed. Second, the prior object is used as input to the main estimation function. Third, the results are processed. The purpose for disentangling the first and second steps is to separate specification from estimation, thereby making the calls in \proglang{R} easier to decipher.
+
+\subsection{Specification}
+\label{sec:spec}
+The main function for performing the first step is \code{set_prior}. Its arguments are listed in Table \ref{tab:overview}. The most important arguments are described below.
+\begin{itemize}
+\item \code{Y}: data input. Should be a list with components containing regularly spaced time series (that inherit from \code{ts} or \code{zooreg}). Names of variables are collected from the names of components that contain single time series. If a component stores multiple time series in a multivariate \code{ts} or \code{zooreg} object, then the names are instead collected from the corresponding column names. Monthly variables can only contain missing values at the end of the sample, and should precede quarterly variables in the list. Matrices in which quarterly variables are padded with \code{NA} and observations stored at the end of each quarter are also accepted, but then the frequency of each variable must be given in the argument \code{freq}. Tibbles and data frames can also be given as input, but require the same use of the \code{freq} argument. Both matrices and data frames should store dates (\code{YYYY-MM-DD}) as row names, or, for data frames, as a separate column. If the data input does not contain mixed frequencies, the \pkg{mfbvar} package provides some, but limited, support if no observations are missing.
+\item \code{aggregation}: the aggregation scheme, either \code{``average''} for the intra-quarterly average, or \code{``triangular''} for the triangular weighting used by \cite{Mariano2003}. The latter is typically used for modeling growth rates, and the former for log-levels; our experience, however, indicates that results tend to be relatively indifferent to the choice.
+\item \code{prior_Pi_AR1}: a numeric vector providing the prior mean for the AR(1) parameters ($\underline{\gamma}$).
+\item \code{lambda1, lambda2, lambda3, lambda4}: one-dimensional numeric vectors providing the hyperparameters for overall tightness, cross-variable tightness, lag decay and intercept variance. The defaults are 0.2, 0.5, 1, and $10^4$, respectively. Note that \code{lambda2} is only used in the independent normal specification for $\Gamma$, which is only employed if the diffuse prior or a factor stochastic volatility model is used for $\Sigma$. The prior variance for the intercept, \code{lambda4}, is only used if the steady-state prior is not used.
+\item \code{prior_psi_mean, prior_psi_Omega}: numeric vector and matrix giving the prior mean and covariance of the steady-state parameters. If the deterministic component of the model includes more terms than a constant, the prior moments are for $\psi=\operatorname{vec}(\Psi)$ and this order should be respected. The package includes a helper function, \code{interval_to_moments}, for simplifying the specification of priors for the steady states. The function \code{interval_to_moments} takes a matrix of prior $100*(1-\alpha)$ \% intervals and returns the mean vector and covariance matrix needed for \code{set_prior}.
+\end{itemize}
+
+\setlength{\tabcolsep}{5pt}
+\begin{sidewaystable}
+\footnotesize
+\centering
+\begin{tabular}{rrlccccRcccc}
+&&&&\multicolumn{3}{c}{Regression prior (\code{prior})} & \multicolumn{4}{c}{Variance (\code{var})}\\
+\cline{5-7} \cline{8-11}
+Category&Argument & Description & Default & \code{``minn''} & \code{``ss''} & \code{``ssng''} & \code{``iw''} & \code{``diffuse''} & \code{``csv''} & \code{``fsv''}\\
+\hline
+General&\code{Y} & data & & \checkmark&\checkmark & \checkmark&\checkmark&\checkmark&\checkmark & \checkmark\\
+&\code{aggregation} & aggregation scheme & \code{``average''} & \checkmark&\checkmark & \checkmark&\checkmark&\checkmark & \checkmark&\checkmark\\
+&\code{prior_Pi_AR1} & $\underline{\gamma}$ in \eqref{eq:gamma} & 0 & \checkmark&\checkmark & \checkmark&\checkmark&\checkmark & \checkmark&\checkmark\\
+&\code{lambda1} & overall tightness; $\lambda_1$ in \eqref{eq:xi} & 0.2 & \checkmark&\checkmark & \checkmark&\checkmark&\checkmark & \checkmark&\checkmark\\
+&\code{lambda2} & cross-var shrinkage; $\lambda_2$ in \eqref{eq:xi} & 0.5 & \checkmark&\checkmark&\checkmark &&\checkmark & &\checkmark\\
+&\code{lambda3} & lag decay; $\lambda_3$ in \eqref{eq:xi} & 1 & \checkmark&\checkmark& \checkmark&\checkmark&\checkmark & \checkmark&\checkmark\\
+&\code{lambda4} & intercept variance; $\lambda_4$ in \eqref{eq:xi} &10,000& \checkmark& & &\checkmark & \checkmark&\checkmark&\checkmark\\
+&\code{block\_exo} & block exogeneity & &\checkmark & \checkmark&\checkmark&&\checkmark & &\checkmark\\
+&\code{n_lags} & number of lags ($p$) & & \checkmark&\checkmark & \checkmark&\checkmark&\checkmark & \checkmark&\checkmark\\
+&\code{n_fcst} & number of forecasts & 0 &\checkmark&\checkmark&\checkmark&\checkmark &\checkmark & \checkmark&\checkmark\\
+&\code{n\_thin} & thinning frequency & 1&\checkmark&\checkmark&\checkmark&\checkmark &\checkmark & \checkmark&\checkmark\\
+&\code{n_reps} & main draws & & \checkmark&\checkmark&\checkmark&\checkmark&\checkmark & \checkmark&\checkmark\\
+&\code{n_burnin} & burn-in draws & \code{n_reps} & \checkmark&\checkmark& \checkmark&\checkmark&\checkmark & \checkmark&\checkmark\\
+&\code{freq} & frequencies of variables (if \code{Y} is matrix) & yes, if \code{Y} is list &\checkmark&\checkmark & \checkmark&\checkmark&\checkmark & \checkmark&\checkmark \\
+&\code{verbose}&progress bar in console & \code{FALSE}&\checkmark&\checkmark&\checkmark&\checkmark&\checkmark & \checkmark&\checkmark\\
+\hline
+SS & \code{d} & deterministc term && & \checkmark&\checkmark&\checkmark&\checkmark & \checkmark&\checkmark\\
+prior &\code{d_fcst} & \code{d} for forecasting period && &\checkmark&\checkmark&\checkmark&\checkmark & \checkmark&\checkmark\\
+&\code{prior_psi_mean} & prior mean, $\underline{\psi}$ & &&\checkmark&\checkmark&\checkmark&\checkmark & \checkmark&\checkmark\\
+&\code{prior_psi_Omega}& prior covariance, $\underline{\Omega}_\psi$ && & \checkmark&\checkmark&\checkmark&\checkmark & \checkmark&\checkmark\\
+&\code{check_roots}& keep only stable $\Phi(L)$ & \code{FALSE}&&\checkmark&\checkmark&\checkmark&\checkmark & \checkmark&\checkmark\\
+\hline
+Hier.&\code{s} & scale of proposal for $\phi_\psi$ & -1000 (adaptive)&& &\checkmark & \checkmark&\checkmark&\checkmark & \checkmark \\
+SS&\code{prior\_ng} &  $(c_0, c_1)$ for $\lambda_\psi$ in \eqref{eq:hss} & 0.01&& &\checkmark & \checkmark&\checkmark&\checkmark & \checkmark\\
+\hline
+Common & \code{prior\_phi} & mean and variance of $\phi$ \eqref{eq:csv}&(0.9, 0.1)&\checkmark&\checkmark & \checkmark& & & \checkmark\\
+SV& \code{prior\_sigma2} & df and mean of $\sigma^2$ \eqref{eq:csv}&(0.01, 4)&\checkmark&\checkmark & \checkmark& & & \checkmark\\
+\hline
+Factor&\code{n_fac} & number of factors &&\checkmark&\checkmark & \checkmark& & && \checkmark \\
+SV&\code{n\_cores} & number of cores &1&\checkmark&\checkmark & \checkmark& & && \checkmark\\
+&\code{...} & additional fsv args &&\checkmark&\checkmark & \checkmark& & && \checkmark
+\end{tabular}
+\caption{Overview of elements in the prior object. Checkmarks indicate that the argument applies for the prior or variance specification that is given at the top of the respective columns.}
+\label{tab:overview}
+\end{sidewaystable}
+
+In order to encourage and enable a pipe-like process of specification, the function \code{update_prior(prior_obj, ...)} can be used to add further specifications to \code{prior_obj}, where \code{prior_obj} is the object returned from \code{set_prior}. The class of the return from \code{set_prior} and \code{update_prior} is \code{mfbvar_prior} for which methods for the generic functions \code{summary}, \code{print} and \code{plot} are implemented (see Section \ref{sec:illustrations}).
+
+\subsection{Estimation}
+With an object containing the specifications in place, the second step of the \pkg{mfbvar} workflow is to estimate the model. The function for doing so is \code{estimate_mfbvar}, with arguments:
+\begin{itemize}
+\item \code{mfbvar_prior}: an object of class \code{mfbvar_prior} obtained from \code{set_prior}/\code{update_prior}
+\item \code{prior}: a string equal to \code{"minn"}, \code{"ss"} or \code{``ssng''} for estimating the model using the Minnesota prior, the steady-state prior, or the hierarchical steady-state prior
+\item \code{variance}: a string equal to \code{"iw"}, \code{``diffuse''}, \code{``csv''} or \code{"fsv"} for selecting the inverse Wishart prior, the diffuse prior, the common stochastic volatility model, or the factor stochastic volatility model for the error covariance matrix in the model
+\item \code{...}: additional arguments that are passed on to \code{update_prior} for temporarily overriding settings in \code{mfbvar_prior}
+\end{itemize}
+
+\subsection{Processing}
+For processing the results, \pkg{mfbvar} provides three functions to simplify this step:
+\begin{itemize}
+\item \code{predict}: a method for the generic \code{predict} function is implemented. The function returns a data frame according to the concept of tidy data \citep{Wickham2014} with the forecasts for the variables. The forecasts of the quarterly variables are returned either as monthly or quarterly forecasts. The data frame includes all post-burn-in draws, or quantiles of the posterior predictive distribution.
+\item \code{plot}: the generic \code{plot} function can be used on the estimated object. The plot displays the forecasts and, if applicable, the posterior steady-state intervals.
+\item \code{volplot}: a plotting function for displaying the posterior standard deviation of the errors over time. Only applicable if stochastic volatility is used.
+\end{itemize}
+
+As discussed in Section \ref{sec:models}, the package also includes estimators for the marginal data density when the normal inverse Wishart prior is used. Given an object \code{x} obtained from \code{estimate_mfbvar} with \code{variance = "iw"}, the marginal data density is estimated by calling \code{mdd(x)}. If \code{prior = "minn"}, the only argument that can be provided is \code{p_trunc} giving the degree of truncation of the truncated normal distribution.
+
+\subsection{Use by Other Packages}
+The computational burden can be large for mixed-frequency VARs and special care has been paid to the implementation of, in particular, the simulation smoother and the sampling of regression parameters. Because of the modularity of MCMC, these implementations can be leveraged by other packages extending the mixed-frequency VAR further. The following functions, implemented in \proglang{C++} via \pkg{RcppArmadillo}, can therefore easily be imported by other packages:
+\begin{itemize}
+\item \code{simsm_adaptive}, \code{simsm_adaptive_univariate}: the adaptive simulation smoother presented by \cite{Ankargren2019}, and its extension with univariate filtering suggested by \cite{Ankargren2019b}
+\item \code{mvn_rue}, \code{mvn_rue_int}, \code{mvn_bcm}: procedures for sampling from multivariate normal posterior distributions using the algorithm by \cite{Rue2001}, the \cite{Rue2001} algorithm including non-zero means for the AR(1) parameters, and the \cite{Bhattacharya2016} algorithm
+\item \code{update\_csv}, \code{update\_fsv}, \code{update\_ng}: functions for the sampling steps required for common stochastic volatility, factor stochastic volatility, and the hierarchical steady-state prior
+\end{itemize}
+
+The functions are available as header files in \code{mfbvar/inst/include} and can therefore easily be imported by other packages, see e.g., \citet[chap.~10]{Wickham2015}.
+
+
+
+\newpage
+
+\section{Illustration} \label{sec:illustrations}
+To illustrate the basic funcionality of the \pkg{mfbvar} package we here estimate mixed-frequency Bayesian VAR models on US data. The data can be retrieved from the ALFRED database provided by the Federal Reserve Bank of St. Louis through the \pkg{alfred} package \citep{Kleen2018}. The model we will use includes inflation and unemployment, which are published monthly, and GDP growth, which is published quarterly.
+<<message = FALSE, eval = FALSE>>=
+library("dplyr")
+library("ggplot2")
+library("alfred")
+
+variables <- c("CPIAUCSL", "UNRATE", "GDPC1")
+out <- lapply(variables, get_alfred_series,
+           observation_start = "1980-01-01",
+           observation_end = "2018-11-01",
+           realtime_start = "2018-12-10",
+           realtime_end = "2018-12-10")
+
+@
+
+<<message = FALSE, include = FALSE>>=
+library("dplyr")
+library("ggplot2")
+library("alfred")
+
+variables <- c("CPIAUCSL", "UNRATE", "GDPC1")
+load("alfred_data.RData")
+
+@
+
+The data start in January 1980 and we retrieve the vintage available on December 10, 2018. For correctly identifying monthly and quarterly data, the \pkg{mfbvar} package expects data to be provided in a list. Each component should contain regularly spaced time series that inherit from class \code{ts} \citep{R2019} or \code{zooreg} \citep{Zeileis2005}, see Section \ref{sec:spec}. Multiple time series sampled at the same frequency can either be stored together in a single component, or separately in individual components.
+
+To transform the data obtained from \pkg{alfred} into a form compatible with \pkg{mfbvar}, we create a helper function to aid in preparing the time series:
+<<>>=
+alfred_to_ts <- function(x, freq) {
+  ts(x[, 3],
+     start = c(1980, 1),
+     frequency = freq)
+}
+
+mf_list <- mapply(alfred_to_ts, x = out, freq = c(12, 12, 4))
+names(mf_list) <- variables
+@
+The list \code{mf\_list} is now of a form that \pkg{mfbvar} understands. However, the steady-state prior requires a stable VAR model, and so we need to transform consumer price index and real GDP into growth rates. To this end, we use the annualized log-difference of the variables.
+<<>>=
+log_diff <- function(x) {
+  freq <- frequency(x)
+  100 * freq * diff(log(x))
+}
+
+mf_list[c("CPIAUCSL", "GDPC1")] <-
+  lapply(mf_list[c("CPIAUCSL", "GDPC1")], log_diff)
+@
+
+Finally, we trim the beginning of the sample so that the series do not start with missing values.
+<<>>=
+mf_list <- mapply(window, x = mf_list,
+                  start = list(c(1980, 4), c(1980, 4), c(1980, 2)))
+@
+
+The data object provided to \pkg{mfbvar} is thus a list of three \code{ts} time series of different frequencies and lengths.
+<<>>=
+str(mf_list, vec.len = 2)
+@
+
+With the data in place, the workflow of the package next requires the user to first specify an object containing all the prior information, and then calling the main function to estimate the model.
+\subsection{Setting the Prior}
+
+To create an initial, minimal prior we call \code{set_prior()} with the following arguments:
+<<>>=
+library("mfbvar")
+prior <- set_prior(Y = mf_list, n_lags = 4, n_reps = 1000)
+@
+
+The \code{print} method for the prior displays what model specifications can be used with the provided information.
+<<>>=
+prior
+@
+
+As is indicated, we need to provide the deterministic term $d_t$ as well as the prior mean for the parameters in $\psi$ to also enable the possibility of estimating the model using the (hierarchical) steady-state prior. In many applications, $d_t=1$ and so the only deterministic term is the unconditional mean. The prior is commonly specified as independent 95 \% prior probability intervals. The prior intervals used here are given in Table~\ref{tab:ss} and mirror those used by \cite{Louzis2019,AnkargrenUnossonYang2019}.
+\begin{table}[!t]
+\centering
+\begin{tabular}{ccc}
+Inflation & Unemployment & GDP\\
+\hline
+$(1, 3)$ & $(4, 8)$ & $(1, 3)$
+\end{tabular}
+\caption{95 \% prior probability intervals for steady states (unconditional means)}
+\label{tab:ss}
+\end{table}
+
+A helper function \code{interval_to_moments()} is included in \pkg{mfbvar} to convert intervals to prior moments $\underline{\psi}$ and $\underline{\Omega}_\psi$. Having obtainted the moments, the prior is updated to include also specifications that enable estimation of the model using the steady-state prior.
+<<>>=
+prior_intervals <- matrix(c(1, 3,
+                            4, 8,
+                            1, 3), ncol = 2, byrow = TRUE)
+moments <- interval_to_moments(prior_intervals)
+prior <- update_prior(prior,
+                      d = "intercept",
+                      prior_psi_mean = moments$prior_psi_mean,
+                      prior_psi_Omega = moments$prior_psi_Omega)
+@
+The argument \code{d} should generally be a matrix, but because intercept-only applications are common passing only the string \code{"intercept"} is allowed. The prior steady-state intervals can be visualized by calling \code{plot} on the prior object. The intervals used here are displayed in Figure \ref{fig:ss_plot}.
+
+<<ss_plot, fig.asp=0.5, fig.cap = "Prior steady-state intervals">>=
+plot(prior)
+@
+
+We will next make forecasts 24 months ahead and must therefore update the prior to accomodate this request. The argument \code{n_fcst} takes the number of forecasts desired in terms of months, i.e., \code{n_fcst = 24} corresponds to two years.
+<<>>=
+prior <- update_prior(prior, n_fcst = 24)
+@
+
+The prior is now fully specified also for the steady-state prior. A summary of the specification can be obtained from the \code{summary} method implemented for the prior object:
+<<>>=
+summary(prior)
+@
+
+
+\subsection{Estimating the Model}
+The prior is prepared and its necessary components have been provided and so estimation is possible by calling the \code{estimate_mfbvar} function. In calling the function, either \code{prior = "minn"}, \code{prior = "ss"} or \code{prior = "ssng"} should be provided to indicate which regression prior to use. The argument \code{variance} determines the form of the error covariance matrix. We first consider the steady-state prior with and without hierachical shrinkage, and with an inverse Wishart prior for the error covariance matrix.
+
+<<comp_chunk,include=FALSE>>=
+if (run_mod) {
+  mod_ss_iw  <- estimate_mfbvar(prior, prior = "ss", variance = "iw")
+  mod_ssng_iw <- estimate_mfbvar(prior, prior = "ssng", variance = "iw")
+  mod_ss_csv  <- estimate_mfbvar(prior, prior = "ss", variance = "csv")
+  mod_ss_fsv <- estimate_mfbvar(prior, prior = "ss", variance = "fsv",
+                              n_fac = 1)
+
+  predict_example <- predict(mod_ss_iw, pred_bands = 0.8)
+  p1 <- plot(mod_ss_iw, plot_start = "2010-01-01", nrow_facet = 3)
+  p2 <- plot(mod_ssng_iw, plot_start = "2010-01-01", nrow_facet = 3)
+  pred_df <- bind_rows("Inverse Wishart" = predict(mod_ss_iw, pred_bands = NULL),
+                       "Common stochastic volatility" = predict(mod_ss_csv, pred_bands = NULL),
+                       "Factor stochastic volatility" = predict(mod_ss_fsv, pred_bands = NULL),
+                       .id = "Variance") %>%
+    filter(variable == "GDPC1")
+  p3 <- ggplot(pred_df, aes(y = factor(fcst_date), x = fcst, fill = Variance)) +
+  ggridges::stat_density_ridges(quantile_lines = TRUE,
+                                quantiles = 2, alpha = 0.5) +
+  labs(x = "US GDP Growth",
+       y = "Date of Forecast") +
+  coord_cartesian(xlim = c(-5, 10)) +
+  theme_minimal() +
+  scale_fill_brewer(palette = "YlGnBu")
+
+  const_vol <- median(sqrt(mod_ss_iw$Sigma[3, 3, ]))
+
+  p4 <- varplot(mod_ss_fsv, variables = "GDPC1") +
+    geom_hline(yintercept = const_vol ,
+               color = "red", linetype = "dashed") +
+    coord_cartesian(ylim = c(0, 20))
+
+  p5 <- varplot(mod_ss_csv, variables = "GDPC1") +
+    geom_hline(yintercept = const_vol,
+               color = "red", linetype = "dashed") +
+    coord_cartesian(ylim = c(0, 20))
+
+  mdd_example <- mdd(mod_ss_iw)
+
+  library("parallel")
+  par_fun <- function(lambda1, prior) {
+    set.seed(2019)
+    mod_par <- estimate_mfbvar(prior, prior = "ss", variance = "iw",
+                               lambda1 = lambda1, lambda3 = 1)
+    mdd(mod_par)
+  }
+
+  cl <- makeCluster(2)
+  clusterEvalQ(cl, library("mfbvar"))
+  lambda1_seq <- seq(0.05, 1, by = 0.05)
+  result <- parSapply(cl, lambda1_seq,
+                      par_fun, prior = prior)
+  stopCluster(cl)
+  max_val <- tibble(lambda1 = lambda1_seq,
+         mdd = result) %>%
+    filter(mdd == max(mdd)) %>% .$lambda1
+
+
+  save(predict_example, mdd_example, lambda1_seq, result, max_val,
+       file = "vignettes/vignette_data.RData",
+       compress = "xz")
+  ggsave("vignettes/figures/ss_plots-1.pdf", p1, "pdf", width = 5.5, height = 5.5*1.5, units = "in")
+  ggsave("vignettes/figures/ss_plots-2.pdf", p2, "pdf", width = 5.5, height = 5.5*1.5, units = "in")
+  ggsave("vignettes/figures/ridges-1.pdf", p3, "pdf", width = 7, height = 7*0.65, units = "in")
+  ggsave("vignettes/figures/varplot-1.pdf", p4, "pdf", width = 5, height = 5*0.5, units = "in")
+  ggsave("vignettes/figures/varplot-2.pdf", p5, "pdf", width = 5, height = 5*0.5, units = "in")
+} else {
+  load("vignette_data.RData")
+}
+@
+
+<<mod_chunk,eval=FALSE>>=
+mod_ss_iw  <- estimate_mfbvar(prior, prior = "ss", variance = "iw")
+mod_ssng_iw <- estimate_mfbvar(prior, prior = "ssng", variance = "iw")
+@
+
+
+To estimate models with stochastic volatility, only the \code{variance} argument needs to be changed. For the factor stochastic volatility model, the number of factors must also be provided.
+<<mod_chunk2,eval=FALSE>>=
+mod_ss_csv  <- estimate_mfbvar(prior, prior = "ss", variance = "csv")
+mod_ss_fsv <- estimate_mfbvar(prior, prior = "ss", variance = "fsv",
+                              n_fac = 1)
+@
+Temporary arguments can be added to the call to \code{estimate_mfbvar}, like \code{n_fac = 1} above. The purpose of first creating a prior object and then estimating the model is illustrated in the preceding code snippet. For two models with different priors but similar settings, we can leverage the same object (i.e., \code{prior}). Estimation of multiple models is thereby simplified as we can reuse the previous settings.
+
+\subsection{Processing the Results}
+
+The principle of tidy data \citep{Wickham2014} has been preserved in creating a method for the \code{predict} function.
+<<eval=FALSE>>=
+predict(mod_ss_iw, pred_bands = 0.8)
+@
+<<echo=FALSE>>=
+predict_example
+@
+The forecasts produced by a mixed-frequency VAR are at the monthly frequency. Because the frequency of interest for quarterly variables is the quarterly frequency, forecasts are aggregated by default in the \code{predict} method. To visualize forecasts and posterior intervals for the steady states (if available), \code{plot} can be called directly on the output of \code{estimate_mfbvar}.
+
+<<eval=FALSE>>=
+plot(mod_ss_iw, plot_start = "2010-01-01", nrow_facet = 3)
+plot(mod_ssng_iw, plot_start = "2010-01-01", nrow_facet = 3)
+@
+\begin{figure}[!htb]
+\subfloat[Steady-state prior\label{fig:ss_plots1}]{\includegraphics[width=0.49\linewidth]{figures/ss_plots-1} }\subfloat[Hierarchical steady-state prior\label{fig:ss_plots2}]{\includegraphics[width=0.49\linewidth]{figures/ss_plots-2} }\caption[Forecasts and posterior steady-state intervals]{Forecasts and posterior steady-state intervals}\label{fig:ss_plots}
+\end{figure}
+Figure \ref{fig:ss_plots} displays the forecasts and posterior steady-state intervals obtained using the steady-state prior with and without hierarchical shrinkage. The posterior intervals are similar, with a narrower interval for unemployment using the hierarchical specification, and with almost indistinguishable differences for inflation and GDP. Because of the similarity between the models, the forecasts from both models in Figure \ref{fig:ss_plots} show that the assessment made by the model is that the economy is in a relatively steady state with a stable rate of growth in the future. Unemployment is expected to rise slowly and return to the steady state in the long run. By default, the plotting method displays the forecasts for the quarterly variables on the quarterly scale, as in the output from \code{predict}.
+
+In order to see the difference between constant and time-varying error covariance matrices, we next compare the distributions of the GDP forecasts. By letting \code{pred_bands = NULL} be an argument to \code{predict}, we obtain the entire set of forecasts from the model. Combining them and plotting the distributions using the \pkg{ggridges} package \citep{Wilke2018} allows us to easily compare the distributions.
+
+<<eval=FALSE>>=
+pred_iw <- predict(mod_ss_iw, pred_bands = NULL)
+pred_csv <- predict(mod_ss_csv, pred_bands = NULL)
+pred_fsv <- predict(mod_ss_fsv, pred_bands = NULL)
+pred_df <- bind_rows("Inverse Wishart" = pred_iw,
+                     "Common stochastic volatility" = pred_csv,
+                     "Factor stochastic volatility" = pred_fsv,
+                     .id = "Variance") %>%
+  filter(variable == "GDPC1")
+ggplot(pred_df, aes(y = factor(fcst_date), x = fcst, fill = Variance)) +
+  ggridges::stat_density_ridges(quantile_lines = TRUE,
+                                quantiles = 2, alpha = 0.5) +
+  labs(x = "US GDP Growth",
+       y = "Date of Forecast") +
+  coord_cartesian(xlim = c(-5, 10)) +
+  theme_minimal() +
+  scale_fill_brewer(palette = "YlGnBu")
+@
+\begin{figure}[!htb]
+\includegraphics[width=\maxwidth]{figures/ridges-1} \caption[Distributions of forecasts produced using the steady-state prior with constant or time-varying error covariance]{Distributions of forecasts produced using the steady-state prior with constant or time-varying error covariance. The vertical lines represent the medians.}\label{fig:ridges}
+\end{figure}
+Figure \ref{fig:ridges} shows that stochastic volatility leads to narrower predictive distributions for the current forecast. In terms of the central tendencies, however, the differences are negligible. The resemblance is greater between the predictive distributions obtained from the two models using stochastic volatility than between any of the models with stochastic volatility and the model with constant volatility. Thus, the choice of stochastic volatility may be less important than whether to include it at all.
+
+The reason for the somewhat wider distribution obtained using constant volatility is that the error covariance matrix that is obtained is a compromise between regimes of high and low volatility. Using stochastic volatility, there is no need to make this compromise. To see this point more clearly, the error standard deviations implied by the stochastic volatility models can be plotted using the \code{varplot} function.
+
+<<eval=FALSE>>=
+const_vol <- median(sqrt(mod_ss_iw$Sigma[3, 3, ]))
+
+varplot(mod_ss_fsv, variables = "GDPC1") +
+  geom_hline(yintercept = const_vol ,
+             color = "red", linetype = "dashed") +
+  coord_cartesian(ylim = c(0, 20))
+
+varplot(mod_ss_csv, variables = "GDPC1") +
+  geom_hline(yintercept = const_vol,
+             color = "red", linetype = "dashed") +
+  coord_cartesian(ylim = c(0, 20))
+@
+\begin{figure}
+\subfloat[Factor stochastic volatility\label{fig:varplot1}]{\includegraphics[width=0.49\linewidth]{figures/varplot-1} }\subfloat[Common stochastic volatility\label{fig:varplot2}]{\includegraphics[width=0.49\linewidth]{figures/varplot-2} }\caption[Standard deviation of the error term in the equation for GDP growth]{Standard deviation of the error term in the equation for GDP growth. The black solid and red dashed lines are the medians from the models with factor stochastic and constant volatility, respectively. The bands are obtained from the 95 \% posterior point-wise intervals.}\label{fig:varplot}
+\end{figure}
+Figure \ref{fig:varplot} shows that the standard deviation of the GDP error term has varied substantially. Periods of particularly high volatility are evident in the early 1980s, 1990s and 2000s as well as during the recent financial crisis at the end of the 2000s. The estimated volatilities are similar between the two models. They both capture the same peaks with the sole difference being that the model with common stochastic volatility estimated a peak in volatility around 2005 that the model with factor stochastic volatility did not. Volatility has in recent years been lower than usual. The line displaying the standard deviation from the model with constant volatility appears to capture a baseline, which the time-varying volatility is currently deviating somewhat from. For this reason, we see that the distribution of the forecasts in Figure \ref{fig:ridges} is narrower under a stochastic volatility specification.
+
+\subsection{Marginal Data Density}
+
+A generic function \code{mdd()} is provided that facilitates estimation of the marginal data density if the inverse Wishart prior is used for $\Sigma$. The marginal data density for the model using the steady-state prior with constant volatility is
+<<eval=FALSE>>=
+mdd(mod_ss_iw)
+@
+<<echo=FALSE>>=
+mdd_example
+@
+
+The marginal data density in itself is not particularly informative. One of its roles, however, is that it can be used as a way of selecting hyperparameters. By searching over a grid of values, the pair ($\lambda_1, \lambda_3$) that maximizes the marginal data density can be used. Such a grid search is embarrassingly parallel and can be computed using the \pkg{parallel} package \citep{R2019}.
+
+
+<<par_chunk2, eval = FALSE>>=
+library("parallel")
+par_fun <- function(lambda1, prior) {
+  set.seed(2019)
+  mod_par <- estimate_mfbvar(prior, prior = "ss", variance = "iw",
+                             lambda1 = lambda1, lambda3 = 1)
+  mdd(mod_par)
+}
+
+cl <- makeCluster(4)
+clusterEvalQ(cl, library("mfbvar"))
+lambda1_seq <- seq(0.05, 1, by = 0.05)
+result <- parSapply(cl, lambda1_seq,
+                    par_fun, prior = prior)
+stopCluster(cl)
+@
+
+
+We are here fixing the lag decay to $\lambda_3=1$ and consider the grid of values $\{0.05, 0.1, \dots, 0.95, 1.00\}$ for $\lambda_1$. Figure \ref{fig:mdd_plot} displays the results.
+
+<<mdd_plot,fig.asp = 0.4, fig.cap = sprintf("Logarithm of the marginal data density as a function of $\\lambda_1$ with $\\lambda_3=1$. The point shows the maximum point at $\\lambda_1=%4.1f$.", max_val)>>=
+plot_df <- tibble(lambda1 = lambda1_seq,
+       mdd = result)
+ggplot(plot_df, aes(x = lambda1, y = mdd)) +
+  geom_line() +
+  geom_point(data = filter(plot_df, mdd == max(mdd))) +
+  labs(y = "Marginal data density (log)",
+       x = bquote(lambda[1])) +
+  theme_minimal()
+@
+
+The highest value of the marginal data density is obtained for $\lambda_1=0.4$, indicating a lower degree of shrinkage in the model than what has been used in the previous estimations. However, the marginal data density is relatively flat as a function of $\lambda_1$ around 0.2--0.5, thereby demonstrating a certain degree of indifference with respect to $\lambda_1$ in this neighborhood.
+
+
+%% -- Summary/conclusions/discussion -------------------------------------------
+\newpage
+\section{Conclusion} \label{sec:summary}
+The \pkg{mfbvar} package introduces a user-friendly interface for estimating mixed-frequency vector autoregressions using Bayesian techniques. As such, it fills a void and provides additional functionality compared to existing packages such as \pkg{midasr} \citep{Ghysels2016b} and \pkg{BMR} \citep{OHara2017}.
+
+We have discussed the models that can be estimated in the \pkg{mfbvar} and the workflow of the package. An application to a small mixed-frequency VAR using monthly inflation and unemployment, and quarterly GDP growth was used to illustrate the functionality of the package. Aside from the features directly visible to the user, the package also provides header files for the key steps of the MCMC algorithm used for estimating the models. These can easily be imported and used by other packages, and thus we hope to make also the use of other, more customized mixed-frequency VARs more frequent.
+
+
+%% -- Optional special unnumbered sections -------------------------------------
+
+
+\section*{Acknowledgments}
+
+This work has been supported by Jan Wallanders och Tom Hedelius stiftelse samt Tore Browaldhs stiftelse, grant number P2016-0293:1.
+
+%% -- Bibliography -------------------------------------------------------------
+%% - References need to be provided in a .bib BibTeX database.
+%% - All references should be made with \cite, \citet, \citep, \citealp etc.
+%%   (and never hard-coded). See the FAQ for details.
+%% - JSS-specific markup (\proglang, \pkg, \code) should be used in the .bib.
+%% - Titles in the .bib should be in title case.
+%% - DOIs should be included where available.
+
+\bibliography{refs}
+
+
+%% -- Appendix (if any) --------------------------------------------------------
+%% - After the bibliography with page break.
+%% - With proper section titles and _not_ just "Appendix".
+
+%% -----------------------------------------------------------------------------
+
+
+\end{document}

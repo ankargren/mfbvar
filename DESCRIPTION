@@ -1,21 +1,38 @@
 Package: mfbvar
 Type: Package
 Title: Mixed-Frequency Bayesian VAR Models 
-Version: 0.5.0.9000
-Date: 2019-05-09
+Version: 0.5.6
+Date: 2021-02-09
 Authors@R: c(
     person("Sebastian", "Ankargren", email = "sebastian.ankargren@statistics.uu.se", role = c("cre", "aut"), comment = c(ORCID = "0000-0003-4415-8734")),
-    person("Yukai", "Yang", email = "yukai.yang@statistics.uu.se", role = c("aut"), comment=c(ORCID="0000-0002-2623-8549")))
-Description: Estimation of mixed-frequency Bayesian vector autoregressive (VAR) models with Minnesota or steady-state priors. The package implements a state space-based VAR model that handles mixed frequencies of the data. The model is estimated using Markov Chain Monte Carlo to numerically approximate the posterior distribution, where the prior can be either the Minnesota prior, as used by Schorfheide and Song (2015) <doi:10.1080/07350015.2014.954707>, or the steady-state prior, as advocated by Ankargren, Unosson and Yang (2018) <http://uu.diva-portal.org/smash/get/diva2:1260262/FULLTEXT01.pdf>.
+    person("Yukai", "Yang", email = "yukai.yang@statistics.uu.se", role = c("aut"), comment=c(ORCID="0000-0002-2623-8549")),
+    person("Gregor", "Kastner", role = "ctb", comment = c(ORCID="0000-0002-8237-8271")))
+Description: Functions and tools for estimation of mixed-frequency Bayesian vector autoregressive (VAR) models. The package implements a state space-based VAR model that handles mixed frequencies of the data as proposed by Schorfheide and Song (2015) <doi:10.1080/07350015.2014.954707>, and extensions thereof developed by Ankargren, Unosson and Yang (2020) <doi:10.1515/jtse-2018-0034>, Ankargren and Joneus (2019) <arXiv:1912.02231>, and Ankargren and Joneus (2020) <doi:10.1016/j.ecosta.2020.05.007>. The models are estimated using Markov Chain Monte Carlo to numerically approximate the posterior distribution. Prior distributions that can be used include normal-inverse Wishart and normal-diffuse priors as well as steady-state priors. Stochastic volatility can be handled by common or factor stochastic volatility models.
 License: GPL-3
 LazyData: TRUE
 URL: https://github.com/ankargren/mfbvar
 BugReports: https://github.com/ankargren/mfbvar/issues
 Imports:
-    Rcpp (>= 0.12.7), ggplot2 (>= 2.2.1), methods, pbapply, utils, factorstochvol, progress, lubridate, GIGrvg
+    Rcpp (>= 0.12.7), 
+    ggplot2 (>= 3.3.0), 
+    methods, 
+    lubridate, 
+    GIGrvg, 
+    stochvol (>= 2.0.3), 
+    RcppParallel,
+    dplyr,
+    magrittr,
+    tibble, 
+    zoo
 LinkingTo:
-    Rcpp, RcppArmadillo, RcppProgress
-Depends: R (>= 2.10)
-Suggests: testthat, covr, tidyverse
-RoxygenNote: 6.1.1
+    Rcpp, 
+    RcppArmadillo, 
+    RcppProgress, 
+    stochvol (>= 2.0.3), 
+    RcppParallel
+Depends: R (>= 3.5.0)
+Suggests: testthat, covr, knitr, ggridges, alfred, factorstochvol
+RoxygenNote: 7.1.1
 Encoding: UTF-8
+SystemRequirements: GNU make
+VignetteBuilder: knitr

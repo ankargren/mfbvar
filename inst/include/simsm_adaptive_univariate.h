@@ -4,7 +4,14 @@
 #define MFBVAR_SIMSM_ADAPTIVE_UNIVARIATE_H
 
 inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::mat Sigma, arma::mat Lambda, arma::mat Z1, arma::uword n_q_, arma::uword T_b, arma::mat f) {
-
+  // y_: The data matrix (n_T x n_vars)
+  // Phi: Matrix with regression parameters, first column is the intercept (n_vars x (1 + n_vars * n_lags))
+  // Sigma: matrix where each row contains the conditional standard deviations of the equations at time t (n_T x n_vars)
+  // Lambda: aggregation matrix (obtained from mfbvar:::build_Lambda), (usually n_vars x n_lags)
+  // Z1: matrix with initial values (n_lags x n_vars)
+  // n_q_: number of quarterly variables
+  // T_b: time index of first NA among monthly variables ( = n_T if none)
+  // f: matrix where each row contains the common component of the equations at time t (n_T x n_vars)
 
   // intercept is first column
   arma::uword n_vars = y_.n_cols;
