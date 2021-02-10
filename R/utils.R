@@ -105,15 +105,15 @@ parameter_initialization <- function(Y, n_vars, n_lags, n_T_, init,
   return(mget(paste0("init_", parameters)))
 }
 
-storage_initializtion <- function(init_pars, pars, envir, n_vars,
+storage_initializtion <- function(init_params, params, envir, n_vars,
                                   n_reps, n_thin, n_T, n_T_, n_determ = NULL,
                                   n_fac = NULL) {
   steady_state <- "psi" %in% parameters
 
-  for (i in seq_along(pars)) {
-    initval <- init_pars[[paste0("init_", pars[i])]]
-    assign(pars[i],
-           switch(pars[i],
+  for (i in seq_along(params)) {
+    initval <- init_params[[paste0("init_", params[i])]]
+    assign(params[i],
+           switch(params[i],
     Pi = array(initval, dim = c(n_vars, n_vars*n_lags+!steady_state, n_reps/n_thin)),
     psi = array(initval, dim = c(n_reps/n_thin, n_vars * n_determ)),
     Z = array(initval, dim = c(n_T, n_vars, n_reps/n_thin)),
