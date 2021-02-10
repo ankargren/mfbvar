@@ -1,19 +1,18 @@
 ## Re-submission of archived package
 This is a resubmission of the mfbvar package that was archived on 2021-02-05 because check problems were not corrected in time. This version thus:
  * Fixes the check problems. The observed warnings came from the vignette, which attempted to download data. This has now been removed; vignette does no longer use an active internet connection (as per the CRAN policy).
- * I have also extended the ability of the package to handle mixed-frequency data to now also include weekly-monthly data.
  * .Rd files now include \value, as per Gregor Seyer's request on 2021-02-09.
  * DESCRIPTION has been extended to include references. 
-
+ * I have also extended the ability of the package to handle mixed-frequency data to now also include weekly-monthly data.
 
 ## Test environments
- * win-builder (R devel, R 4.0.2, R 3.6.3)
+ * win-builder (R devel, R 4.0.3, R 3.6.3)
  * Local Mac OS X 10.14.3 (R 4.0.3)
 
 ## R CMD check results
 There were no ERRORs or WARNINGs. 
 
-On some test environments, one of two NOTEs may appear:
+On some test environments, one to two NOTEs may appear:
 
 * checking for GNU extensions in Makefiles ... NOTE
   GNU make is a SystemRequirements.

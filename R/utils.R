@@ -35,7 +35,8 @@ list_to_variables <- function(x, envir, ...) {
   invisible(NULL)
 }
 
-variable_initialization <- function(Y, freq, freqs, n_lags, Lambda_, d = NULL, d_fcst = NULL) {
+variable_initialization <- function(Y, freq, freqs, n_lags, Lambda_, n_thin,
+                                    d = NULL, d_fcst = NULL) {
   n_vars <- ncol(Y)
   n_determ <- if (!is.null(d)) dim(d)[2] else NULL
   n_q <- sum(freq == freqs[1])
@@ -98,8 +99,88 @@ parameter_initialization <- function(Y, n_vars, n_lags, n_T_, init,
                       latent = t(cbind(matrix(c(log(error_variance), rep(1, n_fac)), nrow = n_T_, ncol = n_vars+n_fac, byrow = TRUE))),
                       latent0 <- numeric(n_vars + n_fac)
     )
-    assign(paste0("init_", init_required[i]), initval, parent.frame())
+    assign(paste0("init_", init_required[i]), initval)
   }
 
   return(mget(paste0("init_", parameters)))
+}
+
+storage_initializtion <- function(init_pars, pars, envir, n_vars,
+                                  n_reps, n_thin, n_T, n_T_, n_determ = NULL,
+                                  n_fac = NULL) {
+  steady_state <- "psi" %in% parameters
+
+  for (i in seq_along(pars)) {
+    initval <- init_pars[[paste0("init_", pars[i])]]
+    assign(pars[i],
+           switch(pars[i],
+    Pi = array(initval, dim = c(n_vars, n_vars*n_lags+!steady_state, n_reps/n_thin)),
+    psi = array(initval, dim = c(n_reps/n_thin, n_vars * n_determ)),
+    Z = array(initval, dim = c(n_T, n_vars, n_reps/n_thin)),
+    mu = matrix(initval, n_vars, n_reps/n_thin),
+    sigma = matrix(initval, n_vars+n_fac, n_reps/n_thin),
+    phi = matrix(initval, n_vars+n_fac, n_reps/n_thin),
+    facload = array(matrix(initval, nrow = n_vars, ncol = n_fac),
+                     dim = c(n_vars, n_fac, n_reps/n_thin)),
+    f = array(matrix(initval, n_fac, n_T_), dim = c(n_fac, n_T_, n_reps/n_thin)),
+    h = array(t(initval), dim = c(n_T_, n_vars+n_fac, n_reps/n_thin),
+               dimnames = list(rownames(initval), colnames(initval), NULL)),
+    omega = matrix(initval, nrow = n_reps/n_thin, ncol = n_vars * n_determ, byrow = TRUE),
+    phi_mu = rep(initval, n_reps/n_thin),
+    lambda_mu = rep(initval, n_reps/n_thin)),
+    envir)
+  }
+}
+
+fsv_initialization <- function(priorsigmaidi, priorsigmafac, priormu,
+                               restrict, priorphiidi, priorphifac, n_vars, n_fac) {
+
+  if (length(priorsigmaidi) == 1) {
+    priorsigmaidi <- rep(priorsigmaidi, n_vars)
+  }
+  if (length(priorsigmafac) == 1) {
+    priorsigmafac <- rep(priorsigmafac, n_fac)
+  }
+
+  bmu <- priormu[1]
+  Bmu <- priormu[2]^2
+
+  Bsigma <- c(priorsigmaidi, priorsigmafac)
+
+  B011inv <- 1/10^8
+  B022inv <- 1/10^12
+
+  armatau2 <- matrix(priorfacload^2, n_vars, n_fac) # priorfacload is scalar, or matrix
+
+  armarestr <- matrix(FALSE, nrow = n_vars, ncol = n_fac)
+  if (restrict == "upper") armarestr[upper.tri(armarestr)] <- TRUE
+  armarestr <- matrix(as.integer(!armarestr), nrow = nrow(armarestr), ncol = ncol(armarestr)) # restrinv
+
+  a0idi <- priorphiidi[1]
+  b0idi <- priorphiidi[2]
+  a0fac <- priorphifac[1]
+  b0fac <- priorphifac[2]
+
+  priorh0 <- rep(-1.0, n_vars + n_fac)
+  return(list(priorsigmaidi = priorsigmaidi,
+              priorsigmafac = priorsigmafac,
+              bmu = bmu,
+              Bmu = Bmu,
+              Bsigma = Bsigma,
+              B011inv = B011inv,
+              B022inv = B022inv,
+              armatau2 = armatau2,
+              armarestr = armarestr,
+              a0idi = a0idi,
+              b0idi = b0idi,
+              a0fac = a0fac,
+              b0fac = b0fac,
+              priorh0 = priorh0))
+}
+
+ssng_initialization <- function(prior_ng, s) {
+  c0 <- ifelse(is.null(prior_ng), 0.01, prior_ng[1])
+  c1 <- ifelse(is.null(prior_ng), 0.01, prior_ng[2])
+  s <- ifelse(is.null(s), 1, s)
+  return(list(c0 = c0, c1 = c1, s = s))
 }

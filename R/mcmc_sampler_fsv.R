@@ -747,88 +747,58 @@ mcmc_sampler.mfbvar_ss_fsv <- function(x, ...){
 
 mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
 
-  check_required_params(x, "Y", "d", "prior_psi_mean", "n_lags", "n_burnin", "n_reps")
-  n_vars <- ncol(x$Y)
+  # Check inputs
+  check_required_params(x, "Y", "d", "prior_psi_mean", "n_lags",
+                        "n_burnin", "n_reps", "n_fac")
 
-  prior_Pi_Omega <- create_prior_Pi_Omega(x$lambda1, x$lambda2, x$lambda3, x$prior_Pi_AR1, x$Y, x$n_lags)
-  list_to_variables(prior_Pi_Omega, parent.frame(), "prior_Pi_Omega", "prior_Pi_AR1")
-  prior_Pi_Omega <- prior_Pi_Omega[-1, ]
-  prior_zero_mean <- all(prior_Pi_AR1 == 0)
-
+  # Assign variables
   list_to_variables(x, parent.frame(), "Y", "freq", "verbose", "prior_psi_mean",
                     "d", "d_fcst", "check_roots", "n_lags", "n_fcst", "n_reps",
                     "n_burnin", "n_thin", "n_fac", "freqs", "Lambda_",
                     "priormu", "priorphiidi", "priorphifac", "priorsigmaidi",
-                    "priorsigmafac", "priorfacload", "restrict")
+                    "priorsigmafac", "priorfacload", "restrict", "prior_ng", "s",
+                    "lambda1", "lambda2", "lambda3", "prior_Pi_AR1")
 
-
-
-  if (length(priorsigmaidi) == 1) {
-    priorsigmaidi <- rep(priorsigmaidi, n_vars)
-  }
-  if (length(priorsigmafac) == 1) {
-    priorsigmafac <- rep(priorsigmafac, n_fac)
-  }
-
-  bmu <- priormu[1]
-  Bmu <- priormu[2]^2
-
-  Bsigma <- c(priorsigmaidi, priorsigmafac)
-
-  B011inv <- 1/10^8
-  B022inv <- 1/10^12
-
-  armatau2 <- matrix(priorfacload^2, n_vars, n_fac) # priorfacload is scalar, or matrix
-
-  armarestr <- matrix(FALSE, nrow = n_vars, ncol = n_fac)
-  if (restrict == "upper") armarestr[upper.tri(armarestr)] <- TRUE
-  armarestr <- matrix(as.integer(!armarestr), nrow = nrow(armarestr), ncol = ncol(armarestr)) # restrinv
-
-  a0idi <- priorphiidi[1]
-  b0idi <- priorphiidi[2]
-  a0fac <- priorphifac[1]
-  b0fac <- priorphifac[2]
-
-  priorh0 <- rep(-1.0, n_vars + n_fac)
-
-  c0 <- ifelse(is.null(x$prior_ng), 0.01, x$prior_ng[1])
-  c1 <- ifelse(is.null(x$prior_ng), 0.01, x$prior_ng[2])
-  s <- ifelse(is.null(x[["s"]]), 1, x$s)
-
-  init_vars <- variable_initialization(Y, freq, freqs, n_lags, Lambda_, n_thin)
+  # Retrieve some additional variables
+  init_vars <- variable_initialization(Y = Y, freq = freq, freqs = freqs,
+                                       n_lags = n_lags, Lambda_ = Lambda_,
+                                       n_thin = n_thin, d = d, d_fcst = d_fcst)
   list_to_variables(init_vars, parent.frame(),
                     "n_vars", "n_q", "T_b", "n_pseudolags",
-                    "n_T", "n_T_", "n_thin")
+                    "n_T", "n_T_", "n_thin", "n_determ")
 
-  ## Initials
+  # Prior
+  prior_Pi_Omega <- create_prior_Pi_Omega(lambda1, lambda2, lambda3, prior_Pi_AR1, Y, n_lags)[-1, ]
+
+  # Initialize fsv priors
+  init_fsv <- fsv_initialization(parent.frame(), priorsigmaidi = priorsigmaidi,
+                                 priorsigmafac = priorsigmafac, priormu= priormu,
+                                 restrict = restrict, priorphiidi = priorphiidi,
+                                 priorphifac = priorphifac, n_vars = n_vars,
+                                 n_fac = n_fac)
+  list_to_variables(init_fsv, parent.frame(), "priorsigmaidi", "priorsigmafac",
+                    "bmu", "Bmu", "Bsigma", "B011inv", "B022inv", "armatau2",
+                    "armarestr", "a0idi", "b0idi", "a0fac", "b0fac", "priorh0")
+
+  # Initialize ssng priors
+  init_ssng <- ssng_initialization(prior_ng, s)
+  list_to_variables(init_ssng, parent.frame(), "c0", "c1", "s")
+
+  # Initialize parameters
   pars <- c("Z", "Psi", "Pi", "omega", "phi_mu", "lambda_mu", "mu", "sigma",
             "phi", "facload", "f", "latent", "latent0")
   add_args <- list(...)
   init <- add_args$init
   init_pars <- parameter_initialization(Y = Y, n_vars = n_vars, n_lags = n_lags, n_T_ = n_T_,
                   init = init, n_fac = n_fac, n_determ = n_determ, pars)
-  list_to_variables(init_pars, parent.frame(), paste0("init_", pars))
 
-  ################################################################
-  ### Preallocation
-  # Pi and Sigma store their i-th draws in the third dimension, psi
-  # is vectorized so it has its i-th draw stored in the i-th row
-  # Pi:    p * pk * n_reps, each [,,i] stores Pi'
-  # Sigma: p * p  * n_reps
-  # psi:   n_reps * p
-  # Z:     T * p * n_reps
-  ### If forecasting (h is horizon):
-  # Z_fcst: hk * p * n_reps
-  # d_fcst_lags: hk * m
-  ### If root checking:
-  # roots: n_reps vector
-  # num_tries: n_reps vector
-  ### If smoothing of the state vector:
-  # smoothed_Z: T * p * n_reps
+  # Initialize storage
+  storage_initializtion(init_pars = init_pars, pars = pars, envir = parent.frame(),
+                         n_vars = n_vars, n_reps = n_reps, n_thin = n_thin,
+                         n_T = n_T, n_T_ = n_T_, n_determ = n_determ,
+                         n_fac = n_fac)
 
-  Pi <- array(init_Pi, dim = c(n_vars, n_vars*n_lags, n_reps/n_thin))
-  psi <- array(init_psi, dim = c(n_reps/n_thin, n_vars * n_determ))
-  Z <- array(init_Z, dim = c(n_T, n_vars, n_reps/n_thin))
+
   Z_fcst<- array(NA, dim = c(n_fcst+n_lags, n_vars, n_reps/n_thin))
   if (n_fcst > 0) {
     rownames(Z_fcst) <- c((n_T-n_lags+1):n_T, paste0("fcst_", 1:n_fcst))
@@ -841,21 +811,6 @@ mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
   roots <- vector("numeric", n_reps/n_thin)
   num_tries <- roots
 
-  mu <- matrix(init_mu, n_vars, n_reps/n_thin)
-  sigma <- matrix(init_sigma, n_vars+n_fac, n_reps/n_thin)
-  phi <- matrix(init_phi, n_vars+n_fac, n_reps/n_thin)
-
-  facload <- array(matrix(init_facload, nrow = n_vars, ncol = n_fac),
-                   dim = c(n_vars, n_fac, n_reps/n_thin))
-  f <- array(matrix(init_f, n_fac, n_T_), dim = c(n_fac, n_T_, n_reps/n_thin))
-
-  h <- array(t(init_latent), dim = c(n_T_, n_vars+n_fac, n_reps/n_thin),
-             dimnames = list(rownames(init_latent), colnames(init_latent), NULL))
-
-  omega <- matrix(init_omega, nrow = n_reps/n_thin, ncol = n_vars * n_determ, byrow = TRUE)
-  phi_mu <- rep(init_phi_mu, n_reps/n_thin)
-  lambda_mu <- rep(init_lambda_mu, n_reps/n_thin)
-
   ################################################################
   ### Compute terms which do not vary in the sampler
 
@@ -863,7 +818,6 @@ mcmc_sampler.mfbvar_ssng_fsv <- function(x, ...){
   D_mat <- build_DD(d = d, n_lags = n_lags)
   dt <- d[-(1:n_lags), , drop = FALSE]
   d1 <- d[1:n_lags, , drop = FALSE]
-
 
 
   mcmc_ssng_fsv(Y[-(1:n_lags),],Pi,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,
