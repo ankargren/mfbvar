@@ -28,7 +28,7 @@ arma::mat loglike(            arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, 
   /* This function computes the smoothed state vector */
   /****************************************************/
   /* Initialize matrices and cubes */
-  arma::mat QQ = Q_comp * Q_comp.t();
+  arma::mat QQ = arma::symmatu(Q_comp * Q_comp.t());
   arma::mat mv(n_T, n_vars);
   mv.fill(NA_REAL);
   arma::mat me(n_T, n_vars);
@@ -53,7 +53,7 @@ arma::mat loglike(            arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, 
 
   /* Fill some temporary variables */
   arma::mat h1 = Pi_comp * z0;
-  arma::mat P1 = Pi_comp * P0 * Pi_comp.t() + QQ;
+  arma::mat P1 = arma::symmatu(Pi_comp * P0 * Pi_comp.t() + QQ);
   arma::mat mH = Lambda.rows(obs_vars);
   arma::mat vz = mz.cols(obs_vars);
 
@@ -61,7 +61,7 @@ arma::mat loglike(            arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, 
   vv.cols(obs_vars) = vz - trans(mH * h1);
   mv.row(0) = vv;
 
-  arma::mat aS = mH * P1 * mH.t();
+  arma::mat aS = arma::symmatu(mH * P1 * mH.t());
   arma::mat mIS = IS.slice(0);
   mIS(obs_vars, obs_vars) = inv_sympd(aS);
   IS.slice(0) = mIS;
@@ -71,7 +71,7 @@ arma::mat loglike(            arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, 
   aK.slice(0) = mK;
 
   arma::mat h2 = h1 + mK.cols(obs_vars) * trans(vv.cols(obs_vars));
-  arma::mat P2 = (identity_mat - mK.cols(obs_vars) * mH) * P1;
+  arma::mat P2 = arma::symmatu((identity_mat - mK.cols(obs_vars) * mH) * P1);
 
   double log_det_val;
   double log_det_sign;
@@ -81,7 +81,7 @@ arma::mat loglike(            arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, 
     obs_vars = find_finite(mz);
 
     h1 = Pi_comp * h2;
-    P1 = Pi_comp * P2 * Pi_comp.t() + QQ;
+    P1 = arma::symmatu(Pi_comp * P2 * Pi_comp.t() + QQ);
 
     mH = Lambda.rows(obs_vars);
     vz = mz.cols(obs_vars);
@@ -90,7 +90,7 @@ arma::mat loglike(            arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, 
     vv.cols(obs_vars) = vz - trans(mH * h1);
     mv.row(i) = vv;
 
-    aS = mH * P1 * mH.t();
+    aS = arma::symmatu(mH * P1 * mH.t());
     mIS = IS.slice(i);
     mIS(obs_vars, obs_vars) = inv_sympd(aS);
     IS.slice(i) = mIS;
@@ -100,9 +100,9 @@ arma::mat loglike(            arma::mat Y, arma::mat Lambda, arma::mat Pi_comp, 
     aK.slice(i) = mK;
 
     h2 = h1 + mK.cols(obs_vars) * trans(vv.cols(obs_vars));
-    P2 = (identity_mat - mK.cols(obs_vars) * mH) * P1;
+    P2 = arma::symmatu((identity_mat - mK.cols(obs_vars) * mH) * P1);
     log_det(log_det_val, log_det_sign, aS);
-    logl.row(i) = -0.5* obs_vars.n_elem * log(2*M_PI) - (log_det_val + vv.cols(obs_vars) * mIS(obs_vars, obs_vars) * trans(vv.cols(obs_vars)))*0.5;
+    logl.row(i) = -0.5* obs_vars.n_elem * std::log(2*M_PI) - (log_det_val + vv.cols(obs_vars) * mIS(obs_vars, obs_vars) * trans(vv.cols(obs_vars)))*0.5;
   }
 
   /* The return is the smoothed state vector */
