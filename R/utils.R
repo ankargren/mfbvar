@@ -105,10 +105,10 @@ parameter_initialization <- function(Y, n_vars, n_lags, n_T_, init,
   return(mget(paste0("init_", parameters)))
 }
 
-storage_initializtion <- function(init_params, params, envir, n_vars,
+storage_initialization <- function(init_params, params, envir, n_vars,
                                   n_reps, n_thin, n_T, n_T_, n_determ = NULL,
                                   n_fac = NULL) {
-  steady_state <- "psi" %in% parameters
+  steady_state <- "psi" %in% params
 
   for (i in seq_along(params)) {
     initval <- init_params[[paste0("init_", params[i])]]

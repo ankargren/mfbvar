@@ -516,35 +516,35 @@ mfbvar_steadystate_fsv <- function(x, ssng, ...) {
 
 
   # Check inputs
-  check_required_params(x, required_params)
+  mfbvar:::check_required_params(x, required_params)
 
   # Assign variables
-  list_to_variables(x, parent.frame(), prior_params)
+  mfbvar:::list_to_variables(x, parent.frame(), prior_params)
 
   # Retrieve some additional variables
-  init_vars <- variable_initialization(Y = Y, freq = freq, freqs = freqs,
+  init_vars <- mfbvar:::variable_initialization(Y = Y, freq = freq, freqs = freqs,
                                        n_lags = n_lags, Lambda_ = Lambda_,
                                        n_thin = n_thin, d = d, d_fcst = d_fcst)
-  list_to_variables(init_vars, parent.frame(),
+  mfbvar:::list_to_variables(init_vars, parent.frame(),
                     retrieved_params)
 
   # Prior
-  prior_Pi_Omega <- create_prior_Pi_Omega(lambda1, lambda2, lambda3, prior_Pi_AR1, Y, n_lags)[-1, ]
+  prior_Pi_Omega <- mfbvar:::create_prior_Pi_Omega(lambda1, lambda2, lambda3, prior_Pi_AR1, Y, n_lags)[-1, ]
 
   # Initialize fsv priors
-  init_fsv <- fsv_initialization(parent.frame(), priorsigmaidi = priorsigmaidi,
+  init_fsv <- mfbvar:::fsv_initialization(priorsigmaidi = priorsigmaidi,
                                  priorsigmafac = priorsigmafac, priormu= priormu,
                                  restrict = restrict, priorphiidi = priorphiidi,
                                  priorphifac = priorphifac, n_vars = n_vars,
                                  n_fac = n_fac)
-  list_to_variables(init_fsv, parent.frame(), "priorsigmaidi", "priorsigmafac",
+  mfbvar:::list_to_variables(init_fsv, parent.frame(), "priorsigmaidi", "priorsigmafac",
                     "bmu", "Bmu", "Bsigma", "B011inv", "B022inv", "armatau2",
                     "armarestr", "a0idi", "b0idi", "a0fac", "b0fac", "priorh0")
 
   # Initialize ssng priors
   if (ssng) {
-    init_ssng <- ssng_initialization(prior_ng, s)
-    list_to_variables(init_ssng, parent.frame(), "c0", "c1", "s")
+    init_ssng <- mfbvar:::ssng_initialization(prior_ng, s)
+    mfbvar:::list_to_variables(init_ssng, parent.frame(), "c0", "c1", "s")
   } else {
     phi_mu <- matrix(0, 1, 1)
     lambda_mu <- matrix(0, 1, 1)
@@ -557,11 +557,11 @@ mfbvar_steadystate_fsv <- function(x, ssng, ...) {
   # Initialize parameters
   add_args <- list(...)
   init <- add_args$init
-  init_params <- parameter_initialization(Y = Y, n_vars = n_vars, n_lags = n_lags, n_T_ = n_T_,
+  init_params <- mfbvar:::parameter_initialization(Y = Y, n_vars = n_vars, n_lags = n_lags, n_T_ = n_T_,
                   init = init, n_fac = n_fac, n_determ = n_determ, params)
 
   # Initialize storage
-  storage_initialization(init_params = init_params, params = pars, envir = parent.frame(),
+  storage_initialization(init_params = init_params, params = params, envir = parent.frame(),
                          n_vars = n_vars, n_reps = n_reps, n_thin = n_thin,
                          n_T = n_T, n_T_ = n_T_, n_determ = n_determ,
                          n_fac = n_fac)
@@ -583,7 +583,7 @@ mfbvar_steadystate_fsv <- function(x, ssng, ...) {
   ### Compute terms which do not vary in the sampler
 
   Z_1 <- Z[1:n_pseudolags,, 1]
-  D_mat <- build_DD(d = d, n_lags = n_lags)
+  D_mat <- mfbvar:::build_DD(d = d, n_lags = n_lags)
   dt <- d[-(1:n_lags), , drop = FALSE]
   d1 <- d[1:n_lags, , drop = FALSE]
 

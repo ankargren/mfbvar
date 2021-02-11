@@ -181,14 +181,34 @@ estimate_mdd_ss_1 <- function(mfbvar_obj) {
 
   ################################################################
   ### Final calculations
-  lklhd          <- sum(c(loglike(Y = as.matrix(mZ), Lambda = Lambda, Pi_comp = Pi_comp, Q_comp = Q_comp, n_T = n_T_, n_vars = n_vars, n_comp = n_lags * n_vars, z0 = h0, P0 = P0)[-1]))
-  eval_prior_Pi_Sigma <- dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = prior_Pi_mean, P = prior_Pi_Omega, S = prior_S, v = n_vars+2)
-  eval_prior_psi      <- dmultn(x = post_psi, m = prior_psi_mean, Sigma = prior_psi_Omega)
-  eval_RB_Pi_Sigma    <- log(mean(eval_Pi_Sigma_RaoBlack(Z_array = Z_red, d = d, post_psi_center = post_psi, post_Pi_center = post_Pi_mean, post_Sigma_center = post_Sigma,
-                                                         post_nu = post_nu, prior_Pi_mean = prior_Pi_mean, prior_Pi_Omega = prior_Pi_Omega, prior_S = prior_S,
-                                                         n_vars = n_vars, n_lags = n_lags, n_reps = n_reps)))
-  eval_marg_psi   <- log(mean(eval_psi_MargPost(Pi_array = Pi, Sigma_array = Sigma, Z_array = Z, post_psi_center = post_psi, prior_psi_mean = prior_psi_mean,
-                                                prior_psi_Omega = prior_psi_Omega, D_mat = D, n_determ = n_determ, n_vars = n_vars, n_lags = n_lags, n_reps = n_reps)))
+  lklhd          <- sum(c(loglike(Y = as.matrix(mZ), Lambda = Lambda,
+                                  Pi_comp = Pi_comp, Q_comp = Q_comp, n_T = n_T_,
+                                  n_vars = n_vars, n_comp = n_lags * n_vars,
+                                  z0 = h0, P0 = P0)[-1]))
+  eval_prior_Pi_Sigma <- dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma,
+                                      M = prior_Pi_mean, P = prior_Pi_Omega,
+                                      S = prior_S, v = n_vars+2)
+  eval_prior_psi      <- dmultn(x = post_psi, m = prior_psi_mean,
+                                Sigma = prior_psi_Omega)
+  eval_log_RB <- eval_Pi_Sigma_RaoBlack(Z_array = Z_red, d = d,
+                                        post_psi_center = post_psi,
+                                        post_Pi_center = post_Pi_mean,
+                                        post_Sigma_center = post_Sigma,
+                                        post_nu = post_nu,
+                                        prior_Pi_mean = prior_Pi_mean,
+                                        prior_Pi_Omega = prior_Pi_Omega,
+                                        prior_S = prior_S, n_vars = n_vars,
+                                        n_lags = n_lags, n_reps = n_reps)
+  const <- median(eval_log_RB)
+  eval_RB_Pi_Sigma    <- log(mean(exp(eval_log_RB-const))) + const
+  eval_marg_psi   <- log(mean(eval_psi_MargPost(Pi_array = Pi, Sigma_array = Sigma,
+                                                Z_array = Z,
+                                                post_psi_center = post_psi,
+                                                prior_psi_mean = prior_psi_mean,
+                                                prior_psi_Omega = prior_psi_Omega,
+                                                D_mat = D, n_determ = n_determ,
+                                                n_vars = n_vars, n_lags = n_lags,
+                                                n_reps = n_reps)))
 
   mdd_estimate <- c(lklhd + eval_prior_Pi_Sigma + eval_prior_psi - (eval_RB_Pi_Sigma + eval_marg_psi))
 
