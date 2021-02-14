@@ -486,6 +486,7 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
 
 mfbvar_steadystate_fsv <- function(x, ssng, ...) {
 
+  envir <- parent.frame()
   if (ssng) {
     required_params <- c("Y", "d", "prior_psi_mean", "n_lags",
                           "n_burnin", "n_reps", "n_fac")
@@ -498,7 +499,7 @@ mfbvar_steadystate_fsv <- function(x, ssng, ...) {
     retrieved_params <- c("n_vars", "n_q", "T_b", "n_pseudolags",
                       "n_T", "n_T_", "n_thin", "n_determ")
     params <- c("Z", "psi", "Pi", "omega", "phi_mu", "lambda_mu", "mu", "sigma",
-              "phi", "facload", "f", "latent", "latent0")
+              "phi", "facload", "f", "latent", "latent0", "h")
   } else {
     required_params <- c("Y", "d", "prior_psi_mean", "prior_psi_Omega", "n_lags",
                         "n_burnin", "n_reps", "n_fac")
@@ -511,7 +512,7 @@ mfbvar_steadystate_fsv <- function(x, ssng, ...) {
     retrieved_params <- c("n_vars", "n_q", "T_b", "n_pseudolags",
                       "n_T", "n_T_", "n_thin", "n_determ")
     params <- c("Z", "psi", "Pi", "mu", "sigma",
-              "phi", "facload", "f", "latent", "latent0")
+              "phi", "facload", "f", "latent", "latent0", "h")
   }
 
 
@@ -519,14 +520,16 @@ mfbvar_steadystate_fsv <- function(x, ssng, ...) {
   mfbvar:::check_required_params(x, required_params)
 
   # Assign variables
-  mfbvar:::list_to_variables(x, parent.frame(), prior_params)
+  mfbvar:::list_to_variables(x, envir, prior_params)
 
   # Retrieve some additional variables
+
+  cat("Before var init: ", ifelse(exists("sigma"), class(sigma), "NONE"),"\n")
   init_vars <- mfbvar:::variable_initialization(Y = Y, freq = freq, freqs = freqs,
                                        n_lags = n_lags, Lambda_ = Lambda_,
                                        n_thin = n_thin, d = d, d_fcst = d_fcst)
-  mfbvar:::list_to_variables(init_vars, parent.frame(),
-                    retrieved_params)
+  mfbvar:::list_to_variables(init_vars, envir, retrieved_params)
+  cat("After var init: ", ifelse(exists("sigma"), class(sigma), "NONE"),"\n")
 
   # Prior
   prior_Pi_Omega <- mfbvar:::create_prior_Pi_Omega(lambda1, lambda2, lambda3, prior_Pi_AR1, Y, n_lags)[-1, ]
@@ -537,14 +540,14 @@ mfbvar_steadystate_fsv <- function(x, ssng, ...) {
                                  restrict = restrict, priorphiidi = priorphiidi,
                                  priorphifac = priorphifac, n_vars = n_vars,
                                  n_fac = n_fac)
-  mfbvar:::list_to_variables(init_fsv, parent.frame(), "priorsigmaidi", "priorsigmafac",
+  mfbvar:::list_to_variables(init_fsv, envir, "priorsigmaidi", "priorsigmafac",
                     "bmu", "Bmu", "Bsigma", "B011inv", "B022inv", "armatau2",
                     "armarestr", "a0idi", "b0idi", "a0fac", "b0fac", "priorh0")
 
   # Initialize ssng priors
   if (ssng) {
     init_ssng <- mfbvar:::ssng_initialization(prior_ng, s)
-    mfbvar:::list_to_variables(init_ssng, parent.frame(), "c0", "c1", "s")
+    mfbvar:::list_to_variables(init_ssng, envir, "c0", "c1", "s")
   } else {
     phi_mu <- matrix(0, 1, 1)
     lambda_mu <- matrix(0, 1, 1)
@@ -555,16 +558,18 @@ mfbvar_steadystate_fsv <- function(x, ssng, ...) {
   }
 
   # Initialize parameters
-  add_args <- list(...)
+  add_args <- ifelse(inherits(try(list(...), silent = TRUE), "try-error"), list(), list(...))
   init <- add_args$init
   init_params <- mfbvar:::parameter_initialization(Y = Y, n_vars = n_vars, n_lags = n_lags, n_T_ = n_T_,
                   init = init, n_fac = n_fac, n_determ = n_determ, params)
 
   # Initialize storage
-  storage_initialization(init_params = init_params, params = params, envir = parent.frame(),
+  cat("Before: ", ifelse(exists("sigma"), class(sigma), "NONE"),"\n")
+  mfbvar:::storage_initialization(init_params = init_params, params = params, envir = envir,
                          n_vars = n_vars, n_reps = n_reps, n_thin = n_thin,
                          n_T = n_T, n_T_ = n_T_, n_determ = n_determ,
                          n_fac = n_fac)
+  cat("After: ", str(sigma),"\n")
 
 
   Z_fcst<- array(NA, dim = c(n_fcst+n_lags, n_vars, n_reps/n_thin))
@@ -587,8 +592,7 @@ mfbvar_steadystate_fsv <- function(x, ssng, ...) {
   dt <- d[-(1:n_lags), , drop = FALSE]
   d1 <- d[1:n_lags, , drop = FALSE]
 
-
-  mcmc_ssng_fsv(Y[-(1:n_lags),],Pi,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,
+  mfbvar:::mcmc_ssng_fsv(Y[-(1:n_lags),],Pi,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,
                        mu,phi,sigma,f,facload,h,
                        Lambda_,prior_Pi_Omega,prior_Pi_AR1,D_mat,dt,d1,
                        d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,bmu,Bmu,

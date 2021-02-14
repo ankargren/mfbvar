@@ -307,6 +307,7 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
 
   arma::mat curpara_old, armafacload_old, armaf_old;
   for (arma::uword i = 0; i < n_reps + n_burnin; ++i) {
+    Rcpp::Rcout << "update_demean:   " << i << std::endl;
     if (!single_freq) {
       update_demean(my, mu_long, y_in_p, mu_mat, d1, Psi_i, Lambda_single, n_vars,
                     n_q, n_Lambda, n_T);
@@ -315,9 +316,11 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
       mZ = y_in_p - mu_mat;
     }
 
+    Rcpp::Rcout << "Pi_i0" << std::endl;
     mZ1 = Z_1 - d1 * Psi_i.t();
     Pi_i0.cols(1, n_vars*n_lags) = Pi_i;
 
+    Rcpp::Rcout << "simsm" << std::endl;
     if (!single_freq) {
       Sig_i = arma::exp(0.5 * armah.head_cols(n_vars));
       mZ = simsm_adaptive_univariate(my, Pi_i0, Sig_i, Lambda_comp, mZ1, n_q, T_b, cc_i);
@@ -330,6 +333,7 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
 
     y_hat = mZ - mX * Pi_i.t();
 
+    Rcpp::Rcout << "update_fsv" << std::endl;
     curpara_old = curpara_arma;
     armafacload_old = armafacload;
     armaf_old = armaf;
@@ -337,6 +341,7 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
                bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv,
                priorh0, armarestr);
 
+    Rcpp::Rcout << "fcst" << std::endl;
     if ((i+1) % n_thin == 0 && i>= n_burnin) {
       mu_i = curpara_old.row(0).t();
       phi_i = curpara_old.row(1).t();
@@ -356,27 +361,34 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
       }
 
 
+      Rcpp::Rcout << "storage 1" << std::endl;
       Z.slice((i-n_burnin)/n_thin) = Z_i;
       Pi.slice((i-n_burnin)/n_thin) = Pi_i;
       psi.row((i-n_burnin)/n_thin) = psi_i.t();
 
+      Rcpp::Rcout << "storage 2" << std::endl;
       f.slice((i-n_burnin)/n_thin) = armaf_old;
       facload.slice((i-n_burnin)/n_thin) = armafacload_old;
       h.slice((i-n_burnin)/n_thin) = armah;
 
-
+      Rcpp::Rcout << "storage 3" << std::endl;
       mu.col((i-n_burnin)/n_thin) = mu_i.head(n_vars);
       phi.col((i-n_burnin)/n_thin) = phi_i;
       sigma.col((i-n_burnin)/n_thin) = sigma_i;
 
+      Rcpp::Rcout << "storage 4" << std::endl;
       if (ssng) {
+        Rcpp::Rcout << "storage 41" << std::endl;
         phi_mu((i-n_burnin)/n_thin) = phi_mu_i;
+        Rcpp::Rcout << "storage 42" << std::endl;
         lambda_mu((i-n_burnin)/n_thin) = lambda_mu_i;
+        Rcpp::Rcout << "storage 43" << std::endl;
         omega.row((i-n_burnin)/n_thin) = omega_i.t();
       }
     }
 
 
+    Rcpp::Rcout << "Pi" << std::endl;
     cc_i = armaf.t() * armafacload.t(); // Common component
     latent_nofac = mZ - cc_i;
     bool stationarity_check = false;
@@ -410,6 +422,8 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
         Rcpp::stop("Attemped to draw stationary Pi 1,000 times.");
       }
     }
+
+    Rcpp::Rcout << "ssng" << std::endl;
     if (ssng) {
       update_ng(phi_mu_i, lambda_mu_i, omega_i, nm, c0, c1, s, psi_i, prior_psi_mean, accept);
       if (adaptive_mh) {
@@ -435,6 +449,8 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
       inv_prior_psi_Omega = arma::diagmat(1/omega_i);
       inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
     }
+
+    Rcpp::Rcout << "psi" << std::endl;
     X = create_X_noint(Z_i, n_lags);
     posterior_psi_fsv(psi_i, mu_mat, Pi_i, D_mat, arma::exp(idivar),
                       inv_prior_psi_Omega, Z_i.rows(n_lags, n_T + n_lags - 1), X,
