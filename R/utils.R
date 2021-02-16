@@ -105,7 +105,7 @@ parameter_initialization <- function(Y, n_vars, n_lags, n_T_, init,
   return(mget(paste0("init_", parameters)))
 }
 
-storage_initialization <- function(init_params, params, envir, n_vars,
+storage_initialization <- function(init_params, params, envir, n_vars, n_lags,
                                   n_reps, n_thin, n_T, n_T_, n_determ = NULL,
                                   n_fac = NULL) {
   steady_state <- "psi" %in% params
@@ -133,7 +133,8 @@ storage_initialization <- function(init_params, params, envir, n_vars,
 }
 
 fsv_initialization <- function(priorsigmaidi, priorsigmafac, priormu,
-                               restrict, priorphiidi, priorphifac, n_vars, n_fac) {
+                               priorfacload, restrict, priorphiidi, priorphifac,
+                               n_vars, n_fac) {
 
   if (length(priorsigmaidi) == 1) {
     priorsigmaidi <- rep(priorsigmaidi, n_vars)

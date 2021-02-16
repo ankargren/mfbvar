@@ -486,7 +486,7 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
 
 mfbvar_steadystate_fsv <- function(x, ssng, ...) {
 
-  envir <- parent.frame()
+  envir <- environment()
   if (ssng) {
     required_params <- c("Y", "d", "prior_psi_mean", "n_lags",
                           "n_burnin", "n_reps", "n_fac")
@@ -523,20 +523,18 @@ mfbvar_steadystate_fsv <- function(x, ssng, ...) {
   mfbvar:::list_to_variables(x, envir, prior_params)
 
   # Retrieve some additional variables
-
-  cat("Before var init: ", ifelse(exists("sigma"), class(sigma), "NONE"),"\n")
   init_vars <- mfbvar:::variable_initialization(Y = Y, freq = freq, freqs = freqs,
                                        n_lags = n_lags, Lambda_ = Lambda_,
                                        n_thin = n_thin, d = d, d_fcst = d_fcst)
   mfbvar:::list_to_variables(init_vars, envir, retrieved_params)
-  cat("After var init: ", ifelse(exists("sigma"), class(sigma), "NONE"),"\n")
 
   # Prior
   prior_Pi_Omega <- mfbvar:::create_prior_Pi_Omega(lambda1, lambda2, lambda3, prior_Pi_AR1, Y, n_lags)[-1, ]
 
   # Initialize fsv priors
   init_fsv <- mfbvar:::fsv_initialization(priorsigmaidi = priorsigmaidi,
-                                 priorsigmafac = priorsigmafac, priormu= priormu,
+                                 priorsigmafac = priorsigmafac, priormu = priormu,
+                                 priorfacload = priorfacload,
                                  restrict = restrict, priorphiidi = priorphiidi,
                                  priorphifac = priorphifac, n_vars = n_vars,
                                  n_fac = n_fac)
@@ -558,18 +556,16 @@ mfbvar_steadystate_fsv <- function(x, ssng, ...) {
   }
 
   # Initialize parameters
-  add_args <- ifelse(inherits(try(list(...), silent = TRUE), "try-error"), list(), list(...))
+  add_args <- tryCatch(list(...), error = function(cond) list())
   init <- add_args$init
   init_params <- mfbvar:::parameter_initialization(Y = Y, n_vars = n_vars, n_lags = n_lags, n_T_ = n_T_,
                   init = init, n_fac = n_fac, n_determ = n_determ, params)
 
   # Initialize storage
-  cat("Before: ", ifelse(exists("sigma"), class(sigma), "NONE"),"\n")
   mfbvar:::storage_initialization(init_params = init_params, params = params, envir = envir,
-                         n_vars = n_vars, n_reps = n_reps, n_thin = n_thin,
-                         n_T = n_T, n_T_ = n_T_, n_determ = n_determ,
-                         n_fac = n_fac)
-  cat("After: ", str(sigma),"\n")
+                         n_vars = n_vars, n_lags = n_lags, n_reps = n_reps,
+                         n_thin = n_thin, n_T = n_T, n_T_ = n_T_,
+                         n_determ = n_determ, n_fac = n_fac)
 
 
   Z_fcst<- array(NA, dim = c(n_fcst+n_lags, n_vars, n_reps/n_thin))
@@ -598,7 +594,7 @@ mfbvar_steadystate_fsv <- function(x, ssng, ...) {
                        d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,bmu,Bmu,
                        a0idi,b0idi,a0fac,b0fac,Bsigma,B011inv,B022inv,priorh0,
                        armarestr,armatau2,n_fac,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,
-                       n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,TRUE)
+                       n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,ssng)
   if (verbose) {
     cat("\n")
   }
