@@ -47,10 +47,10 @@ variable_initialization <- function(Y, freq, freqs, n_lags, Lambda_, n_thin,
   }
   if (n_q == 0 || n_q == n_vars) {
     complete_quarters <- apply(Y, 1, function(x) !any(is.na(x)))
-    Y <- Y[complete_quarters, ]
+    #Y <- Y[complete_quarters, ]
     if (!is.null(d)) {
       d_fcst <- rbind(d[!complete_quarters, , drop = FALSE], d_fcst)
-      d <- d[complete_quarters, , drop = FALSE]
+      #d <- d[complete_quarters, , drop = FALSE]
     }
   }
 
@@ -59,9 +59,11 @@ variable_initialization <- function(Y, freq, freqs, n_lags, Lambda_, n_thin,
   n_T_ <- n_T - n_pseudolags
 
   n_thin <- ifelse(is.null(n_thin), 1, n_thin)
+
+  Z_1 <- Y[1:n_pseudolags, ]
   return(list(n_vars = n_vars, n_determ = n_determ, n_q = n_q, T_b = T_b,
               n_pseudolags = n_pseudolags, n_T = n_T, n_T_ = n_T_,
-              n_thin = n_thin))
+              n_thin = n_thin, Z_1 = Z_1))
 }
 
 parameter_initialization <- function(Y, n_vars, n_lags, n_T_, init,
@@ -107,7 +109,7 @@ parameter_initialization <- function(Y, n_vars, n_lags, n_T_, init,
 
 storage_initialization <- function(init_params, params, envir, n_vars, n_lags,
                                   n_reps, n_thin, n_T, n_T_, n_determ = NULL,
-                                  n_fac = NULL) {
+                                  n_fac = NULL, n_fcst) {
   steady_state <- "psi" %in% params
 
   for (i in seq_along(params)) {
@@ -130,6 +132,15 @@ storage_initialization <- function(init_params, params, envir, n_vars, n_lags,
     lambda_mu = rep(initval, n_reps/n_thin)),
     envir)
   }
+
+  Z_fcst <- array(NA, dim = c(n_fcst+n_lags, n_vars, n_reps/n_thin))
+  if (n_fcst > 0) {
+    rownames(Z_fcst) <- c((n_T-n_lags+1):n_T, paste0("fcst_", 1:n_fcst))
+    Z_fcst[,,1] <- 0
+  } else {
+    rownames(Z_fcst) <- (n_T-n_lags+1):n_T
+  }
+  assign("Z_fcst", Z_fcst, envir)
 }
 
 fsv_initialization <- function(priorsigmaidi, priorsigmafac, priormu,
@@ -184,4 +195,13 @@ ssng_initialization <- function(prior_ng, s) {
   c1 <- ifelse(is.null(prior_ng), 0.01, prior_ng[2])
   s <- ifelse(is.null(s), 1, s)
   return(list(c0 = c0, c1 = c1, s = s))
+}
+
+ss_initialization <- function(d, d_fcst, n_T, n_lags, n_fcst) {
+  d_fcst_lags <- as.matrix(rbind(d[(n_T-n_lags+1):n_T, , drop = FALSE], d_fcst))
+  d_fcst_lags <- d_fcst_lags[1:(n_lags+n_fcst), , drop = FALSE]
+  D_mat <- mfbvar:::build_DD(d = d, n_lags = n_lags)
+  dt <- d[-(1:n_lags), , drop = FALSE]
+  d1 <- d[1:n_lags, , drop = FALSE]
+  return(list(d_fcst_lags = d_fcst_lags, D_mat = D_mat, dt = dt, d1 = d1))
 }

@@ -13,6 +13,7 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
   // T_b: time index of first NA among monthly variables ( = n_T if none)
   // f: matrix where each row contains the common component of the equations at time t (n_T x n_vars)
 
+  Rcpp::Rcout << "beginning" << std::endl;
   // intercept is first column
   arma::uword n_vars = y_.n_cols;
   arma::uword n_lags = Z1.n_rows;
@@ -25,6 +26,7 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
   arma::uvec t_vec(1);
 
   // simulation
+  Rcpp::Rcout << "simulation" << std::endl;
   arma::mat Phi_no_c = Phi.cols(1, n_vars * n_lags);
   arma::mat Phi_c = Phi.col(0);
   arma::uvec quarterly_indexes = arma::uvec(Lambda.n_cols);
@@ -36,18 +38,22 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
   ///////////////////////////////////////////////
   //               SIMULATING                  //
   ///////////////////////////////////////////////
-  quarterly_indexes = create_quarterly_indexes(Lambda, n_m, n_q, n_vars);
+  if (n_q > 0) {
+    quarterly_indexes = create_quarterly_indexes(Lambda, n_m, n_q, n_vars);
+  }
 
   // Generating errors
   std::generate(epsilon.begin(), epsilon.end(), ::norm_rand);
   epsilon %= Sigma;
 
+  Rcpp::Rcout << "create sim" << std::endl;
   create_sim(Z_gen, y_sim, Phi_no_c, Phi_c, epsilon, y_, Z1, Lambda,
              quarterly_indexes, n_vars, n_m, n_q, n_T, n_lags);
 
   ///////////////////////////////////////////////
   //                 COMPACT                   //
   ///////////////////////////////////////////////
+  Rcpp::Rcout << "compact" << std::endl;
   arma::mat y_orig = y_;
   y_ = y_ - y_sim;
   arma::mat Z1_orig = Z1;
@@ -76,26 +82,35 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
   arma::mat a1 = arma::mat(n_q*(n_lags+1), 1, arma::fill::zeros);
   arma::mat Beta_W = arma::mat(n_q, n_m*n_lags+1, arma::fill::zeros);
 
+  Rcpp::Rcout << "create mat" << std::endl;
   create_matrices(Phi_mm, Phi_mq, Phi_qm, Phi_qq, Z, Tt, intercept, a1, W,
                   d, Beta_W, n_vars, n_m, n_q, n_lags, Lambda, Z1, Phi);
 
   ////////////////////////////////////////////////////////////////////
 
+  Rcpp::Rcout << "inits" << std::endl;
   arma::mat G, H, HT;
   arma::mat X = arma::mat(1, n_m*n_lags, arma::fill::zeros);
   arma::mat c = arma::mat(1, n_vars, arma::fill::zeros);
   G = Sigma(arma::span::all, arma::span(0, n_m - 1)).t(); // G contains the sqrt(variances) for the n_m variables
-  H = Sigma(arma::span::all, arma::span(n_m, n_vars - 1)).t(); // H for the n_q variables
-  if (T_b < n_T) { // Only if there are ragged edges do we need HT
-    HT = Sigma.submat(arma::span(T_b, T_b), arma::span(n_m, n_vars - 1));
+  if (n_q > 0) {
+    H = Sigma(arma::span::all, arma::span(n_m, n_vars - 1)).t(); // H for the n_q variables
+    if (T_b < n_T) { // Only if there are ragged edges do we need HT
+      HT = Sigma.submat(arma::span(T_b, T_b), arma::span(n_m, n_vars - 1));
+    }
+
+    d.cols(0, n_q - 1) += f.submat(0, n_m, 0, n_vars - 1);
+    a1 += d.t();
   }
 
-  d.cols(0, n_q - 1) += f.submat(0, n_m, 0, n_vars - 1);
-  a1 += d.t();
   arma::mat P1 = arma::mat(n_q*(n_lags+1), n_q*(n_lags+1), arma::fill::zeros);
-  for (arma::uword j = 0; j < n_q; j++) {
-    P1(j,j) = std::pow(H(j,0), 2.0);
+
+  if (n_q > 0) {
+    for (arma::uword j = 0; j < n_q; j++) {
+      P1(j,j) = std::pow(H(j,0), 2.0);
+    }
   }
+
 
   ///////////////////////////////////////////////
   //             COMPACT FILTERING             //
@@ -133,62 +148,68 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
 
   a.row(0) = a_t;
   P_cmpct.slice(0) = P_t;
-  for (arma::uword t = 0; t < T_b; t++) {
+  if (n_q > 0) {
 
-    prepare_filtering_t(obs_vars, t_vec, X, W, c, d, t, y, Z1, Phi_mm, Beta_W,
-                        n_m, n_q, n_lags);
+    for (arma::uword t = 0; t < T_b; t++) {
+      Rcpp::Rcout << "t: " << t << ", T_b: " << T_b << std::endl;
 
-    c.cols(0, n_m - 1) += f.row(t).cols(0, n_m - 1);
-    if (t < n_T - 1) {
-      d.cols(0, n_q - 1) += f.row(t+1).cols(n_m, n_vars - 1);
-    }
+      prepare_filtering_t(obs_vars, t_vec, X, W, c, d, t, y, Z1, Phi_mm, Beta_W,
+                          n_m, n_q, n_lags);
 
-    n_obs = obs_vars.n_elem;
-    for (arma::uword i = 0; i < n_obs; i++) {
-      v_t = y(t, obs_vars(i)) - a_t * Z.row(obs_vars(i)).t() - c.col(obs_vars(i)) - intercept.col(obs_vars(i));
-      F_t = (Z.row(obs_vars(i)) * P_t) * Z.row(obs_vars(i)).t();
-      if (i < n_m) {
-        F_t += std::pow(Sigma(t, obs_vars(i)), 2.0);
+      c.cols(0, n_m - 1) += f.row(t).cols(0, n_m - 1);
+      if (t < n_T - 1) {
+        d.cols(0, n_q - 1) += f.row(t+1).cols(n_m, n_vars - 1);
       }
-      K_t = P_t * Z.row(obs_vars(i)).t();
 
-      v(t, obs_vars(i)) = arma::as_scalar(v_t);
-      K_store.slice(t).col(obs_vars(i)) = K_t;
-      FF_inv_store(t, obs_vars(i)) = arma::as_scalar(1.0 / F_t);
+      n_obs = obs_vars.n_elem;
+      for (arma::uword i = 0; i < n_obs; i++) {
+        v_t = y(t, obs_vars(i)) - a_t * Z.row(obs_vars(i)).t() - c.col(obs_vars(i)) - intercept.col(obs_vars(i));
+        F_t = (Z.row(obs_vars(i)) * P_t) * Z.row(obs_vars(i)).t();
+        if (i < n_m) {
+          F_t += std::pow(Sigma(t, obs_vars(i)), 2.0);
+        }
+        K_t = P_t * Z.row(obs_vars(i)).t();
 
-      a_t += v_t * arma::inv(F_t) * K_t.t();
-      P_t -= K_t * arma::inv(F_t) * K_t.t();
+        v(t, obs_vars(i)) = arma::as_scalar(v_t);
+        K_store.slice(t).col(obs_vars(i)) = K_t;
+        FF_inv_store(t, obs_vars(i)) = arma::as_scalar(1.0 / F_t);
 
-      if (i == (n_obs - 1)) {
-        a_tt_compact.row(t) = a_t;
-        if (t < n_T - 1) {
-          a_t = a_t * Tt.t() + d;
-          P_tt = P_t;
-          P_t = (Tt * P_tt) * Tt.t();
-          for (arma::uword j = 0; j < n_q; j++) {
-            P_t(j,j) += std::pow(H(j, t+1), 2.0);
+        a_t += v_t * arma::inv(F_t) * K_t.t();
+        P_t -= K_t * arma::inv(F_t) * K_t.t();
+
+        if (i == (n_obs - 1)) {
+          a_tt_compact.row(t) = a_t;
+          if (t < n_T - 1) {
+            a_t = a_t * Tt.t() + d;
+            P_tt = P_t;
+            P_t = (Tt * P_tt) * Tt.t();
+            for (arma::uword j = 0; j < n_q; j++) {
+              P_t(j,j) += std::pow(H(j, t+1), 2.0);
+            }
           }
-        }
 
-      }
-    }
-
-    if (t < T_b - 1) {
-      a.row(t+1) = a_t;
-      P_cmpct.slice(t+1) = P_t;
-    } else {
-      a_t1 = a_t;
-      if (T_b < n_T) {
-        P_t1 = (Tt * P_tt) * Tt.t();
-        for (arma::uword j = 0; j < n_q; j++) {
-          P_t1(j,j) += std::pow(HT(j), 2.0);
         }
-        P_TT = P_tt;
       }
+
+      if (t < T_b - 1) {
+        a.row(t+1) = a_t;
+        P_cmpct.slice(t+1) = P_t;
+      } else {
+        a_t1 = a_t;
+        if (T_b < n_T) {
+          P_t1 = (Tt * P_tt) * Tt.t();
+          for (arma::uword j = 0; j < n_q; j++) {
+            P_t1(j,j) += std::pow(HT(j), 2.0);
+          }
+          P_TT = P_tt;
+        }
+      }
+      P_t_out.slice(t) = P_t;
+      P_tt_out.slice(t) = P_tt;
     }
-    P_t_out.slice(t) = P_t;
-    P_tt_out.slice(t) = P_tt;
   }
+
+  Rcpp::Rcout << "Before adaptive" << std::endl;
 
   ///////////////////////////////////////////////
   //                ADAPTIVE                   //
@@ -211,6 +232,8 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
   arma::mat a_tt_out2;
 
   if (T_b < n_T) {
+
+    Rcpp::Rcout << "Adaptive if" << std::endl;
     update_missing(y_t, obs_vars, obs_q, n_ovars, n_oq, obs_m, n_om, non_obs_m, obs_m2,
                    n_om2, non_obs_m2, y_tpt, y_tpt2, T_b, y_, n_vars, n_m, n_lags);
 
@@ -226,11 +249,19 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
     create_Tt_d(Tt, d, Phi_uu, T_b-1, y_, n_m, n_q, n_om,
                 n_om2, n_lags, obs_m2, non_obs_m, y_tpt2, Phi_uom);
 
-    a_t = a_tt * Tt.t() + d;
+    if (n_q > 0) {
+      a_t = a_tt * Tt.t() + d;
+    } else {
+      a_t = arma::rowvec((n_q+n_m-n_om)*(n_lags + 1), arma::fill::zeros);
+    }
     f_t = f.row(T_b);
     a_t.cols(0, n_m - n_om - 1) += f_t.cols(non_obs_m);
-    a_t.cols(n_m - n_om, n_m - n_om + n_q - 1) += f_t.cols(n_m, n_vars - 1);
-    P_t = Tt * P_TT * Tt.t();
+    if (n_q > 0) {
+      a_t.cols(n_m - n_om, n_m - n_om + n_q - 1) += f_t.cols(n_m, n_vars - 1);
+      P_t = Tt * P_TT * Tt.t();
+    } else {
+      P_t = arma::mat((n_q+n_m-n_om)*(n_lags + 1), (n_q+n_m-n_om)*(n_lags + 1), arma::fill::zeros);
+    }
     if (n_m > n_om) {
       for (arma::uword i = 0; i < n_m - n_om; i++) {
         P_t(i,i) += std::pow(Sigma(T_b, non_obs_m(i)), 2.0);
@@ -244,6 +275,8 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
     Tt_out(0,0) = Tt;
 
     for (arma::uword t = T_b; t < n_T; t++) {
+
+      Rcpp::Rcout << "t: " << t << ", T_b: " << T_b << std::endl;
       t_vec(0) = t;
 
       X = arma::mat(1, n_om*n_lags, arma::fill::ones);
@@ -251,7 +284,9 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
 
       W_intercept = arma::mat(n_m-n_om+n_q, 1);
       W_intercept.rows(0, n_m-n_om-1) = intercept.cols(non_obs_m).t();
-      W_intercept.rows(n_m-n_om, n_m-n_om+n_q-1) = Phi.col(0).rows(n_m, n_vars - 1);
+      if (n_q > 0) {
+        W_intercept.rows(n_m-n_om, n_m-n_om+n_q-1) = Phi.col(0).rows(n_m, n_vars - 1);
+      }
 
       Phi_omom = create_Phi_omom(Phi, n_vars, n_om, n_om2, n_lags, obs_m, obs_m2);
       Phi_omu = create_Phi_omu(Phi, n_vars, n_q, n_m, n_om, n_om2, n_lags, non_obs_m, obs_m, obs_vars);
@@ -329,6 +364,7 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
   ///////////////////////////////////////////////
   //               SMOOTHING                   //
   ///////////////////////////////////////////////
+  Rcpp::Rcout << "smoothing" << std::endl;
 
   arma::field<arma::mat> r_out(T_b, 1);
 
@@ -341,35 +377,37 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
   arma::mat L_temp;
 
   r = r * Tt_cmpct;
-  for (int t = T_b-1; t >= 1; t--) {
-    obs_vars = arma::find_finite(y_.row(t));
+  if (n_q > 0) {
+    for (int t = T_b-1; t >= 1; t--) {
+      obs_vars = arma::find_finite(y_.row(t));
+      n_obs = obs_vars.n_elem;
+      for (int i = n_obs; i > 0; i--) { //subtract 1 in indexes
+        i_obs = obs_vars(i-1);
+        L_temp = arma::mat(n_q*(n_lags+1), n_q*(n_lags+1), arma::fill::eye);
+        L_temp -= K_store.slice(t).col(i_obs) * FF_inv_store(t, i_obs) * Z.row(i_obs);
+        r = FF_inv_store(t, i_obs) * v(t, i_obs) * Z.row(i_obs)  + r * L_temp;
+      }
+      // Make sure P is ocrrect, compare the 'r's
+      a_tT = a.row(t) + r * P_cmpct.slice(t);
+      a_tT_y.row(t).cols(n_m, n_vars - 1) = a_tT.cols(0, n_q-1);
+      r_out(t-1,0) = r;
+      r = r * Tt_cmpct;
+    }
+    obs_vars = arma::find_finite(y_.row(0));
     n_obs = obs_vars.n_elem;
     for (int i = n_obs; i > 0; i--) { //subtract 1 in indexes
       i_obs = obs_vars(i-1);
       L_temp = arma::mat(n_q*(n_lags+1), n_q*(n_lags+1), arma::fill::eye);
-      L_temp -= K_store.slice(t).col(i_obs) * FF_inv_store(t, i_obs) * Z.row(i_obs);
-      r = FF_inv_store(t, i_obs) * v(t, i_obs) * Z.row(i_obs)  + r * L_temp;
+      L_temp -= K_store.slice(0).col(i_obs) * FF_inv_store(0, i_obs) * Z.row(i_obs);
+      r = FF_inv_store(0, i_obs) * v(0, i_obs) * Z.row(i_obs)  + r * L_temp;
     }
-    // Make sure P is ocrrect, compare the 'r's
-    a_tT = a.row(t) + r * P_cmpct.slice(t);
-    a_tT_y.row(t).cols(n_m, n_vars - 1) = a_tT.cols(0, n_q-1);
-    r_out(t-1,0) = r;
-    r = r * Tt_cmpct;
+    a_tT = a.row(0) + r * P_cmpct.slice(0);
+    a_tT_y.row(0).cols(n_m, n_vars - 1) = a_tT.cols(0, n_q-1);
   }
-  obs_vars = arma::find_finite(y_.row(0));
-  n_obs = obs_vars.n_elem;
-  for (int i = n_obs; i > 0; i--) { //subtract 1 in indexes
-    i_obs = obs_vars(i-1);
-    L_temp = arma::mat(n_q*(n_lags+1), n_q*(n_lags+1), arma::fill::eye);
-    L_temp -= K_store.slice(0).col(i_obs) * FF_inv_store(0, i_obs) * Z.row(i_obs);
-    r = FF_inv_store(0, i_obs) * v(0, i_obs) * Z.row(i_obs)  + r * L_temp;
-  }
-  // Make sure P is ocrrect, compare the 'r's
-  a_tT = a.row(0) + r * P_cmpct.slice(0);
-  a_tT_y.row(0).cols(n_m, n_vars - 1) = a_tT.cols(0, n_q-1);
 
   arma::mat Z_rand = Z_gen.rows(1, n_T).cols(0, n_vars - 1);
   arma::mat Z_draw = a_tT_y + Z_rand;
+  Rcpp::Rcout << "finished" << std::endl;
 
   return Z_draw;
 }

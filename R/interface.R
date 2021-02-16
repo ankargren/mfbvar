@@ -253,7 +253,7 @@ check_prior <- function(prior_obj) {
       } else {
         prior_obj$Lambda_ <- build_Lambda(rep("triangular", n_l), 5)}
     } else if (n_l == 0) {
-      prior_obj$Lambda_ <- matrix(0, 1, 3)
+      prior_obj$Lambda_ <- diag(ncol(prior_obj$Y))
     } else if (freqs[1] == "m") {
       if (prior_obj$aggregation == "triangular") {
         stop("Triangular aggregation not supported for weekly data.")

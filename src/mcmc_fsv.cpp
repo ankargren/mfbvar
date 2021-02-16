@@ -199,10 +199,20 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
                  arma::uword n_T, arma::uword n_fcst, arma::uword n_determ, arma::uword n_thin,
                  bool verbose, bool ssng) {
   bool single_freq;
+  arma::uword n_l;
   if (n_q == 0 || n_q == n_vars) {
     single_freq = true;
+    n_l = 0;
   } else {
     single_freq = false;
+    n_l = n_q;
+  }
+
+  bool ragged_edge;
+  if (y_in_p.has_nan()) {
+    ragged_edge = true;
+  } else {
+    ragged_edge = false;
   }
 
   Progress p(n_reps+n_burnin, verbose);
@@ -264,6 +274,7 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
   arma::mat Pi_comp = arma::mat(n_vars*n_lags, n_vars*n_lags, arma::fill::zeros);
   Pi_comp.submat(n_vars, 0, n_vars*n_lags - 1, n_vars*(n_lags-1) - 1) = arma::eye(n_vars*(n_lags-1), n_vars*(n_lags-1));
 
+  Rcpp::Rcout << "stuff" << std::endl;
   arma::mat Psi_i = arma::mat(psi_i.begin(), n_vars, n_determ, false, true);
   mu_mat = dt * Psi_i.t();
   arma::uword n_Lambda = Lambda_comp.n_cols/Lambda_comp.n_rows;
@@ -308,6 +319,16 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
   arma::mat curpara_old, armafacload_old, armaf_old;
   for (arma::uword i = 0; i < n_reps + n_burnin; ++i) {
     if (!single_freq) {
+      Rcpp::Rcout << "update_demean" << std::endl;
+      Rcpp::Rcout << "my: " << arma::size(my) << std::endl;
+      Rcpp::Rcout << "mu_long: " << arma::size(mu_long) << std::endl;
+      Rcpp::Rcout << "y_in_p: " << arma::size(y_in_p) << std::endl;
+      Rcpp::Rcout << "mu_mat: " << arma::size(mu_mat) << std::endl;
+      Rcpp::Rcout << "d1: " << arma::size(d1) << std::endl;
+      Rcpp::Rcout << "Psi_i: " << arma::size(Psi_i) << std::endl;
+      Rcpp::Rcout << "Lambda_single: " << arma::size(Lambda_single) << std::endl;
+      Rcpp::Rcout << "n: " << n_vars << " " << n_q << " " << n_Lambda << " " << n_T << std::endl;
+
       update_demean(my, mu_long, y_in_p, mu_mat, d1, Psi_i, Lambda_single, n_vars,
                     n_q, n_Lambda, n_T);
     } else {
@@ -318,11 +339,22 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
     mZ1 = Z_1 - d1 * Psi_i.t();
     Pi_i0.cols(1, n_vars*n_lags) = Pi_i;
 
-    if (!single_freq) {
+    Rcpp::Rcout << "single_freq: " << single_freq << std::endl;
+    if (!single_freq || ragged_edge) {
+      Rcpp::Rcout << "inside" << std::endl;
       Sig_i = arma::exp(0.5 * armah.head_cols(n_vars));
-      mZ = simsm_adaptive_univariate(my, Pi_i0, Sig_i, Lambda_comp, mZ1, n_q, T_b, cc_i);
+      Rcpp::Rcout << "my: " << arma::size(my) << std::endl;
+      Rcpp::Rcout << "Pi_i0: " << arma::size(Pi_i0) << std::endl;
+      Rcpp::Rcout << "Sig_i: " << arma::size(Sig_i) << std::endl;
+      Rcpp::Rcout << "Lambda_comp: " << arma::size(Lambda_comp) << std::endl;
+      Rcpp::Rcout << "mZ1: " << arma::size(mZ1) << std::endl;
+      Rcpp::Rcout << "n_l: " << n_l << std::endl;
+      Rcpp::Rcout << "T_b: " << T_b << std::endl;
+      Rcpp::Rcout << "cc_i: " << arma::size(cc_i) << std::endl;
+      mZ = simsm_adaptive_univariate(my, Pi_i0, Sig_i, Lambda_comp, mZ1, n_l, T_b, cc_i);
       Z_i.rows(n_lags, n_T + n_lags - 1) = mZ + mu_mat;
     }
+    Rcpp::Rcout << mZ << std::endl;
     Z_i_demean.rows(0, n_lags - 1) = mZ1;
     Z_i_demean.rows(n_lags, n_T + n_lags - 1) = mZ;
 

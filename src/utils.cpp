@@ -284,8 +284,12 @@ void create_sim(arma::mat & Z_gen, arma::mat & y_sim,
 
     obs_vars = find_nonfinite(y_.row(i-1));
     t_vec(0) = i-1;
-    y_sim.submat(i-1, 0, i-1, n_m - 1) = Z_gen_t.cols(0, n_m - 1);
-    y_sim.submat(i-1, n_m, i-1, n_vars - 1) = Z_gen_t(quarterly_indexes).t() * Lambda.t();
+    if (n_m > 0) {
+      y_sim.submat(i-1, 0, i-1, n_m - 1) = Z_gen_t.cols(0, n_m - 1);
+    }
+    if (n_q > 0) {
+      y_sim.submat(i-1, n_m, i-1, n_vars - 1) = Z_gen_t(quarterly_indexes).t() * Lambda.t();
+    }
     y_sim.submat(t_vec, obs_vars) = arma::mat(1, obs_vars.n_elem).fill(NA_REAL);
   }
 }
@@ -297,25 +301,42 @@ void create_matrices(arma::mat & Phi_mm, arma::mat & Phi_mq, arma::mat & Phi_qm,
                      arma::uword n_lags, const arma::mat & Lambda,
                      const arma::mat & Z1, const arma::mat & Phi) {
   for (unsigned int i = 0; i < n_lags; i++) {
-    Phi_mm.cols(i*n_m, (i+1)*n_m - 1) = Phi.submat(0, i*n_vars+1, n_m - 1, i*n_vars + n_m);
-    Phi_mq.cols(i*n_q, (i+1)*n_q - 1) = Phi.submat(0, i*n_vars+n_m+1, n_m - 1, (i+1)*n_vars);
-    Phi_qm.cols(i*n_m, (i+1)*n_m - 1) = Phi.submat(n_m, i*n_vars+1, n_vars - 1, i*n_vars + n_m);
-    Phi_qq.cols(i*n_q, (i+1)*n_q - 1) = Phi.submat(n_m, i*n_vars+n_m+1, n_vars - 1, (i+1)*n_vars);
+    Rcpp::Rcout << "create mat mm" << std::endl;
+    if (n_m > 0) {
+      Phi_mm.cols(i*n_m, (i+1)*n_m - 1) = Phi.submat(0, i*n_vars+1, n_m - 1, i*n_vars + n_m);
+    }
+    if (n_m > 0 && n_q > 0) {
+      Rcpp::Rcout << "create mat mq" << std::endl;
+      Phi_mq.cols(i*n_q, (i+1)*n_q - 1) = Phi.submat(0, i*n_vars+n_m+1, n_m - 1, (i+1)*n_vars);
+      Rcpp::Rcout << "create mat qm" << std::endl;
+      Phi_qm.cols(i*n_m, (i+1)*n_m - 1) = Phi.submat(n_m, i*n_vars+1, n_vars - 1, i*n_vars + n_m);
+    }
+    if (n_q > 0) {
+      Rcpp::Rcout << "create mat qq" << std::endl;
+      Phi_qq.cols(i*n_q, (i+1)*n_q - 1) = Phi.submat(n_m, i*n_vars+n_m+1, n_vars - 1, (i+1)*n_vars);
+    }
   }
 
-  Z.submat(0, n_q, n_m - 1, n_q*(n_lags + 1) - 1) = Phi_mq;
-  Z.submat(n_m, 0, n_vars - 1, Lambda.n_cols - 1) = Lambda;
+  if (n_m > 0 && n_q > 0) {
+    Z.submat(0, n_q, n_m - 1, n_q*(n_lags + 1) - 1) = Phi_mq;
+  }
+  if (n_m > 0) {
+    intercept.cols(0, n_m - 1) = arma::trans(Phi.submat(0, 0, n_m - 1, 0));
+    W.cols(0, n_m*n_lags - 1) = reshape(trans(flipud(Z1.cols(0, n_m-1))), 1, n_lags*n_m); //X.row(0)
+    if (n_q > 0) {
+      Beta_W = join_rows(Phi_qm, Phi.submat(n_m, 0, n_vars-1, 0));
+      d.cols(0, n_q - 1) = W * trans(Beta_W);
+      Z.submat(n_m, 0, n_vars - 1, Lambda.n_cols - 1) = Lambda;
+    }
+  }
 
-  Tt.submat(0, 0, n_q - 1, n_q*n_lags - 1) = Phi_qq;
-  Tt.submat(n_q, 0, n_q*(n_lags+1)-1, n_q*n_lags - 1) = arma::eye(n_lags*n_q, n_lags*n_q);
+  if (n_q > 0) {
+    Tt.submat(0, 0, n_q - 1, n_q*n_lags - 1) = Phi_qq;
+    Tt.submat(n_q, 0, n_q*(n_lags+1)-1, n_q*n_lags - 1) = arma::eye(n_lags*n_q, n_lags*n_q);
+    a1.rows(0, n_q*n_lags - 1) = reshape(trans(flipud(Z1.cols(n_m, n_vars - 1))), 1, n_lags*n_q).t();
+    a1 = Tt * a1;
+  }
 
-  intercept.cols(0, n_m - 1) = arma::trans(Phi.submat(0, 0, n_m - 1, 0));
-
-  a1.rows(0, n_q*n_lags - 1) = reshape(trans(flipud(Z1.cols(n_m, n_vars - 1))), 1, n_lags*n_q).t();
-  a1 = Tt * a1;
-  W.cols(0, n_m*n_lags - 1) = reshape(trans(flipud(Z1.cols(0, n_m-1))), 1, n_lags*n_m); //X.row(0)
-  Beta_W = join_rows(Phi_qm, Phi.submat(n_m, 0, n_vars-1, 0));
-  d.cols(0, n_q - 1) = W * trans(Beta_W);
 }
 
 void prepare_filtering_t(arma::uvec & obs_vars, arma::uvec & t_vec, arma::mat & X,
