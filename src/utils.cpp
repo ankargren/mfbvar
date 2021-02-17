@@ -256,7 +256,9 @@ arma::mat adaptive_to_compact_smoothing(arma::mat & a_tT_y,
         alpha_t1(j + i*n_q) = a_tT(j + n_m - n_om + i*(n_q+n_m-n_om));
       }
     }
-    r = (alpha_t1 - a_t1) * arma::pinv(P_t1);
+    if (alpha_t1.is_empty() || a_t1.is_empty()) {
+      r = (alpha_t1 - a_t1) * arma::pinv(P_t1);
+    }
   } else {
     r = arma::mat(1, n_q*(n_lags+1), arma::fill::zeros);
     a_tT_y.row(n_T-1).cols(n_m, n_vars - 1) = a_tt_compact.row(n_T-1).cols(0, n_q-1);

@@ -386,15 +386,18 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
   arma::mat r = adaptive_to_compact_smoothing(a_tT_y, a_tt_y, a_tt, a_tt_compact, a_tt_out,
                                               N_store, L_store, ZFv, y_, a_t1, P_t1, n_vars,
                                               n_m, n_q, n_T, T_b, n_lags, n_om);
-  r_out(T_b-1,0) = r;
 
-  Rcpp::Rcout << "after adaptive" << std::endl;
+  Rcpp::Rcout << "after adaptive smoothing" << std::endl;
 
-  arma::uword i_obs;
-  arma::mat L_temp;
-
-  r = r * Tt_cmpct;
   if (n_q > 0) {
+    r_out(T_b-1,0) = r;
+
+    Rcpp::Rcout << "after adaptive" << std::endl;
+
+    arma::uword i_obs;
+    arma::mat L_temp;
+
+    r = r * Tt_cmpct;
     for (int t = T_b-1; t >= 1; t--) {
       obs_vars = arma::find_finite(y_.row(t));
       n_obs = obs_vars.n_elem;
