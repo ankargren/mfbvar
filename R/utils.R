@@ -73,7 +73,7 @@ parameter_initialization <- function(Y, n_vars, n_lags, n_T_, init,
   steady_state <- "psi" %in% parameters
   fsv <- "facload" %in% parameters
   if (fsv) {
-    error_variance <- compute_error_variances(Y)
+    error_variance <- mfbvar:::compute_error_variances(Y)
   }
 
   init_available <- paste0("init", parameters) %in% names(init)
@@ -85,8 +85,8 @@ parameter_initialization <- function(Y, n_vars, n_lags, n_T_, init,
 
   for (i in seq_along(init_required)) {
     initval <- switch(init_required[i],
-                      Z = fill_na(Y),
-                      psi = colMeans(fill_na(Y)),
+                      Z = mfbvar:::fill_na(Y),
+                      psi = colMeans(mfbvar:::fill_na(Y)),
                       Pi = matrix(0, nrow = n_vars, ncol = n_vars*(n_vars*n_lags)+!steady_state),
                       omega = ifelse(!is.null(arguments$prior_psi_Omega),
                                      diag(prior_psi_Omega),
@@ -99,7 +99,11 @@ parameter_initialization <- function(Y, n_vars, n_lags, n_T_, init,
                       facload = matrix(rnorm(n_vars*n_fac, sd = 0.5)^2, n_vars, n_fac),
                       f = matrix(rnorm(n_fac * n_T_, sd = 0.5), n_fac, n_T_),
                       latent = t(cbind(matrix(c(log(error_variance), rep(1, n_fac)), nrow = n_T_, ncol = n_vars+n_fac, byrow = TRUE))),
-                      latent0 <- numeric(n_vars + n_fac)
+                      latent0 = numeric(n_vars + n_fac),
+                      global = 0.1,
+                      aux = rep(0.1, n_vars^2 * n_lags),
+                      local = rep(0.1, n_vars^2 * n_lags),
+                      slice =  rep(1, n_vars^2 * n_lags)
     )
     assign(paste0("init_", init_required[i]), initval)
   }
@@ -125,11 +129,15 @@ storage_initialization <- function(init_params, params, envir, n_vars, n_lags,
     facload = array(matrix(initval, nrow = n_vars, ncol = n_fac),
                      dim = c(n_vars, n_fac, n_reps/n_thin)),
     f = array(matrix(initval, n_fac, n_T_), dim = c(n_fac, n_T_, n_reps/n_thin)),
-    h = array(t(initval), dim = c(n_T_, n_vars+n_fac, n_reps/n_thin),
+    latent = array(t(initval), dim = c(n_T_, n_vars+n_fac, n_reps/n_thin),
                dimnames = list(rownames(initval), colnames(initval), NULL)),
     omega = matrix(initval, nrow = n_reps/n_thin, ncol = n_vars * n_determ, byrow = TRUE),
     phi_mu = rep(initval, n_reps/n_thin),
-    lambda_mu = rep(initval, n_reps/n_thin)),
+    lambda_mu = rep(initval, n_reps/n_thin),
+    aux = matrix(initval, nrow = n_reps/n_thin, ncol = n_vars*n_vars*n_lags, byrow = TRUE),
+    local = matrix(initval, nrow = n_reps/n_thin, ncol = n_vars*n_vars*n_lags, byrow = TRUE),
+    global = matrix(initval, n_reps/n_thin, ncol = 1),
+    slice = matrix(initval, nrow = 1, ncol = n_vars*n_vars*n_lags)),
     envir)
   }
 
@@ -204,4 +212,10 @@ ss_initialization <- function(d, d_fcst, n_T, n_lags, n_fcst) {
   dt <- d[-(1:n_lags), , drop = FALSE]
   d1 <- d[1:n_lags, , drop = FALSE]
   return(list(d_fcst_lags = d_fcst_lags, D_mat = D_mat, dt = dt, d1 = d1))
+}
+
+dl_initialization <- function(a, gig, n_cores) {
+  a   <- ifelse(is.null(a), 1, a)
+  gig <- ifelse(is.null(gig), TRUE, FALSE)
+  RcppParallel::setThreadOptions(numThreads = x$n_cores)
 }

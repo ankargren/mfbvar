@@ -48,11 +48,13 @@ arma::mat create_Phi_uom(const arma::mat &Phi, arma::uword n_vars, arma::uword n
       }
     }
   }
-  // Quarterly part
-  for (arma::uword i = 0; i < n_q; i++) {
-    for (arma::uword j = 0; j < n_lags; j++) {
-      for (arma::uword k = 0; k < n_om2; k++) {
-        Phi_uom(i+n_m-n_om, k+j*n_om2) = Phi(n_m+i, obs_m2(k)+j*n_vars+1);
+  if (n_q > 0) {
+    // Quarterly part
+    for (arma::uword i = 0; i < n_q; i++) {
+      for (arma::uword j = 0; j < n_lags; j++) {
+        for (arma::uword k = 0; k < n_om2; k++) {
+          Phi_uom(i+n_m-n_om, k+j*n_om2) = Phi(n_m+i, obs_m2(k)+j*n_vars+1);
+        }
       }
     }
   }
@@ -108,7 +110,9 @@ void create_Tt_d(arma::mat & Tt, arma::mat & d, const arma::mat & Phi_uu, arma::
                  arma::uvec obs_m2, arma::uvec non_obs_m, const arma::mat & y_tpt2,
                  const arma::mat & Phi_uom) {
   Tt.fill(0);
-  Tt.submat(0, 0, n_q+n_m-n_om-1, (n_q+n_m-n_om2)*n_lags-1) = Phi_uu;
+  if (!Phi_uu.is_empty()) {
+    Tt.submat(0, 0, n_q+n_m-n_om-1, (n_q+n_m-n_om2)*n_lags-1) = Phi_uu;
+  }
 
   int counter;
   for (arma::uword j = 0; j < n_lags; j++) {
@@ -127,18 +131,24 @@ void create_Tt_d(arma::mat & Tt, arma::mat & d, const arma::mat & Phi_uu, arma::
   }
 
   arma::mat W = arma::mat(1, n_om2*n_lags+1, arma::fill::ones);
-  W.cols(0, n_om2*n_lags - 1) = reshape(trans(flipud(y_tpt2.rows(1, n_lags))), 1, n_lags*n_om2);
-  d.cols(0, n_m-n_om+n_q-1) = W.cols(0, n_om2*n_lags - 1) * arma::trans(Phi_uom);
+  if (n_om2*n_lags >= 1) {
+    W.cols(0, n_om2*n_lags - 1) = reshape(trans(flipud(y_tpt2.rows(1, n_lags))), 1, n_lags*n_om2);
+  }
+  if (n_m-n_om+n_q >= 1) {
+    d.cols(0, n_m-n_om+n_q-1) = W.cols(0, n_om2*n_lags - 1) * arma::trans(Phi_uom);
+  }
 }
 
 void create_Zt(arma::mat & Zt, const arma::mat & Phi_omu, const arma::mat & Lambda,
                arma::uword n_ovars, arma::uword n_m, arma::uword n_om, arma::uword n_om2,
                arma::uword n_q, arma::uword n_oq, arma::uword n_lags, const arma::uvec & obs_q) {
-  Zt(0, n_q+n_m-n_om, arma::size(n_ovars, (n_q+n_m-n_om)*n_lags)) = Phi_omu;
-  if (n_oq != 0) {
-    for (arma::uword i = 0; i < n_oq; i++) {
-      for (arma::uword j = 0; j < Lambda.n_cols/n_q; j++) {
-        Zt(i+n_om, obs_q(i)+n_m-n_om+(n_m-n_om+n_q)*j) = Lambda(obs_q(i), obs_q(i)+j*n_q);
+  if (!Zt.is_empty()) {
+    Zt(0, n_q+n_m-n_om, arma::size(n_ovars, (n_q+n_m-n_om)*n_lags)) = Phi_omu;
+    if (n_oq != 0) {
+      for (arma::uword i = 0; i < n_oq; i++) {
+        for (arma::uword j = 0; j < Lambda.n_cols/n_q; j++) {
+          Zt(i+n_om, obs_q(i)+n_m-n_om+(n_m-n_om+n_q)*j) = Lambda(obs_q(i), obs_q(i)+j*n_q);
+        }
       }
     }
   }
@@ -152,9 +162,11 @@ void update_missing(arma::mat & y_t, arma::uvec & obs_vars, arma::uvec & obs_q,
                     arma::uword t, const arma::mat & y_, arma::uword n_vars, arma::uword n_m, arma::uword n_lags) {
   y_t = y_.row(t);
   obs_vars = find_finite(y_t);
-  obs_q = find_finite(y_t.cols(n_m, n_vars - 1));
   n_ovars = obs_vars.n_elem;
-  n_oq = obs_q.n_elem;
+  if (n_m <= n_vars - 1) {
+    obs_q = find_finite(y_t.cols(n_m, n_vars - 1));
+    n_oq = obs_q.n_elem;
+  }
 
   obs_m = find_finite(y_t.cols(0, n_m - 1));
   n_om = obs_m.n_elem;

@@ -50,8 +50,14 @@ prior_Pi_Sigma <- function(lambda1, lambda2, prior_Pi_AR1, Y, n_lags, prior_nu) 
 
   prior_S <- (prior_nu - n_vars - 1) * diag(error_variance)
 
+  inv_prior_Pi_Omega <- chol2inv(chol(prior_Pi_Omega))
+  Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi_mean
 
-  return(list(prior_Pi_mean = prior_Pi_mean, prior_Pi_Omega = diag(prior_Pi_Omega), prior_S = prior_S))
+  return(list(prior_Pi_mean = prior_Pi_mean,
+              prior_Pi_Omega = diag(prior_Pi_Omega),
+              prior_S = prior_S,
+              inv_prior_Pi_Omega = inv_prior_Pi_Omega,
+              Omega_Pi = Omega_Pi))
 }
 
 #' Create the priors for Pi and Sigma

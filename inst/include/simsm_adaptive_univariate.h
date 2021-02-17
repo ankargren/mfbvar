@@ -237,35 +237,41 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
     update_missing(y_t, obs_vars, obs_q, n_ovars, n_oq, obs_m, n_om, non_obs_m, obs_m2,
                    n_om2, non_obs_m2, y_tpt, y_tpt2, T_b, y_, n_vars, n_m, n_lags);
 
+    Rcpp::Rcout << "Tt d etc:" << n_m << n_om << std::endl;
     Tt = arma::mat((n_q+n_m-n_om)*(n_lags + 1), (n_q+n_m-n_om2)*(n_lags + 1), arma::fill::zeros);
+    Rcpp::Rcout << "Tt: " << arma::size(Tt) << std::endl;
     d = arma::mat(1, (n_m-n_om+n_q)*(n_lags + 1), arma::fill::zeros);
     a_tt = a_tt_compact.row(T_b-1);
     a_tt_out2 = a_tt;
 
+    Rcpp::Rcout << "Phi_uom" << std::endl;
     Phi_uom = create_Phi_uom(Phi, n_vars, n_q, n_m, n_om, n_om2, n_lags, non_obs_m, obs_m2);
+    Rcpp::Rcout << "Phi_uu" << std::endl;
     Phi_uu = create_Phi_uu(Phi, n_vars, n_q, n_m, n_om, n_om2, n_lags, non_obs_m, non_obs_m2);
 
     // Update Tt
+    Rcpp::Rcout << "create_Tt_d, Phi_uu: " << arma::size(Phi_uu) << std::endl;
     create_Tt_d(Tt, d, Phi_uu, T_b-1, y_, n_m, n_q, n_om,
                 n_om2, n_lags, obs_m2, non_obs_m, y_tpt2, Phi_uom);
 
+    Rcpp::Rcout << "if" << std::endl;
     if (n_q > 0) {
       a_t = a_tt * Tt.t() + d;
     } else {
       a_t = arma::rowvec((n_q+n_m-n_om)*(n_lags + 1), arma::fill::zeros);
     }
     f_t = f.row(T_b);
-    a_t.cols(0, n_m - n_om - 1) += f_t.cols(non_obs_m);
+    if (n_m > n_om) {
+      a_t.cols(0, n_m - n_om - 1) += f_t.cols(non_obs_m);
+    }
     if (n_q > 0) {
       a_t.cols(n_m - n_om, n_m - n_om + n_q - 1) += f_t.cols(n_m, n_vars - 1);
       P_t = Tt * P_TT * Tt.t();
     } else {
       P_t = arma::mat((n_q+n_m-n_om)*(n_lags + 1), (n_q+n_m-n_om)*(n_lags + 1), arma::fill::zeros);
     }
-    if (n_m > n_om) {
-      for (arma::uword i = 0; i < n_m - n_om; i++) {
-        P_t(i,i) += std::pow(Sigma(T_b, non_obs_m(i)), 2.0);
-      }
+    for (arma::uword i = 0; i < n_m - n_om; i++) {
+      P_t(i,i) += std::pow(Sigma(T_b, non_obs_m(i)), 2.0);
     }
     for (arma::uword i = n_m - n_om; i < n_m - n_om + n_q; i++) {
       P_t(i,i) += std::pow(Sigma(T_b, i+n_om), 2.0);
@@ -280,15 +286,21 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
       t_vec(0) = t;
 
       X = arma::mat(1, n_om*n_lags, arma::fill::ones);
-      X.cols(0, n_om*n_lags - 1) = reshape(trans(flipud(y_tpt.rows(0, n_lags-1))), 1, n_lags*n_om);
+      if (n_om > 0) {
+        X.cols(0, n_om*n_lags - 1) = reshape(trans(flipud(y_tpt.rows(0, n_lags-1))), 1, n_lags*n_om);
+      }
 
       W_intercept = arma::mat(n_m-n_om+n_q, 1);
-      W_intercept.rows(0, n_m-n_om-1) = intercept.cols(non_obs_m).t();
+      if (n_m-n_om > 1) {
+        W_intercept.rows(0, n_m-n_om-1) = intercept.cols(non_obs_m).t();
+      }
       if (n_q > 0) {
         W_intercept.rows(n_m-n_om, n_m-n_om+n_q-1) = Phi.col(0).rows(n_m, n_vars - 1);
       }
 
+      Rcpp::Rcout << "omom"<< std::endl;
       Phi_omom = create_Phi_omom(Phi, n_vars, n_om, n_om2, n_lags, obs_m, obs_m2);
+      Rcpp::Rcout << "omu"<< std::endl;
       Phi_omu = create_Phi_omu(Phi, n_vars, n_q, n_m, n_om, n_om2, n_lags, non_obs_m, obs_m, obs_vars);
 
       c = arma::mat(1, n_ovars, arma::fill::zeros);
@@ -296,7 +308,9 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
       c.cols(0, n_om - 1) += f.submat(t_vec, obs_m);
 
       Zt = arma::mat(n_ovars, (n_q+n_m-n_om)*(n_lags+1), arma::fill::zeros);
+      Rcpp::Rcout << "Zt:"<< arma::size(Zt) << std::endl;
       create_Zt(Zt, Phi_omu, Lambda, n_ovars, n_m, n_om, n_om2, n_q, n_oq, n_lags, obs_q);
+      Rcpp::Rcout << "v_t"<< std::endl;
 
       v_t = y_.submat(t_vec, obs_vars) - a_t * Zt.t() - c - intercept.cols(obs_vars);
       M_t = P_t * Zt.t();
@@ -313,6 +327,7 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
       v.submat(t_vec, obs_vars) = v_t;
       ZFv(t-T_b, 0) = v_FF_inv_t * Zt;
 
+      Rcpp::Rcout << "if t < n_T - 1"<< std::endl;
       if (t < n_T - 1) {
         update_missing(y_t, obs_vars, obs_q, n_ovars, n_oq, obs_m, n_om, non_obs_m, obs_m2,
                        n_om2, non_obs_m2, y_tpt, y_tpt2, t+1, y_, n_vars, n_m, n_lags);
@@ -372,6 +387,8 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
                                               N_store, L_store, ZFv, y_, a_t1, P_t1, n_vars,
                                               n_m, n_q, n_T, T_b, n_lags, n_om);
   r_out(T_b-1,0) = r;
+
+  Rcpp::Rcout << "after adaptive" << std::endl;
 
   arma::uword i_obs;
   arma::mat L_temp;
