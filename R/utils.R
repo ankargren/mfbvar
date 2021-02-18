@@ -35,23 +35,13 @@ list_to_variables <- function(x, envir, ...) {
   invisible(NULL)
 }
 
-variable_initialization <- function(Y, freq, freqs, n_lags, Lambda_, n_thin,
-                                    d = NULL, d_fcst = NULL) {
+variable_initialization <- function(Y, freq, freqs, n_lags, Lambda_, n_thin) {
   n_vars <- ncol(Y)
-  n_determ <- if (!is.null(d)) dim(d)[2] else NULL
   n_q <- sum(freq == freqs[1])
   if (n_q < n_vars) {
     T_b <- max(which(!apply(apply(Y[, freq == freqs[2], drop = FALSE], 2, is.na), 1, any)))
   } else {
     T_b <- nrow(Y)
-  }
-  if (n_q == 0 || n_q == n_vars) {
-    complete_quarters <- apply(Y, 1, function(x) !any(is.na(x)))
-    #Y <- Y[complete_quarters, ]
-    if (!is.null(d)) {
-      d_fcst <- rbind(d[!complete_quarters, , drop = FALSE], d_fcst)
-      #d <- d[complete_quarters, , drop = FALSE]
-    }
   }
 
   n_pseudolags <- max(c(n_lags, ncol(Lambda_)/nrow(Lambda_)))
@@ -206,12 +196,14 @@ ssng_initialization <- function(prior_ng, s) {
 }
 
 ss_initialization <- function(d, d_fcst, n_T, n_lags, n_fcst) {
+  n_determ <- if (!is.null(d)) dim(d)[2] else NULL
   d_fcst_lags <- as.matrix(rbind(d[(n_T-n_lags+1):n_T, , drop = FALSE], d_fcst))
   d_fcst_lags <- d_fcst_lags[1:(n_lags+n_fcst), , drop = FALSE]
   D_mat <- mfbvar:::build_DD(d = d, n_lags = n_lags)
   dt <- d[-(1:n_lags), , drop = FALSE]
   d1 <- d[1:n_lags, , drop = FALSE]
-  return(list(d_fcst_lags = d_fcst_lags, D_mat = D_mat, dt = dt, d1 = d1))
+  return(list(d_fcst_lags = d_fcst_lags, D_mat = D_mat, dt = dt, d1 = d1,
+              n_determ = n_determ))
 }
 
 dl_initialization <- function(a, gig, n_cores) {

@@ -74,7 +74,7 @@ prior_Pi_Sigma <- function(lambda1, lambda2, prior_Pi_AR1, Y, n_lags, prior_nu) 
 #' @keywords internal
 #' @noRd
 create_prior_Pi_Omega <- function(lambda1, lambda2, lambda3, prior_Pi_AR1, Y, n_lags,
-                                  block_exo = NULL) {
+                                  block_exo = NULL, intercept = TRUE) {
   # lambda1: 1-long vector (overall tightness)
   # lambda2: 1-long vector (lag decay)
   # prior_Pi_AR1: p-long vector with prior means for the AR(1) coefficients
@@ -93,6 +93,8 @@ create_prior_Pi_Omega <- function(lambda1, lambda2, lambda3, prior_Pi_AR1, Y, n_
       prior_Pi_Omega[-1, i] <- prior_Pi_Omega[-1, i] * (1e-06)^(!(1:ncol(Y) %in% block_exo))
     }
   }
+
+  if (!intercept) prior_Pi_Omega <- prior_Pi_Omega[-1, ]
 
   return(prior_Pi_Omega = prior_Pi_Omega^2)
 }
