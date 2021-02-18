@@ -43,7 +43,7 @@ test_that("Mixed", {
 test_that("Quarterly", {
   set.seed(10237)
   Y <- mfbvar::mf_sweden
-  prior_obj <- set_prior(Y = Y[seq(2, nrow(Y), by = 3), ], freq = rep("q", 5),
+  prior_obj <- set_prior(Y = Y[seq(2, nrow(Y)-1, by = 3), ], freq = rep("q", 5),
                          n_lags = 4, n_burnin = 10, n_reps = 10)
 
   prior_intervals <- matrix(c( 6,   7,

@@ -85,10 +85,10 @@ mfbvar_minndl_fsv <- function(x, dl, ...){
     gig <- TRUE
   }
 
-  mcmc_minn_fsv(Y[-(1:n_lags),],Pi,Z,Z_fcst,mu,phi,sigma,f,facload,latent,
+  mfbvar:::mcmc_minn_fsv(Y[-(1:n_lags),],Pi,Z,Z_fcst,mu,phi,sigma,f,facload,latent,
                         aux,global,local,slice,Lambda_,prior_Pi_Omega,prior_Pi_AR1, Z_1,bmu,Bmu,
                         a0idi,b0idi,a0fac,b0fac,Bsigma,B011inv,B022inv,priorh0,
-                        armarestr,armatau2,n_fac,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,
+                        armarestr,armatau2,n_fac,n_reps,n_burnin,n_q,T_b-n_lags-1,n_lags,
                         n_vars,n_T_,n_fcst,n_thin,verbose,a,gig)
   if (verbose) {
     cat("\n")

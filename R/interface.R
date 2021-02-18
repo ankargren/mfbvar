@@ -224,8 +224,8 @@ check_prior <- function(prior_obj) {
         stop("Y: high-frequency variables are NA at the beginning of the sample.")
       }
   } else {
-      if (min(unlist(apply(prior_obj$Y, 2, function(x) Position(is.na, x, nomatch = 9999999999)))) == 1) {
-        stop("Y: monthly variables are NA at the beginning of the sample.")
+      if (any(is.na(prior_obj$Y))) {
+        stop("Y: single-frequency estimation requires the data to contain no NAs.")
       }
   }
 
