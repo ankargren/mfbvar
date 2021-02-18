@@ -36,7 +36,7 @@ mfbvar_steadystate_iw <- function(x, ssng, ...) {
   mfbvar:::list_to_variables(init_vars, envir, retrieved_params)
 
   # Prior
-  priors <- mfbvar:::create_prior_Pi_Omega(lambda1 = lambda1,
+  priors <- mfbvar:::prior_Pi_Sigma(lambda1 = lambda1,
                                            lambda2 = lambda3,
                                            prior_Pi_AR1 = prior_Pi_AR1,
                                            Y = Y,
