@@ -65,7 +65,7 @@ test_that("Quarterly", {
   #expect_error(mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl", variance = "iw"))
 
   expect_error(estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "csv"), NA)
-  expect_error(estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "csv"
+  expect_error(estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss",   variance = "csv"), NA)
   expect_error(estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ssng", variance = "csv"), NA)
   #expect_error(mod <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "dl",   variance = "csv"))
 

@@ -66,11 +66,11 @@ parameter_initialization <- function(Y, n_vars, n_lags, n_T_, init,
     error_variance <- mfbvar:::compute_error_variances(Y)
   }
 
-  init_available <- paste0("init", parameters) %in% names(init)
+  init_available <- paste0("init_", parameters) %in% names(init)
   init_required <- parameters[!init_available]
 
   if (any(init_available)) {
-    list_to_variables(init, parent.frame(), paste0("init", parameters)[init_available])
+    list_to_variables(init, parent.frame(), paste0("init_", parameters)[init_available])
   }
 
   for (i in seq_along(init_required)) {
@@ -78,6 +78,7 @@ parameter_initialization <- function(Y, n_vars, n_lags, n_T_, init,
                       Z = mfbvar:::fill_na(Y),
                       psi = colMeans(mfbvar:::fill_na(Y)),
                       Pi = matrix(0, nrow = n_vars, ncol = n_vars*(n_vars*n_lags)+!steady_state),
+                      Sigma = cov(mfbvar:::fill_na(Y)),
                       omega = ifelse(!is.null(arguments$prior_psi_Omega),
                                      diag(prior_psi_Omega),
                                      rep(0.1, n_determ*n_vars)),
@@ -111,6 +112,7 @@ storage_initialization <- function(init_params, params, envir, n_vars, n_lags,
     assign(params[i],
            switch(params[i],
     Pi = array(initval, dim = c(n_vars, n_vars*n_lags+!steady_state, n_reps/n_thin)),
+    Sigma = array(initval, dim = c(n_vars, n_vars, n_reps/n_thin)),
     psi = array(initval, dim = c(n_reps/n_thin, n_vars * n_determ)),
     Z = array(initval, dim = c(n_T, n_vars, n_reps/n_thin)),
     mu = matrix(initval, n_vars, n_reps/n_thin),

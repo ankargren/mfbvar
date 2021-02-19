@@ -1,24 +1,21 @@
 #' Create the priors for Pi and Sigma
 #'
 #' Creates the prior mean and covariance for Pi given the hyperparameters, and the prior parameters for Sigma.
-#' @templateVar lambda1 TRUE
-#' @templateVar lambda2 TRUE
-#' @templateVar prior_Pi_AR1 TRUE
-#' @templateVar Y TRUE
-#' @templateVar n_lags TRUE
-#' @templateVar prior_nu TRUE
-#' @template man_template
+#' @param lambda1 Hyperparameter for overall tightness
+#' @param lambda3 Hyperparameter for lag decay
+#' @param lambda4 Hyperparameter for intercept
+#' @param prior_Pi_AR1 prior means for AR(1) coefficients
+#' @param Y data matrix
+#' @param n_lags number of lags
+#' @param prior_nu Prior degrees of freedom
+#' @param intercept boolean flag for indicating whether intercept is included
 #' @return \item{prior_Pi}{The prior mean matrix for Pi.}
-#' \item{prior_Pi_Omega}{The prior covariance matrix for Pi.}
-#' \item{prior_s}{The prior for Sigma.}
+#' \item{prior_Pi_Omega}{The prior scale matrix for Pi.}
+#' \item{prior_S}{The prior for Sigma.}
 #' @keywords internal
 #' @noRd
-prior_Pi_Sigma <- function(lambda1, lambda2, prior_Pi_AR1, Y, n_lags, prior_nu) {
-  # lambda1: 1-long vector (overall tightness)
-  # lambda2: 1-long vector (lag decay)
-  # prior_Pi_AR1: p-long vector with prior means for the AR(1) coefficients
-  # Y: Txp matrix with data
-
+prior_Pi_Sigma <- function(lambda1, lambda3, lambda4, prior_Pi_AR1, Y, n_lags, prior_nu,
+                           intercept) {
   n_vars <- length(prior_Pi_AR1)
   prior_Pi_mean <- rbind(diag(prior_Pi_AR1), matrix(0, nrow = n_vars*(n_lags-1), ncol = n_vars))
 
@@ -44,11 +41,17 @@ prior_Pi_Sigma <- function(lambda1, lambda2, prior_Pi_AR1, Y, n_lags, prior_nu) 
   for (l in 1:n_lags) {
     for (r in 1:n_vars) {
       i <- (l - 1) * n_vars + r
-      prior_Pi_Omega[i] <- lambda1^2 / (l^(lambda2) * sqrt(error_variance[r]))^2
+      prior_Pi_Omega[i] <- lambda1^2 / (l^(lambda3) * sqrt(error_variance[r]))^2
     }
   }
 
   prior_S <- (prior_nu - n_vars - 1) * diag(error_variance)
+
+  if (intercept) {
+    # Add terms for constant
+    prior_Pi_Omega <- c(lambda1^2*lambda4^2, prior_Pi_Omega)
+    prior_Pi_mean <- rbind(0, prior_Pi_mean)
+  }
 
   inv_prior_Pi_Omega <- chol2inv(chol(diag(prior_Pi_Omega)))
   Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi_mean
@@ -63,11 +66,11 @@ prior_Pi_Sigma <- function(lambda1, lambda2, prior_Pi_AR1, Y, n_lags, prior_nu) 
 #' Create the priors for Pi and Sigma
 #'
 #' Creates the prior mean and covariance for Pi given the hyperparameters, and the prior parameters for Sigma.
-#' @param lambda1 overall tightness
-#' @param lambda2 cross-equation tightness
-#' @param lambda3 lag decay
+#' @param lambda1 Hyperparameter for overall tightness
+#' @param lambda2 Hyperparameter for cross-equation tightness
+#' @param lambda3 Hyperparameter for lag decay
 #' @param prior_Pi_AR1 prior means for AR(1) coefficients
-#' @param Y data
+#' @param Y data matrix
 #' @param n_lags number of lags
 #' @return
 #' \item{prior_Pi_Omega}{The prior covariance matrix for Pi.}
