@@ -4,7 +4,7 @@ mcmc_sampler.mfbvar_minn_fsv <- function(x, ...){
                     "n_reps", "n_burnin", "n_thin", "n_fac", "freqs", "Lambda_",
                     "priormu", "priorphiidi", "priorphifac", "priorsigmaidi",
                     "priorsigmafac", "priorfacload", "restrict",
-                    "lambda1", "lambda2", "lambda3", "prior_Pi_AR1")
+                    "lambda1", "lambda2", "lambda3", "lambda4", "prior_Pi_AR1")
   retrieved_params <- c("n_vars", "n_q", "T_b", "n_pseudolags",
                         "n_T", "n_T_", "Z_1")
   params <- c("Z", "Pi", "mu", "sigma",
@@ -22,7 +22,7 @@ mcmc_sampler.mfbvar_dl_fsv <- function(x, ...){
                     "n_reps", "n_burnin", "n_thin", "n_fac", "freqs", "Lambda_",
                     "priormu", "priorphiidi", "priorphifac", "priorsigmaidi",
                     "priorsigmafac", "priorfacload", "restrict",
-                    "lambda1", "lambda2", "lambda3", "prior_Pi_AR1", "a",
+                    "lambda1", "lambda2", "lambda3", "lambda4", "prior_Pi_AR1", "a",
                     "gig", "n_cores")
   retrieved_params <- c("n_vars", "n_q", "T_b", "n_pseudolags",
                         "n_T", "n_T_", "Z_1")

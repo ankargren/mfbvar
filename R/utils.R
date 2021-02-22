@@ -58,6 +58,7 @@ variable_initialization <- function(Y, freq, freqs, n_lags, Lambda_, n_thin) {
 
 parameter_initialization <- function(Y, n_vars, n_lags, n_T_, init,
                                      n_fac = NULL, n_determ = NULL,
+                                     n_sv = NULL,
                                      fsv, csv, ...) {
   arguments <- list(...)
   parameters <- unlist(arguments)
@@ -66,7 +67,6 @@ parameter_initialization <- function(Y, n_vars, n_lags, n_T_, init,
     error_variance <- mfbvar:::compute_error_variances(Y)
   }
 
-  n_sv <- fsv*(n_vars + n_fac) + csv
   const_latent <-  if (fsv) c(log(error_variance), rep(0, n_fac)) else 0
 
   init_available <- paste0("init_", parameters) %in% names(init)
@@ -107,7 +107,7 @@ parameter_initialization <- function(Y, n_vars, n_lags, n_T_, init,
 
 storage_initialization <- function(init_params, params, envir, n_vars, n_lags,
                                   n_reps, n_thin, n_T, n_T_, n_determ = NULL,
-                                  n_fac = NULL, n_fcst) {
+                                  n_fac = NULL, n_fcst, n_sv = NULL) {
   steady_state <- "psi" %in% params
 
   for (i in seq_along(params)) {
@@ -119,12 +119,12 @@ storage_initialization <- function(init_params, params, envir, n_vars, n_lags,
     psi = array(initval, dim = c(n_reps/n_thin, n_vars * n_determ)),
     Z = array(initval, dim = c(n_T, n_vars, n_reps/n_thin)),
     mu = matrix(initval, n_vars, n_reps/n_thin),
-    sigma = matrix(initval, n_vars+n_fac, n_reps/n_thin),
-    phi = matrix(initval, n_vars+n_fac, n_reps/n_thin),
+    sigma = matrix(initval, n_sv, n_reps/n_thin),
+    phi = matrix(initval, n_sv, n_reps/n_thin),
     facload = array(matrix(initval, nrow = n_vars, ncol = n_fac),
                      dim = c(n_vars, n_fac, n_reps/n_thin)),
     f = array(matrix(initval, n_fac, n_T_), dim = c(n_fac, n_T_, n_reps/n_thin)),
-    latent = array(t(initval), dim = c(n_T_, n_vars+n_fac, n_reps/n_thin),
+    latent = array(t(initval), dim = c(n_T_, n_sv, n_reps/n_thin),
                dimnames = list(rownames(initval), colnames(initval), NULL)),
     omega = matrix(initval, nrow = n_reps/n_thin, ncol = n_vars * n_determ, byrow = TRUE),
     phi_mu = rep(initval, n_reps/n_thin),
@@ -190,7 +190,8 @@ fsv_initialization <- function(priorsigmaidi, priorsigmafac, priormu,
               b0idi = b0idi,
               a0fac = a0fac,
               b0fac = b0fac,
-              priorh0 = priorh0))
+              priorh0 = priorh0,
+              n_sv = n_fac + n_vars))
 }
 
 ssng_initialization <- function(prior_ng, s) {
@@ -225,5 +226,6 @@ csv_initialization <- function(prior_phi, prior_sigma2) {
   prior_df <- prior_sigma2[2]
 
   return(list(phi_invvar = phi_invvar, phi_meaninvvar = phi_meaninvvar,
-              prior_sigma2 = prior_sigma2, prior_df = prior_df))
+              prior_sigma2 = prior_sigma2, prior_df = prior_df,
+              n_sv = 1))
 }

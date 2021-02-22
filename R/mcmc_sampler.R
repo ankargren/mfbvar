@@ -40,12 +40,13 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
     priors <- mfbvar:::create_prior_Pi(lambda1 = lambda1,
                                        lambda2 = NULL,
                                        lambda3 = lambda3,
-                                       lambda4 = lambda4,
+                                       lambda4 = ifelse(!ss, lambda4, NULL),
                                        prior_Pi_AR1 = prior_Pi_AR1,
                                        Y = Y,
                                        n_lags = n_lags,
                                        intercept = !ss,
-                                       prior_nu = n_vars + 2)
+                                       prior_nu = n_vars + 2,
+                                       independent = FALSE)
     mfbvar:::list_to_variables(priors, envir, "prior_Pi_mean", "prior_Pi_Omega",
                                "prior_S", "inv_prior_Pi_Omega", "Omega_Pi")
   }
@@ -53,12 +54,13 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
     prior_Pi_Omega <- mfbvar:::create_prior_Pi(lambda1 = lambda1,
                                                lambda2 = lambda2,
                                                lambda3 = lambda3,
-                                               lambda4 = lambda4,
+                                               lambda4 = ifelse(!ss, lambda4, NULL),
                                                prior_Pi_AR1 = prior_Pi_AR1,
                                                Y = Y,
                                                n_lags = n_lags,
                                                intercept = !ss,
-                                               block_exo = block_exo)
+                                               block_exo = block_exo,
+                                               independent = TRUE)
   }
 
   # Initalize csv priors
@@ -66,7 +68,7 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
     init_csv <- mfbvar:::csv_initialization(prior_phi = prior_phi,
                                             prior_sigma2 = prior_sigma2)
     mfbvar:::list_to_variables(init_csv, envir, "phi_invvar", "phi_meaninvvar",
-                               "prior_sigma2", "prior_df")
+                               "prior_sigma2", "prior_df", "n_sv")
   }
 
   # Initialize fsv priors
@@ -79,10 +81,9 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
                                             n_fac = n_fac)
     mfbvar:::list_to_variables(init_fsv, envir, "priorsigmaidi", "priorsigmafac",
                                "bmu", "Bmu", "Bsigma", "B011inv", "B022inv", "armatau2",
-                               "armarestr", "a0idi", "b0idi", "a0fac", "b0fac", "priorh0")
+                               "armarestr", "a0idi", "b0idi", "a0fac", "b0fac", "priorh0",
+                               "n_sv")
 
-  } else {
-    n_fac <- NULL
   }
 
   # Initialize ss priors
@@ -91,8 +92,6 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
                                           n_T = n_T, n_lags = n_lags, n_fcst = n_fcst)
     mfbvar:::list_to_variables(init_ss, envir, "d_fcst_lags", "D_mat", "dt",
                                "d1", "n_determ")
-  } else {
-    n_determ <- NULL
   }
 
   # Initialize ssng priors
@@ -129,7 +128,8 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
                                                    n_lags = n_lags, n_T_ = n_T_,
                                                    init = init, n_fac = n_fac,
                                                    n_determ = n_determ,
-                                                   fsv = fsv, csv = csv, params)
+                                                   n_sv = n_sv, fsv = fsv,
+                                                   csv = csv, params)
 
   ##############################################################################
   ## INITIALIZATION OF STORAGE OBJECTS
@@ -138,7 +138,7 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
                                   n_lags = n_lags, n_reps = n_reps,
                                   n_thin = n_thin, n_T = n_T, n_T_ = n_T_,
                                   n_determ = n_determ, n_fac = n_fac,
-                                  n_fcst = n_fcst)
+                                  n_fcst = n_fcst, n_sv = n_sv)
 
   roots <- vector("numeric", n_reps/n_thin)
   num_tries <- roots
@@ -182,14 +182,14 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
 
   # ss(ng) csv
   if (ss && csv) {
-    mcmc_ssng_csv(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,phi,sigma,f,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
+    mcmc_ssng_csv(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,phi,sigma,latent,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
                   prior_S,D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,
                   10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,ssng)
   }
 
   # minn csv
   if (!ss && csv) {
-    mcmc_minn_csv(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,phi,sigma,latent,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,
+    mfbvar:::mcmc_minn_csv(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,phi,sigma,latent,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,
                   Omega_Pi,prior_Pi_mean,prior_S,Z_1,10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,
                   n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,n_thin,verbose)
   }
