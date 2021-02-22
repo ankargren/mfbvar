@@ -1,3 +1,8 @@
+# mfbvar 0.6.0 (in development)
+* Major changes to internal structures and function calls
+* Harmonization of initializations of models, using `*_initialization()` functions
+* Minor changes to starting values; will mean non-identical results compared to previous runs
+
 # mfbvar 0.5.6 (2021-02-03)
 * Removed use of internet connection in vignette
 * Enabled use of weekly-monthly frequency mix

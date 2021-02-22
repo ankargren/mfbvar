@@ -51,20 +51,23 @@ variable_initialization <- function(Y, freq, freqs, n_lags, Lambda_, n_thin) {
   n_thin <- ifelse(is.null(n_thin), 1, n_thin)
 
   Z_1 <- Y[1:n_pseudolags, ]
-  return(list(n_vars = n_vars, n_determ = n_determ, n_q = n_q, T_b = T_b,
+  return(list(n_vars = n_vars, n_q = n_q, T_b = T_b,
               n_pseudolags = n_pseudolags, n_T = n_T, n_T_ = n_T_,
               n_thin = n_thin, Z_1 = Z_1))
 }
 
 parameter_initialization <- function(Y, n_vars, n_lags, n_T_, init,
-                                     n_fac = NULL, n_determ = NULL, ...) {
+                                     n_fac = NULL, n_determ = NULL,
+                                     fsv, csv, ...) {
   arguments <- list(...)
   parameters <- unlist(arguments)
   steady_state <- "psi" %in% parameters
-  fsv <- "facload" %in% parameters
   if (fsv) {
     error_variance <- mfbvar:::compute_error_variances(Y)
   }
+
+  n_sv <- fsv*(n_vars + n_fac) + csv
+  const_latent <-  if (fsv) c(log(error_variance), rep(0, n_fac)) else 0
 
   init_available <- paste0("init_", parameters) %in% names(init)
   init_required <- parameters[!init_available]
@@ -85,11 +88,11 @@ parameter_initialization <- function(Y, n_vars, n_lags, n_T_, init,
                       phi_mu = 1,
                       lambda_mu = 1,
                       mu = log(error_variance),
-                      sigma = rep(0.75, n_vars + n_fac),
-                      phi = rep(0.2, n_vars + n_fac),
+                      sigma = rep(0.75, n_sv),
+                      phi = rep(0.2, n_sv),
                       facload = matrix(rnorm(n_vars*n_fac, sd = 0.5)^2, n_vars, n_fac),
                       f = matrix(rnorm(n_fac * n_T_, sd = 0.5), n_fac, n_T_),
-                      latent = t(cbind(matrix(c(log(error_variance), rep(1, n_fac)), nrow = n_T_, ncol = n_vars+n_fac, byrow = TRUE))),
+                      latent = t(cbind(matrix(const_latent, nrow = n_T_, ncol = n_sv, byrow = TRUE))),
                       latent0 = numeric(n_vars + n_fac),
                       global = 0.1,
                       aux = rep(0.1, n_vars^2 * n_lags),
@@ -212,4 +215,15 @@ dl_initialization <- function(a, gig, n_cores) {
   a   <- ifelse(is.null(a), 1, a)
   gig <- ifelse(is.null(gig), TRUE, FALSE)
   RcppParallel::setThreadOptions(numThreads = x$n_cores)
+}
+
+
+csv_initialization <- function(prior_phi, prior_sigma2) {
+  phi_invvar <- 1/prior_phi[2]
+  phi_meaninvvar <- prior_phi[1] * phi_invvar
+  prior_sigma2 <- prior_sigma2[1]
+  prior_df <- prior_sigma2[2]
+
+  return(list(phi_invvar = phi_invvar, phi_meaninvvar = phi_meaninvvar,
+              prior_sigma2 = prior_sigma2, prior_df = prior_df))
 }
