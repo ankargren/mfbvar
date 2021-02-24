@@ -116,23 +116,23 @@ storage_initialization <- function(init_params, params, envir, n_vars, n_lags,
            switch(params[i],
     Pi = array(initval, dim = c(n_vars, n_vars*n_lags+!steady_state, n_reps/n_thin)),
     Sigma = array(initval, dim = c(n_vars, n_vars, n_reps/n_thin)),
-    psi = array(initval, dim = c(n_reps/n_thin, n_vars * n_determ)),
+    psi = array(initval, dim = c(n_vars * n_determ, 1, n_reps/n_thin)),
     Z = array(initval, dim = c(n_T, n_vars, n_reps/n_thin)),
-    mu = matrix(initval, n_vars, n_reps/n_thin),
-    sigma = matrix(initval, n_sv, n_reps/n_thin),
-    phi = matrix(initval, n_sv, n_reps/n_thin),
+    mu = array(initval, dim = c(n_vars, 1, n_reps/n_thin)),
+    sigma = array(initval, dim = c(n_sv, 1, n_reps/n_thin)),
+    phi = array(initval, dim = c(n_sv, 1, n_reps/n_thin)),
     facload = array(matrix(initval, nrow = n_vars, ncol = n_fac),
                      dim = c(n_vars, n_fac, n_reps/n_thin)),
     f = array(matrix(initval, n_fac, n_T_), dim = c(n_fac, n_T_, n_reps/n_thin)),
-    latent = array(t(initval), dim = c(n_T_, n_sv, n_reps/n_thin),
-               dimnames = list(rownames(initval), colnames(initval), NULL)),
-    omega = matrix(initval, nrow = n_reps/n_thin, ncol = n_vars * n_determ, byrow = TRUE),
-    phi_mu = rep(initval, n_reps/n_thin),
-    lambda_mu = rep(initval, n_reps/n_thin),
-    aux = matrix(initval, nrow = n_reps/n_thin, ncol = n_vars*n_vars*n_lags, byrow = TRUE),
-    local = matrix(initval, nrow = n_reps/n_thin, ncol = n_vars*n_vars*n_lags, byrow = TRUE),
-    global = matrix(initval, n_reps/n_thin, ncol = 1),
-    slice = matrix(initval, nrow = 1, ncol = n_vars*n_vars*n_lags)),
+    latent = array(initval, dim = c(n_T_, n_sv, n_reps/n_thin),
+                    dimnames = list(rownames(initval), colnames(initval), NULL)),
+    omega = array(initval, dim = c(n_vars * n_determ, 1, n_reps/n_thin)),
+    phi_mu = array(initval, dim = c(1, 1, n_reps/n_thin)),
+    lambda_mu = array(initval, dim = c(1, 1, n_reps/n_thin)),
+    aux = array(initval, dim = c(n_vars*n_vars*n_lags, 1, n_reps/n_thin)),
+    local = array(initval, dim = c(n_vars*n_vars*n_lags, 1, n_reps/n_thin)),
+    global = array(initval, dim = c(1, 1, n_reps/n_thin)),
+    slice = array(initval, dim = c(n_vars*n_vars*n_lags, 1, n_reps/n_thin))),
     envir)
   }
 
@@ -222,8 +222,8 @@ dl_initialization <- function(a, gig, n_cores) {
 csv_initialization <- function(prior_phi, prior_sigma2) {
   phi_invvar <- 1/prior_phi[2]
   phi_meaninvvar <- prior_phi[1] * phi_invvar
-  prior_sigma2 <- prior_sigma2[1]
   prior_df <- prior_sigma2[2]
+  prior_sigma2 <- prior_sigma2[1]
 
   return(list(phi_invvar = phi_invvar, phi_meaninvvar = phi_meaninvvar,
               prior_sigma2 = prior_sigma2, prior_df = prior_df,

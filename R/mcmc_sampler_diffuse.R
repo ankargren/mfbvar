@@ -1,10 +1,10 @@
 mcmc_sampler.mfbvar_minn_diffuse <- function(x, ...){
 
   required_params <- c("Y", "n_lags", "n_burnin", "n_reps")
-  prior_params <- c("Y", "freq", "verbose", "check_roots", "n_lags", "n_fcst",
-                    "n_reps", "n_burnin", "n_thin", "freqs", "Lambda_",
-                    "lambda1", "lambda2", "lambda3", "lambda4", "prior_Pi_AR1",
-                    "block_exo")
+  prior_params <- c(required_params,
+                    "freq", "verbose", "check_roots", "n_fcst", "n_thin",
+                    "freqs", "Lambda_", "lambda1", "lambda2", "lambda3",
+                    "lambda4", "prior_Pi_AR1", "block_exo")
   retrieved_params <- c("n_vars", "n_q", "T_b", "n_pseudolags",
                         "n_T", "n_T_", "Z_1")
   params <- c("Z", "Pi", "Sigma")
@@ -18,10 +18,11 @@ mcmc_sampler.mfbvar_minn_diffuse <- function(x, ...){
 mcmc_sampler.mfbvar_dl_diffuse <- function(x, ...){
 
   required_params <- c("Y", "n_lags", "n_burnin", "n_reps")
-  prior_params <- c("Y", "freq", "verbose", "check_roots", "n_lags", "n_fcst",
-                    "n_reps", "n_burnin", "n_thin", "freqs", "Lambda_",
-                    "lambda1", "lambda2", "lambda3", "lambda4", "prior_Pi_AR1",
-                    "a", "gig", "n_cores", "block_exo")
+  prior_params <- c(required_params,
+                    "freq", "verbose", "check_roots", "n_fcst", "n_thin",
+                    "freqs", "Lambda_", "lambda1", "lambda2", "lambda3",
+                    "lambda4", "prior_Pi_AR1", "a", "gig", "n_cores",
+                    "block_exo")
   retrieved_params <- c("n_vars", "n_q", "T_b", "n_pseudolags",
                         "n_T", "n_T_", "Z_1")
   params <- c("Z", "Pi", "Sigma", "global", "aux", "local", "slice")

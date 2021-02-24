@@ -29,11 +29,14 @@ create_prior_Pi <- function(lambda1, lambda2,  lambda3, lambda4, prior_Pi_AR1, Y
 
     prior_Pi_Omega <- matrix(0, n_vars * n_lags + 1, n_vars)
 
-    prior_Pi_Omega[1, ] <- lambda1 * lambda4 * sqrt(error_variance)
+    if (intercept) {
+      prior_Pi_Omega[1, ] <- lambda1 * lambda4 * sqrt(error_variance)
+    }
+
     for (i in 1:n_vars) {
       prior_Pi_Omega[-1, i] <- lambda1 * lambda2^((1:n_vars) != i) * sqrt(error_variance[i])/
         ((rep(1:n_lags, each = n_vars))^(lambda3) * rep(sqrt(error_variance), times = n_lags))
-      if (i %in% block_exo) {
+      if (!is.null(block_exo) && (i %in% block_exo)) {
         prior_Pi_Omega[-1, i] <- prior_Pi_Omega[-1, i] * (1e-06)^(!(1:ncol(Y) %in% block_exo))
       }
     }

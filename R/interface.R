@@ -811,7 +811,7 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
   class(mfbvar_prior) <- c(sprintf("mfbvar_%s_%s", prior, variance), sprintf("mfbvar_%s", prior), sprintf("mfbvar_%s", variance), class(mfbvar_prior))
 
   time_out <- c(time_out, Sys.time())
-  main_run <-  mcmc_sampler(mfbvar_prior)
+  main_run <-  mfbvar:::mcmc_sampler(mfbvar_prior)
   time_out <- c(time_out, Sys.time())
   if (mfbvar_prior$verbose) {
     time_diff <- Sys.time() - time_out[1]
@@ -867,8 +867,9 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
     rownames(mfbvar_prior$d) <- rownames(mfbvar_prior$Y)
     main_run$names_determ <- names_determ
     n_determ <- dim(mfbvar_prior$d)[2]
-    dimnames(main_run$psi) <- list(iteration = 1:(mfbvar_prior$n_reps/mfbvar_prior$n_thin),
-                                   param = paste0(rep(names_col, n_determ), ".", rep(names_determ, each = n_vars)))
+    dimnames(main_run$psi) <- list(param = paste0(rep(names_col, n_determ), ".", rep(names_determ, each = n_vars)),
+                                   NULL,
+                                   iteration = 1:(mfbvar_prior$n_reps/mfbvar_prior$n_thin))
     dimnames(main_run$Pi) <- list(dep = names_col,
                                   indep = paste0(rep(names_col, mfbvar_prior$n_lags), ".l", rep(1:mfbvar_prior$n_lags, each = n_vars)),
                                   iteration = 1:(mfbvar_prior$n_reps/mfbvar_prior$n_thin))
@@ -878,7 +879,7 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
                                   iteration = 1:(mfbvar_prior$n_reps/mfbvar_prior$n_thin))
   }
 
-  if (sum(mfbvar_prior$freq == "m") == 0 || sum(mfbvar_prior$freq == "m") == ncol(mfbvar_prior$Y)) {
+  if (length(mfbvar_prior$freqs) == 1) {
     class(main_run) <- c("sfbvar", sprintf("sfbvar_%s_%s", prior, variance), sprintf("sfbvar_%s", prior), sprintf("sfbvar_%s", variance))
   } else {
     class(main_run) <- c("mfbvar", sprintf("mfbvar_%s_%s", prior, variance), sprintf("mfbvar_%s", prior), sprintf("mfbvar_%s", variance))

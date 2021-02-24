@@ -91,8 +91,8 @@ void mcmc_minn_iw(const arma::mat & y_in_p,
 
 // [[Rcpp::export]]
 void mcmc_ssng_iw(const arma::mat & y_in_p,
-                  arma::cube& Pi, arma::cube& Sigma, arma::mat& psi, arma::vec& phi_mu,
-                  arma::vec& lambda_mu, arma::mat& omega, arma::cube& Z,
+                  arma::cube& Pi, arma::cube& Sigma, arma::cube& psi, arma::cube& phi_mu,
+                  arma::cube& lambda_mu, arma::cube& omega, arma::cube& Z,
                   arma::cube& Z_fcst, const arma::mat& Lambda_comp, const arma::mat& prior_Pi_Omega,
                   const arma::mat& inv_prior_Pi_Omega,
                   const arma::mat& Omega_Pi, const arma::mat& prior_Pi_mean,
@@ -115,7 +115,7 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
 
   arma::mat Pi_i = Pi.slice(0);
   arma::mat Sigma_i = Sigma.slice(0);
-  arma::vec psi_i  = psi.row(0).t();
+  arma::vec psi_i  = psi.slice(0);
   arma::mat y_i, X, XX, XX_inv, Pi_sample, post_Pi_Omega, post_Pi;
   arma::mat S, Pi_diff, post_S, x, mu_mat, mZ, mZ1, mX;
   arma::mat my = arma::mat(arma::size(y_in_p), arma::fill::zeros);
@@ -142,9 +142,9 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
   arma::mat Sigma_chol = arma::chol(Sigma_i, "lower");
 
   arma::uword nm = n_vars*n_determ;
-  double lambda_mu_i = lambda_mu(0);
-  double phi_mu_i = phi_mu(0);
-  arma::vec omega_i = omega.row(0).t();
+  double lambda_mu_i = arma::as_scalar(lambda_mu.slice(0));
+  double phi_mu_i = arma::as_scalar(phi_mu.slice(0));
+  arma::vec omega_i = omega.slice(0);
   arma::mat inv_prior_psi_Omega = arma::diagmat(1.0/omega_i);
   arma::vec inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
   double M, batch = 1.0;
@@ -263,11 +263,11 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
       Z.slice((i-n_burnin)/n_thin) = Z_i;
       Sigma.slice((i-n_burnin)/n_thin) = Sigma_i;
       Pi.slice((i-n_burnin)/n_thin) = Pi_i;
-      psi.row((i-n_burnin)/n_thin) = psi_i.t();
+      psi.slice((i-n_burnin)/n_thin) = psi_i;
       if (ssng) {
-        phi_mu((i-n_burnin)/n_thin) = phi_mu_i;
-        lambda_mu((i-n_burnin)/n_thin) = lambda_mu_i;
-        omega.row((i-n_burnin)/n_thin) = omega_i.t();
+        phi_mu.slice((i-n_burnin)/n_thin) = phi_mu_i;
+        lambda_mu.slice((i-n_burnin)/n_thin) = lambda_mu_i;
+        omega.slice((i-n_burnin)/n_thin) = omega_i;
       }
 
     }

@@ -54,7 +54,7 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
     prior_Pi_Omega <- mfbvar:::create_prior_Pi(lambda1 = lambda1,
                                                lambda2 = lambda2,
                                                lambda3 = lambda3,
-                                               lambda4 = ifelse(!ss, lambda4, NULL),
+                                               lambda4 = lambda4,
                                                prior_Pi_AR1 = prior_Pi_AR1,
                                                Y = Y,
                                                n_lags = n_lags,
@@ -99,9 +99,9 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
     init_ssng <- mfbvar:::ssng_initialization(prior_ng, s)
     mfbvar:::list_to_variables(init_ssng, envir, "c0", "c1", "s")
   } else if (ss) {
-    phi_mu <- matrix(0, 1, 1)
-    lambda_mu <- matrix(0, 1, 1)
-    omega <- matrix(diag(prior_psi_Omega), nrow = 1)
+    phi_mu <- array(0, dim = c(1, 1, 1))
+    lambda_mu <- array(0, dim = c(1, 1, 1))
+    omega <- array(diag(prior_psi_Omega), dim = c(n_vars * n_determ, 1, n_reps/n_thin))
     c0 <- 0
     c1 <- 0
     s <- 0
@@ -112,11 +112,11 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
     init_dl <- dl_initialization(a = a, gig = gig, n_cores = n_cores)
     mfbvar:::list_to_variables(init_dl, envir, "a", "slice", "gig")
   } else {
-    aux <- matrix(0, 1, 1)
-    global <- c(0)
-    local <- matrix(0, 1, 1)
+    aux <- array(0, dim = c(1, 1, 1))
+    global <- array(0, dim = c(1, 1, 1))
+    local <- array(0, dim = c(1, 1, 1))
     a <- -1
-    slice <- c(0)
+    slice <- array(0, dim = c(1, 1, 1))
     gig <- TRUE
   }
 
@@ -168,7 +168,7 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
 
   # ss(ng) iw
   if (ss && iw) {
-    mcmc_ssng_iw(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
+    mfbvar:::mcmc_ssng_iw(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
             prior_S,D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,n_reps,n_burnin,
             n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,ssng)
   }
@@ -182,7 +182,7 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
 
   # ss(ng) csv
   if (ss && csv) {
-    mcmc_ssng_csv(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,phi,sigma,latent,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
+    mfbvar:::mcmc_ssng_csv(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,phi,sigma,latent,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
                   prior_S,D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,
                   10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,ssng)
   }
@@ -197,7 +197,7 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
   # minn diffuse
   if (!ss && diffuse) {
     mcmc_minn_diffuse(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,aux,global,local,slice,Lambda_,prior_Pi_Omega,
-                      prior_Pi_mean_vec,Z_1,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,
+                      c(prior_Pi_mean),Z_1,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,
                       n_thin,verbose,a,gig)
   }
   if (verbose) {

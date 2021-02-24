@@ -63,7 +63,6 @@ void update_csv(
   * Sample sigma2
   */
   arma::vec u = hT - phi * hT1;
-
   sigma = std::pow(R::rgamma(prior_df + T - 1, 1/(prior_df * prior_sigma2 + arma::accu(arma::pow(u, 2.0)))), -0.5);
   sigma2inv = std::pow(sigma, -2.0);
 

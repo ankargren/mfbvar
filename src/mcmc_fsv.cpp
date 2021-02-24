@@ -9,10 +9,10 @@
 // [[Rcpp::export]]
 void mcmc_minn_fsv(const arma::mat & y_in_p,
                    arma::cube& Pi, arma::cube& Z, arma::cube& Z_fcst,
-                   arma::mat& mu, arma::mat& phi, arma::mat& sigma,
+                   arma::cube& mu, arma::cube& phi, arma::cube& sigma,
                    arma::cube& f, arma::cube& facload, arma::cube& h,
-                   arma::mat & aux, arma::vec & global, arma::mat & local,
-                   arma::vec & slice,
+                   arma::cube& aux, arma::cube& global, arma::cube& local,
+                   arma::cube& slice,
                    const arma::mat& Lambda_comp, arma::mat prior_Pi_Omega,
                    const arma::vec& prior_Pi_AR1, const arma::mat& Z_1,
                    double bmu, double Bmu, double a0idi, double b0idi, double a0fac, double b0fac,
@@ -39,16 +39,17 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
 
 
   // fsv
+
+  arma::vec mu_i = mu.slice(0);
+  arma::vec phi_i = phi.slice(0);
+  arma::vec sigma_i = sigma.slice(0);
+
   Rcpp::NumericMatrix curpara = Rcpp::NumericMatrix(3, n_vars + n_fac);
   arma::mat curpara_arma(curpara.begin(), curpara.nrow(), curpara.ncol(), false);
   curpara_arma.fill(0.0);
-  curpara_arma.row(0).cols(0, n_vars - 1) = mu.col(0).t();
-  curpara_arma.row(1) = phi.col(0).t();
-  curpara_arma.row(2) = sigma.col(0).t();
-
-  arma::vec mu_i = mu.col(0);
-  arma::vec phi_i = phi.col(0);
-  arma::vec sigma_i = sigma.col(0);
+  curpara_arma.row(0).cols(0, n_vars - 1) = mu_i.t();
+  curpara_arma.row(1) = phi_i.t();
+  curpara_arma.row(2) = sigma_i.t();
 
   arma::mat armaf = f.slice(0);
   arma::mat armafacload = facload.slice(0);
@@ -85,10 +86,11 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
   double global_i;
   if (a > 0) {
     dl = true;
-    global_i = global(0);
+    global_i = arma::as_scalar(global.slice(0));
   }
-  arma::vec aux_i = aux.row(0).t();
-  arma::vec local_i = local.row(0).t();
+  arma::vec aux_i = aux.slice(0);
+  arma::vec local_i = local.slice(0);
+  arma::vec slice_i = slice.slice(0);
 
   if (dl) {
     prior_Pi_Omega.rows(1, n_vars*n_lags) = arma::reshape(aux_i % arma::pow(global_i * local_i, 2.0), n_vars*n_lags, n_vars);
@@ -137,13 +139,16 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
       f.slice((i-n_burnin)/n_thin) = armaf_old;
       facload.slice((i-n_burnin)/n_thin) = armafacload_old;
       h.slice((i-n_burnin)/n_thin) = armah;
-      mu.col((i-n_burnin)/n_thin) = mu_i.head(n_vars);
-      phi.col((i-n_burnin)/n_thin) = phi_i;
-      sigma.col((i-n_burnin)/n_thin) = sigma_i;
+      mu.slice((i-n_burnin)/n_thin) = mu_i.head(n_vars);
+      phi.slice((i-n_burnin)/n_thin) = phi_i;
+      sigma.slice((i-n_burnin)/n_thin) = sigma_i;
       if (dl) {
-        global((i-n_burnin)/n_thin) = global_i;
-        aux.row((i-n_burnin)/n_thin) = aux_i.t();
-        local.row((i-n_burnin)/n_thin) = local_i.t();
+        global.slice((i-n_burnin)/n_thin) = global_i;
+        aux.slice((i-n_burnin)/n_thin) = aux_i;
+        local.slice((i-n_burnin)/n_thin) = local_i;
+        if (!gig) {
+          slice.slice((i-n_burnin)/n_thin) = slice_i;
+        }
       }
     }
 
@@ -165,7 +170,7 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
     Pi_i = output.t();
 
     if (dl) {
-      update_dl(prior_Pi_Omega, aux_i, local_i, global_i, Pi_i.t(), n_vars, n_lags, a, slice, gig, true);
+      update_dl(prior_Pi_Omega, aux_i, local_i, global_i, Pi_i.t(), n_vars, n_lags, a, slice_i, gig, true);
     }
 
     if (verbose) {
@@ -179,9 +184,9 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
 
 // [[Rcpp::export]]
 void mcmc_ssng_fsv(const arma::mat & y_in_p,
-                 arma::cube& Pi, arma::mat& psi, arma::vec& phi_mu,
-                 arma::vec& lambda_mu, arma::mat& omega, arma::cube& Z, arma::cube& Z_fcst,
-                 arma::mat& mu, arma::mat& phi, arma::mat& sigma,
+                 arma::cube& Pi, arma::cube& psi, arma::cube& phi_mu,
+                 arma::cube& lambda_mu, arma::cube& omega, arma::cube& Z, arma::cube& Z_fcst,
+                 arma::cube& mu, arma::cube& phi, arma::cube& sigma,
                  arma::cube& f, arma::cube& facload, arma::cube& h,
                  const arma::mat& Lambda_comp, arma::mat prior_Pi_Omega,
                  const arma::vec& prior_Pi_AR1,
@@ -207,7 +212,7 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
   Progress p(n_reps+n_burnin, verbose);
 
   arma::mat Pi_i = Pi.slice(0);
-  arma::vec psi_i = psi.row(0).t();
+  arma::vec psi_i = psi.slice(0);
   arma::mat X;
   arma::mat y_i = y_in_p;
   arma::mat x;
@@ -215,16 +220,16 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
 
 
   // fsv
+  arma::vec mu_i = mu.slice(0);
+  arma::vec phi_i = phi.slice(0);
+  arma::vec sigma_i = sigma.slice(0);
+
   Rcpp::NumericMatrix curpara = Rcpp::NumericMatrix(3, n_vars + n_fac);
   arma::mat curpara_arma(curpara.begin(), curpara.nrow(), curpara.ncol(), false);
   curpara_arma.fill(0.0);
-  curpara_arma.row(0).cols(0, n_vars - 1) = mu.col(0).t();
-  curpara_arma.row(1) = phi.col(0).t();
-  curpara_arma.row(2) = sigma.col(0).t();
-
-  arma::vec mu_i = mu.col(0);
-  arma::vec phi_i = phi.col(0);
-  arma::vec sigma_i = sigma.col(0);
+  curpara_arma.row(0).cols(0, n_vars - 1) = mu_i.t();
+  curpara_arma.row(1) = phi_i.t();
+  curpara_arma.row(2) = sigma_i.t();
 
   arma::mat armaf = f.slice(0);
   arma::mat armafacload = facload.slice(0);
@@ -278,8 +283,8 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
   double lambda_mu_i, phi_mu_i, accept, s_prop, M, batch;
   bool adaptive_mh;
   if (ssng) {
-    lambda_mu_i = lambda_mu(0);
-    phi_mu_i = phi_mu(0);
+    lambda_mu_i = arma::as_scalar(lambda_mu.slice(0));
+    phi_mu_i = arma::as_scalar(phi_mu.slice(0));
     accept = 0.0;
     batch = 1.0;
 
@@ -292,7 +297,7 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
     }
   }
 
-  arma::vec omega_i = omega.row(0).t();
+  arma::vec omega_i = omega.slice(0);
   arma::mat inv_prior_psi_Omega = arma::diagmat(1/omega_i);
   arma::vec inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
   arma::running_stat<double> stats;
@@ -357,20 +362,20 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
 
       Z.slice((i-n_burnin)/n_thin) = Z_i;
       Pi.slice((i-n_burnin)/n_thin) = Pi_i;
-      psi.row((i-n_burnin)/n_thin) = psi_i.t();
+      psi.slice((i-n_burnin)/n_thin) = psi_i;
 
       f.slice((i-n_burnin)/n_thin) = armaf_old;
       facload.slice((i-n_burnin)/n_thin) = armafacload_old;
       h.slice((i-n_burnin)/n_thin) = armah;
 
-      mu.col((i-n_burnin)/n_thin) = mu_i.head(n_vars);
-      phi.col((i-n_burnin)/n_thin) = phi_i;
-      sigma.col((i-n_burnin)/n_thin) = sigma_i;
+      mu.slice((i-n_burnin)/n_thin) = mu_i.head(n_vars);
+      phi.slice((i-n_burnin)/n_thin) = phi_i;
+      sigma.slice((i-n_burnin)/n_thin) = sigma_i;
 
       if (ssng) {
-        phi_mu((i-n_burnin)/n_thin) = phi_mu_i;
-        lambda_mu((i-n_burnin)/n_thin) = lambda_mu_i;
-        omega.row((i-n_burnin)/n_thin) = omega_i.t();
+        phi_mu.slice((i-n_burnin)/n_thin) = phi_mu_i;
+        lambda_mu.slice((i-n_burnin)/n_thin) = lambda_mu_i;
+        omega.slice((i-n_burnin)/n_thin) = omega_i;
       }
     }
 
@@ -417,12 +422,12 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
           batch += 1.0;
           min_vec(1) = std::pow(batch, -0.5);
           if (stats.mean() > 0.44) {
-            s_prop = log(s) + arma::min(min_vec);
+            s_prop = std::log(s) + arma::min(min_vec);
             if (s_prop < M){
               s = std::exp(s_prop);
             }
           } else {
-            s_prop = log(s) - arma::min(min_vec);
+            s_prop = std::log(s) - arma::min(min_vec);
             if (s_prop > -M){
               s = std::exp(s_prop);
             }

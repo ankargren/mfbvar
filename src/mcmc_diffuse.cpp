@@ -6,8 +6,8 @@
 // [[Rcpp::export]]
 void mcmc_minn_diffuse(const arma::mat & y_in_p,
                   arma::cube& Pi, arma::cube& Sigma, arma::cube& Z, arma::cube& Z_fcst,
-                  arma::mat & aux, arma::vec & global, arma::mat & local,
-                  arma::vec & slice,
+                  arma::cube& aux, arma::cube& global, arma::cube& local,
+                  arma::cube& slice,
                   const arma::mat& Lambda_comp, arma::mat prior_Pi_Omega,
                   arma::vec prior_Pi_mean_vec,
                   const arma::mat& Z_1,
@@ -47,10 +47,11 @@ void mcmc_minn_diffuse(const arma::mat & y_in_p,
   double global_i;
   if (a > 0) {
     dl = true;
-    global_i = global(0);
+    global_i = arma::as_scalar(global.slice(0));
   }
-  arma::vec aux_i = aux.row(0).t();
-  arma::vec local_i = local.row(0).t();
+  arma::vec aux_i = aux.slice(0);
+  arma::vec local_i = local.slice(0);
+  arma::vec slice_i = slice.slice(0);
 
   if (dl) {
     prior_Pi_Omega.rows(1, n_vars*n_lags) = arma::reshape(aux_i % arma::pow(global_i * local_i, 2.0), n_vars*n_lags, n_vars);
@@ -87,7 +88,7 @@ void mcmc_minn_diffuse(const arma::mat & y_in_p,
     Sigma_inv = arma::inv_sympd(Sigma_i);
 
     if (dl) {
-      update_dl(prior_Pi_Omega, aux_i, local_i, global_i, Pi_i.t(), n_vars, n_lags, a, slice, gig, true);
+      update_dl(prior_Pi_Omega, aux_i, local_i, global_i, Pi_i.t(), n_vars, n_lags, a, slice_i, gig, true);
       prior_Pi_Omega_vec_inv = 1.0 / arma::vectorise(prior_Pi_Omega);
       Omega_Pi = prior_Pi_mean_vec % prior_Pi_Omega_vec_inv;
     }
@@ -107,6 +108,15 @@ void mcmc_minn_diffuse(const arma::mat & y_in_p,
       Z.slice((i-n_burnin)/n_thin) = Z_i;
       Sigma.slice((i-n_burnin)/n_thin) = Sigma_i;
       Pi.slice((i-n_burnin)/n_thin) = Pi_i;
+
+      if (dl) {
+        global.slice((i-n_burnin)/n_thin) = global_i;
+        aux.slice((i-n_burnin)/n_thin) = aux_i;
+        local.slice((i-n_burnin)/n_thin) = local_i;
+        if (!gig) {
+          slice.slice((i-n_burnin)/n_thin) = slice_i;
+        }
+      }
     }
     if (verbose) {
       p.increment();
