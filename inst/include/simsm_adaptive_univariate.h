@@ -213,6 +213,7 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
 
   Rcpp::Rcout << "adaptive" << std::endl;
   if (T_b < n_T) {
+    Rcpp::Rcout << "update missing" << std::endl;
     update_missing(y_t, obs_vars, obs_q, n_ovars, n_oq, obs_m, n_om, non_obs_m, obs_m2,
                    n_om2, non_obs_m2, y_tpt, y_tpt2, T_b, y_, n_vars, n_m, n_lags);
 
@@ -221,13 +222,16 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
     a_tt = a_tt_compact.row(T_b-1);
     a_tt_out2 = a_tt;
 
+    Rcpp::Rcout << "create phi" << std::endl;
     Phi_uom = create_Phi_uom(Phi, n_vars, n_q, n_m, n_om, n_om2, n_lags, non_obs_m, obs_m2);
     Phi_uu = create_Phi_uu(Phi, n_vars, n_q, n_m, n_om, n_om2, n_lags, non_obs_m, non_obs_m2);
 
+    Rcpp::Rcout << "create tt d" << std::endl;
     // Update Tt
     create_Tt_d(Tt, d, Phi_uu, T_b-1, y_, n_m, n_q, n_om,
                 n_om2, n_lags, obs_m2, non_obs_m, y_tpt2, Phi_uom);
 
+    Rcpp::Rcout << "a P" << std::endl;
     a_t = a_tt * Tt.t() + d;
     f_t = f.row(T_b);
     a_t.cols(0, n_m - n_om - 1) += f_t.cols(non_obs_m);

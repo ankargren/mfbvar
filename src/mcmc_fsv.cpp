@@ -104,11 +104,8 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
       try {
         y_i = simsm_adaptive_univariate(y_in_p, Pi_i, Sig_i, Lambda_comp, Z_1, n_q, T_b, cc_i);
       } catch(...) {
-        std::stringstream error_str;
-        error_str << "Error at iteration " << i
-          << ", simulation smoothing block.";
         if (i == 0) {
-          y_i = Z.slice(0).rows(n_lags, n_T + n_lags);
+          y_i = Z.slice(0).rows(n_lags, n_T + n_lags - 1);
         } else {
           ::Rf_error("Error at iteration %i, simulation smoothing block.", i);
         }
