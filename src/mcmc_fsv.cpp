@@ -101,7 +101,18 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
   for (arma::uword i = 0; i < n_reps + n_burnin; ++i) {
     if (!single_freq)  {
       Sig_i = arma::exp(0.5 * armah.head_cols(n_vars));
-      y_i = simsm_adaptive_univariate(y_in_p, Pi_i, Sig_i, Lambda_comp, Z_1, n_q, T_b, cc_i);
+      try {
+        y_i = simsm_adaptive_univariate(y_in_p, Pi_i, Sig_i, Lambda_comp, Z_1, n_q, T_b, cc_i);
+      } catch(...) {
+        std::stringstream error_str;
+        error_str << "Error at iteration " << i
+          << ", simulation smoothing block.";
+        if (i == 0) {
+          y_i = Z.slice(0).rows(n_lags, n_T + n_lags);
+        } else {
+          ::Rf_error("Error at iteration %i, simulation smoothing block.", i);
+        }
+      }
       Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
       X = create_X(Z_i, n_lags);
     }
@@ -201,7 +212,11 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
                  arma::uword n_fac, arma::uword n_reps, arma::uword n_burnin,
                  arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars,
                  arma::uword n_T, arma::uword n_fcst, arma::uword n_determ, arma::uword n_thin,
-                 bool verbose, bool ssng) {
+                 bool verbose, bool ssng, bool fixate_Z, bool fixate_Pi,
+                 bool fixate_psi, bool fixate_phi_mu, bool fixate_lambda_mu,
+                 bool fixate_omega, bool fixate_mu, bool fixate_phi,
+                 bool fixate_sigma, bool fixate_f, bool fixate_facload,
+                 bool fixate_latent) {
   bool single_freq;
   if (n_q == 0 || n_q == n_vars) {
     single_freq = true;

@@ -1,5 +1,8 @@
-# The below loop just gets the error variances from AR(4) regressions
-
+#' Compute error variances
+#'
+#' Function to run independent AR(4) regressions to obtain preliminary estimates of error variances
+#' @param Y data matrix
+#' @return vector with error variances
 compute_error_variances <- function(Y) {
   n_vars <- ncol(Y)
   error_variance <- rep(NA, n_vars)
@@ -21,6 +24,11 @@ compute_error_variances <- function(Y) {
   return(error_variance)
 }
 
+#' Check required parameters
+#'
+#' Check whether prior contains the required parameters
+#' @param x prior object
+#' @param ... names of parameters whose existence is to be checked
 check_required_params <- function(x, ...) {
   required_params <- unlist(list(...))
   test <- vapply(x[required_params], is.null, logical(1))
@@ -29,12 +37,27 @@ check_required_params <- function(x, ...) {
   }
 }
 
+#' List to variables
+#'
+#' Transform a list to variables, assigning variables to the given environment
+#' @param x list
+#' @param envir environment
+#' @param ... variables existing in the list that are to be assigned to \code{envir}
 list_to_variables <- function(x, envir, ...) {
   variables <- unlist(list(...))
   foo <- mapply(function(x1, x2, envir) assign(x1, x2, envir), names(x[variables]), x[variables], MoreArgs = list(envir = envir))
   invisible(NULL)
 }
 
+#' Initialize variables
+#'
+#' Function to initialize some variables used by samplers
+#' @param Y data matrix
+#' @param freq vector of frequencies for each column of \code{Y}
+#' @param freqs vector with unique frequencies
+#' @param n_lags number of lags
+#' @param Lambda_ aggregation matrix
+#' @param n_thin thinning
 variable_initialization <- function(Y, freq, freqs, n_lags, Lambda_, n_thin) {
   n_vars <- ncol(Y)
   n_q <- sum(freq == freqs[1])
@@ -50,12 +73,26 @@ variable_initialization <- function(Y, freq, freqs, n_lags, Lambda_, n_thin) {
 
   n_thin <- ifelse(is.null(n_thin), 1, n_thin)
 
-  Z_1 <- Y[1:n_pseudolags, ]
+  Z_1 <- fill_na(Y)[1:n_pseudolags, ]
   return(list(n_vars = n_vars, n_q = n_q, T_b = T_b,
               n_pseudolags = n_pseudolags, n_T = n_T, n_T_ = n_T_,
               n_thin = n_thin, Z_1 = Z_1))
 }
 
+
+#' Initialize parameters
+#'
+#' Function to initialize parameters (set starting values)
+#' @param Y data matrix
+#' @param n_vars number of variables
+#' @param n_lags number of lags
+#' @param n_T_ number of effective observations (lags subtracted)
+#' @param init list with custom initial values
+#' @param n_fac number of factors
+#' @param n_determ number of determ
+#' @param n_sv number of stochastic volatility series
+#' @param fsv boolean for factor stochastic volatility
+#' @param csv boolean for common stochastic volatility
 parameter_initialization <- function(Y, n_vars, n_lags, n_T_, init,
                                      n_fac = NULL, n_determ = NULL,
                                      n_sv = NULL,
@@ -67,9 +104,9 @@ parameter_initialization <- function(Y, n_vars, n_lags, n_T_, init,
     error_variance <- mfbvar:::compute_error_variances(Y)
   }
 
-  const_latent <-  if (fsv) c(log(error_variance), rep(0, n_fac)) else 0
+  const_latent <- if (fsv) c(log(error_variance), rep(0, n_fac)) else 0
 
-  init_available <- paste0("init_", parameters) %in% names(init)
+  init_available <- parameters %in% names(init)
   init_required <- parameters[!init_available]
 
   if (any(init_available)) {
@@ -80,7 +117,7 @@ parameter_initialization <- function(Y, n_vars, n_lags, n_T_, init,
     initval <- switch(init_required[i],
                       Z = mfbvar:::fill_na(Y),
                       psi = colMeans(mfbvar:::fill_na(Y)),
-                      Pi = matrix(0, nrow = n_vars, ncol = n_vars*(n_vars*n_lags)+!steady_state),
+                      Pi = matrix(0, nrow = n_vars, ncol = n_vars*n_lags+!steady_state),
                       Sigma = cov(mfbvar:::fill_na(Y)),
                       omega = ifelse(!is.null(arguments$prior_psi_Omega),
                                      diag(prior_psi_Omega),
@@ -146,6 +183,22 @@ storage_initialization <- function(init_params, params, envir, n_vars, n_lags,
   assign("Z_fcst", Z_fcst, envir)
 }
 
+#' Initialize factor stochastic volatility parameters
+#'
+#' Function to go from user input of FSV parameters to variables used by samplers
+#'
+#' @param priorsigmaidi prior for idiosyncratic sigma
+#' @param priorsigmafac prior for factor sigma
+#' @param priormu prior for mu
+#' @param priorfacload prior for factor loadings
+#' @param restrict restriction to use for identification
+#' @param priorphiidi prior for idiosyncratic phi
+#' @param prior for factor phi
+#' @param n_vars number of variables
+#' @param n_fac number of factors
+#' @return a list
+#' @keywords internal
+#' @noRd
 fsv_initialization <- function(priorsigmaidi, priorsigmafac, priormu,
                                priorfacload, restrict, priorphiidi, priorphifac,
                                n_vars, n_fac) {
@@ -194,6 +247,16 @@ fsv_initialization <- function(priorsigmaidi, priorsigmafac, priormu,
               n_sv = n_fac + n_vars))
 }
 
+#' Initialize steady-state normal-gamma parameters
+#'
+#' Function to go from user input of steady-state normal-gamma prior parameters to variables used by samplers
+#'
+#' @param prior_ng vector with two elements, \code{c0} and \code{c1}
+#' @param s scalar with the Metropolis-Hastings tuning parameter
+#' @return a list
+#' @keywords internal
+#' @noRd
+#'
 ssng_initialization <- function(prior_ng, s) {
   c0 <- ifelse(is.null(prior_ng), 0.01, prior_ng[1])
   c1 <- ifelse(is.null(prior_ng), 0.01, prior_ng[2])
@@ -201,6 +264,18 @@ ssng_initialization <- function(prior_ng, s) {
   return(list(c0 = c0, c1 = c1, s = s))
 }
 
+#' Initialize steady-state parameters
+#'
+#' Function to go from user input of steady-state prior parameters to variables used by samplers
+#'
+#' @param d matrix of deterministic variables
+#' @param d_fcst matrix of deterministic variables for forecast period
+#' @param n_T number of observations
+#' @param n_lags number of lags
+#' @param n_fcst number of forecasts
+#' @return a list
+#' @keywords internal
+#' @noRd
 ss_initialization <- function(d, d_fcst, n_T, n_lags, n_fcst) {
   n_determ <- if (!is.null(d)) dim(d)[2] else NULL
   d_fcst_lags <- as.matrix(rbind(d[(n_T-n_lags+1):n_T, , drop = FALSE], d_fcst))
@@ -212,13 +287,31 @@ ss_initialization <- function(d, d_fcst, n_T, n_lags, n_fcst) {
               n_determ = n_determ))
 }
 
+#' Initialize Dirichlet-Laplace parameters
+#'
+#' Function to go from user input of DL prior parameters to variables used by samplers
+#'
+#' @param a scalar value
+#' @param gig boolean, \code{TRUE} indicates use of generalized inverse-Gaussian, otherwise slice sampler
+#' @param n_cores number of cores to use
+#' @return a list
+#' @keywords internal
+#' @noRd
 dl_initialization <- function(a, gig, n_cores) {
   a   <- ifelse(is.null(a), 1, a)
   gig <- ifelse(is.null(gig), TRUE, FALSE)
-  RcppParallel::setThreadOptions(numThreads = x$n_cores)
+  RcppParallel::setThreadOptions(numThreads = n_cores)
 }
 
-
+#' Initialize common stochastic volatility parameters
+#'
+#' Function to go from user input of CSV parameters to variables used by samplers
+#'
+#' @param prior_phi vector with two elements for prior mean and variance of phi
+#' @param prior_sigma2 vector with two elements for prior mean and df of sigma2
+#' @return a list
+#' @keywords internal
+#' @noRd
 csv_initialization <- function(prior_phi, prior_sigma2) {
   phi_invvar <- 1/prior_phi[2]
   phi_meaninvvar <- prior_phi[1] * phi_invvar
@@ -228,4 +321,23 @@ csv_initialization <- function(prior_phi, prior_sigma2) {
   return(list(phi_invvar = phi_invvar, phi_meaninvvar = phi_meaninvvar,
               prior_sigma2 = prior_sigma2, prior_df = prior_df,
               n_sv = 1))
+}
+
+#' Initialize fixation of parameters
+#'
+#' Function to go from user input of fixated parameters to variables used by samplers
+#'
+#' @param fixate named list, names correspond to parameters in \code{params} and values are boolean
+#' @param params character vector with names of parameters
+#' @return a list with fixate flags for all parameters in \code{params} with \code{FALSE} as default
+#' @keywords internal
+#' @noRd
+fixate_initialization <- function(fixate, params) {
+  fixate_supplied <- names(fixate)
+  fixate_missing_vec <- setdiff(params, fixate_supplied)
+  fixate_missing <- lapply(seq_along(fixate_missing_vec), function(x) FALSE)
+  names(fixate_missing) <- fixate_missing_vec
+  fixate_complete <- c(fixate, fixate_missing)
+  names(fixate_complete) <- paste0("fixate_", names(fixate_complete))
+  return(fixate_complete)
 }

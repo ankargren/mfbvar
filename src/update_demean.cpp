@@ -4,10 +4,6 @@ void update_demean(arma::mat & my, arma::mat & mu_long,
                    const arma::mat & y_in_p, const arma::mat & mu_mat, const arma::mat & d1,
                    const arma::mat & Psi_i, const arma::mat & Lambda_single,
                    arma::uword n_vars, arma::uword n_q, arma::uword n_Lambda, arma::uword n_T) {
-  Rcpp::Rcout << "n_vars = " <<  n_vars  << std::endl;
-  Rcpp::Rcout << "n_q = " <<  n_q  << std::endl;
-  Rcpp::Rcout << "n_vars - n_q - 1 = " <<  n_vars - n_q - 1 << std::endl;
-  Rcpp::Rcout << "my = " <<  arma::size(my) << ", " << "y_in_p = " <<  arma::size(y_in_p) << ", " << "mu_mat = " <<  arma::size(mu_mat) << ", " << std::endl;
   my.cols(0, n_vars - n_q - 1) = y_in_p.cols(0, n_vars - n_q - 1) - mu_mat.cols(0, n_vars - n_q - 1);
   mu_long.rows(0, n_Lambda-1) = d1.tail_rows(n_Lambda) * Psi_i.t();
   mu_long.rows(n_Lambda, n_T+n_Lambda-1) = mu_mat;

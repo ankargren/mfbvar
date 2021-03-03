@@ -51,7 +51,7 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
                                "prior_S", "inv_prior_Pi_Omega", "Omega_Pi")
   }
   if (fsv || diffuse) {
-    prior_Pi_Omega <- mfbvar:::create_prior_Pi(lambda1 = lambda1,
+    priors <- mfbvar:::create_prior_Pi(lambda1 = lambda1,
                                                lambda2 = lambda2,
                                                lambda3 = lambda3,
                                                lambda4 = lambda4,
@@ -61,6 +61,7 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
                                                intercept = !ss,
                                                block_exo = block_exo,
                                                independent = TRUE)
+    mfbvar:::list_to_variables(priors, envir, "prior_Pi_mean", "prior_Pi_Omega")
   }
 
   # Initalize csv priors
@@ -124,12 +125,15 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
   ## STARTING VALUES FOR PARAMETERS
   add_args <- tryCatch(list(...), error = function(cond) list())
   init <- add_args$init
+  fixate <- add_args$fixate
   init_params <- mfbvar:::parameter_initialization(Y = Y, n_vars = n_vars,
                                                    n_lags = n_lags, n_T_ = n_T_,
                                                    init = init, n_fac = n_fac,
                                                    n_determ = n_determ,
                                                    n_sv = n_sv, fsv = fsv,
                                                    csv = csv, params)
+  init_fixate <- mfbvar:::fixate_initialization(fixate, params)
+  mfbvar:::list_to_variables(init_fixate, envir, paste0("fixate_", params))
 
   ##############################################################################
   ## INITIALIZATION OF STORAGE OBJECTS
@@ -154,7 +158,11 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
                            d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,bmu,Bmu,
                            a0idi,b0idi,a0fac,b0fac,Bsigma,B011inv,B022inv,priorh0,
                            armarestr,armatau2,n_fac,n_reps,n_burnin,n_q,T_b-n_lags-1,n_lags,
-                           n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,ssng)
+                           n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,ssng,
+                           fixate_Z, fixate_Pi, fixate_psi, fixate_phi_mu,
+                           fixate_lambda_mu, fixate_omega, fixate_mu,
+                           fixate_phi, fixate_sigma, fixate_f, fixate_facload,
+                           fixate_latent)
   }
 
   # minn/dl fsv

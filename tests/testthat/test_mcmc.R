@@ -83,7 +83,7 @@ test_that("Quarterly", {
 test_that("Monthly", {
   set.seed(10237)
   Y <- mfbvar::mf_sweden
-  prior_obj <- set_prior(Y = Y[, -5], freq = rep("m", 4),
+  prior_obj <- set_prior(Y = na.omit(Y[, -5]), freq = rep("m", 4),
                          n_lags = 4, n_burnin = 10, n_reps = 10)
 
   prior_intervals <- matrix(c( 6,   7,

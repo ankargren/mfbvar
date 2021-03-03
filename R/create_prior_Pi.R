@@ -25,6 +25,8 @@ create_prior_Pi <- function(lambda1, lambda2,  lambda3, lambda4, prior_Pi_AR1, Y
   n_vars <- length(prior_Pi_AR1)
   error_variance <- compute_error_variances(Y)
 
+  prior_Pi_mean <- rbind(diag(prior_Pi_AR1), matrix(0, nrow = n_vars*(n_lags-1), ncol = n_vars))
+
   if (independent) {
 
     prior_Pi_Omega <- matrix(0, n_vars * n_lags + 1, n_vars)
@@ -43,10 +45,9 @@ create_prior_Pi <- function(lambda1, lambda2,  lambda3, lambda4, prior_Pi_AR1, Y
 
     if (!intercept) prior_Pi_Omega <- prior_Pi_Omega[-1, ]
 
-    return(prior_Pi_Omega = prior_Pi_Omega^2)
+    return(list(prior_Pi_Omega = prior_Pi_Omega^2,
+                prior_Pi_mean = prior_Pi_mean))
   } else {
-
-    prior_Pi_mean <- rbind(diag(prior_Pi_AR1), matrix(0, nrow = n_vars*(n_lags-1), ncol = n_vars))
 
     prior_Pi_Omega <- rep(0, n_lags * n_vars)
 
