@@ -106,6 +106,9 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
     c0 <- 0
     c1 <- 0
     s <- 0
+    fixate_phi_mu <- FALSE
+    fixate_lambda_mu <- FALSE
+    fixate_omega <- FALSE
   }
 
   # Initialize dl priors
@@ -157,7 +160,7 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
                            Lambda_,prior_Pi_Omega,prior_Pi_AR1,D_mat,dt,d1,
                            d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,bmu,Bmu,
                            a0idi,b0idi,a0fac,b0fac,Bsigma,B011inv,B022inv,priorh0,
-                           armarestr,armatau2,n_fac,n_reps,n_burnin,n_q,T_b-n_lags-1,n_lags,
+                           armarestr,armatau2,n_fac,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,
                            n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,ssng,
                            fixate_Z, fixate_Pi, fixate_psi, fixate_phi_mu,
                            fixate_lambda_mu, fixate_omega, fixate_mu,
@@ -170,7 +173,7 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
     mfbvar:::mcmc_minn_fsv(Y[-(1:n_lags),],Pi,Z,Z_fcst,mu,phi,sigma,f,facload,latent,
                            aux,global,local,slice,Lambda_,prior_Pi_Omega,prior_Pi_AR1, Z_1,bmu,Bmu,
                            a0idi,b0idi,a0fac,b0fac,Bsigma,B011inv,B022inv,priorh0,
-                           armarestr,armatau2,n_fac,n_reps,n_burnin,n_q,T_b-n_lags-1,n_lags,
+                           armarestr,armatau2,n_fac,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,
                            n_vars,n_T_,n_fcst,n_thin,verbose,a,gig)
   }
 

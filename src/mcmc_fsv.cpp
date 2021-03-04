@@ -101,15 +101,7 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
   for (arma::uword i = 0; i < n_reps + n_burnin; ++i) {
     if (!single_freq)  {
       Sig_i = arma::exp(0.5 * armah.head_cols(n_vars));
-      try {
-        y_i = simsm_adaptive_univariate(y_in_p, Pi_i, Sig_i, Lambda_comp, Z_1, n_q, T_b, cc_i);
-      } catch(...) {
-        if (i == 0) {
-          y_i = Z.slice(0).rows(n_lags, n_T + n_lags - 1);
-        } else {
-          ::Rf_error("Error at iteration %i, simulation smoothing block.", i);
-        }
-      }
+      y_i = simsm_adaptive_univariate(y_in_p, Pi_i, Sig_i, Lambda_comp, Z_1, n_q, T_b, cc_i);
       Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
       X = create_X(Z_i, n_lags);
     }
@@ -336,8 +328,12 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
 
     if (!single_freq) {
       Sig_i = arma::exp(0.5 * armah.head_cols(n_vars));
-      mZ = simsm_adaptive_univariate(my, Pi_i0, Sig_i, Lambda_comp, mZ1, n_q, T_b, cc_i);
-      Z_i.rows(n_lags, n_T + n_lags - 1) = mZ + mu_mat;
+      if (!fixate_Z) {
+        mZ = simsm_adaptive_univariate(my, Pi_i0, Sig_i, Lambda_comp, mZ1, n_q, T_b, cc_i);
+        Z_i.rows(n_lags, n_T + n_lags - 1) = mZ + mu_mat;
+      } else {
+        mZ = Z_i - mu_mat;
+      }
     }
     Z_i_demean.rows(0, n_lags - 1) = mZ1;
     Z_i_demean.rows(n_lags, n_T + n_lags - 1) = mZ;
@@ -349,9 +345,12 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
     curpara_old = curpara_arma;
     armafacload_old = armafacload;
     armaf_old = armaf;
-    update_fsv(armafacload, armaf, armah, armah0, curpara, armatau2, y_hat.t(),
-               bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv,
-               priorh0, armarestr);
+    if (fixate_mu && fixate_phi && fixate_sigma && fixate_f && fixate_facload && fixate_latent) {
+      update_fsv(armafacload, armaf, armah, armah0, curpara, armatau2, y_hat.t(),
+                 bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv,
+                 priorh0, armarestr);
+
+    }
 
     if ((i+1) % n_thin == 0 && i>= n_burnin) {
       mu_i = curpara_old.row(0).t();
@@ -397,66 +396,72 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
     bool stationarity_check = false;
     int num_try = 0, iter = 0;
     double root = 1000;
-    while (stationarity_check == false) {
-      iter += 1;
-      eps.imbue(norm_rand);
-      arma::mat output(n_vars*n_lags, n_vars);
-      if (rue) {
-        Pi_parallel_rue Pi_parallel_i(output, latent_nofac, mX, prior_Pi_Omega, eps,
-                                      armah, prior_Pi_AR1, n_T, n_vars, n_lags);
-        RcppParallel::parallelFor(0, n_vars, Pi_parallel_i);
-      } else {
-        Pi_parallel_bcm Pi_parallel_i(output, latent_nofac, mX, prior_Pi_Omega, eps,
-                                      armah, n_T, n_vars, n_lags);
-        RcppParallel::parallelFor(0, n_vars, Pi_parallel_i);
-      }
-      Pi_i = output.t();
-      if (check_roots) {
-        Pi_comp.rows(0, n_vars-1) = Pi_i;
-        root = max_eig_cpp(Pi_comp);
-      } else {
-        root = 0.0;
-      }
-      if (root < 1.0) {
-        stationarity_check = true;
-        num_try = iter;
-      }
-      if (iter == 1000) {
-        Rcpp::stop("Attemped to draw stationary Pi 1,000 times.");
+    if (!fixate_Pi) {
+      while (stationarity_check == false) {
+        iter += 1;
+        eps.imbue(norm_rand);
+        arma::mat output(n_vars*n_lags, n_vars);
+        if (rue) {
+          Pi_parallel_rue Pi_parallel_i(output, latent_nofac, mX, prior_Pi_Omega, eps,
+                                        armah, prior_Pi_AR1, n_T, n_vars, n_lags);
+          RcppParallel::parallelFor(0, n_vars, Pi_parallel_i);
+        } else {
+          Pi_parallel_bcm Pi_parallel_i(output, latent_nofac, mX, prior_Pi_Omega, eps,
+                                        armah, n_T, n_vars, n_lags);
+          RcppParallel::parallelFor(0, n_vars, Pi_parallel_i);
+        }
+        Pi_i = output.t();
+        if (check_roots) {
+          Pi_comp.rows(0, n_vars-1) = Pi_i;
+          root = max_eig_cpp(Pi_comp);
+        } else {
+          root = 0.0;
+        }
+        if (root < 1.0) {
+          stationarity_check = true;
+          num_try = iter;
+        }
+        if (iter == 1000) {
+          Rcpp::stop("Attemped to draw stationary Pi 1,000 times.");
+        }
       }
     }
 
-    if (ssng) {
-      update_ng(phi_mu_i, lambda_mu_i, omega_i, nm, c0, c1, s, psi_i, prior_psi_mean, accept);
-      if (adaptive_mh) {
-        stats(accept);
-        if (i % 100 == 0) {
-          batch += 1.0;
-          min_vec(1) = std::pow(batch, -0.5);
-          if (stats.mean() > 0.44) {
-            s_prop = std::log(s) + arma::min(min_vec);
-            if (s_prop < M){
-              s = std::exp(s_prop);
-            }
-          } else {
-            s_prop = std::log(s) - arma::min(min_vec);
-            if (s_prop > -M){
-              s = std::exp(s_prop);
-            }
-          }
-          stats.reset();
-        }
-      }
 
-      inv_prior_psi_Omega = arma::diagmat(1/omega_i);
-      inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
+    if (ssng) {
+      if (!(fixate_phi_mu && fixate_lambda_mu && fixate_omega)) {
+        update_ng(phi_mu_i, lambda_mu_i, omega_i, nm, c0, c1, s, psi_i, prior_psi_mean, accept);
+        if (adaptive_mh) {
+          stats(accept);
+          if (i % 100 == 0) {
+            batch += 1.0;
+            min_vec(1) = std::pow(batch, -0.5);
+            if (stats.mean() > 0.44) {
+              s_prop = std::log(s) + arma::min(min_vec);
+              if (s_prop < M){
+                s = std::exp(s_prop);
+              }
+            } else {
+              s_prop = std::log(s) - arma::min(min_vec);
+              if (s_prop > -M){
+                s = std::exp(s_prop);
+              }
+            }
+            stats.reset();
+          }
+        }
+        inv_prior_psi_Omega = arma::diagmat(1/omega_i);
+        inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
+      }
     }
 
     X = create_X_noint(Z_i, n_lags);
-    posterior_psi_fsv(psi_i, mu_mat, Pi_i, D_mat, arma::exp(idivar),
-                      inv_prior_psi_Omega, Z_i.rows(n_lags, n_T + n_lags - 1), X,
-                      armafacload, armaf, inv_prior_psi_Omega_mean,
-                      dt, n_determ, n_vars, n_lags);
+    if (!fixate_psi) {
+      posterior_psi_fsv(psi_i, mu_mat, Pi_i, D_mat, arma::exp(idivar),
+                        inv_prior_psi_Omega, Z_i.rows(n_lags, n_T + n_lags - 1), X,
+                        armafacload, armaf, inv_prior_psi_Omega_mean,
+                        dt, n_determ, n_vars, n_lags);
+    }
 
 
     if (verbose) {

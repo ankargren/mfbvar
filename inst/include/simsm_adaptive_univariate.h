@@ -134,8 +134,6 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
   a.row(0) = a_t;
   P_cmpct.slice(0) = P_t;
   for (arma::uword t = 0; t < T_b; t++) {
-    Rcpp::Rcout << t << std::endl;
-
     prepare_filtering_t(obs_vars, t_vec, X, W, c, d, t, y, Z1, Phi_mm, Beta_W,
                         n_m, n_q, n_lags);
 
@@ -146,6 +144,7 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
 
     n_obs = obs_vars.n_elem;
     for (arma::uword i = 0; i < n_obs; i++) {
+
       v_t = y(t, obs_vars(i)) - a_t * Z.row(obs_vars(i)).t() - c.col(obs_vars(i)) - intercept.col(obs_vars(i));
       F_t = (Z.row(obs_vars(i)) * P_t) * Z.row(obs_vars(i)).t();
       if (i < n_m) {
@@ -194,6 +193,7 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
   ///////////////////////////////////////////////
   //                ADAPTIVE                   //
   ///////////////////////////////////////////////
+
   arma::field<arma::mat> a_tt_out(n_T-T_b, 1);
   arma::field<arma::mat> L_store(n_T-T_b, 1);
   arma::field<arma::mat> N_store(n_T-T_b, 1);
@@ -211,9 +211,7 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
 
   arma::mat a_tt_out2;
 
-  Rcpp::Rcout << "adaptive" << std::endl;
   if (T_b < n_T) {
-    Rcpp::Rcout << "update missing" << std::endl;
     update_missing(y_t, obs_vars, obs_q, n_ovars, n_oq, obs_m, n_om, non_obs_m, obs_m2,
                    n_om2, non_obs_m2, y_tpt, y_tpt2, T_b, y_, n_vars, n_m, n_lags);
 
@@ -222,16 +220,13 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
     a_tt = a_tt_compact.row(T_b-1);
     a_tt_out2 = a_tt;
 
-    Rcpp::Rcout << "create phi" << std::endl;
     Phi_uom = create_Phi_uom(Phi, n_vars, n_q, n_m, n_om, n_om2, n_lags, non_obs_m, obs_m2);
     Phi_uu = create_Phi_uu(Phi, n_vars, n_q, n_m, n_om, n_om2, n_lags, non_obs_m, non_obs_m2);
 
-    Rcpp::Rcout << "create tt d" << std::endl;
     // Update Tt
     create_Tt_d(Tt, d, Phi_uu, T_b-1, y_, n_m, n_q, n_om,
                 n_om2, n_lags, obs_m2, non_obs_m, y_tpt2, Phi_uom);
 
-    Rcpp::Rcout << "a P" << std::endl;
     a_t = a_tt * Tt.t() + d;
     f_t = f.row(T_b);
     a_t.cols(0, n_m - n_om - 1) += f_t.cols(non_obs_m);
@@ -245,13 +240,13 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
     for (arma::uword i = n_m - n_om; i < n_m - n_om + n_q; i++) {
       P_t(i,i) += std::pow(Sigma(T_b, i+n_om), 2.0);
     }
+
     store_a(a_y, a_t, T_b, non_obs_m, n_m, n_om, n_q);
 
     Tt_out(0,0) = Tt;
 
     for (arma::uword t = T_b; t < n_T; t++) {
 
-      Rcpp::Rcout << t << "/" << n_T-1 << std::endl;
       t_vec(0) = t;
 
       X = arma::mat(1, n_om*n_lags, arma::fill::ones);
@@ -340,7 +335,6 @@ inline arma::mat simsm_adaptive_univariate(arma::mat y_, arma::mat Phi, arma::ma
 
   arma::field<arma::mat> r_out(T_b, 1);
 
-  Rcpp::Rcout << "smoothing" << std::endl;
   arma::mat r = adaptive_to_compact_smoothing(a_tT_y, a_tt_y, a_tt, a_tt_compact, a_tt_out,
                                               N_store, L_store, ZFv, y_, a_t1, P_t1, n_vars,
                                               n_m, n_q, n_T, T_b, n_lags, n_om);
