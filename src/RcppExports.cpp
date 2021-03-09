@@ -539,13 +539,13 @@ BEGIN_RCPP
 END_RCPP
 }
 // variances_csv
-void variances_csv(arma::cube& variances, const arma::cube& Sigma, const arma::mat& f, arma::uword n_T, arma::uword n_reps, arma::uvec variables_num);
+void variances_csv(arma::cube& variances, const arma::cube& Sigma, const arma::cube& f, arma::uword n_T, arma::uword n_reps, arma::uvec variables_num);
 RcppExport SEXP _mfbvar_variances_csv(SEXP variancesSEXP, SEXP SigmaSEXP, SEXP fSEXP, SEXP n_TSEXP, SEXP n_repsSEXP, SEXP variables_numSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::cube& >::type variances(variancesSEXP);
     Rcpp::traits::input_parameter< const arma::cube& >::type Sigma(SigmaSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type f(fSEXP);
+    Rcpp::traits::input_parameter< const arma::cube& >::type f(fSEXP);
     Rcpp::traits::input_parameter< arma::uword >::type n_T(n_TSEXP);
     Rcpp::traits::input_parameter< arma::uword >::type n_reps(n_repsSEXP);
     Rcpp::traits::input_parameter< arma::uvec >::type variables_num(variables_numSEXP);

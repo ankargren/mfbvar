@@ -35,9 +35,9 @@ mcmc_sampler.mfbvar_dl_diffuse <- function(x, ...){
 
 mcmc_sampler.mfbvar_ss_diffuse <- function(x, ...){
 
-  required_params <- c("Y", "n_lags", "n_burnin", "n_reps", "prior_psi_mean",
+  required_params <- c("Y", "d", "n_lags", "n_burnin", "n_reps", "prior_psi_mean",
                        "prior_psi_Omega")
-  prior_params <- c("Y", "freq", "verbose", "check_roots", "n_lags", "n_fcst",
+  prior_params <- c("Y", "d_fcst", "freq", "verbose", "check_roots", "n_lags", "n_fcst",
                     "n_reps", "n_burnin", "n_thin", "freqs", "Lambda_",
                     "lambda1", "lambda2", "lambda3", "prior_Pi_AR1",
                     "block_exo")
@@ -53,9 +53,9 @@ mcmc_sampler.mfbvar_ss_diffuse <- function(x, ...){
 
 mcmc_sampler.mfbvar_ssng_diffuse <- function(x, ...){
 
-  required_params <- c("Y", "n_lags", "n_burnin", "n_reps", "prior_psi_mean",
+  required_params <- c("Y", "d", "n_lags", "n_burnin", "n_reps", "prior_psi_mean",
                        "prior_psi_Omega")
-  prior_params <- c("Y", "freq", "verbose", "check_roots", "n_lags", "n_fcst",
+  prior_params <- c("Y", "d_fcst", "freq", "verbose", "check_roots", "n_lags", "n_fcst",
                     "n_reps", "n_burnin", "n_thin", "freqs", "Lambda_",
                     "lambda1", "lambda2", "lambda3", "prior_Pi_AR1",
                     "block_exo", "prior_ng", "s")

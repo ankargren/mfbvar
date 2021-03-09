@@ -23,7 +23,6 @@ void mcmc_minn_diffuse(const arma::mat & y_in_p,
     single_freq = false;
   }
 
-
   Progress p(n_reps + n_burnin, verbose);
   arma::vec Pi_vec = arma::vec(Pi.begin(), n_vars*(n_vars*n_lags+1));
   arma::mat Pi_i = Pi.slice(0); //arma::mat(Pi_vec.begin(), n_vars, n_vars*n_lags + 1, false, true);
@@ -73,6 +72,7 @@ void mcmc_minn_diffuse(const arma::mat & y_in_p,
     post_Pi_Omega_inv = arma::kron(Sigma_inv, X.t() * X);
     post_Pi_Omega_inv.diag() += prior_Pi_Omega_vec_inv;
     L = arma::chol(post_Pi_Omega_inv, "lower");
+
     b = arma::vectorise(X.t() * y_i * Sigma_inv) + Omega_Pi;
     u1 = arma::solve(arma::trimatl(L), b);
     u2 = arma::solve(arma::trimatu(L.t()), u1);
@@ -80,7 +80,8 @@ void mcmc_minn_diffuse(const arma::mat & y_in_p,
     u4 = arma::solve(arma::trimatu(L.t()), u3);
     Pi_vec = u2 + u4;
     Pi_i = arma::trans(arma::reshape(Pi_vec, n_vars*n_lags+1, n_vars));
-    resid = y_i - X * Pi_i.t(); // Pi_vec and Pi_i use the same memory
+    resid = y_i - X * Pi_i.t();
+
     // Sigma
     post_S = resid.t() * resid;
     Sigma_i = rinvwish(n_T, post_S);

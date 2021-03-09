@@ -51,7 +51,7 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
                                "prior_S", "inv_prior_Pi_Omega", "Omega_Pi")
   }
   if (fsv || diffuse) {
-    priors <- mfbvar:::create_prior_Pi(lambda1 = lambda1,
+    priors <- create_prior_Pi(lambda1 = lambda1,
                                                lambda2 = lambda2,
                                                lambda3 = lambda3,
                                                lambda4 = lambda4,
@@ -207,7 +207,7 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
 
   # minn diffuse
   if (!ss && diffuse) {
-    mcmc_minn_diffuse(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,aux,global,local,slice,Lambda_,prior_Pi_Omega,
+    mfbvar:::mcmc_minn_diffuse(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,aux,global,local,slice,Lambda_,prior_Pi_Omega,
                       c(prior_Pi_mean),Z_1,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,
                       n_thin,verbose,a,gig)
   }

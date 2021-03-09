@@ -26,6 +26,9 @@ create_prior_Pi <- function(lambda1, lambda2,  lambda3, lambda4, prior_Pi_AR1, Y
   error_variance <- compute_error_variances(Y)
 
   prior_Pi_mean <- rbind(diag(prior_Pi_AR1), matrix(0, nrow = n_vars*(n_lags-1), ncol = n_vars))
+  if (intercept) {
+    prior_Pi_mean <- rbind(0, prior_Pi_mean)
+  }
 
   if (independent) {
 
