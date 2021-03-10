@@ -110,7 +110,8 @@ parameter_initialization <- function(Y, n_vars, n_lags, n_T_, init,
   init_required <- parameters[!init_available]
 
   if (any(init_available)) {
-    list_to_variables(init, parent.frame(), paste0("init_", parameters)[init_available])
+    init_envir <- environment()
+    list_to_variables(init, init_envir, parameters[init_available])
   }
 
   for (i in seq_along(init_required)) {
@@ -136,10 +137,10 @@ parameter_initialization <- function(Y, n_vars, n_lags, n_T_, init,
                       local = rep(0.1, n_vars^2 * n_lags),
                       slice =  rep(1, n_vars^2 * n_lags)
     )
-    assign(paste0("init_", init_required[i]), initval)
+    assign(init_required[i], initval)
   }
 
-  return(mget(paste0("init_", parameters)))
+  return(mget(parameters))
 }
 
 storage_initialization <- function(init_params, params, envir, n_vars, n_lags,
@@ -148,7 +149,7 @@ storage_initialization <- function(init_params, params, envir, n_vars, n_lags,
   steady_state <- "psi" %in% params
 
   for (i in seq_along(params)) {
-    initval <- init_params[[paste0("init_", params[i])]]
+    initval <- init_params[[params[i]]]
     assign(params[i],
            switch(params[i],
     Pi = array(initval, dim = c(n_vars, n_vars*n_lags+!steady_state, n_reps/n_thin)),

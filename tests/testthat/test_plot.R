@@ -120,6 +120,10 @@ test_that("varplot", {
   set.seed(10)
   mod_ss <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss", Y = Y, variance = "fsv")
   expect_error(varplot(mod_ss, variables = 1), NA)
+
+  set.seed(10)
+  mod_ss <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "ss", Y = Y, variance = "csv")
+  expect_error(varplot(mod_ss, variables = 1), NA)
 })
 
 test_that("Weekly-Monthly plots", {

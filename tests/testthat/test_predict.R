@@ -63,7 +63,7 @@ test_that("Forecasts (monthly)", {
   set.seed(10237)
   Y <- mfbvar::mf_sweden
   rownames(Y) <- as.character(lubridate::floor_date(lubridate::ymd(rownames(Y)), unit = "months"))
-  prior_obj <- set_prior(Y = Y[, -5], freq = rep("m", 4),
+  prior_obj <- set_prior(Y = na.omit(Y[, -5]), freq = rep("m", 4),
                          n_lags = 4, n_burnin = 10, n_reps = 10)
 
   prior_intervals <- matrix(c( 6,   7,
@@ -108,7 +108,7 @@ test_that("Forecasts (quarterly)", {
   set.seed(10237)
   Y <- mfbvar::mf_sweden
   rownames(Y) <- as.character(lubridate::floor_date(lubridate::ymd(rownames(Y)), unit = "months"))
-  prior_obj <- set_prior(Y = Y[seq(2, nrow(Y), by = 3), ], freq = rep("q", 5),
+  prior_obj <- set_prior(Y = na.omit(Y[seq(2, nrow(Y), by = 3), ]), freq = rep("q", 5),
                          n_lags = 4, n_burnin = 10, n_reps = 10)
 
   prior_intervals <- matrix(c( 6,   7,

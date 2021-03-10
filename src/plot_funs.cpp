@@ -23,7 +23,7 @@ void variances_csv(arma::cube & variances, const arma::cube & Sigma, const arma:
   for (arma::uword i = 0; i < n_T; ++i) {
     for (arma::uword j = 0; j < n_reps; ++j) {
       Sigma_i = Sigma.slice(j).diag();
-      variances.slice(j).row(i) = std::exp(0.5 * f(j, 1, i)) * arma::sqrt(Sigma_i.rows(variables_num-1).t());
+      variances.slice(j).row(i) = std::exp(0.5 * f(i, 1, j)) * arma::sqrt(Sigma_i.rows(variables_num-1).t());
     }
   }
 }

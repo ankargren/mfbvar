@@ -37,7 +37,7 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
   ## PRIOR-SPECIFIC INITIALIZATIONS
 
   if (iw || csv) {
-    priors <- mfbvar:::create_prior_Pi(lambda1 = lambda1,
+    priors <- create_prior_Pi(lambda1 = lambda1,
                                        lambda2 = NULL,
                                        lambda3 = lambda3,
                                        lambda4 = ifelse(!ss, lambda4, NULL),
@@ -186,7 +186,7 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
 
   # minn iw
   if (!ss && iw) {
-    mcmc_minn_iw(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,
+    mfbvar:::mcmc_minn_iw(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,
             Omega_Pi,prior_Pi_mean,prior_S,Z_1,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,
             n_thin,verbose,2)
   }
@@ -219,6 +219,7 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
   ## RETURN OBJECTS AND POST-PROCESSING
 
   return_obj <- mget(c(params, prior_params, retrieved_params))
+  return_obj$add_args <- add_args
 
   if (check_roots == TRUE) {
     return_obj$roots <- roots

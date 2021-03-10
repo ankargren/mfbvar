@@ -811,7 +811,7 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
   class(mfbvar_prior) <- c(sprintf("mfbvar_%s_%s", prior, variance), sprintf("mfbvar_%s", prior), sprintf("mfbvar_%s", variance), class(mfbvar_prior))
 
   time_out <- c(time_out, Sys.time())
-  main_run <-  mfbvar:::mcmc_sampler(mfbvar_prior)
+  main_run <-  mfbvar:::mcmc_sampler(mfbvar_prior, ...)
   time_out <- c(time_out, Sys.time())
   if (mfbvar_prior$verbose) {
     time_diff <- Sys.time() - time_out[1]
@@ -1264,10 +1264,10 @@ varplot <- function(x, variables = colnames(x$Y), var_bands = 0.95, nrow_facet =
   }
   if (sv_type == "fsv") {
     n_fac <- x$mfbvar_prior$n_fac
-    variances_fsv(variances, x$h, x$facload, variables_num, n_fac, n_reps, n_T, n_vars, n_plotvars)
+    variances_fsv(variances, x$latent, x$facload, variables_num, n_fac, n_reps, n_T, n_vars, n_plotvars)
   }
   if (sv_type == "csv") {
-    variances_csv(variances, x$Sigma, x$f, n_T, n_reps, variables_num)
+    variances_csv(variances, x$Sigma, x$latent, n_T, n_reps, variables_num)
   }
 
   date <- tryCatch(as.Date(rownames(x$Y)), error = function(cond) cond)
