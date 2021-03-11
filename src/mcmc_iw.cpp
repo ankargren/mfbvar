@@ -12,7 +12,8 @@ void mcmc_minn_iw(const arma::mat & y_in_p,
                   arma::uword n_reps, arma::uword n_burnin,
                   arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars,
                   arma::uword n_T, arma::uword n_fcst,
-                  arma::uword n_thin, bool verbose, int prior_nu) {
+                  arma::uword n_thin, bool verbose, int prior_nu,
+                  bool fixate_Pi, bool fixate_Sigma, bool fixate_Z) {
   bool single_freq;
   if (n_q == 0 || n_q == n_vars) {
     single_freq = true;
@@ -28,9 +29,8 @@ void mcmc_minn_iw(const arma::mat & y_in_p,
   arma::vec errors = arma::vec(n_vars);
   arma::mat X, XX, XX_inv, Pi_sample, post_Pi_Omega, post_Pi;
   arma::mat S, Pi_diff, post_S, Sigma_chol, x;
-  arma::mat Z_i = arma::mat(n_lags + y_in_p.n_rows, n_vars, arma::fill::zeros);
+  arma::mat Z_i = Z.slice(0);
   arma::mat Z_fcst_i = arma::mat(n_vars, n_lags + n_fcst);
-  Z_i.rows(0, n_lags - 1) = Z_1;
   int post_nu = n_T + n_vars + prior_nu;
 
   if (single_freq) {
@@ -50,8 +50,10 @@ void mcmc_minn_iw(const arma::mat & y_in_p,
 
   for (arma::uword i = 0; i < n_reps + n_burnin; ++i) {
     if (!single_freq) {
-      y_i = simsm_adaptive_cv(y_in_p, Pi_i, Sigma_chol, Lambda_comp, Z_1, n_q, T_b);
-      Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
+      if (!fixate_Z) {
+        y_i = simsm_adaptive_cv(y_in_p, Pi_i, Sigma_chol, Lambda_comp, Z_1, n_q, T_b);
+        Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
+      }
       X = create_X(Z_i, n_lags);
       XX = X.t() * X;
       XX_inv = arma::inv_sympd(XX);
@@ -62,9 +64,13 @@ void mcmc_minn_iw(const arma::mat & y_in_p,
       Pi_diff = prior_Pi_mean - Pi_sample;
       post_S = prior_S + S + Pi_diff.t() * arma::inv_sympd(prior_Pi_Omega + XX_inv) * Pi_diff;
     }
-    Sigma_i = rinvwish(post_nu, post_S);
+    if (!fixate_Sigma) {
+      Sigma_i = rinvwish(post_nu, post_S);
+    }
     Sigma_chol = arma::chol(Sigma_i, "lower");
-    Pi_i = rmatn(post_Pi.t(), post_Pi_Omega, Sigma_i);
+    if (!fixate_Pi) {
+      Pi_i = rmatn(post_Pi.t(), post_Pi_Omega, Sigma_i);
+    }
 
     if ((i+1) % n_thin == 0 && i >= n_burnin) {
       if (n_fcst > 0) {
