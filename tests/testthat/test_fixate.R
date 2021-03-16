@@ -52,7 +52,7 @@ test_that("IW", {
 
   # Initial steady state
   set.seed(10)
-  mod2 <- estimate_mfbvar(prior_obj, "minn", "iw",
+  mod2 <- estimate_mfbvar(prior_obj, "ss", "iw",
                           init = list(psi = mod$psi[,,10]),
                           fixate = list(psi = TRUE))
   expect_equal(mod$psi[,,10], mod2$psi[,,1])
