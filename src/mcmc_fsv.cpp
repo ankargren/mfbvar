@@ -260,11 +260,6 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
     eps = arma::mat(n_vars*n_lags, n_vars);
   }
 
-
-
-
-  // ss
-
   arma::mat mu_mat, mZ, mZ1, mX;
   arma::mat my = arma::mat(arma::size(y_in_p), arma::fill::zeros);
   arma::mat Z_i_demean = arma::mat(n_lags + y_in_p.n_rows, n_vars, arma::fill::zeros);
@@ -284,16 +279,11 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
 
   // ssng
   arma::uword nm = n_vars*n_determ;
-  double lambda_mu_i, phi_mu_i, accept, s_prop, M, batch;
-  bool adaptive_mh;
+  double lambda_mu_i, phi_mu_i, accept = 0.0, M;
+  bool adaptive_mh = false;
   if (ssng) {
     lambda_mu_i = arma::as_scalar(lambda_mu.slice(0));
     phi_mu_i = arma::as_scalar(phi_mu.slice(0));
-    accept = 0.0;
-    batch = 1.0;
-
-    adaptive_mh = false;
-
     if (s < 0) {
       M = std::abs(s);
       s = 1.0;
@@ -305,9 +295,6 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
   arma::mat inv_prior_psi_Omega = arma::diagmat(1/omega_i);
   arma::vec inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
   arma::running_stat<double> stats;
-
-  arma::vec min_vec(2);
-  min_vec(0) = 0.01;
 
   if (single_freq) {
     Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
@@ -432,23 +419,7 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
       if (!(fixate_phi_mu && fixate_lambda_mu && fixate_omega)) {
         update_ng(phi_mu_i, lambda_mu_i, omega_i, nm, c0, c1, s, psi_i, prior_psi_mean, accept);
         if (adaptive_mh) {
-          stats(accept);
-          if (i % 100 == 0) {
-            batch += 1.0;
-            min_vec(1) = std::pow(batch, -0.5);
-            if (stats.mean() > 0.44) {
-              s_prop = std::log(s) + arma::min(min_vec);
-              if (s_prop < M){
-                s = std::exp(s_prop);
-              }
-            } else {
-              s_prop = std::log(s) - arma::min(min_vec);
-              if (s_prop > -M){
-                s = std::exp(s_prop);
-              }
-            }
-            stats.reset();
-          }
+          update_s(s, stats, accept, i, M);
         }
         inv_prior_psi_Omega = arma::diagmat(1/omega_i);
         inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;

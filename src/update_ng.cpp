@@ -50,3 +50,32 @@ void update_ng(double & phi_mu, double & lambda_mu, arma::vec & omega, arma::uwo
     accept = 0.0;
   }
 }
+
+void update_s(double & s,
+                arma::running_stat<double> & stats,
+                double accept,
+                arma::uword i,
+                double M) {
+  double s_prop;
+  arma::vec min_vec(2);
+  min_vec(0) = 0.01;
+  double batch;
+  double target = 0.44;
+  stats(accept);
+  if (i % 100 == 0) {
+    batch = i/100;
+    min_vec(1) = std::pow(batch, -0.5);
+    if (stats.mean() > target) {
+      s_prop = log(s) + arma::min(min_vec);
+      if (s_prop < M){
+        s = std::exp(s_prop);
+      }
+    } else {
+      s_prop = log(s) - arma::min(min_vec);
+      if (s_prop > -M){
+        s = std::exp(s_prop);
+      }
+    }
+    stats.reset();
+  }
+}
