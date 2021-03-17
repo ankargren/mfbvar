@@ -12,7 +12,11 @@ void update_csv(
     const double phi_invvar,
     const double phi_meaninvvar,
     const double prior_sigma2,
-    const double prior_df);
+    const double prior_df,
+    bool fixate_latent,
+    bool fixate_latent0,
+    bool fixate_phi,
+    bool fixate_sigma);
 
 #endif
 

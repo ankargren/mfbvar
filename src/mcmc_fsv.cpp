@@ -22,7 +22,8 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
                    arma::uword n_fac, arma::uword n_reps, arma::uword n_burnin,
                    arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars,
                    arma::uword n_T, arma::uword n_fcst, arma::uword n_thin, bool verbose,
-                   const double a, bool gig) {
+                   const double a, bool gig, bool fixate_aux, bool fixate_global,
+                   bool fixate_local) {
   bool single_freq;
   if (n_q == 0 || n_q == n_vars) {
     single_freq = true;
@@ -77,7 +78,7 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
   }
 
   if (single_freq) {
-    Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
+    Z_i.rows(n_lags, n_T + n_lags - 1) = y_in_p;
     X = create_X(Z_i, n_lags);
   }
 
@@ -170,7 +171,9 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
     Pi_i = output.t();
 
     if (dl) {
-      update_dl(prior_Pi_Omega, aux_i, local_i, global_i, Pi_i.t(), n_vars, n_lags, a, slice_i, gig, true);
+      update_dl(prior_Pi_Omega, aux_i, local_i, global_i, Pi_i.t(), n_vars,
+                n_lags, a, slice_i, fixate_aux, fixate_global, fixate_local,
+                gig, true);
     }
 
     if (verbose) {
@@ -297,7 +300,7 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
   arma::running_stat<double> stats;
 
   if (single_freq) {
-    Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
+    Z_i.rows(n_lags, n_T + n_lags - 1) = y_in_p;
   }
 
   arma::mat curpara_old, armafacload_old, armaf_old;
@@ -416,14 +419,14 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
 
 
     if (ssng) {
-      if (!(fixate_phi_mu && fixate_lambda_mu && fixate_omega)) {
-        update_ng(phi_mu_i, lambda_mu_i, omega_i, nm, c0, c1, s, psi_i, prior_psi_mean, accept);
-        if (adaptive_mh) {
-          update_s(s, stats, accept, i, M);
-        }
-        inv_prior_psi_Omega = arma::diagmat(1/omega_i);
-        inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
+      update_ng(phi_mu_i, lambda_mu_i, omega_i, nm, c0, c1, s, psi_i,
+                prior_psi_mean, accept, fixate_phi_mu, fixate_lambda_mu,
+                fixate_omega);
+      if (adaptive_mh) {
+        update_s(s, stats, accept, i, M);
       }
+      inv_prior_psi_Omega = arma::diagmat(1/omega_i);
+      inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
     }
 
     X = create_X_noint(Z_i, n_lags);

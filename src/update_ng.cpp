@@ -10,9 +10,11 @@ double posterior_phi_mu(const double lambda, const double phi_mu, const arma::ve
   return log_prob;
 }
 
-void update_ng(double & phi_mu, double & lambda_mu, arma::vec & omega, arma::uword nm,
-               const double c0, const double c1, double s,
-               const arma::vec & psi_i, const arma::vec & prior_psi_mean, double & accept) {
+void update_ng(double & phi_mu, double & lambda_mu, arma::vec & omega,
+               arma::uword nm, const double c0, const double c1, double s,
+               const arma::vec & psi_i, const arma::vec & prior_psi_mean,
+               double & accept, bool fixate_phi_mu, bool fixate_lambda_mu,
+               bool fixate_omega) {
   // phi_mu: the shrinkage parameter phi_mu
   // lambda_mu: the shrinkage parameter lambda_mu
   // omega: the idiosyncratic shrinkage parameters omega
@@ -32,22 +34,28 @@ void update_ng(double & phi_mu, double & lambda_mu, arma::vec & omega, arma::uwo
   arma::vec gig_chi = arma::pow(psi_i-prior_psi_mean, 2.0);
   double gig_psi = lambda_mu * phi_mu;
 
-  for (arma::uword i = 0; i < nm; ++i) {
-    //omega(i) = do_rgig1(gig_lambda, gig_chi, gig_psi(i));
-    omega(i) = do_rgig1(gig_lambda, gig_chi(i), gig_psi);
+  if (!fixate_omega) {
+    for (arma::uword i = 0; i < nm; ++i) {
+      //omega(i) = do_rgig1(gig_lambda, gig_chi, gig_psi(i));
+      omega(i) = do_rgig1(gig_lambda, gig_chi(i), gig_psi);
+    }
   }
   // Update lambda
-  lambda_mu = R::rgamma((double)nm * phi_mu + c0, 1.0/(0.5 * phi_mu * arma::accu(omega) + c1));
+  if (!fixate_lambda_mu) {
+    lambda_mu = R::rgamma((double)nm * phi_mu + c0, 1.0/(0.5 * phi_mu * arma::accu(omega) + c1));
+  }
 
   // Update phi
-  double phi_mu_proposal = phi_mu * std::exp(R::rnorm(0.0, s));
-  double prob = exp(posterior_phi_mu(lambda_mu, phi_mu_proposal, omega, nm)-posterior_phi_mu(lambda_mu, phi_mu, omega, nm))*phi_mu_proposal/phi_mu;
-  double u = R::runif(0.0, 1.0);
-  if (u < prob) {
-    phi_mu = phi_mu_proposal;
-    accept = 1.0;
-  } else {
-    accept = 0.0;
+  if (!fixate_phi_mu) {
+    double phi_mu_proposal = phi_mu * std::exp(R::rnorm(0.0, s));
+    double prob = exp(posterior_phi_mu(lambda_mu, phi_mu_proposal, omega, nm)-posterior_phi_mu(lambda_mu, phi_mu, omega, nm))*phi_mu_proposal/phi_mu;
+    double u = R::runif(0.0, 1.0);
+    if (u < prob) {
+      phi_mu = phi_mu_proposal;
+      accept = 1.0;
+    } else {
+      accept = 0.0;
+    }
   }
 }
 

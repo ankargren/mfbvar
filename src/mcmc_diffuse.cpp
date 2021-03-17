@@ -9,13 +9,15 @@ void mcmc_minn_diffuse(const arma::mat & y_in_p,
                   arma::cube& aux, arma::cube& global, arma::cube& local,
                   arma::cube& slice,
                   const arma::mat& Lambda_comp, arma::mat prior_Pi_Omega,
-                  arma::vec prior_Pi_mean_vec,
+                  arma::vec prior_Pi_mean_vec, bool check_roots,
                   const arma::mat& Z_1,
                   arma::uword n_reps, arma::uword n_burnin,
                   arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars,
                   arma::uword n_T, arma::uword n_fcst,
                   arma::uword n_thin, bool verbose,
-                  const double a, bool gig) {
+                  const double a, bool gig,
+                  bool fixate_Pi, bool fixate_Sigma, bool fixate_Z,
+                  bool fixate_aux, bool fixate_global, bool fixate_local) {
   bool single_freq;
   if (n_q == 0 || n_q == n_vars) {
     single_freq = true;
@@ -27,17 +29,21 @@ void mcmc_minn_diffuse(const arma::mat & y_in_p,
   arma::vec Pi_vec = arma::vec(Pi.begin(), n_vars*(n_vars*n_lags+1));
   arma::mat Pi_i = Pi.slice(0); //arma::mat(Pi_vec.begin(), n_vars, n_vars*n_lags + 1, false, true);
   arma::mat Sigma_i = Sigma.slice(0);
-  arma::mat y_i = y_in_p;
+  arma::mat y_i = Z.slice(0).rows(n_lags, n_T + n_lags - 1);
+  arma::mat Z_i = Z.slice(0);
   arma::vec errors = arma::vec(n_vars);
   arma::mat X, post_Pi_Omega_inv, L, b, u1, u2, u4, resid, x;
   arma::mat u3 = arma::vec(n_vars*(n_vars*n_lags + 1));
   arma::mat post_S, Sigma_chol, Sigma_inv;
-  arma::mat Z_i = arma::mat(n_lags + y_in_p.n_rows, n_vars, arma::fill::zeros);
   arma::mat Z_fcst_i = arma::mat(n_vars, n_lags + n_fcst);
   Z_i.rows(0, n_lags - 1) = Z_1;
 
   if (single_freq) {
-    Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
+    y_i = y_in_p;
+  }
+
+  if (single_freq || fixate_Z) {
+    Z_i.rows(n_lags, n_T + n_lags - 1) = y_in_p;
     X = create_X(Z_i, n_lags);
   }
 
@@ -53,7 +59,9 @@ void mcmc_minn_diffuse(const arma::mat & y_in_p,
   arma::vec slice_i = slice.slice(0);
 
   if (dl) {
-    prior_Pi_Omega.rows(1, n_vars*n_lags) = arma::reshape(aux_i % arma::pow(global_i * local_i, 2.0), n_vars*n_lags, n_vars);
+    prior_Pi_Omega.rows(1, n_vars*n_lags) =
+      arma::reshape(aux_i % arma::pow(global_i * local_i, 2.0),
+                    n_vars*n_lags, n_vars);
   }
 
   Sigma_chol = arma::chol(Sigma_i, "lower");
@@ -62,34 +70,32 @@ void mcmc_minn_diffuse(const arma::mat & y_in_p,
   arma::vec Omega_Pi = prior_Pi_mean_vec % prior_Pi_Omega_vec_inv;
 
   for (arma::uword i = 0; i < n_reps + n_burnin; ++i) {
-    if (!single_freq) {
-      y_i = simsm_adaptive_cv(y_in_p, Pi_i, Sigma_chol, Lambda_comp, Z_1, n_q, T_b);
+    if (!single_freq && !fixate_Z) {
+      y_i = simsm_adaptive_cv(y_in_p, Pi_i, Sigma_chol,
+                              Lambda_comp, Z_1, n_q, T_b);
       Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
       X = create_X(Z_i, n_lags);
     }
 
     // Pi
-    post_Pi_Omega_inv = arma::kron(Sigma_inv, X.t() * X);
-    post_Pi_Omega_inv.diag() += prior_Pi_Omega_vec_inv;
-    L = arma::chol(post_Pi_Omega_inv, "lower");
-
-    b = arma::vectorise(X.t() * y_i * Sigma_inv) + Omega_Pi;
-    u1 = arma::solve(arma::trimatl(L), b);
-    u2 = arma::solve(arma::trimatu(L.t()), u1);
-    u3.imbue(norm_rand);
-    u4 = arma::solve(arma::trimatu(L.t()), u3);
-    Pi_vec = u2 + u4;
-    Pi_i = arma::trans(arma::reshape(Pi_vec, n_vars*n_lags+1, n_vars));
+    if (!fixate_Pi) {
+      Pi_i = sample_Pi_vec(Sigma_inv, X, y_i, prior_Pi_Omega_vec_inv, Omega_Pi,
+                           check_roots, n_vars, n_lags);
+    }
     resid = y_i - X * Pi_i.t();
 
     // Sigma
-    post_S = resid.t() * resid;
-    Sigma_i = rinvwish(n_T, post_S);
-    Sigma_chol = arma::chol(Sigma_i, "lower");
-    Sigma_inv = arma::inv_sympd(Sigma_i);
+    if (!fixate_Sigma) {
+      post_S = resid.t() * resid;
+      Sigma_i = rinvwish(n_T, post_S);
+      Sigma_chol = arma::chol(Sigma_i, "lower");
+      Sigma_inv = arma::inv_sympd(Sigma_i);
+    }
 
     if (dl) {
-      update_dl(prior_Pi_Omega, aux_i, local_i, global_i, Pi_i.t(), n_vars, n_lags, a, slice_i, gig, true);
+      update_dl(prior_Pi_Omega, aux_i, local_i, global_i, Pi_i.t(), n_vars,
+                n_lags, a, slice_i, fixate_aux, fixate_global, fixate_local,
+                gig, true);
       prior_Pi_Omega_vec_inv = 1.0 / arma::vectorise(prior_Pi_Omega);
       Omega_Pi = prior_Pi_mean_vec % prior_Pi_Omega_vec_inv;
     }
@@ -130,17 +136,23 @@ void mcmc_minn_diffuse(const arma::mat & y_in_p,
 
 // [[Rcpp::export]]
 void mcmc_ssng_diffuse(const arma::mat & y_in_p,
-                       arma::cube& Pi, arma::cube& Sigma, arma::mat& psi, arma::vec& phi_mu,
-                       arma::vec& lambda_mu, arma::mat& omega, arma::cube& Z,
-                       arma::cube& Z_fcst, const arma::mat& Lambda_comp, const arma::mat& prior_Pi_Omega,
+                       arma::cube& Pi, arma::cube& Sigma, arma::cube& psi,
+                       arma::cube& phi_mu, arma::cube& lambda_mu,
+                       arma::cube& omega, arma::cube& Z, arma::cube& Z_fcst,
+                       const arma::mat& Lambda_comp,
+                       const arma::mat& prior_Pi_Omega,
                        const arma::mat& Omega_Pi,
-                       const arma::mat & D_mat, const arma::mat & dt, const arma::mat & d1,
-                       const arma::mat & d_fcst_lags, const arma::vec& prior_psi_mean,
-                       double c0, double c1, double s,
-                       bool check_roots, const arma::mat& Z_1, arma::uword n_reps, arma::uword n_burnin,
-                       arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars,
-                       arma::uword n_T, arma::uword n_fcst, arma::uword n_determ,
-                       arma::uword n_thin, bool verbose, bool ssng) {
+                       const arma::mat & D_mat, const arma::mat & dt,
+                       const arma::mat & d1, const arma::mat & d_fcst_lags,
+                       const arma::vec& prior_psi_mean, double c0, double c1,
+                       double s, bool check_roots, const arma::mat& Z_1,
+                       arma::uword n_reps, arma::uword n_burnin,
+                       arma::uword n_q, arma::uword T_b, arma::uword n_lags,
+                       arma::uword n_vars, arma::uword n_T, arma::uword n_fcst,
+                       arma::uword n_determ, arma::uword n_thin, bool verbose,
+                       bool ssng, bool fixate_Pi, bool fixate_Sigma,
+                       bool fixate_Z, bool fixate_psi, bool fixate_phi_mu,
+                       bool fixate_lambda_mu, bool fixate_omega) {
   bool single_freq;
   if (n_q == 0 || n_q == n_vars) {
     single_freq = true;
@@ -153,14 +165,17 @@ void mcmc_ssng_diffuse(const arma::mat & y_in_p,
   arma::vec Pi_vec = arma::vec(Pi.begin(), n_vars*(n_vars*n_lags));
   arma::mat Pi_i = Pi.slice(0);
   arma::mat Sigma_i = Sigma.slice(0);
-  arma::vec psi_i  = psi.row(0).t();
-  arma::mat y_i = y_in_p;
-  arma::mat X, post_Pi_Omega_inv, L, b, u1, u2, u4, resid, x;
+  arma::vec psi_i  = psi.slice(0);
+  arma::mat y_i = Z.slice(0).rows(n_lags, n_T + n_lags - 1);
+  arma::mat Z_i = Z.slice(0);
+  double lambda_mu_i = arma::as_scalar(lambda_mu.slice(0));
+  double phi_mu_i = arma::as_scalar(phi_mu.slice(0));
+  arma::vec omega_i = omega.slice(0);
+
+  arma::mat X, resid, x;
   arma::mat post_S, mu_mat, mZ, mZ1, mX, Sigma_chol, Sigma_inv;
-  arma::mat u3 = arma::vec(n_vars*(n_vars*n_lags));
   arma::mat my = arma::mat(arma::size(y_in_p), arma::fill::zeros);
 
-  arma::mat Z_i = arma::mat(n_lags + y_in_p.n_rows, n_vars, arma::fill::zeros);
   arma::mat Z_fcst_i = arma::mat(n_vars, n_lags + n_fcst);
   arma::mat Z_i_demean = Z_i;
   Z_i.rows(0, n_lags - 1) = Z_1;
@@ -184,29 +199,23 @@ void mcmc_ssng_diffuse(const arma::mat & y_in_p,
 
   // if single freq, we don't need to update
   if (single_freq) {
+    y_i = y_in_p;
     Z_i.rows(n_lags, n_T + n_lags - 1) = y_in_p;
   }
 
   // NG stuff
   arma::uword nm = n_vars*n_determ;
-  double lambda_mu_i = lambda_mu(0);
-  double phi_mu_i = phi_mu(0);
-  arma::vec omega_i = omega.row(0).t();
   arma::mat inv_prior_psi_Omega = arma::diagmat(1.0/omega_i);
   arma::vec inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
-  double M, batch = 1.0;
+  double M;
   arma::running_stat<double> stats;
   double accept = 0.0;
   bool adaptive_mh = false;
-  double s_prop;
   if (s < 0) {
     M = std::abs(s);
     s = 1.0;
     adaptive_mh = true;
   }
-  arma::vec min_vec(2);
-  min_vec(0) = 0.01;
-
   for (arma::uword i = 0; i < n_reps + n_burnin; ++i) {
     if (!single_freq) {
       update_demean(my, mu_long, y_in_p, mu_mat, d1, Psi_i, Lambda_single, n_vars,
@@ -220,75 +229,36 @@ void mcmc_ssng_diffuse(const arma::mat & y_in_p,
     Pi_i0.cols(1, n_vars*n_lags) = Pi_i;
 
     if (!single_freq) {
-      mZ = simsm_adaptive_cv(my, Pi_i0, Sigma_chol, Lambda_comp, mZ1, n_q, T_b);
-      Z_i.rows(n_lags, n_T + n_lags - 1) = mZ + mu_mat;
+      if (!fixate_Z) {
+        mZ = simsm_adaptive_cv(my, Pi_i0, Sigma_chol, Lambda_comp, mZ1, n_q, T_b);
+        Z_i.rows(n_lags, n_T + n_lags - 1) = mZ + mu_mat;
+      } else {
+        mZ = Z_i.rows(n_lags, n_T + n_lags - 1) - mu_mat;
+      }
     }
 
     Z_i_demean.rows(0, n_lags - 1) = mZ1;
     Z_i_demean.rows(n_lags, n_T + n_lags - 1) = mZ;
 
     mX = create_X_noint(Z_i_demean, n_lags);
-    // Pi
-    post_Pi_Omega_inv = arma::kron(Sigma_inv, mX.t() * mX);
-    post_Pi_Omega_inv.diag() += prior_Pi_Omega_vec_inv;
-    L = arma::chol(post_Pi_Omega_inv, "lower");
-    b = arma::vectorise(mX.t() * mZ * Sigma_inv + Omega_Pi);
-    u1 = arma::solve(arma::trimatl(L), b);
-    u2 = arma::solve(arma::trimatu(L.t()), u1);
-
-    bool stationarity_check = false;
-    int num_try = 0, iter = 0;
-    double root = 1000;
-    while (stationarity_check == false) {
-      iter += 1;
-      u3.imbue(norm_rand);
-      u4 = arma::solve(arma::trimatu(L.t()), u3);
-      Pi_vec = u2 + u4;
-      Pi_i = arma::trans(arma::reshape(Pi_vec, n_vars*n_lags, n_vars));
-      if (check_roots) {
-        Pi_comp.rows(0, n_vars-1) = Pi_i;
-        root = max_eig_cpp(Pi_comp);
-      } else {
-        root = 0.0;
-      }
-      if (root < 1.0) {
-        stationarity_check = true;
-        num_try = iter;
-      }
-      if (iter == 1000) {
-        Rcpp::stop("Attemped to draw stationary Pi 1,000 times.");
-      }
-    }
-
+    Pi_i = sample_Pi_vec(Sigma_inv, mX, mZ, prior_Pi_Omega_vec_inv, Omega_Pi,
+                         check_roots, n_vars, n_lags);
     resid = mZ - mX * Pi_i.t();
+
     // Sigma
     post_S = resid.t() * resid;
     Sigma_i = rinvwish(n_T, post_S);
     Sigma_chol = arma::chol(Sigma_i, "lower");
     Sigma_inv = arma::inv_sympd(Sigma_i);
 
-    if (ssng) {update_ng(phi_mu_i, lambda_mu_i, omega_i, nm, c0, c1, s, psi_i, prior_psi_mean, accept);
+    if (ssng) {
+      update_ng(phi_mu_i, lambda_mu_i, omega_i, nm, c0, c1, s, psi_i,
+                prior_psi_mean, accept, fixate_phi_mu, fixate_lambda_mu,
+                fixate_omega);
       if (adaptive_mh) {
-        stats(accept);
-        if (i % 100 == 0) {
-          batch += 1.0;
-          min_vec(1) = std::pow(batch, -0.5);
-          if (stats.mean() > 0.44) {
-            s_prop = log(s) + arma::min(min_vec);
-            if (s_prop < M){
-              s = std::exp(s_prop);
-            }
-          } else {
-            s_prop = log(s) - arma::min(min_vec);
-            if (s_prop > -M){
-              s = std::exp(s_prop);
-            }
-          }
-          stats.reset();
-        }
+        update_s(s, stats, accept, i, M);
       }
-
-      inv_prior_psi_Omega = arma::diagmat(1/omega_i);
+      inv_prior_psi_Omega = arma::diagmat(1.0/omega_i);
       inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
     }
 

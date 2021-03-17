@@ -9,7 +9,7 @@ void mcmc_minn_iw(const arma::mat & y_in_p,
                   const arma::mat& Lambda_comp, const arma::mat& prior_Pi_Omega,
                   const arma::mat& inv_prior_Pi_Omega,
                   const arma::mat& Omega_Pi, const arma::mat& prior_Pi_mean,
-                  const arma::mat & prior_S, const arma::mat& Z_1,
+                  const arma::mat & prior_S, bool check_roots, const arma::mat& Z_1,
                   arma::uword n_reps, arma::uword n_burnin,
                   arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars,
                   arma::uword n_T, arma::uword n_fcst,
@@ -27,14 +27,18 @@ void mcmc_minn_iw(const arma::mat & y_in_p,
   arma::mat Pi_i = Pi.slice(0);
   arma::mat Sigma_i = Sigma.slice(0);
   arma::mat y_i = Z.slice(0).rows(n_lags, n_T + n_lags - 1);
+  arma::mat Z_i = Z.slice(0);
+
   arma::vec errors = arma::vec(n_vars);
   arma::mat X, post_Pi_Omega, post_Pi;
   arma::mat post_S, Sigma_chol, x;
-  arma::mat Z_i = Z.slice(0);
   arma::mat Z_fcst_i = arma::mat(n_vars, n_lags + n_fcst);
   int post_nu = n_T + n_vars + prior_nu;
 
   if (single_freq) {
+    y_i = y_in_p;
+  }
+  if (single_freq || fixate_Z) {
     Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
     X = create_X(Z_i, n_lags);
     update_iw(post_Pi_Omega, post_Pi, post_S, X, y_i, prior_Pi_mean,
@@ -44,11 +48,9 @@ void mcmc_minn_iw(const arma::mat & y_in_p,
   Sigma_chol = arma::chol(Sigma_i, "lower");
 
   for (arma::uword i = 0; i < n_reps + n_burnin; ++i) {
-    if (!single_freq) {
-      if (!fixate_Z) {
-        y_i = simsm_adaptive_cv(y_in_p, Pi_i, Sigma_chol, Lambda_comp, Z_1, n_q, T_b);
-        Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
-      }
+    if (!single_freq && !fixate_Z) {
+      y_i = simsm_adaptive_cv(y_in_p, Pi_i, Sigma_chol, Lambda_comp, Z_1, n_q, T_b);
+      Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
       X = create_X(Z_i, n_lags);
       update_iw(post_Pi_Omega, post_Pi, post_S, X, y_i, prior_Pi_mean,
                 prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_S);
@@ -112,18 +114,20 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
   arma::mat Pi_i = Pi.slice(0);
   arma::mat Sigma_i = Sigma.slice(0);
   arma::vec psi_i  = psi.slice(0);
-  arma::mat y_i, X, post_Pi_Omega, post_Pi;
+  arma::mat Z_i = Z.slice(0);
+  double lambda_mu_i = arma::as_scalar(lambda_mu.slice(0));
+  double phi_mu_i = arma::as_scalar(phi_mu.slice(0));
+  arma::vec omega_i = omega.slice(0);
+
+  arma::mat X, post_Pi_Omega, post_Pi;
   arma::mat post_S, x, mu_mat, mZ, mZ1, mX;
   arma::mat my = arma::mat(arma::size(y_in_p), arma::fill::zeros);
 
-  arma::mat Z_i = Z.slice(0);
   arma::mat Z_fcst_i = arma::mat(n_vars, n_lags + n_fcst);
   arma::mat Z_i_demean = Z_i;
   Z_i.rows(0, n_lags - 1) = Z_1;
 
   arma::mat Pi_i0 = arma::mat(n_vars, n_vars*n_lags+1, arma::fill::zeros);
-  arma::mat Pi_comp = arma::mat(n_vars*n_lags, n_vars*n_lags, arma::fill::zeros);
-  Pi_comp.submat(n_vars, 0, n_vars*n_lags - 1, n_vars*(n_lags-1) - 1) = arma::eye(n_vars*(n_lags-1), n_vars*(n_lags-1));
   int post_nu = n_T + n_vars + 2;
   arma::mat Sigma_chol = arma::chol(Sigma_i, "lower");
 
@@ -137,9 +141,6 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
   }
 
   arma::uword nm = n_vars*n_determ;
-  double lambda_mu_i = arma::as_scalar(lambda_mu.slice(0));
-  double phi_mu_i = arma::as_scalar(phi_mu.slice(0));
-  arma::vec omega_i = omega.slice(0);
   arma::mat inv_prior_psi_Omega = arma::diagmat(1.0/omega_i);
   arma::vec inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
 
@@ -174,7 +175,7 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
         mZ = simsm_adaptive_cv(my, Pi_i0, Sigma_chol, Lambda_comp, mZ1, n_q, T_b);
         Z_i.rows(n_lags, n_T + n_lags - 1) = mZ + mu_mat;
       } else {
-        mZ = Z_i - mu_mat;
+        mZ = Z_i.rows(n_lags, n_T + n_lags - 1) - mu_mat;
       }
     }
 
@@ -193,20 +194,22 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
     }
 
     if (ssng) {
-      if (!(fixate_phi_mu && fixate_lambda_mu && fixate_omega)) {
-        update_ng(phi_mu_i, lambda_mu_i, omega_i, nm, c0, c1, s, psi_i, prior_psi_mean, accept);
-        if (adaptive_mh) {
-          update_s(s, stats, accept, i, M);
-        }
-        inv_prior_psi_Omega = arma::diagmat(1.0/omega_i);
-        inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
+      update_ng(phi_mu_i, lambda_mu_i, omega_i, nm, c0, c1, s, psi_i,
+                prior_psi_mean, accept, fixate_phi_mu, fixate_lambda_mu,
+                fixate_omega);
+      if (adaptive_mh) {
+        update_s(s, stats, accept, i, M);
       }
+      inv_prior_psi_Omega = arma::diagmat(1.0/omega_i);
+      inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
     }
 
     X = create_X_noint(Z_i, n_lags);
-    posterior_psi_iw(psi_i, mu_mat, Pi_i, D_mat, Sigma_i, inv_prior_psi_Omega,
-                     mZ + mu_mat, X, inv_prior_psi_Omega_mean, dt, n_determ,
-                     n_vars, n_lags);
+    if (!fixate_psi) {
+      posterior_psi_iw(psi_i, mu_mat, Pi_i, D_mat, Sigma_i, inv_prior_psi_Omega,
+                       mZ + mu_mat, X, inv_prior_psi_Omega_mean, dt, n_determ,
+                       n_vars, n_lags);
+    }
 
     arma::vec errors = arma::vec(n_vars);
     if ((i+1) % n_thin == 0 && i>=n_burnin) {

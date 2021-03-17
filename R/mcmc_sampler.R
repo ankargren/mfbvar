@@ -189,7 +189,7 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
   # minn iw
   if (!ss && iw) {
     mfbvar:::mcmc_minn_iw(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,
-            Omega_Pi,prior_Pi_mean,prior_S,Z_1,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,
+            Omega_Pi,prior_Pi_mean,prior_S,check_roots,Z_1,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,
             n_thin,verbose,2, fixate_Pi, fixate_Sigma, fixate_Z)
   }
 
@@ -197,21 +197,32 @@ mfbvar_sampler <- function(x, required_params, prior_params, retrieved_params,
   if (ss && csv) {
     mfbvar:::mcmc_ssng_csv(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,phi,sigma,latent,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
                   prior_S,D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,
-                  10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,ssng)
+                  10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,ssng, fixate_Pi, fixate_Sigma,
+                  fixate_Z, fixate_psi, fixate_phi_mu,
+                  fixate_lambda_mu, fixate_omega, fixate_latent,
+                  fixate_latent0, fixate_phi, fixate_sigma)
   }
 
   # minn csv
   if (!ss && csv) {
     mfbvar:::mcmc_minn_csv(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,phi,sigma,latent,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,
-                  Omega_Pi,prior_Pi_mean,prior_S,Z_1,10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,
-                  n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,n_thin,verbose)
+                  Omega_Pi,prior_Pi_mean,prior_S,check_roots,Z_1,10,phi_invvar,phi_meaninvvar,prior_sigma2,prior_df,
+                  n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,n_thin,verbose,fixate_Pi,fixate_Sigma,
+                  fixate_Z,fixate_latent,fixate_latent0,fixate_phi,fixate_sigma)
   }
 
   # minn diffuse
   if (!ss && diffuse) {
     mfbvar:::mcmc_minn_diffuse(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,aux,global,local,slice,Lambda_,prior_Pi_Omega,
                       c(prior_Pi_mean),Z_1,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,
-                      n_thin,verbose,a,gig)
+                      n_thin,verbose,a,gig,fixate_Pi, fixate_Sigma, fixate_Z,
+                      fixate_aux, fixate_global, fixate_local)
+  }
+  # minn diffuse
+  if (ss && diffuse) {
+    mfbvar:::mcmc_ssng_diffuse(Y[-(1:n_lags),], Pi, Sigma, psi, phi_mu, lambda_mu,
+                               omega, Z, Z_fcst, Lambda_, prior_Pi_Omega, Omega_Pi, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, n_reps, n_burnin, n_q, T_b-n_lags, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng, fixate_Pi, fixate_Sigma, fixate_Z, fixate_psi, fixate_phi_mu, fixate_lambda_mu, fixate_omega)
+
   }
   if (verbose) {
     cat("\n")

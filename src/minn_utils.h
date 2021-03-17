@@ -7,4 +7,12 @@ arma::mat sample_Pi_mat(const arma::mat & post_Pi,
                    const arma::mat & Sigma,
                    bool check_roots,
                    arma::uword n_vars);
+arma::mat sample_Pi_vec(const arma::mat & Sigma_inv,
+              const arma::mat & X,
+              const arma::mat & y,
+              const arma::vec & prior_Pi_Omega_vec_inv,
+              const arma::mat & Omega_Pi,
+              bool check_roots,
+              arma::uword n_vars,
+              arma::uword n_lags);
 #endif

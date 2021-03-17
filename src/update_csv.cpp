@@ -20,7 +20,11 @@ void update_csv(
     const double phi_invvar,
     const double phi_meaninvvar,
     const double prior_sigma2,
-    const double prior_df) {
+    const double prior_df,
+    bool fixate_latent,
+    bool fixate_latent0,
+    bool fixate_phi,
+    bool fixate_sigma) {
   // data: data matrix
   // phi: AR(1) parameter
   // sigma: standard deviation of log-volatility innovation
@@ -54,16 +58,25 @@ void update_csv(
   /*
   * Sample phi
   */
-  double phi_postvar = std::pow(phi_invvar + sigma2inv * arma::accu(arma::pow(hT1, 2.0)), -1.0);
-  double phi_postmean = phi_postvar * (sigma2inv * arma::accu(hT1 % hT) + phi_meaninvvar);
-  phi = rtruncnorm(phi_postmean, phi_postvar);
+  double phi_postvar = std::pow(phi_invvar +
+                                sigma2inv * arma::accu(arma::pow(hT1, 2.0)),
+                                -1.0);
+  double phi_postmean = phi_postvar * (sigma2inv * arma::accu(hT1 % hT)
+                                         + phi_meaninvvar);
+  if (!fixate_phi) {
+    phi = rtruncnorm(phi_postmean, phi_postvar);
+  }
   const double phi2 = std::pow(phi, 2.0);
 
   /*
   * Sample sigma2
   */
   arma::vec u = hT - phi * hT1;
-  sigma = std::pow(R::rgamma(prior_df + T - 1, 1/(prior_df * prior_sigma2 + arma::accu(arma::pow(u, 2.0)))), -0.5);
+  if (!fixate_sigma) {
+    sigma = std::pow(R::rgamma(prior_df + T - 1,
+                               1/(prior_df * prior_sigma2 +
+                                 arma::accu(arma::pow(u, 2.0)))), -0.5);
+  }
   sigma2inv = std::pow(sigma, -2.0);
 
   /*
@@ -85,6 +98,7 @@ void update_csv(
   /*
   * Step (a): sample the latent volatilities h:
   */
+
   omega_diag[0] = (Bh0inv + 1) * sigma2inv;
   covector[0] = 0.0;
 
@@ -115,6 +129,11 @@ void update_csv(
   // Solution of (Chol')*x = htmp ("backward algorithm")
   backwardAlg(chol_diag, chol_offdiag, htmp, hnew);
 
-  h = hnew.tail(T);
-  h0 = hnew[0];
+  if (!fixate_latent) {
+    h = hnew.tail(T);
+  }
+
+  if (!fixate_latent0) {
+    h0 = hnew[0];
+  }
 }

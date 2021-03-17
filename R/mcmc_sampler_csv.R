@@ -7,7 +7,7 @@ mcmc_sampler.mfbvar_minn_csv <- function(x, ...){
                     "lambda4", "prior_Pi_AR1", "prior_phi", "prior_sigma2")
   retrieved_params <- c("n_vars", "n_q", "T_b", "n_pseudolags",
                         "n_T", "n_T_", "Z_1")
-  params <- c("Z", "Pi", "Sigma", "phi", "sigma", "latent")
+  params <- c("Z", "Pi", "Sigma", "phi", "sigma", "latent", "latent0")
 
   out <- mfbvar_sampler(x, required_params, prior_params, retrieved_params,
                         params, csv = TRUE, ...)
@@ -27,7 +27,7 @@ mcmc_sampler.mfbvar_ss_csv <- function(x, ...) {
                     "prior_Pi_AR1", "prior_phi", "prior_sigma2"))
   retrieved_params <- c("n_vars", "n_q", "T_b", "n_pseudolags",
                         "n_T", "n_T_", "n_determ", "Z_1")
-  params <- c("Z", "psi", "Pi", "Sigma", "phi", "sigma", "latent")
+  params <- c("Z", "psi", "Pi", "Sigma", "phi", "sigma", "latent", "latent0")
 
   out <- mfbvar_sampler(x, required_params, prior_params, retrieved_params,
                         params, ss = TRUE, csv = TRUE, ...)
@@ -48,7 +48,7 @@ mcmc_sampler.mfbvar_ssng_csv <- function(x, ...) {
   retrieved_params <- c("n_vars", "n_q", "T_b", "n_pseudolags",
                         "n_T", "n_T_", "n_determ", "Z_1")
   params <- c("Z", "psi", "Pi", "omega", "phi_mu", "lambda_mu", "Sigma",
-              "phi", "sigma", "latent")
+              "phi", "sigma", "latent", "latent0")
 
   out <- mfbvar_sampler(x, required_params, prior_params, retrieved_params,
                         params, ssng = TRUE, ss = TRUE, csv = TRUE, ...)

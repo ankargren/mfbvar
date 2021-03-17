@@ -30,7 +30,8 @@ void dl_reg(const arma::mat & y, arma::mat & x, arma::mat & beta,
 
     //beta_i.col(0) = mvn_rue(x, prior_Pi_Omega, y);
     beta.row(i) = beta_i.col(0).t();
-    update_dl(prior_Pi_Omega, aux_i, local_i, global_i, beta_i, 1, n_lags, a, slice, gig, false);
+    update_dl(prior_Pi_Omega, aux_i, local_i, global_i, beta_i, 1, n_lags, a, slice,
+              false, false, false, gig, false);
     global(i) = global_i;
     aux.row(i) = aux_i.t();
     local.row(i) = local_i.t();
