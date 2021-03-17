@@ -39,84 +39,42 @@ test_that("IW", {
 
   testthat::skip_on_cran()
   # minn iw
-  params <- c("Z", "Pi", "Sigma")
+  params <- mfbvar:::get_params_info(minn = TRUE, iw = TRUE)$params
   prior <- "minn"
   variance <- "iw"
   test_wrapper(prior_obj, prior, variance, params)
 
   # ss iw
-  params <- c("psi", "Pi", "Sigma", "Z")
+  params <- mfbvar:::get_params_info(ss = TRUE, iw = TRUE)$params
   prior <- "ss"
   variance <- "iw"
   test_wrapper(prior_obj, prior, variance, params)
 
   # ssng iw
-  params <- c("Z", "psi", "Pi", "omega", "phi_mu", "lambda_mu", "Sigma")
+  params <- mfbvar:::get_params_info(ss = TRUE, ssng = TRUE, iw = TRUE)$params
   prior <- "ssng"
   variance <- "iw"
   test_wrapper(prior_obj, prior, variance, params)
 
   # minn csv
-  params <- c("Z", "Pi", "Sigma", "phi", "sigma", "latent", "latent0")
+  params <- mfbvar:::get_params_info(minn = TRUE, csv = TRUE)$params
   prior <- "minn"
   variance <- "csv"
   test_wrapper(prior_obj, prior, variance, params)
 
   # ss csv
-  params <- c("Z", "psi", "Pi", "Sigma", "phi", "sigma", "latent", "latent0")
+  params <- mfbvar:::get_params_info(ss = TRUE, iw = TRUE)$params
   prior <- "minn"
   variance <- "csv"
   test_wrapper(prior_obj, prior, variance, params)
 
   # ssng csv
-  params <- c("Z", "psi", "Pi", "omega", "phi_mu", "lambda_mu", "Sigma",
-              "phi", "sigma", "latent", "latent0")
+  params <- mfbvar:::get_params_info(ss = TRUE, ssng = TRUE, csv = TRUE)$params
   prior <- "ssng"
   variance <- "csv"
   test_wrapper(prior_obj, prior, variance, params)
 
-  # FSV
-  set.seed(10)
-  mod <- estimate_mfbvar(prior_obj, "minn", "fsv")
 
-  # Initial mu
-  set.seed(10)
-  mod2 <- estimate_mfbvar(prior_obj, "minn", "iw",
-                          init = list(mu = mod$mu[,,10]),
-                          fixate = list(mu = TRUE))
-  expect_equal(mod$mu[,,10], mod2$mu[,,1])
-  expect_equal(mod2$mu[,,1], mod2$mu[,,10])
 
-  # Initial sigma
-  set.seed(10)
-  mod2 <- estimate_mfbvar(prior_obj, "minn", "iw",
-                          init = list(sigma = mod$sigma[,,10]),
-                          fixate = list(sigma = TRUE))
-  expect_equal(mod$sigma[,,10], mod2$sigma[,,1])
-  expect_equal(mod2$sigma[,,1], mod2$sigma[,,10])
-
-  # Initial phi
-  set.seed(10)
-  mod2 <- estimate_mfbvar(prior_obj, "minn", "iw",
-                          init = list(phi = mod$phi[,,10]),
-                          fixate = list(phi = TRUE))
-  expect_equal(mod$phi[,,10], mod2$phi[,,1])
-  expect_equal(mod2$phi[,,1], mod2$phi[,,10])
-
-  # Initial f
-  set.seed(10)
-  mod2 <- estimate_mfbvar(prior_obj, "minn", "iw",
-                          init = list(f = mod$f[,,10]),
-                          fixate = list(f = TRUE))
-  expect_equal(mod$f[,,10], mod2$f[,,1])
-  expect_equal(mod2$f[,,1], mod2$f[,,10])
-
-  # Initial latent0
-  set.seed(10)
-  mod2 <- estimate_mfbvar(prior_obj, "minn", "iw",
-                          init = list(latent0 = mod$latent0[,,10]),
-                          fixate = list(latent0 = TRUE))
-  expect_equal(mod$latent0[,,10], mod2$latent0[,,1])
-  expect_equal(mod2$latent0[,,1], mod2$latent0[,,10])
 })
 

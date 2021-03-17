@@ -1,0 +1,70 @@
+get_params_info <- function(minn = FALSE,
+                       ss = FALSE,
+                       ssng = FALSE,
+                       dl = FALSE,
+                       iw = FALSE,
+                       diffuse = FALSE,
+                       csv = FALSE,
+                       fsv = FALSE) {
+
+  # Needed for all
+  required_params <- c("Y", "n_lags", "n_burnin", "n_reps")
+
+  retrieved_params <- c("n_vars", "n_q", "T_b", "n_pseudolags",
+                        "n_T", "n_T_", "Z_1")
+
+  prior_params <- c(required_params,
+                    "freq", "verbose", "check_roots", "n_fcst", "n_thin",
+                    "freqs", "Lambda_", "lambda1", "lambda3",
+                    "lambda4", "prior_Pi_AR1", "block_exo")
+
+  params <- c("Z", "Pi")
+
+  if (!fsv) {
+    params <- c(params, "Sigma")
+  }
+  if (fsv) {
+    params <- c(params, "mu", "sigma", "phi", "facload", "f", "latent",
+                "latent0")
+    prior_params <- c(prior_params, "priormu", "priorphiidi", "priorphifac",
+                      "priorsigmaidi", "priorsigmafac", "priorfacload",
+                      "restrict")
+  }
+  if (csv) {
+    params <- c(params, "phi", "latent", "latent0", "sigma")
+    prior_params <- c(prior_params, "prior_phi", "prior_sigma2")
+  }
+
+  if (minn || dl) {
+    prior_params <- c(prior_params, "lambda4")
+  }
+
+  if (dl) {
+    params <- c(params, "slice")
+  }
+
+  if (ss) {
+    prior_params <- c(prior_params, "d_fcst")
+    required_params <- c(required_params, "prior_psi_mean", "d")
+    params <- c(params, "psi")
+    if (!ssng) {
+      required_params <- c(required_params, "prior_psi_Omega")
+    }
+  }
+  if (ssng) {
+    prior_params <- c(prior_params, "prior_ng", "s")
+    params <- c(params, "omega", "lambda_mu", "phi_mu")
+  }
+  if (diffuse || fsv) {
+    prior_params <- c("lambda2", "block_exo")
+  }
+
+  prior_params <- sort(c(required_params, prior_params))
+  required_params <- sort(required_params)
+  params <- sort(params)
+
+  return(list(prior_params = prior_params,
+              required_params = required_params,
+              params = params))
+
+}
