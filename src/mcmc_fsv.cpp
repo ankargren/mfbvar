@@ -22,8 +22,10 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
                    arma::uword n_fac, arma::uword n_reps, arma::uword n_burnin,
                    arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars,
                    arma::uword n_T, arma::uword n_fcst, arma::uword n_thin, bool verbose,
-                   const double a, bool gig, bool fixate_aux, bool fixate_global,
-                   bool fixate_local) {
+                   const double a, bool gig, bool fixate_Z, bool fixate_Pi,
+                   bool fixate_mu, bool fixate_phi, bool fixate_sigma,
+                   bool fixate_f, bool fixate_facload, bool fixate_latent,
+                   bool fixate_aux, bool fixate_global, bool fixate_local) {
   bool single_freq;
   if (n_q == 0 || n_q == n_vars) {
     single_freq = true;
@@ -32,29 +34,31 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
   }
 
   Progress p(n_reps+n_burnin, verbose);
+  arma::mat y_i = Z.slice(0).rows(n_lags, n_T + n_lags - 1);
+  arma::mat Z_i = Z.slice(0);
   arma::mat Pi_i = Pi.slice(0);
+  arma::vec mu_i = mu.slice(0);
+  arma::vec phi_i = phi.slice(0);
+  arma::vec sigma_i = sigma.slice(0);
+  arma::mat armaf = f.slice(0);
+  arma::mat armafacload = facload.slice(0);
+  arma::mat armah = h.slice(0);
+  arma::vec aux_i = aux.slice(0);
+  arma::vec local_i = local.slice(0);
+  arma::vec slice_i = slice.slice(0);
+
   arma::mat X;
-  arma::mat y_i = y_in_p;
   arma::mat x;
   arma::vec vol_pred;
 
 
   // fsv
-
-  arma::vec mu_i = mu.slice(0);
-  arma::vec phi_i = phi.slice(0);
-  arma::vec sigma_i = sigma.slice(0);
-
   Rcpp::NumericMatrix curpara = Rcpp::NumericMatrix(3, n_vars + n_fac);
   arma::mat curpara_arma(curpara.begin(), curpara.nrow(), curpara.ncol(), false);
   curpara_arma.fill(0.0);
   curpara_arma.row(0).cols(0, n_vars - 1) = mu_i.t();
   curpara_arma.row(1) = phi_i.t();
   curpara_arma.row(2) = sigma_i.t();
-
-  arma::mat armaf = f.slice(0);
-  arma::mat armafacload = facload.slice(0);
-  arma::mat armah = h.slice(0);
   arma::mat cc_i = armaf.t() * armafacload.t();
 
   arma::vec armah0 = arma::vec(n_vars + n_fac);
@@ -64,7 +68,6 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
   arma::vec errors_sv = arma::vec(n_vars + n_fac);
   arma::vec errors_var = arma::vec(n_vars + n_fac);
 
-  arma::mat Z_i = arma::mat(n_lags + y_in_p.n_rows, n_vars, arma::fill::zeros);
   arma::mat Z_fcst_i = arma::mat(n_vars, n_lags + n_fcst);
   Z_i.rows(0, n_lags - 1) = Z_1;
 
@@ -76,9 +79,11 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
   } else {
     eps = arma::mat(n_vars*n_lags+1, n_vars);
   }
-
   if (single_freq) {
-    Z_i.rows(n_lags, n_T + n_lags - 1) = y_in_p;
+    y_i = y_in_p;
+  }
+  if (single_freq || fixate_Z) {
+    Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
     X = create_X(Z_i, n_lags);
   }
 
@@ -89,9 +94,6 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
     dl = true;
     global_i = arma::as_scalar(global.slice(0));
   }
-  arma::vec aux_i = aux.slice(0);
-  arma::vec local_i = local.slice(0);
-  arma::vec slice_i = slice.slice(0);
 
   if (dl) {
     prior_Pi_Omega.rows(1, n_vars*n_lags) = arma::reshape(aux_i % arma::pow(global_i * local_i, 2.0), n_vars*n_lags, n_vars);
@@ -102,9 +104,11 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
   for (arma::uword i = 0; i < n_reps + n_burnin; ++i) {
     if (!single_freq)  {
       Sig_i = arma::exp(0.5 * armah.head_cols(n_vars));
-      y_i = simsm_adaptive_univariate(y_in_p, Pi_i, Sig_i, Lambda_comp, Z_1, n_q, T_b, cc_i);
-      Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
-      X = create_X(Z_i, n_lags);
+      if (!fixate_Z) {
+        y_i = simsm_adaptive_univariate(y_in_p, Pi_i, Sig_i, Lambda_comp, Z_1, n_q, T_b, cc_i);
+        Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
+        X = create_X(Z_i, n_lags);
+      }
     }
 
     y_hat = y_i - X * Pi_i.t();
@@ -113,9 +117,11 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
     armafacload_old = armafacload;
     armaf_old = armaf;
 
-    update_fsv(armafacload, armaf, armah, armah0, curpara, armatau2, y_hat.t(),
-               bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv,
-               priorh0, armarestr);
+    if (!(fixate_mu && fixate_phi && fixate_sigma && fixate_f && fixate_facload && fixate_latent)) {
+      update_fsv(armafacload, armaf, armah, armah0, curpara, armatau2, y_hat.t(),
+                 bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv,
+                 priorh0, armarestr);
+    }
 
     if ((i+1) % n_thin == 0 && i >= n_burnin) {
       mu_i = curpara_old.row(0).t();
@@ -158,17 +164,18 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
 
     eps.imbue(norm_rand);
     arma::mat output(n_vars*n_lags+1, n_vars);
-    if (rue) {
-      Pi_parallel_rue Pi_parallel_i(output, latent_nofac, X, prior_Pi_Omega, eps,
-                                armah, prior_Pi_AR1, n_T, n_vars, n_lags);
-      RcppParallel::parallelFor(0, n_vars, Pi_parallel_i);
-    } else {
-      Pi_parallel_bcm Pi_parallel_i(output, latent_nofac, X, prior_Pi_Omega, eps,
-                                    armah, n_T, n_vars, n_lags);
-      RcppParallel::parallelFor(0, n_vars, Pi_parallel_i);
+    if (!fixate_Pi) {
+      if (rue) {
+        Pi_parallel_rue Pi_parallel_i(output, latent_nofac, X, prior_Pi_Omega, eps,
+                                  armah, prior_Pi_AR1, n_T, n_vars, n_lags);
+        RcppParallel::parallelFor(0, n_vars, Pi_parallel_i);
+      } else {
+        Pi_parallel_bcm Pi_parallel_i(output, latent_nofac, X, prior_Pi_Omega, eps,
+                                      armah, n_T, n_vars, n_lags);
+        RcppParallel::parallelFor(0, n_vars, Pi_parallel_i);
+      }
+      Pi_i = output.t();
     }
-
-    Pi_i = output.t();
 
     if (dl) {
       update_dl(prior_Pi_Omega, aux_i, local_i, global_i, Pi_i.t(), n_vars,
@@ -335,7 +342,7 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
     curpara_old = curpara_arma;
     armafacload_old = armafacload;
     armaf_old = armaf;
-    if (fixate_mu && fixate_phi && fixate_sigma && fixate_f && fixate_facload && fixate_latent) {
+    if (!(fixate_mu && fixate_phi && fixate_sigma && fixate_f && fixate_facload && fixate_latent)) {
       update_fsv(armafacload, armaf, armah, armah0, curpara, armatau2, y_hat.t(),
                  bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv,
                  priorh0, armarestr);

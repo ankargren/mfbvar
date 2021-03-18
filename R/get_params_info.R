@@ -13,8 +13,7 @@ get_params_info <- function(minn = FALSE,
   retrieved_params <- c("n_vars", "n_q", "T_b", "n_pseudolags",
                         "n_T", "n_T_", "Z_1")
 
-  prior_params <- c(required_params,
-                    "freq", "verbose", "check_roots", "n_fcst", "n_thin",
+  prior_params <- c("freq", "verbose", "check_roots", "n_fcst", "n_thin",
                     "freqs", "Lambda_", "lambda1", "lambda3",
                     "lambda4", "prior_Pi_AR1", "block_exo")
 
@@ -24,6 +23,7 @@ get_params_info <- function(minn = FALSE,
     params <- c(params, "Sigma")
   }
   if (fsv) {
+    required_params <- c(required_params, "n_fac")
     params <- c(params, "mu", "sigma", "phi", "facload", "f", "latent",
                 "latent0")
     prior_params <- c(prior_params, "priormu", "priorphiidi", "priorphifac",
@@ -43,10 +43,11 @@ get_params_info <- function(minn = FALSE,
     params <- c(params, "slice")
   }
 
-  if (ss) {
+  if (ss || ssng) {
     prior_params <- c(prior_params, "d_fcst")
     required_params <- c(required_params, "prior_psi_mean", "d")
     params <- c(params, "psi")
+    retrieved_params <- c(retrieved_params, "n_determ")
     if (!ssng) {
       required_params <- c(required_params, "prior_psi_Omega")
     }
@@ -56,15 +57,18 @@ get_params_info <- function(minn = FALSE,
     params <- c(params, "omega", "lambda_mu", "phi_mu")
   }
   if (diffuse || fsv) {
-    prior_params <- c("lambda2", "block_exo")
+    prior_params <- c(prior_params, "lambda2", "block_exo")
   }
 
   prior_params <- sort(c(required_params, prior_params))
   required_params <- sort(required_params)
+  retrieved_params <- sort(retrieved_params)
   params <- sort(params)
+
 
   return(list(prior_params = prior_params,
               required_params = required_params,
+              retrieved_params = retrieved_params,
               params = params))
 
 }

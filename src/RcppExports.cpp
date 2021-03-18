@@ -351,8 +351,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // mcmc_minn_fsv
-void mcmc_minn_fsv(const arma::mat& y_in_p, arma::cube& Pi, arma::cube& Z, arma::cube& Z_fcst, arma::cube& mu, arma::cube& phi, arma::cube& sigma, arma::cube& f, arma::cube& facload, arma::cube& h, arma::cube& aux, arma::cube& global, arma::cube& local, arma::cube& slice, const arma::mat& Lambda_comp, arma::mat prior_Pi_Omega, const arma::vec& prior_Pi_AR1, const arma::mat& Z_1, double bmu, double Bmu, double a0idi, double b0idi, double a0fac, double b0fac, const Rcpp::NumericVector& Bsigma, double B011inv, double B022inv, const Rcpp::NumericVector& priorh0, const arma::imat& armarestr, const arma::mat& armatau2, arma::uword n_fac, arma::uword n_reps, arma::uword n_burnin, arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars, arma::uword n_T, arma::uword n_fcst, arma::uword n_thin, bool verbose, const double a, bool gig, bool fixate_aux, bool fixate_global, bool fixate_local);
-RcppExport SEXP _mfbvar_mcmc_minn_fsv(SEXP y_in_pSEXP, SEXP PiSEXP, SEXP ZSEXP, SEXP Z_fcstSEXP, SEXP muSEXP, SEXP phiSEXP, SEXP sigmaSEXP, SEXP fSEXP, SEXP facloadSEXP, SEXP hSEXP, SEXP auxSEXP, SEXP globalSEXP, SEXP localSEXP, SEXP sliceSEXP, SEXP Lambda_compSEXP, SEXP prior_Pi_OmegaSEXP, SEXP prior_Pi_AR1SEXP, SEXP Z_1SEXP, SEXP bmuSEXP, SEXP BmuSEXP, SEXP a0idiSEXP, SEXP b0idiSEXP, SEXP a0facSEXP, SEXP b0facSEXP, SEXP BsigmaSEXP, SEXP B011invSEXP, SEXP B022invSEXP, SEXP priorh0SEXP, SEXP armarestrSEXP, SEXP armatau2SEXP, SEXP n_facSEXP, SEXP n_repsSEXP, SEXP n_burninSEXP, SEXP n_qSEXP, SEXP T_bSEXP, SEXP n_lagsSEXP, SEXP n_varsSEXP, SEXP n_TSEXP, SEXP n_fcstSEXP, SEXP n_thinSEXP, SEXP verboseSEXP, SEXP aSEXP, SEXP gigSEXP, SEXP fixate_auxSEXP, SEXP fixate_globalSEXP, SEXP fixate_localSEXP) {
+void mcmc_minn_fsv(const arma::mat& y_in_p, arma::cube& Pi, arma::cube& Z, arma::cube& Z_fcst, arma::cube& mu, arma::cube& phi, arma::cube& sigma, arma::cube& f, arma::cube& facload, arma::cube& h, arma::cube& aux, arma::cube& global, arma::cube& local, arma::cube& slice, const arma::mat& Lambda_comp, arma::mat prior_Pi_Omega, const arma::vec& prior_Pi_AR1, const arma::mat& Z_1, double bmu, double Bmu, double a0idi, double b0idi, double a0fac, double b0fac, const Rcpp::NumericVector& Bsigma, double B011inv, double B022inv, const Rcpp::NumericVector& priorh0, const arma::imat& armarestr, const arma::mat& armatau2, arma::uword n_fac, arma::uword n_reps, arma::uword n_burnin, arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars, arma::uword n_T, arma::uword n_fcst, arma::uword n_thin, bool verbose, const double a, bool gig, bool fixate_Z, bool fixate_Pi, bool fixate_mu, bool fixate_phi, bool fixate_sigma, bool fixate_f, bool fixate_facload, bool fixate_latent, bool fixate_aux, bool fixate_global, bool fixate_local);
+RcppExport SEXP _mfbvar_mcmc_minn_fsv(SEXP y_in_pSEXP, SEXP PiSEXP, SEXP ZSEXP, SEXP Z_fcstSEXP, SEXP muSEXP, SEXP phiSEXP, SEXP sigmaSEXP, SEXP fSEXP, SEXP facloadSEXP, SEXP hSEXP, SEXP auxSEXP, SEXP globalSEXP, SEXP localSEXP, SEXP sliceSEXP, SEXP Lambda_compSEXP, SEXP prior_Pi_OmegaSEXP, SEXP prior_Pi_AR1SEXP, SEXP Z_1SEXP, SEXP bmuSEXP, SEXP BmuSEXP, SEXP a0idiSEXP, SEXP b0idiSEXP, SEXP a0facSEXP, SEXP b0facSEXP, SEXP BsigmaSEXP, SEXP B011invSEXP, SEXP B022invSEXP, SEXP priorh0SEXP, SEXP armarestrSEXP, SEXP armatau2SEXP, SEXP n_facSEXP, SEXP n_repsSEXP, SEXP n_burninSEXP, SEXP n_qSEXP, SEXP T_bSEXP, SEXP n_lagsSEXP, SEXP n_varsSEXP, SEXP n_TSEXP, SEXP n_fcstSEXP, SEXP n_thinSEXP, SEXP verboseSEXP, SEXP aSEXP, SEXP gigSEXP, SEXP fixate_ZSEXP, SEXP fixate_PiSEXP, SEXP fixate_muSEXP, SEXP fixate_phiSEXP, SEXP fixate_sigmaSEXP, SEXP fixate_fSEXP, SEXP fixate_facloadSEXP, SEXP fixate_latentSEXP, SEXP fixate_auxSEXP, SEXP fixate_globalSEXP, SEXP fixate_localSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type y_in_p(y_in_pSEXP);
@@ -398,10 +398,18 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
     Rcpp::traits::input_parameter< const double >::type a(aSEXP);
     Rcpp::traits::input_parameter< bool >::type gig(gigSEXP);
+    Rcpp::traits::input_parameter< bool >::type fixate_Z(fixate_ZSEXP);
+    Rcpp::traits::input_parameter< bool >::type fixate_Pi(fixate_PiSEXP);
+    Rcpp::traits::input_parameter< bool >::type fixate_mu(fixate_muSEXP);
+    Rcpp::traits::input_parameter< bool >::type fixate_phi(fixate_phiSEXP);
+    Rcpp::traits::input_parameter< bool >::type fixate_sigma(fixate_sigmaSEXP);
+    Rcpp::traits::input_parameter< bool >::type fixate_f(fixate_fSEXP);
+    Rcpp::traits::input_parameter< bool >::type fixate_facload(fixate_facloadSEXP);
+    Rcpp::traits::input_parameter< bool >::type fixate_latent(fixate_latentSEXP);
     Rcpp::traits::input_parameter< bool >::type fixate_aux(fixate_auxSEXP);
     Rcpp::traits::input_parameter< bool >::type fixate_global(fixate_globalSEXP);
     Rcpp::traits::input_parameter< bool >::type fixate_local(fixate_localSEXP);
-    mcmc_minn_fsv(y_in_p, Pi, Z, Z_fcst, mu, phi, sigma, f, facload, h, aux, global, local, slice, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, a, gig, fixate_aux, fixate_global, fixate_local);
+    mcmc_minn_fsv(y_in_p, Pi, Z, Z_fcst, mu, phi, sigma, f, facload, h, aux, global, local, slice, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, a, gig, fixate_Z, fixate_Pi, fixate_mu, fixate_phi, fixate_sigma, fixate_f, fixate_facload, fixate_latent, fixate_aux, fixate_global, fixate_local);
     return R_NilValue;
 END_RCPP
 }
@@ -988,7 +996,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mfbvar_mcmc_ssng_csv", (DL_FUNC) &_mfbvar_mcmc_ssng_csv, 56},
     {"_mfbvar_mcmc_minn_diffuse", (DL_FUNC) &_mfbvar_mcmc_minn_diffuse, 32},
     {"_mfbvar_mcmc_ssng_diffuse", (DL_FUNC) &_mfbvar_mcmc_ssng_diffuse, 41},
-    {"_mfbvar_mcmc_minn_fsv", (DL_FUNC) &_mfbvar_mcmc_minn_fsv, 46},
+    {"_mfbvar_mcmc_minn_fsv", (DL_FUNC) &_mfbvar_mcmc_minn_fsv, 54},
     {"_mfbvar_mcmc_ssng_fsv", (DL_FUNC) &_mfbvar_mcmc_ssng_fsv, 64},
     {"_mfbvar_mcmc_minn_iw", (DL_FUNC) &_mfbvar_mcmc_minn_iw, 27},
     {"_mfbvar_mcmc_ssng_iw", (DL_FUNC) &_mfbvar_mcmc_ssng_iw, 44},

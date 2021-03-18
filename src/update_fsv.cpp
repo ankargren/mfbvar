@@ -206,9 +206,6 @@ void update_fsv(arma::mat & armafacload, arma::mat & armaf, arma::mat & armah,
     double C0_j = C0(j);
     double Bsigma_j = Bsigma(j);
 
-    if (j < 1) {
-
-    }
     stochvol::update_sv(armaynorm_j, curpara_j, curh_j, curh0j, curmixprob_j, curmixind_j,
                         centered_baseline, C0_j, cT, Bsigma_j, a0idi, b0idi, bmu, Bmu, B011inv, B022inv, Gammaprior,
                         truncnormal, MHcontrol, MHsteps, parameterization, false, priorh0_j);

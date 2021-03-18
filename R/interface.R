@@ -797,21 +797,51 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
     prior <- args$prior_type
   }
 
-  if (!(prior %in% c("ss", "ssng", "minn", "dl"))) {
-    stop("prior must be 'ss', 'ssng', 'minn' or 'dl'.")
+  prior_opts <- c("ss", "ssng", "minn", "dl")
+  variance_opts <- c("iw", "fsv", "csv", "diffuse")
+  envir <- environment()
+  if (!(prior %in% prior_opts)) {
+    stop(sprintf("prior must be %s or %s.",
+                 paste(prior_opts[-length(prior_opts)], collapse = ", "),
+                 prior_opts[length(prior_opts)]))
+  } else {
+    assign(prior, TRUE, envir)
+    vapply(setdiff(prior_opts, prior),
+           function(x) assign(x, FALSE, envir),
+           logical(1))
   }
-  if (!(variance %in% c("iw", "fsv", "csv", "diffuse"))) {
-    stop("volatility must be 'iw', 'diffuse', 'csv' or 'fsv'.")
+  if (!(variance %in% variance_opts)) {
+    stop(sprintf("variance must be %s or %s.",
+                 paste(variance_opts[-length(variance_opts)], collapse = ", "),
+                 variance_opts[length(variance_opts)]))
+  } else {
+    assign(variance, TRUE, envir)
+    vapply(setdiff(variance_opts, variance),
+           function(x) assign(x, FALSE, envir),
+           logical(1))
   }
 
   if (prior == "dl" && !(variance %in% c("fsv", "diffuse"))) {
-    stop("The Dirichlet-Laplace prior (dl) can only be used with variance specifications fsv and diffuse.")
+    stop("The Dirichlet-Laplace prior (dl) can only be used with
+         variance specifications fsv and diffuse.")
   }
 
-  class(mfbvar_prior) <- c(sprintf("mfbvar_%s_%s", prior, variance), sprintf("mfbvar_%s", prior), sprintf("mfbvar_%s", variance), class(mfbvar_prior))
+  class(mfbvar_prior) <- c(sprintf("mfbvar_%s_%s", prior, variance),
+                           sprintf("mfbvar_%s", prior),
+                           sprintf("mfbvar_%s", variance),
+                           class(mfbvar_prior))
 
   time_out <- c(time_out, Sys.time())
-  main_run <-  mfbvar:::mcmc_sampler(mfbvar_prior, ...)
+  main_run <- mfbvar_sampler(mfbvar_prior,
+                             minn = minn,
+                             ss = ss,
+                             ssng = ssng,
+                             dl = dl,
+                             iw = iw,
+                             csv = csv,
+                             diffuse = diffuse,
+                             fsv = fsv,
+                             ...)
   time_out <- c(time_out, Sys.time())
   if (mfbvar_prior$verbose) {
     time_diff <- Sys.time() - time_out[1]
