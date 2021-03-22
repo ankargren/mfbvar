@@ -74,70 +74,66 @@ test_that("IW", {
   variance <- "csv"
   test_wrapper(prior_obj, prior, variance, params)
 
+  # minn diffuse
+  params <- mfbvar:::get_params_info(minn = TRUE, diffuse = TRUE)$params
+  prior <- "minn"
+  variance <- "diffuse"
+  test_wrapper(prior_obj, prior, variance, params)
+
+  # ss diffuse
+  params <- mfbvar:::get_params_info(ss = TRUE, diffuse = TRUE)$params
+  prior <- "ss"
+  variance <- "diffuse"
+  test_wrapper(prior_obj, prior, variance, params)
+
+  # ssng diffuse
+  params <- mfbvar:::get_params_info(ss = TRUE, ssng = TRUE, diffuse = TRUE)$params
+  prior <- "ssng"
+  variance <- "diffuse"
+  test_wrapper(prior_obj, prior, variance, params)
+
   prior_obj <- update_prior(prior_obj, n_fac = 1)
+
+  test_wrapper_fsv <- function(prior_obj, prior, params) {
+    set.seed(10)
+    variance <- "fsv"
+    mod <- estimate_mfbvar(prior_obj, prior, variance)
+
+    for (i in params) {
+      set.seed(10)
+      init <- list(mod[[i]][,,10])
+      fixate <- list(TRUE)
+      names(init) <- i
+      names(fixate) <- i
+      cat(prior, variance, i, "\n")
+      mod2 <- estimate_mfbvar(prior_obj, prior, variance,
+                              init = init,
+                              fixate = fixate)
+      # Only set-wise fixation is implemented
+      if (i %in% c("f", "facload", "latent", "mu", "phi", "sigma")) {
+        expect_false(isTRUE(all.equal(mod[[i]][,,10], mod2[[i]][,,1])))
+        expect_false(isTRUE(all.equal(mod2[[i]][,,1], mod2[[i]][,,10])))
+      } else {
+        expect_equal(mod[[i]][,,10], mod2[[i]][,,1])
+        expect_equal(mod2[[i]][,,1], mod2[[i]][,,10])
+      }
+    }
+  }
 
   # minn fsv
   params <- mfbvar:::get_params_info(minn = TRUE, fsv = TRUE)$params
   prior <- "minn"
-  variance <- "fsv"
-
-  set.seed(10)
-  mod <- estimate_mfbvar(prior_obj, prior, variance)
-
-  for (i in params) {
-    set.seed(10)
-    init <- list(mod[[i]][,,10])
-    fixate <- list(TRUE)
-    names(init) <- i
-    names(fixate) <- i
-    cat(prior, variance, i, "\n")
-    mod2 <- estimate_mfbvar(prior_obj, prior, variance,
-                            init = init,
-                            fixate = fixate)
-    # Only set-wise fixation is implemented
-    if (i %in% c("f", "facload", "latent", "mu", "phi", "sigma")) {
-      expect_false(isTRUE(all.equal(mod[[i]][,,10], mod2[[i]][,,1])))
-      expect_false(isTRUE(all.equal(mod2[[i]][,,1], mod2[[i]][,,10])))
-    } else {
-      expect_equal(mod[[i]][,,10], mod2[[i]][,,1])
-      expect_equal(mod2[[i]][,,1], mod2[[i]][,,10])
-    }
-  }
+  test_wrapper_fsv(prior_obj, prior, params)
 
   # ss fsv
   params <- mfbvar:::get_params_info(ss = TRUE, fsv = TRUE)$params
   prior <- "ss"
-  variance <- "fsv"
-
-  set.seed(10)
-  mod <- estimate_mfbvar(prior_obj, prior, variance)
-
-  for (i in params) {
-    set.seed(10)
-    init <- list(mod[[i]][,,10])
-    fixate <- list(TRUE)
-    names(init) <- i
-    names(fixate) <- i
-    cat(prior, variance, i, "\n")
-    mod2 <- estimate_mfbvar(prior_obj, prior, variance,
-                            init = init,
-                            fixate = fixate)
-    # Only set-wise fixation is implemented
-    if (i %in% c("f", "facload", "latent", "mu", "phi", "sigma")) {
-      expect_false(isTRUE(all.equal(mod[[i]][,,10], mod2[[i]][,,1])))
-      expect_false(isTRUE(all.equal(mod2[[i]][,,1], mod2[[i]][,,10])))
-    } else {
-      expect_equal(mod[[i]][,,10], mod2[[i]][,,1])
-      expect_equal(mod2[[i]][,,1], mod2[[i]][,,10])
-    }
-  }
+  test_wrapper_fsv(prior_obj, prior, params)
 
   # ssng fsv
   params <- mfbvar:::get_params_info(ss = TRUE, ssng = TRUE, fsv = TRUE)$params
   prior <- "ssng"
-  variance <- "fsv"
-  test_wrapper(prior_obj, prior, variance, params)
-
+  test_wrapper_fsv(prior_obj, prior, params)
 
 
 })

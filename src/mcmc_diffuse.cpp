@@ -29,10 +29,9 @@ void mcmc_minn_diffuse(const arma::mat & y_in_p,
   arma::vec Pi_vec = arma::vec(Pi.begin(), n_vars*(n_vars*n_lags+1));
   arma::mat Pi_i = Pi.slice(0); //arma::mat(Pi_vec.begin(), n_vars, n_vars*n_lags + 1, false, true);
   arma::mat Sigma_i = Sigma.slice(0);
-  arma::mat y_i = Z.slice(0).rows(n_lags, n_T + n_lags - 1);
   arma::mat Z_i = Z.slice(0);
   arma::vec errors = arma::vec(n_vars);
-  arma::mat X, post_Pi_Omega_inv, L, b, u1, u2, u4, resid, x;
+  arma::mat X, post_Pi_Omega_inv, L, b, u1, u2, u4, resid, x, y_i;
   arma::mat u3 = arma::vec(n_vars*(n_vars*n_lags + 1));
   arma::mat post_S, Sigma_chol, Sigma_inv;
   arma::mat Z_fcst_i = arma::mat(n_vars, n_lags + n_fcst);
@@ -40,10 +39,12 @@ void mcmc_minn_diffuse(const arma::mat & y_in_p,
 
   if (single_freq) {
     y_i = y_in_p;
+  } else {
+    y_i = Z.slice(0).rows(n_lags, n_T + n_lags - 1);
   }
 
   if (single_freq || fixate_Z) {
-    Z_i.rows(n_lags, n_T + n_lags - 1) = y_in_p;
+    Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
     X = create_X(Z_i, n_lags);
   }
 
@@ -141,7 +142,7 @@ void mcmc_ssng_diffuse(const arma::mat & y_in_p,
                        arma::cube& omega, arma::cube& Z, arma::cube& Z_fcst,
                        const arma::mat& Lambda_comp,
                        const arma::mat& prior_Pi_Omega,
-                       const arma::mat& Omega_Pi,
+                       const arma::vec & prior_Pi_mean_vec,
                        const arma::mat & D_mat, const arma::mat & dt,
                        const arma::mat & d1, const arma::mat & d_fcst_lags,
                        const arma::vec& prior_psi_mean, double c0, double c1,
@@ -161,7 +162,6 @@ void mcmc_ssng_diffuse(const arma::mat & y_in_p,
   }
 
   Progress p(n_reps + n_burnin, verbose);
-
   arma::vec Pi_vec = arma::vec(Pi.begin(), n_vars*(n_vars*n_lags));
   arma::mat Pi_i = Pi.slice(0);
   arma::mat Sigma_i = Sigma.slice(0);
@@ -196,6 +196,7 @@ void mcmc_ssng_diffuse(const arma::mat & y_in_p,
   Sigma_chol = arma::chol(Sigma_i, "lower");
   Sigma_inv = arma::inv_sympd(Sigma_i);
   arma::vec prior_Pi_Omega_vec_inv = 1.0 / arma::vectorise(prior_Pi_Omega);
+  arma::vec Omega_Pi = prior_Pi_mean_vec % prior_Pi_Omega_vec_inv;
 
   // if single freq, we don't need to update
   if (single_freq) {
@@ -241,15 +242,19 @@ void mcmc_ssng_diffuse(const arma::mat & y_in_p,
     Z_i_demean.rows(n_lags, n_T + n_lags - 1) = mZ;
 
     mX = create_X_noint(Z_i_demean, n_lags);
-    Pi_i = sample_Pi_vec(Sigma_inv, mX, mZ, prior_Pi_Omega_vec_inv, Omega_Pi,
-                         check_roots, n_vars, n_lags);
+    if (!fixate_Pi) {
+      Pi_i = sample_Pi_vec(Sigma_inv, mX, mZ, prior_Pi_Omega_vec_inv, Omega_Pi,
+                           check_roots, n_vars, n_lags);
+    }
     resid = mZ - mX * Pi_i.t();
 
     // Sigma
-    post_S = resid.t() * resid;
-    Sigma_i = rinvwish(n_T, post_S);
-    Sigma_chol = arma::chol(Sigma_i, "lower");
-    Sigma_inv = arma::inv_sympd(Sigma_i);
+    if (!fixate_Sigma) {
+      post_S = resid.t() * resid;
+      Sigma_i = rinvwish(n_T, post_S);
+      Sigma_chol = arma::chol(Sigma_i, "lower");
+      Sigma_inv = arma::inv_sympd(Sigma_i);
+    }
 
     if (ssng) {
       update_ng(phi_mu_i, lambda_mu_i, omega_i, nm, c0, c1, s, psi_i,
@@ -263,7 +268,11 @@ void mcmc_ssng_diffuse(const arma::mat & y_in_p,
     }
 
     X = create_X_noint(Z_i, n_lags);
-    posterior_psi_iw(psi_i, mu_mat, Pi_i, D_mat, Sigma_i, inv_prior_psi_Omega, mZ + mu_mat, X, inv_prior_psi_Omega_mean, dt, n_determ, n_vars, n_lags);
+    if (!fixate_psi) {
+      posterior_psi_iw(psi_i, mu_mat, Pi_i, D_mat, Sigma_i, inv_prior_psi_Omega,
+                       mZ + mu_mat, X, inv_prior_psi_Omega_mean, dt, n_determ,
+                       n_vars, n_lags);
+    }
 
     arma::vec errors = arma::vec(n_vars);
     if (((i+1) % n_thin == 0) && (i >= n_burnin)) {
@@ -280,11 +289,11 @@ void mcmc_ssng_diffuse(const arma::mat & y_in_p,
       Z.slice((i-n_burnin)/n_thin) = Z_i;
       Sigma.slice((i-n_burnin)/n_thin) = Sigma_i;
       Pi.slice((i-n_burnin)/n_thin) = Pi_i;
-      psi.row((i-n_burnin)/n_thin) = psi_i.t();
+      psi.slice((i-n_burnin)/n_thin) = psi_i;
       if (ssng) {
-        phi_mu((i-n_burnin)/n_thin) = phi_mu_i;
-        lambda_mu((i-n_burnin)/n_thin) = lambda_mu_i;
-        omega.row((i-n_burnin)/n_thin) = omega_i.t();
+        phi_mu.slice((i-n_burnin)/n_thin) = phi_mu_i;
+        lambda_mu.slice((i-n_burnin)/n_thin) = lambda_mu_i;
+        omega.slice((i-n_burnin)/n_thin) = omega_i;
       }
 
     }

@@ -43,18 +43,20 @@ arma::mat sample_Pi_vec(const arma::mat & Sigma_inv,
                         bool check_roots,
                         arma::uword n_vars,
                         arma::uword n_lags) {
+  arma::uword n_dim0 = n_vars * n_lags;
+  arma::uword n_dim1 = Omega_Pi.n_rows/n_vars;
   arma::mat post_Pi_Omega_inv = arma::kron(Sigma_inv, X.t() * X);
   post_Pi_Omega_inv.diag() += prior_Pi_Omega_vec_inv;
   arma::mat L = arma::chol(post_Pi_Omega_inv, "lower");
-  arma::vec b = arma::vectorise(X.t() * y * Sigma_inv + Omega_Pi);
+  arma::vec b = arma::vectorise(X.t() * y * Sigma_inv) + Omega_Pi;
   arma::vec u1 = arma::solve(arma::trimatl(L), b);
   arma::vec u2 = arma::solve(arma::trimatu(L.t()), u1);
-  arma::mat u3 = arma::vec(n_vars*(n_vars*n_lags + 1));
+  arma::mat u3 = arma::vec(n_vars*n_dim1);
   arma::mat Pi;
-  arma::uword n_dim = n_vars * n_lags;
-  arma::mat Pi_comp = arma::mat(n_dim, n_dim, arma::fill::zeros);
-  Pi_comp.submat(n_vars, 0, n_dim - 1, n_dim - n_vars - 1) =
-    arma::eye(n_dim - n_vars, n_dim - n_vars);
+  bool intercept = n_dim1 > n_dim0;
+  arma::mat Pi_comp = arma::mat(n_dim0, n_dim0, arma::fill::zeros);
+  Pi_comp.submat(n_vars, 0, n_dim0 - 1, n_dim0 - n_vars - 1) =
+    arma::eye(n_dim0 - n_vars, n_dim0 - n_vars);
   bool stationarity_check = false;
   int num_try = 0, iter = 0;
   double root = 1000;
@@ -63,9 +65,13 @@ arma::mat sample_Pi_vec(const arma::mat & Sigma_inv,
     u3.imbue(norm_rand);
     arma::vec u4 = arma::solve(arma::trimatu(L.t()), u3);
     arma::vec Pi_vec = u2 + u4;
-    Pi = arma::trans(arma::reshape(Pi_vec, n_vars*n_lags, n_vars));
+    Pi = arma::trans(arma::reshape(Pi_vec, n_dim1, n_vars));
     if (check_roots) {
-      Pi_comp.rows(0, n_vars-1) = Pi;
+      if (intercept) {
+        Pi_comp.rows(0, n_vars-1) = Pi.cols(1, n_dim1-1);
+      } else {
+        Pi_comp.rows(0, n_vars-1) = Pi;
+      }
       root = max_eig_cpp(Pi_comp);
     } else {
       root = 0.0;

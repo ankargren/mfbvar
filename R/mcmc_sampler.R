@@ -56,7 +56,7 @@ mfbvar_sampler <- function(x, minn = FALSE, ssng = FALSE, ss = FALSE, dl = FALSE
                                "prior_S", "inv_prior_Pi_Omega", "Omega_Pi")
   }
   if (fsv || diffuse) {
-    priors <- create_prior_Pi(lambda1 = lambda1,
+    priors <- mfbvar:::create_prior_Pi(lambda1 = lambda1,
                                                lambda2 = lambda2,
                                                lambda3 = lambda3,
                                                lambda4 = lambda4,
@@ -225,14 +225,14 @@ mfbvar_sampler <- function(x, minn = FALSE, ssng = FALSE, ss = FALSE, dl = FALSE
   # minn diffuse
   if (minn && diffuse) {
     mfbvar:::mcmc_minn_diffuse(Y[-(1:n_lags),],Pi,Sigma,Z,Z_fcst,aux,global,local,slice,Lambda_,prior_Pi_Omega,
-                      c(prior_Pi_mean),Z_1,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,
+                      c(prior_Pi_mean),check_roots,Z_1,n_reps,n_burnin,n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,
                       n_thin,verbose,a,gig,fixate_Pi, fixate_Sigma, fixate_Z,
                       fixate_aux, fixate_global, fixate_local)
   }
   # minn diffuse
   if ((ss || ssng) && diffuse) {
     mfbvar:::mcmc_ssng_diffuse(Y[-(1:n_lags),], Pi, Sigma, psi, phi_mu, lambda_mu,
-                               omega, Z, Z_fcst, Lambda_, prior_Pi_Omega, Omega_Pi, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, n_reps, n_burnin, n_q, T_b-n_lags, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng, fixate_Pi, fixate_Sigma, fixate_Z, fixate_psi, fixate_phi_mu, fixate_lambda_mu, fixate_omega)
+                               omega, Z, Z_fcst, Lambda_, prior_Pi_Omega, c(prior_Pi_mean), D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, n_reps, n_burnin, n_q, T_b-n_lags, n_lags, n_vars, n_T_, n_fcst, n_determ, n_thin, verbose, ssng, fixate_Pi, fixate_Sigma, fixate_Z, fixate_psi, fixate_phi_mu, fixate_lambda_mu, fixate_omega)
 
   }
   if (verbose) {

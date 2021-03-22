@@ -227,16 +227,13 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
 
   arma::mat Pi_i = Pi.slice(0);
   arma::vec psi_i = psi.slice(0);
-  arma::mat X;
-  arma::mat y_i = y_in_p;
-  arma::mat x;
-  arma::vec vol_pred;
-
-
-  // fsv
+  arma::mat Z_i = Z.slice(0);
   arma::vec mu_i = mu.slice(0);
   arma::vec phi_i = phi.slice(0);
   arma::vec sigma_i = sigma.slice(0);
+  arma::mat armaf = f.slice(0);
+  arma::mat armafacload = facload.slice(0);
+  arma::mat armah = h.slice(0);
 
   Rcpp::NumericMatrix curpara = Rcpp::NumericMatrix(3, n_vars + n_fac);
   arma::mat curpara_arma(curpara.begin(), curpara.nrow(), curpara.ncol(), false);
@@ -245,11 +242,7 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
   curpara_arma.row(1) = phi_i.t();
   curpara_arma.row(2) = sigma_i.t();
 
-  arma::mat armaf = f.slice(0);
-  arma::mat armafacload = facload.slice(0);
-  arma::mat armah = h.slice(0);
   arma::mat cc_i = armaf.t() * armafacload.t();
-
   arma::vec armah0 = arma::vec(n_vars + n_fac);
 
   arma::mat Sig_i, y_hat, latent_nofac, h_j, X_j, y_j;
@@ -257,7 +250,6 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
   arma::vec errors_sv = arma::vec(n_vars + n_fac);
   arma::vec errors_var = arma::vec(n_vars + n_fac);
 
-  arma::mat Z_i = arma::mat(n_lags + y_in_p.n_rows, n_vars, arma::fill::zeros);
   arma::mat Z_fcst_i = arma::mat(n_vars, n_lags + n_fcst);
   Z_i.rows(0, n_lags - 1) = Z_1;
 
@@ -270,6 +262,8 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
     eps = arma::mat(n_vars*n_lags, n_vars);
   }
 
+  arma::mat X, x;
+  arma::vec vol_pred;
   arma::mat mu_mat, mZ, mZ1, mX;
   arma::mat my = arma::mat(arma::size(y_in_p), arma::fill::zeros);
   arma::mat Z_i_demean = arma::mat(n_lags + y_in_p.n_rows, n_vars, arma::fill::zeros);
@@ -329,7 +323,7 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
         mZ = simsm_adaptive_univariate(my, Pi_i0, Sig_i, Lambda_comp, mZ1, n_q, T_b, cc_i);
         Z_i.rows(n_lags, n_T + n_lags - 1) = mZ + mu_mat;
       } else {
-        mZ = Z_i - mu_mat;
+        mZ = Z_i.rows(n_lags, n_T + n_lags - 1) - mu_mat;
       }
     }
     Z_i_demean.rows(0, n_lags - 1) = mZ1;

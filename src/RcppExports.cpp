@@ -301,8 +301,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // mcmc_ssng_diffuse
-void mcmc_ssng_diffuse(const arma::mat& y_in_p, arma::cube& Pi, arma::cube& Sigma, arma::cube& psi, arma::cube& phi_mu, arma::cube& lambda_mu, arma::cube& omega, arma::cube& Z, arma::cube& Z_fcst, const arma::mat& Lambda_comp, const arma::mat& prior_Pi_Omega, const arma::mat& Omega_Pi, const arma::mat& D_mat, const arma::mat& dt, const arma::mat& d1, const arma::mat& d_fcst_lags, const arma::vec& prior_psi_mean, double c0, double c1, double s, bool check_roots, const arma::mat& Z_1, arma::uword n_reps, arma::uword n_burnin, arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars, arma::uword n_T, arma::uword n_fcst, arma::uword n_determ, arma::uword n_thin, bool verbose, bool ssng, bool fixate_Pi, bool fixate_Sigma, bool fixate_Z, bool fixate_psi, bool fixate_phi_mu, bool fixate_lambda_mu, bool fixate_omega);
-RcppExport SEXP _mfbvar_mcmc_ssng_diffuse(SEXP y_in_pSEXP, SEXP PiSEXP, SEXP SigmaSEXP, SEXP psiSEXP, SEXP phi_muSEXP, SEXP lambda_muSEXP, SEXP omegaSEXP, SEXP ZSEXP, SEXP Z_fcstSEXP, SEXP Lambda_compSEXP, SEXP prior_Pi_OmegaSEXP, SEXP Omega_PiSEXP, SEXP D_matSEXP, SEXP dtSEXP, SEXP d1SEXP, SEXP d_fcst_lagsSEXP, SEXP prior_psi_meanSEXP, SEXP c0SEXP, SEXP c1SEXP, SEXP sSEXP, SEXP check_rootsSEXP, SEXP Z_1SEXP, SEXP n_repsSEXP, SEXP n_burninSEXP, SEXP n_qSEXP, SEXP T_bSEXP, SEXP n_lagsSEXP, SEXP n_varsSEXP, SEXP n_TSEXP, SEXP n_fcstSEXP, SEXP n_determSEXP, SEXP n_thinSEXP, SEXP verboseSEXP, SEXP ssngSEXP, SEXP fixate_PiSEXP, SEXP fixate_SigmaSEXP, SEXP fixate_ZSEXP, SEXP fixate_psiSEXP, SEXP fixate_phi_muSEXP, SEXP fixate_lambda_muSEXP, SEXP fixate_omegaSEXP) {
+void mcmc_ssng_diffuse(const arma::mat& y_in_p, arma::cube& Pi, arma::cube& Sigma, arma::cube& psi, arma::cube& phi_mu, arma::cube& lambda_mu, arma::cube& omega, arma::cube& Z, arma::cube& Z_fcst, const arma::mat& Lambda_comp, const arma::mat& prior_Pi_Omega, const arma::vec& prior_Pi_mean_vec, const arma::mat& D_mat, const arma::mat& dt, const arma::mat& d1, const arma::mat& d_fcst_lags, const arma::vec& prior_psi_mean, double c0, double c1, double s, bool check_roots, const arma::mat& Z_1, arma::uword n_reps, arma::uword n_burnin, arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars, arma::uword n_T, arma::uword n_fcst, arma::uword n_determ, arma::uword n_thin, bool verbose, bool ssng, bool fixate_Pi, bool fixate_Sigma, bool fixate_Z, bool fixate_psi, bool fixate_phi_mu, bool fixate_lambda_mu, bool fixate_omega);
+RcppExport SEXP _mfbvar_mcmc_ssng_diffuse(SEXP y_in_pSEXP, SEXP PiSEXP, SEXP SigmaSEXP, SEXP psiSEXP, SEXP phi_muSEXP, SEXP lambda_muSEXP, SEXP omegaSEXP, SEXP ZSEXP, SEXP Z_fcstSEXP, SEXP Lambda_compSEXP, SEXP prior_Pi_OmegaSEXP, SEXP prior_Pi_mean_vecSEXP, SEXP D_matSEXP, SEXP dtSEXP, SEXP d1SEXP, SEXP d_fcst_lagsSEXP, SEXP prior_psi_meanSEXP, SEXP c0SEXP, SEXP c1SEXP, SEXP sSEXP, SEXP check_rootsSEXP, SEXP Z_1SEXP, SEXP n_repsSEXP, SEXP n_burninSEXP, SEXP n_qSEXP, SEXP T_bSEXP, SEXP n_lagsSEXP, SEXP n_varsSEXP, SEXP n_TSEXP, SEXP n_fcstSEXP, SEXP n_determSEXP, SEXP n_thinSEXP, SEXP verboseSEXP, SEXP ssngSEXP, SEXP fixate_PiSEXP, SEXP fixate_SigmaSEXP, SEXP fixate_ZSEXP, SEXP fixate_psiSEXP, SEXP fixate_phi_muSEXP, SEXP fixate_lambda_muSEXP, SEXP fixate_omegaSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type y_in_p(y_in_pSEXP);
@@ -316,7 +316,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::cube& >::type Z_fcst(Z_fcstSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type Lambda_comp(Lambda_compSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type prior_Pi_Omega(prior_Pi_OmegaSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type Omega_Pi(Omega_PiSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type prior_Pi_mean_vec(prior_Pi_mean_vecSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type D_mat(D_matSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type dt(dtSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type d1(d1SEXP);
@@ -346,7 +346,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type fixate_phi_mu(fixate_phi_muSEXP);
     Rcpp::traits::input_parameter< bool >::type fixate_lambda_mu(fixate_lambda_muSEXP);
     Rcpp::traits::input_parameter< bool >::type fixate_omega(fixate_omegaSEXP);
-    mcmc_ssng_diffuse(y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, Omega_Pi, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng, fixate_Pi, fixate_Sigma, fixate_Z, fixate_psi, fixate_phi_mu, fixate_lambda_mu, fixate_omega);
+    mcmc_ssng_diffuse(y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, prior_Pi_mean_vec, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng, fixate_Pi, fixate_Sigma, fixate_Z, fixate_psi, fixate_phi_mu, fixate_lambda_mu, fixate_omega);
     return R_NilValue;
 END_RCPP
 }
