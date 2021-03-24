@@ -46,7 +46,6 @@ void update_csv(
   arma::vec covector(T+1);  // holds covector (see McCausland et al. 2011)
   arma::vec htmp(T+1);  // intermediate vector for sampling h
   arma::vec hnew(T+1);  // intermediate vector for sampling h
-
   double sigma2inv = std::pow(sigma, -2.0);
 
   double Bh0inv = 1.0/priorlatent0;
@@ -66,6 +65,7 @@ void update_csv(
   if (!fixate_phi) {
     phi = rtruncnorm(phi_postmean, phi_postvar);
   }
+
   const double phi2 = std::pow(phi, 2.0);
 
   /*
@@ -77,6 +77,7 @@ void update_csv(
                                1/(prior_df * prior_sigma2 +
                                  arma::accu(arma::pow(u, 2.0)))), -0.5);
   }
+
   sigma2inv = std::pow(sigma, -2.0);
 
   /*

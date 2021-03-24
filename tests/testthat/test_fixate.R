@@ -27,7 +27,7 @@ test_that("IW", {
       fixate <- list(TRUE)
       names(init) <- i
       names(fixate) <- i
-      cat(prior, variance, i, "\n")
+      #cat(prior, variance, i, "\n")
       mod2 <- estimate_mfbvar(prior_obj, prior, variance,
                               init = init,
                               fixate = fixate)
@@ -105,7 +105,7 @@ test_that("IW", {
       fixate <- list(TRUE)
       names(init) <- i
       names(fixate) <- i
-      cat(prior, variance, i, "\n")
+      #cat(prior, variance, i, "\n")
       mod2 <- estimate_mfbvar(prior_obj, prior, variance,
                               init = init,
                               fixate = fixate)

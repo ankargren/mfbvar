@@ -147,26 +147,14 @@ estimate_mdd_ss_1 <- function(mfbvar_obj) {
   d_post_psi <- d %*% t(matrix(post_psi, nrow = n_vars))
   ################################################################
   ### Reduced Gibbs step
-  for (r in 2:n_reps) {
-    ################################################################
-    ### Pi and Sigma step
-    #                             (Z_r1,                 d,     psi_r1,            prior_Pi_mean, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_S, prior_nu, check_roots, n_vars, n_lags, n_T)
-    Pi_Sigma <- posterior_Pi_Sigma(Z_r1 = Z_red[,, r-1], d = d, psi_r1 = post_psi, prior_Pi_mean, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_S, n_vars+2, check_roots = TRUE, n_vars, n_lags, n_T)
-    Pi_red[,,r]      <- Pi_Sigma$Pi_r
-    Sigma_red[,,r]   <- Pi_Sigma$Sigma_r
-    num_tries[r] <- Pi_Sigma$num_try
-    roots[r]     <- Pi_Sigma$root
-
-    ################################################################
-    ### Smoothing step
-    #(Y, d, Pi_r,            Sigma_r,               psi_r,                          Z_1, Lambda, n_vars, n_lags, n_T_, smooth_state)
-
-    Pi_r <- cbind(Pi_red[,,r], 0)
-    Z_res <- kf_sim_smooth(mZ, Pi_r, Sigma_red[,,r], Lambda_, demeaned_z0, n_q, T_b)
-    Z_res <- rbind(demeaned_z0, Z_res) + d_post_psi
-    Z_red[,, r] <- Z_res
-  }
-
+  mod_red <- estimate_mfbvar(
+    mfbvar_prior = mfbvar_obj$mfbvar_prior,
+    prior = "ss",
+    variance = "iw",
+    init = list(psi = post_psi),
+    fixate = list(psi = TRUE)
+  )
+  Z_red <- mod_red$Z
   ################################################################
   ### For the likelihood calculation
   mZ <- Y - d %*% t(matrix(post_psi, nrow = n_vars))

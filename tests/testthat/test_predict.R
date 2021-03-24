@@ -84,7 +84,7 @@ test_that("Forecasts (monthly)", {
                  pull(median),
                c(apply(mod_minn$Z_fcst[-(1:4),4,], 1, median), use.names = FALSE))
 
-  Y_list <- lapply(Y[,1:4], function(x) ts(x, frequency = 12, start = c(1996, 8)))
+  Y_list <- lapply(na.omit(Y[,1:4]), function(x) ts(x, frequency = 12, start = c(1996, 8)))
 
   set.seed(10237)
   prior_obj2 <- set_prior(Y = Y_list, n_lags = 4, n_burnin = 10, n_reps = 10)
@@ -130,7 +130,7 @@ test_that("Forecasts (quarterly)", {
                  pull(median),
                as.numeric(apply(mod_minn$Z_fcst[-(1:4),4,], 1, median)))
 
-  Y <- Y[seq(2, nrow(Y), by = 3), ]
+  Y <- na.omit(Y[seq(2, nrow(Y), by = 3), ])
   Y_list <- lapply(Y, function(x) ts(x, frequency = 4, start = c(1996, 3)))
 
   set.seed(10237)

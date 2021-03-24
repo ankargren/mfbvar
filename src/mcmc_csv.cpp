@@ -33,14 +33,18 @@ void mcmc_minn_csv(const arma::mat & y_in_p,
 
   arma::mat Pi_i = Pi.slice(0);
   arma::mat Sigma_i = Sigma.slice(0);
+  arma::vec f_i = f.slice(0);
+  double phi_i = arma::as_scalar(phi.slice(0));
+  double sigma_i = arma::as_scalar(sigma.slice(0));
   arma::mat y_i = Z.slice(0).rows(n_lags, n_T + n_lags - 1);
+
   arma::mat X, post_Pi_Omega, post_Pi, Sigma_chol_inv;
   arma::mat post_S, Sigma_chol, x, y_scaled, X_scaled, eps, u, u_tilde;
 
-  arma::vec f_i = f.slice(0);
+
   arma::vec exp_sqrt_f = arma::exp(0.5 * f_i);
   arma::vec errors = arma::vec(n_vars);
-  double phi_i = arma::as_scalar(phi.slice(0)), sigma_i = arma::as_scalar(sigma(0)), vol_pred;
+  double vol_pred;
   arma::imat r = arma::imat(n_T, n_vars);
   double f0 = 0.0;
   arma::mat mixprob = arma::mat(10*n_T, n_vars);
