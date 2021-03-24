@@ -53,7 +53,10 @@ mfbvar_sampler <- function(x, minn = FALSE, ssng = FALSE, ss = FALSE, dl = FALSE
                                        prior_nu = n_vars + 2,
                                        independent = FALSE)
     mfbvar:::list_to_variables(priors, envir, "prior_Pi_mean", "prior_Pi_Omega",
-                               "prior_S", "inv_prior_Pi_Omega", "Omega_Pi")
+                               "prior_S", "inv_prior_Pi_Omega", "Omega_Pi",
+                               "prior_nu")
+    prior_params <- sort(c(prior_params,
+                      "prior_Pi_mean", "prior_Pi_Omega", "prior_S", "prior_nu"))
   }
   if (fsv || diffuse) {
     priors <- mfbvar:::create_prior_Pi(lambda1 = lambda1,
@@ -67,6 +70,8 @@ mfbvar_sampler <- function(x, minn = FALSE, ssng = FALSE, ss = FALSE, dl = FALSE
                                                block_exo = block_exo,
                                                independent = TRUE)
     mfbvar:::list_to_variables(priors, envir, "prior_Pi_mean", "prior_Pi_Omega")
+    prior_params <- sort(c(prior_params,
+                           "prior_Pi_mean", "prior_Pi_Omega"))
   }
 
   # Initalize csv priors

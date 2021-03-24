@@ -74,7 +74,8 @@ create_prior_Pi <- function(lambda1, lambda2,  lambda3, lambda4, prior_Pi_AR1, Y
                 prior_Pi_Omega = diag(prior_Pi_Omega),
                 prior_S = prior_S,
                 inv_prior_Pi_Omega = inv_prior_Pi_Omega,
-                Omega_Pi = Omega_Pi))
+                Omega_Pi = Omega_Pi,
+                prior_nu = prior_nu))
   }
 }
 
