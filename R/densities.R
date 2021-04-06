@@ -42,21 +42,6 @@ dmultn <- function(x, m, Sigma) {
   return(log_d)
 }
 
-#' Truncated multivariate normal density function
-#'
-#' Density function for the truncated multivariate normal distribution
-#' @templateVar V_inv TRUE
-#' @param d The number of components.
-#' @templateVar p_trunc TRUE
-#' @templateVar chisq_val TRUE
-#' @template man_template
-#' @keywords internal
-#' @noRd
-#' @inherit dmultn
-dnorm_trunc <- function(x, m, V_inv, d, p_trunc, chisq_val) {
-  qf <- t(x - m) %*% V_inv %*% (x - m)
-  return((1/p_trunc) * (1/sqrt((2*pi)^d/det(V_inv))) * exp(-0.5 * qf) * (qf < chisq_val))
-}
 
 #' Matrix t distribution
 #'
