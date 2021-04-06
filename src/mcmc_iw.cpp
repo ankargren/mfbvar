@@ -33,7 +33,7 @@ void mcmc_minn_iw(const arma::mat & y_in_p,
   arma::mat X, post_Pi_Omega, post_Pi;
   arma::mat post_S, Sigma_chol, x;
   arma::mat Z_fcst_i = arma::mat(n_vars, n_lags + n_fcst);
-  int post_nu = n_T + n_vars + prior_nu;
+  int post_nu = n_T + prior_nu;
 
   if (single_freq) {
     y_i = y_in_p;
@@ -99,7 +99,7 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
                   bool check_roots, const arma::mat& Z_1, arma::uword n_reps, arma::uword n_burnin,
                   arma::uword n_q, arma::uword T_b, arma::uword n_lags, arma::uword n_vars,
                   arma::uword n_T, arma::uword n_fcst, arma::uword n_determ,
-                  arma::uword n_thin, bool verbose, bool ssng,
+                  arma::uword n_thin, bool verbose, int prior_nu, bool ssng,
                   bool fixate_Pi, bool fixate_Sigma, bool fixate_Z, bool fixate_psi,
                   bool fixate_phi_mu, bool fixate_lambda_mu, bool fixate_omega) {
   bool single_freq;
@@ -128,7 +128,7 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
   Z_i.rows(0, n_lags - 1) = Z_1;
 
   arma::mat Pi_i0 = arma::mat(n_vars, n_vars*n_lags+1, arma::fill::zeros);
-  int post_nu = n_T + n_vars + 2;
+  int post_nu = n_T + prior_nu;
   arma::mat Sigma_chol = arma::chol(Sigma_i, "lower");
 
   arma::mat Psi_i = arma::mat(psi_i.begin(), n_vars, n_determ, false, true);

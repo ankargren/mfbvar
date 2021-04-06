@@ -197,7 +197,7 @@ mfbvar_sampler <- function(x, minn = FALSE, ssng = FALSE, ss = FALSE, dl = FALSE
   if ((ss || ssng) && iw) {
     mfbvar:::mcmc_ssng_iw(Y[-(1:n_lags),],Pi,Sigma,psi,phi_mu,lambda_mu,omega,Z,Z_fcst,Lambda_,prior_Pi_Omega,inv_prior_Pi_Omega,Omega_Pi,prior_Pi_mean,
             prior_S,D_mat,dt,d1,d_fcst_lags,prior_psi_mean,c0,c1,s,check_roots,Z_1,n_reps,n_burnin,
-            n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,ssng,
+            n_q,T_b-n_lags,n_lags,n_vars,n_T_,n_fcst,n_determ,n_thin,verbose,prior_nu,ssng,
             fixate_Pi, fixate_Sigma, fixate_Z, fixate_psi, fixate_phi_mu,
             fixate_lambda_mu, fixate_omega)
   }

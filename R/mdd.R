@@ -90,7 +90,7 @@ estimate_mdd_ss_1 <- function(mfbvar_obj) {
   prior_Pi_Omega <- mfbvar_obj$prior_Pi_Omega
   prior_Pi_mean <- mfbvar_obj$prior_Pi_mean
   prior_S <- mfbvar_obj$prior_S
-  post_nu <- mfbvar_obj$post_nu
+  post_nu <- mfbvar_obj$prior_nu + mfbvar_obj$n_T_
 
   Y     <- mfbvar_obj$Y
   Z     <- mfbvar_obj$Z
@@ -102,7 +102,7 @@ estimate_mdd_ss_1 <- function(mfbvar_obj) {
 
   post_Pi_mean <- apply(Pi, c(1, 2), mean)
   post_Sigma <- apply(Sigma, c(1, 2), mean)
-  post_psi <- colMeans(psi)
+  post_psi <- apply(psi, c(1, 2), mean)
 
   prior_S <- mfbvar_obj$prior_S
   prior_Pi_Omega <- mfbvar_obj$prior_Pi_Omega
@@ -113,8 +113,8 @@ estimate_mdd_ss_1 <- function(mfbvar_obj) {
   freq <- mfbvar_obj$mfbvar_prior$freq
   n_q <- sum(freq == "q")
   T_b <- max(which(!apply(apply(Y[, freq == "m"], 2, is.na), 1, any)))
-  Lambda <- build_Lambda(ifelse(freq == "q", "average", freq), n_lags)
-  Lambda_ <- build_Lambda(rep("average", n_q), 3)
+  Lambda <- mfbvar:::build_Lambda(ifelse(freq == "q", "average", freq), n_lags)
+  Lambda_ <- mfbvar:::build_Lambda(rep("average", n_q), 3)
 
   ################################################################
   ### Initialize
@@ -133,7 +133,7 @@ estimate_mdd_ss_1 <- function(mfbvar_obj) {
   ### Compute terms which do not vary in the sampler
 
   # Create D (does not vary in the sampler), and find roots of Pi
-  D <- build_DD(d = d, n_lags = n_lags)
+  D <- mfbvar:::build_DD(d = d, n_lags = n_lags)
 
   # For the posterior of Pi
   inv_prior_Pi_Omega <- solve(prior_Pi_Omega)
@@ -141,10 +141,10 @@ estimate_mdd_ss_1 <- function(mfbvar_obj) {
 
   Z_1 <- Z_red[1:n_lags,, 1]
 
-  mZ <- Y - d %*% t(matrix(post_psi, nrow = n_vars))
+  mZ <- Y - d %*% t(post_psi)
   mZ <- as.matrix(mZ)
-  demeaned_z0 <- Z_1 - d[1:n_lags, ] %*% t(matrix(post_psi, nrow = n_vars))
-  d_post_psi <- d %*% t(matrix(post_psi, nrow = n_vars))
+  demeaned_z0 <- Z_1 - d[1:n_lags, ] %*% t(post_psi)
+  d_post_psi <- d %*% t(post_psi)
   ################################################################
   ### Reduced Gibbs step
   mod_red <- estimate_mfbvar(
@@ -157,29 +157,29 @@ estimate_mdd_ss_1 <- function(mfbvar_obj) {
   Z_red <- mod_red$Z
   ################################################################
   ### For the likelihood calculation
-  mZ <- Y - d %*% t(matrix(post_psi, nrow = n_vars))
+  mZ <- Y - d %*% t(post_psi)
   mZ <- mZ[-(1:n_lags), ]
-  demeaned_z0 <- Z[1:n_lags,, 1] - d[1:n_lags, ] %*% t(matrix(post_psi, nrow = n_vars))
+  demeaned_z0 <- Z[1:n_lags,, 1] - d[1:n_lags, ] %*% t(post_psi)
   h0 <- matrix(t(demeaned_z0), ncol = 1)
   h0 <- h0[(n_vars*n_lags):1,, drop = FALSE] # have to reverse the order
-  Pi_comp <- build_companion(post_Pi_mean, n_vars = n_vars, n_lags = n_lags)
+  Pi_comp <- mfbvar:::build_companion(post_Pi_mean, n_vars = n_vars, n_lags = n_lags)
   Q_comp  <- matrix(0, ncol = n_vars*n_lags, nrow = n_vars*n_lags)
   Q_comp[1:n_vars, 1:n_vars] <- t(chol(post_Sigma))
   P0 <- matrix(0, n_lags*n_vars, n_lags*n_vars)
 
   ################################################################
   ### Final calculations
-  lklhd          <- sum(c(loglike(Y = as.matrix(mZ), Lambda = Lambda,
+  lklhd          <- sum(c(mfbvar:::loglike(Y = as.matrix(mZ), Lambda = Lambda,
                                   Pi_comp = Pi_comp, Q_comp = Q_comp, n_T = n_T_,
                                   n_vars = n_vars, n_comp = n_lags * n_vars,
                                   z0 = h0, P0 = P0)[-1]))
-  eval_prior_Pi_Sigma <- dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma,
+  eval_prior_Pi_Sigma <- mfbvar:::dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma,
                                       M = prior_Pi_mean, P = prior_Pi_Omega,
                                       S = prior_S, v = n_vars+2)
-  eval_prior_psi      <- dmultn(x = post_psi, m = prior_psi_mean,
+  eval_prior_psi      <- mfbvar:::dmultn(x = post_psi, m = prior_psi_mean,
                                 Sigma = prior_psi_Omega)
-  eval_log_RB <- eval_Pi_Sigma_RaoBlack(Z_array = Z_red, d = d,
-                                        post_psi_center = post_psi,
+  eval_log_RB <- mfbvar:::eval_Pi_Sigma_RaoBlack(Z_array = Z_red, d = d,
+                                        post_psi_center = t(post_psi),
                                         post_Pi_center = post_Pi_mean,
                                         post_Sigma_center = post_Sigma,
                                         post_nu = post_nu,
@@ -189,7 +189,7 @@ estimate_mdd_ss_1 <- function(mfbvar_obj) {
                                         n_lags = n_lags, n_reps = n_reps)
   const <- median(eval_log_RB)
   eval_RB_Pi_Sigma    <- log(mean(exp(eval_log_RB-const))) + const
-  eval_marg_psi   <- log(mean(eval_psi_MargPost(Pi_array = Pi, Sigma_array = Sigma,
+  eval_marg_psi   <- log(mean(mfbvar:::eval_psi_MargPost(Pi_array = Pi, Sigma_array = Sigma,
                                                 Z_array = Z,
                                                 post_psi_center = post_psi,
                                                 prior_psi_mean = prior_psi_mean,
@@ -233,7 +233,7 @@ estimate_mdd_ss_2 <- function(mfbvar_obj, p_trunc) {
   prior_Pi_Omega <- mfbvar_obj$prior_Pi_Omega
   prior_Pi_mean <- mfbvar_obj$prior_Pi_mean
   prior_S <- mfbvar_obj$prior_S
-  post_nu <- mfbvar_obj$post_nu
+  post_nu <- mfbvar_obj$prior_nu + mfbvar_obj$n_T_
 
   Y <- mfbvar_obj$Y
   Z <- mfbvar_obj$Z
@@ -243,8 +243,8 @@ estimate_mdd_ss_2 <- function(mfbvar_obj, p_trunc) {
 
   post_Pi_mean <- apply(mfbvar_obj$Pi, c(1, 2), mean)
   post_Sigma <- apply(mfbvar_obj$Sigma, c(1, 2), mean)
-  post_psi <- colMeans(psi)
-  post_psi_Omega <- cov(psi)
+  post_psi <- apply(psi, c(1, 2), mean)
+  post_psi_Omega <- cov(t(matrix(psi, nrow = dim(psi)[1])))
 
   prior_S <- mfbvar_obj$prior_S
   prior_Pi_Omega <- mfbvar_obj$prior_Pi_Omega
@@ -256,7 +256,7 @@ estimate_mdd_ss_2 <- function(mfbvar_obj, p_trunc) {
   chisq_val <- qchisq(p_trunc, n_determ*n_vars)
 
   #(mZ,lH,mF,mQ,iT,ip,iq,h0,P0)
-  Pi_comp <- build_companion(post_Pi_mean, n_vars = n_vars, n_lags = n_lags)
+  Pi_comp <- mfbvar:::build_companion(post_Pi_mean, n_vars = n_vars, n_lags = n_lags)
   Q_comp  <- matrix(0, ncol = n_vars*n_lags, nrow = n_vars*n_lags)
   Q_comp[1:n_vars, 1:n_vars] <- t(chol(post_Sigma))
   P0      <- matrix(0, n_lags*n_vars, n_lags*n_vars)
@@ -271,8 +271,8 @@ estimate_mdd_ss_2 <- function(mfbvar_obj, p_trunc) {
   Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi_mean
   for (r in 1:n_reps) {
     # Demean z, create Z (companion form version)
-    demeaned_z <- Z[,, r] - d %*% t(matrix(psi[r, ], nrow = n_vars))
-    demeaned_Z <- build_Z(z = demeaned_z, n_lags = n_lags)
+    demeaned_z <- Z[,, r] - d %*% t(matrix(psi[,,r], nrow = n_vars))
+    demeaned_Z <- mfbvar:::build_Z(z = demeaned_z, n_lags = n_lags)
     XX <- demeaned_Z[-nrow(demeaned_Z), ]
     YY <- demeaned_Z[-1, 1:n_vars]
     XXt.XX <- crossprod(XX)
@@ -292,15 +292,15 @@ estimate_mdd_ss_2 <- function(mfbvar_obj, p_trunc) {
     post_s_i <- prior_S + s_sample + t(Pi_diff) %*% chol2inv(chol(prior_Pi_Omega + XXt.XX.inv)) %*% Pi_diff
 
     # Set the variables which vary in the Kalman filtering
-    mZ <- Y - d %*% t(matrix(psi[r, ], nrow = n_vars))
+    mZ <- Y - d %*% t(matrix(psi[,,r], nrow = n_vars))
     mZ <- mZ[-(1:n_lags), ]
-    demeaned_z0 <- Z[1:n_lags,, 1] - d[1:n_lags, ] %*% t(matrix(psi[r, ], nrow = n_vars))
+    demeaned_z0 <- Z[1:n_lags,, 1] - d[1:n_lags, ] %*% t(matrix(psi[,,r], nrow = n_vars))
     h0 <- matrix(t(demeaned_z0), ncol = 1)
     h0 <- h0[(n_vars*n_lags):1,,drop = FALSE] # have to reverse the order
 
 
-    eval_posterior_Pi_Sigma[r] <- dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = post_Pi_i, P = post_Pi_Omega_i, S = post_s_i, v = post_nu)
-    data_likelihood[r] <- sum(c(loglike(Y = as.matrix(mZ), Lambda = Lambda, Pi_comp = Pi_comp, Q_comp = Q_comp, n_T = n_T_, n_vars = n_vars, n_comp = n_lags * n_vars, z0 = h0, P0 = P0)[-1]))
+    eval_posterior_Pi_Sigma[r] <- mfbvar:::dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma, M = post_Pi_i, P = post_Pi_Omega_i, S = post_s_i, v = post_nu)
+    data_likelihood[r] <- sum(c(mfbvar:::loglike(Y = as.matrix(mZ), Lambda = Lambda, Pi_comp = Pi_comp, Q_comp = Q_comp, n_T = n_T_, n_vars = n_vars, n_comp = n_lags * n_vars, z0 = h0, P0 = P0)[-1]))
 
     eval_prior_psi[r] <- dmultn(x = psi[r, ], m = prior_psi_mean, Sigma = prior_psi_Omega)
     psi_truncated[r] <- dnorm_trunc(psi[r, ], post_psi, solve(post_psi_Omega), n_determ*n_vars, p_trunc, chisq_val)
@@ -342,8 +342,8 @@ estimate_mdd_minn <- function(mfbvar_obj, p_trunc, ...) {
   prior_S <- mfbvar_obj$prior_S
   prior_nu <- mfbvar_obj$prior_nu
 
-  postsim <- sapply(1:n_reps, function(x) {
-    Z_comp <- build_Z(z = Z[,, x], n_lags = n_lags)
+  postsim <- vapply(1:n_reps, function(x) {
+    Z_comp <- mfbvar:::build_Z(z = Z[,, x], n_lags = n_lags)
     XX <- Z_comp[-nrow(Z_comp), ]
     XX <- cbind(XX, 1)
     YY <- Z_comp[-1, 1:n_vars]
@@ -358,8 +358,9 @@ estimate_mdd_minn <- function(mfbvar_obj, p_trunc, ...) {
     S <- crossprod(YY - XX %*% Pi_sample)
     Pi_diff <- prior_Pi_mean - Pi_sample
     post_S <- prior_S + S + t(Pi_diff) %*% chol2inv(chol(prior_Pi_Omega + XXt.XX.inv)) %*% Pi_diff
-    return(dmatt(YY, XX %*% prior_Pi_mean, chol2inv(chol(diag(nrow(YY)) + XX %*% prior_Pi_Omega %*% t(XX))), prior_S, prior_nu))
-  })
+    return(mfbvar:::dmatt(YY, XX %*% prior_Pi_mean, chol2inv(chol(diag(nrow(YY)) + XX %*% prior_Pi_Omega %*% t(XX))), prior_S, prior_nu))
+  },
+  numeric(1))
 
   temp <- apply(Z[-(1:n_lags), , ], 3, function(x) x[is.na(c(mfbvar_obj$Y[-(1:n_lags),]))])
 
