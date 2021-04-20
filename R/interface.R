@@ -58,21 +58,20 @@
 #'   \item{\code{restrict}}{\code{ = "none"}}
 #' }
 #'
-#' The function \code{update_prior} can be used to update an existing prior object. See the examples.
 #'
 #' @return An object of class \code{mfbvar_prior} that is used as input to \code{estimate_mfbvar}.
 #' @examples
 #' # Standard list-based way
 #' prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 100)
-#' prior_obj <- update_prior(prior_obj, n_fcst = 4)
+#' prior_obj <- set_prior(prior_obj, n_fcst = 4)
 #'
 #' # Weekly-monthly mix of data, four weeks per month
 #' Y <- matrix(rnorm(400), 100, 4)
 #' Y[setdiff(1:100,seq(4, 100, by = 4)), 4] <- NA
 #' prior_obj <- set_prior(Y = Y, freq = c(rep("w", 3), "m"),
 #'                        n_lags = 4, n_reps = 10)
-#' @seealso \code{\link{estimate_mfbvar}}, \code{\link{update_prior}}, \code{\link{interval_to_moments}}, \code{\link{print.mfbvar_prior}}, \code{\link{summary.mfbvar_prior}}, \code{\link[factorstochvol]{fsvsample}}
-set_prior <- function(Y, aggregation = "average", prior_Pi_AR1 = 0, lambda1 = 0.2,
+#' @seealso \code{\link{estimate_mfbvar}}, \code{\link{interval_to_moments}}, \code{\link{print.mfbvar_prior}}, \code{\link{summary.mfbvar_prior}}, \code{\link[factorstochvol]{fsvsample}}
+set_prior <- function(prior_obj, Y, aggregation = "average", prior_Pi_AR1 = 0, lambda1 = 0.2,
                       lambda2 = 0.5, lambda3 = 1, lambda4 = 10000, block_exo = NULL, n_lags,
                       n_fcst = 0, n_thin = 1, n_reps, n_burnin = n_reps, freq = NULL, d = NULL, d_fcst = NULL,
                       prior_psi_mean = NULL, prior_psi_Omega = NULL, check_roots = FALSE,
@@ -80,39 +79,73 @@ set_prior <- function(Y, aggregation = "average", prior_Pi_AR1 = 0, lambda1 = 0.
                       prior_phi = c(0.9, 0.1),
                       prior_sigma2 = c(0.01, 4), n_fac = NULL,
                       n_cores = 1, verbose = FALSE, ...) {
-  prior_call <- mget(names(formals())[names(formals()) != "..."], sys.frame(sys.nframe()))
-  prior_call$supplied_args <- names(as.list(match.call()))[-1]
-  ellipsis <- list(...)
-  fsv_names <- names(ellipsis)
-  fsv_arguments <- c("priormu", "priorphiidi", "priorphifac", "priorsigmaidi", "priorsigmafac", "priorfacload")
-  if (!all(fsv_names %in% fsv_arguments)) {
-    unused_names <- setdiff(fsv_names, fsv_arguments)
-    warning(sprintf("The following arguments passed along to fsvsample are unused: %s", ifelse(unused_names == "", "[unnamed component]", unused_names)))
+  if (!missing(prior_obj) && inherits(prior_obj, "mfbvar_prior")) {
+    prior_call <- as.list(match.call())[-1]
+    call_names <- names(prior_call)
+    for(iter in seq_along(call_names)) {
+      eval(parse(text = paste0("prior_obj[[", call_names[iter], "]] = prior_call[[iter]]")))
+    }
+    prior_obj$supplied_args <- union(prior_obj$supplied_args, call_names)
+    prior_obj <- check_prior(prior_obj)
+  } else {
+    prior_call <- mget(names(formals())[names(formals()) != "..."], sys.frame(sys.nframe()))
+    prior_call$supplied_args <- names(as.list(match.call()))[-1]
+    ellipsis <- list(...)
+    fsv_names <- names(ellipsis)
+    fsv_arguments <- c("priormu", "priorphiidi", "priorphifac", "priorsigmaidi", "priorsigmafac", "priorfacload")
+    if (!all(fsv_names %in% fsv_arguments)) {
+      unused_names <- setdiff(fsv_names, fsv_arguments)
+      warning(sprintf("The following arguments passed along to fsvsample are unused: %s", ifelse(unused_names == "", "[unnamed component]", unused_names)))
+    }
+    prior_call <- append(prior_call, ellipsis[fsv_names %in% fsv_arguments])
+    ret <- check_prior(prior_call)
+    class(ret) <- "mfbvar_prior"
   }
-  prior_call <- append(prior_call, ellipsis[fsv_names %in% fsv_arguments])
-  ret <- check_prior(prior_call)
-  class(ret) <- "mfbvar_prior"
   return(ret)
 }
-#' @rdname set_prior
-#' @param prior_obj an object of class \code{mfbvar_prior}
-update_prior <- function(prior_obj, ...) {
-  if(!inherits(prior_obj, "mfbvar_prior")) {
-    stop("The object to be updated is not of class mfbvar_prior.")
-  }
 
-  tmp <- list(...)
-  nam <- names(tmp)
-  for(iter in 1:length(tmp)) {
-    eval(parse(text=paste0("prior_obj$",nam[iter]," = tmp[[iter]]")))
-  }
-  prior_obj$supplied_args <- union(prior_obj$supplied_args, names(as.list(match.call()))[-1])
-  prior_obj <- check_prior(prior_obj)
-
-  return(prior_obj)
-}
 
 check_prior <- function(prior_obj) {
+  is_scalar <- function(x) {
+    is.atomic(x) && length(x) == 1 && !is.character(x) && !is.logical(x)
+  }
+
+  is_numeric_vector <- function(x) {
+    is.numeric(x) && (is.vector(x) || (is.matrix(x) && min(dim(x)) == 1))
+  }
+
+  assert_class <- function(prior_obj, x, y) {
+    if (!inherits(prior_obj[[x]], y)) {
+      stop(sprintf("%s must inherit from class %s.",
+                   x, paste(y, collapse = " or ")))
+    }
+  }
+
+  assert_scalar <- function(prior_obj, x) {
+    if (!is_scalar(prior_obj[[x]])) {
+      stop(sprintf("%s must be a scalar.", x))
+    }
+  }
+
+  assert_numeric_vector <- function(prior_obj, x, n = 2) {
+    if (x %in% prior_obj$supplied_args) {
+      if (!(is.numeric(prior_obj[[x]]) && is.vector(prior_obj[[x]])) || !(length(prior_obj[[x]]) %in% n)) {
+        stop(sprintf("%s must be a %d-dimensional numeric vector.", x, n))
+      }
+    }
+  }
+
+  scalar_values <- c("lambda1", "lambda2", "lambda3", "lambda4", "s", "n_lags",
+                     "n_thin", "n_reps", "n_burnin", "a")
+
+  required <- c("Y", "n_lags")
+  if (any(vapply(required, missing, logical(1)))) {
+    stop(sprintf("Missing required arguments: %s",
+                 paste(vapply(required, missing, logical(1))),
+                 collapse = ", "))
+  }
+
+  assert_class(prior_obj, "Y", c("matrix", "data.frame", "list"))
   if (!is.matrix(prior_obj$Y)) {
     if (inherits(prior_obj$Y, "list")) {
       list_conv <- list_to_matrix(prior_obj$Y)
@@ -141,8 +174,6 @@ check_prior <- function(prior_obj) {
       else {
         stop(sprintf("The data frame contains %d non-numeric columns. Please include at most one non-numeric column that can be coerced to dates.", sum(!(col_class == "numeric"))))
       }
-    } else {
-      stop(paste0("Y is of class ", class(prior_obj$Y), ", but must be matrix, data frame/tibble or a list of ts or zooreg objects."))
     }
   } else {
     if (is.null(rownames(prior_obj$Y))) {
@@ -150,48 +181,16 @@ check_prior <- function(prior_obj) {
     }
   }
 
-  if (nrow(prior_obj$Y) > max(unlist(apply(prior_obj$Y, 2, function(x) Position(is.na, x, nomatch = nrow(prior_obj$Y)))))) {
+  if (nrow(prior_obj$Y) >
+      max(unlist(apply(prior_obj$Y, 2, function(x)
+        Position(is.na, x, nomatch = nrow(prior_obj$Y)))))) {
     stop("Y: remove final rows containing only NAs.")
-  }
-
-  intercept_flag <- FALSE
-
-  if ("d" %in% prior_obj$supplied_args) {
-    if (is.atomic(prior_obj$d) && length(prior_obj$d) == 1) {
-      intercept_flag <- TRUE
-      prior_obj$d <- matrix(1, nrow = nrow(prior_obj$Y), 1)
-    } else if (all(prior_obj$d == 1)) {
-      intercept_flag <- TRUE
-    }
-
-    prior_obj$intercept_flag <- intercept_flag
-
-    if (!intercept_flag) {
-      if ("d_fcst" %in% prior_obj$supplied_args) {
-        if (!is.matrix(prior_obj$d_fcst)) {
-          stop("d_fcst is of class", class(prior_obj$d_fcst), ", but must be a matrix.")
-        }
-
-        if (ncol(prior_obj$d) != ncol(prior_obj$d_fcst)) {
-          stop("d has", ncol(prior_obj$d), " columns and d_fcst", ncol(prior_obj$d_fcst), ".")
-        }
-      }
-    }
-
-    if (nrow(prior_obj$Y) != nrow(prior_obj$d)) {
-      stop("Y has ", nrow(prior_obj$Y), "rows and d ", nrow(prior_obj$d), "rows, but they must be equal.")
-    }
-
-    if (!is.matrix(prior_obj$d)) {
-      stop("d is of class", class(prior_obj$d), ", but must be a matrix.")
-    }
   }
 
 
   if ("freq" %in% prior_obj$supplied_args) {
-    if (!(is.atomic(prior_obj$freq) && is.character(prior_obj$freq))) {
-      stop("freq is of class ", class(prior_obj$freq), ", but it must be a character vector.")
-    } else if (!all(prior_obj$freq %in% c("w", "m", "q"))) {
+    assert_class(prior_obj, "freq", "character")
+    if (!all(prior_obj$freq %in% c("w", "m", "q"))) {
       stop("Elements of freq must be 'w', 'm' or 'q'.")
     } else if (length(prior_obj$freq) != ncol(prior_obj$Y)) {
       stop("The length of freq is ", length(prior_obj$freq), ", but Y has ", ncol(prior_obj$Y), " columns.")
@@ -204,7 +203,7 @@ check_prior <- function(prior_obj) {
       )
       freqs <- c("q", "m", "w")
       freqs <- freqs[!is.na(freq_pos)]
-      if (length(freqs)>2) {
+      if (length(freqs) > 2) {
         stop("mfbvar can currently only handle a mix of two frequencies.")
       }
       if (length(freqs)>1 && freqs[1]=="q" && freqs[2] == "w") {
@@ -215,30 +214,49 @@ check_prior <- function(prior_obj) {
         stop("Variables must be placed in weekly-monthly-quarterly order.")
       }
     }
-  } else {
-    stop("freq: must be supplied.")
   }
 
-  if (length(freqs)>1) {
-      if (min(unlist(apply(prior_obj$Y[, prior_obj$freq %in% freqs[-1], drop = FALSE], 2, function(x) Position(is.na, x, nomatch = 9999999999)))) == 1) {
-        stop("Y: high-frequency variables are NA at the beginning of the sample.")
-      }
-  } else {
-      if (any(is.na(prior_obj$Y))) {
-        stop("Y: single-frequency estimation requires the data to contain no NAs.")
-      }
-  }
-
-
-  if ("aggregation" %in% prior_obj$supplied_args) {
-    if (is.atomic(prior_obj$aggregation) || is.matrix(prior_obj$aggregation)) {
-    } else {
-      stop("aggregation must be a character vector or a matrix, but is now of class ", class(prior_obj$aggregation), ".")
+  if (length(freqs) > 1) {
+    if (min(unlist(
+      apply(prior_obj$Y[, prior_obj$freq %in% freqs[-1], drop = FALSE], 2,
+            function(x) Position(is.na, x, nomatch = 1e10)))) == 1) {
+      stop("Y: high-frequency variables are NA at the beginning of the sample.")
     }
   } else {
-    prior_obj$aggregation <- "average"
+    if (any(is.na(prior_obj$Y))) {
+      stop("Y: single-frequency estimation requires the data to contain no NAs.")
+    }
   }
 
+  intercept_flag <- FALSE
+
+  if ("d" %in% prior_obj$supplied_args) {
+    if (is_scalar(prior_obj$d)) {
+      intercept_flag <- TRUE
+      prior_obj$d <- matrix(1, nrow = nrow(prior_obj$Y), 1)
+    } else if (all(prior_obj$d == 1)) {
+      intercept_flag <- TRUE
+    }
+
+    prior_obj$intercept_flag <- intercept_flag
+
+    if (!intercept_flag) {
+      if ("d_fcst" %in% prior_obj$supplied_args) {
+        assert_class(prior_obj, "d_fcst", "matrix")
+        if (ncol(prior_obj$d) != ncol(prior_obj$d_fcst)) {
+          stop("d has", ncol(prior_obj$d), " columns and d_fcst", ncol(prior_obj$d_fcst), ".")
+        }
+      }
+    }
+
+    if (nrow(prior_obj$Y) != nrow(prior_obj$d)) {
+      stop("Y has ", nrow(prior_obj$Y), "rows and d ", nrow(prior_obj$d), "rows, but they must be equal.")
+    }
+
+    assert_class(prior_obj, "d", "matrix")
+  }
+
+  assert_class(prior_obj, "aggregation", c("character", "matrix"))
   if (is.matrix(prior_obj$aggregation)) {
     prior_obj$Lambda <- prior_obj$aggregation
     prior_obj$aggregation <- "custom"
@@ -264,55 +282,37 @@ check_prior <- function(prior_obj) {
     }
   }
 
+  if (prior_obj$aggregation == "triangular") {
+    if (prior_obj$n_lags < 5) {
+      stop("The number of lags must be at least 5 when using triangular aggregation.")
+    }
+  } else if (prior_obj$aggregation == "average") {
+    if (prior_obj$n_lags < 3) {
+      stop("The number of lags must be at least 3 when using intra-quarterly averaging.")
+    }
+  }
 
-  if ("prior_Pi_AR1" %in% prior_obj$supplied_args) {
-    if (is.atomic(prior_obj$prior_Pi_AR1)) {
-      if (length(prior_obj$prior_Pi_AR1) == 1) {
-        prior_obj$prior_Pi_AR1 <- rep(prior_obj$prior_Pi_AR1, ncol(prior_obj$Y))
-      }
+  if (is_scalar(prior_obj$prior_Pi_AR1)) {
+    prior_obj$prior_Pi_AR1 <- rep(prior_obj$prior_Pi_AR1, ncol(prior_obj$Y))
+  } else if (is_numeric_vector(prior_obj$prior_Pi_AR1)) {
+    prior_obj$prior_Pi_AR1 <- c(prior_obj$prior_Pi_AR1)
+    if (length(prior_obj$prior_Pi_AR1) != ncol(prior_obj$Y)) {
+      stop("The number of elements in prior_Pi_AR1 differs
+           from number of variables.")
+    }
+  }
+
+  for (i in seq_along(scalar_values)) {
+    if (scalar_values[i] %in% prior_obj$supplied_args) {
+      assert_scalar(prior_obj, scalar_values[i])
     } else {
-      stop("prior_Pi_AR1 must be a vector, but is now of class ", class(prior_obj$prior_Pi_AR1), ".")
+      prior_obj$supplied_args <- c(prior_obj$supplied_args, scalar_values[i])
     }
-  } else {
-    prior_obj$prior_Pi_AR1 <- rep(0, ncol(prior_obj$Y))
-    prior_obj$supplied_args <- c(prior_obj$supplied_args, "prior_Pi_AR1")
   }
 
-
-  if ("lambda1" %in% prior_obj$supplied_args) {
-    if (!is.atomic(prior_obj$lambda1) || length(prior_obj$lambda1) > 1) {
-      stop("lambda1 must be a vector with a single element.")
-    }
-  } else {
-    prior_obj$supplied_args <- c(prior_obj$supplied_args, "lambda1")
-  }
-
-  if ("lambda2" %in% prior_obj$supplied_args) {
-    if (!is.atomic(prior_obj$lambda2) || length(prior_obj$lambda2) > 1) {
-      stop("lambda2 must be a vector with a single element.")
-    }
-  } else {
-    prior_obj$supplied_args <- c(prior_obj$supplied_args, "lambda2")
-  }
-
-  if ("lambda3" %in% prior_obj$supplied_args) {
-    if (!is.atomic(prior_obj$lambda3) || length(prior_obj$lambda3) > 1) {
-      stop("lambda3 must be a vector with a single element.")
-    }
-  } else {
-    prior_obj$supplied_args <- c(prior_obj$supplied_args, "lambda3")
-  }
-
-  if ("lambda4" %in% prior_obj$supplied_args) {
-    if (!is.atomic(prior_obj$lambda4) || length(prior_obj$lambda4) > 1) {
-      stop("lambda4 must be a vector with a single element.")
-    }
-  } else {
-    prior_obj$supplied_args <- c(prior_obj$supplied_args, "lambda4")
-  }
 
   if ("block_exo" %in% prior_obj$supplied_args) {
-    if (!is.atomic(prior_obj$block_exo)) {
+    if (!is.vector(prior_obj$block_exo)) {
       stop("block_exo must be a vector of indexes or names.")
     } else {
       if (is.character(prior_obj$block_exo)) {
@@ -327,51 +327,35 @@ check_prior <- function(prior_obj) {
 
 
   if ("prior_psi_mean" %in% prior_obj$supplied_args) {
-    if (!(is.atomic(prior_obj$prior_psi_mean) || is.matrix(prior_obj$prior_psi_mean))) {
+    if (!is_numeric_vector(prior_obj$prior_psi_mean)) {
       stop("prior_psi_mean must be a vector or matrix with one row or column.")
     }
-    if (is.atomic(prior_obj$prior_psi_mean)) {
+    if (is.vector(prior_obj$prior_psi_mean)) {
       if (length(prior_obj$prior_psi_mean) %% ncol(prior_obj$Y) != 0) {
-        stop("prior_psi_mean has ", length(prior_obj$prior_psi_mean), " elements, but there are ", ncol(prior_obj$Y), " variables in Y.")
+        stop("prior_psi_mean has ", length(prior_obj$prior_psi_mean), " elements,
+             but there are ", ncol(prior_obj$Y), " variables in Y.")
       }
     }
     if (is.matrix(prior_obj$prior_psi_mean)) {
-      if (!any(dim(prior_obj$prior_psi_mean) == 1)) {
-        stop("prior_psi_mean must be a vector or matrix with one row or column.")
-      } else {
-        prior_obj$prior_psi_mean <- c(prior_obj$prior_psi_mean)
-      }
+      prior_obj$prior_psi_mean <- c(prior_obj$prior_psi_mean)
     }
   }
-
 
   if ("prior_psi_Omega" %in% prior_obj$supplied_args) {
-    if (!is.matrix(prior_obj$prior_psi_Omega)) {
-      stop("prior_psi_Omega must be a matrix.")
-    } else {
-      if (dim(prior_obj$prior_psi_Omega)[1] != dim(prior_obj$prior_psi_Omega)[2]) {
-        stop("prior_psi_Omega must be a positive-definite symmetric matrix.")
-      }
-      if (dim(prior_obj$prior_psi_Omega)[1] != length(prior_obj$prior_psi_mean)) {
-        stop("The dimension of prior_psi_Omega must correspond to the number of elements in prior_psi_mean.")
-      }
+    assert_class(prior_obj, "prior_psi_Omega", "matrix")
+    if (dim(prior_obj$prior_psi_Omega)[1] != dim(prior_obj$prior_psi_Omega)[2]) {
+      stop("prior_psi_Omega must be a positive-definite symmetric matrix.")
+    }
+    if (dim(prior_obj$prior_psi_Omega)[1] != length(prior_obj$prior_psi_mean)) {
+      stop("The dimension of prior_psi_Omega must correspond to the number of elements in prior_psi_mean.")
     }
   }
-
-  if ("s" %in% prior_obj$supplied_args) {
-    if (!is.atomic(prior_obj$s) || length(prior_obj$s) > 1) {
-      stop("s must be a vector with a single element.")
-    }
-  } else {
-    prior_obj$supplied_args <- c(prior_obj$supplied_args, "s")
-  }
-
 
   if ("prior_ng" %in% prior_obj$supplied_args) {
-    if (!is.atomic(prior_obj$prior_ng) || length(prior_obj$prior_ng) > 2) {
-      stop("prior_ng must be a vector with one or two elements.")
+    if (!is_numeric_vector(prior_obj$prior_ng) || length(prio_obj$prior_ng) > 2) {
+      stop("prior_ng must be a numeric vector with one or two elements.")
     } else {
-      if (length(prior_obj$prior_ng) == 1) {
+      if (is_scalar(prior_obj$prior_ng)) {
         prior_obj$prior_ng <- c(prior_obj$prior_ng, prior_obj$prior_ng)
       }
     }
@@ -379,132 +363,46 @@ check_prior <- function(prior_obj) {
     prior_obj$supplied_args <- c(prior_obj$supplied_args, "prior_ng")
   }
 
-  if ("n_lags" %in% prior_obj$supplied_args) {
-    if (!is.atomic(prior_obj$n_lags) || length(prior_obj$n_lags) > 1) {
-      stop("n_lags must be a vector with a single element.")
-    }
-  } else {
-    stop("n_lags: No lag length specified.\n")
-  }
-
-  if (prior_obj$aggregation == "triangular") {
-    if (prior_obj$n_lags < 5) {
-      stop("The number of lags must be at least 5 when using triangular aggregation.")
-    }
-  } else if (prior_obj$aggregation == "average") {
-    if (prior_obj$n_lags < 3) {
-      stop("The number of lags must be at least 3 when using intra-quarterly averaging.")
-    }
-  }
-
-  if ("n_fcst" %in% prior_obj$supplied_args) {
-    if (!is.atomic(prior_obj$n_fcst) || length(prior_obj$n_fcst) > 1) {
-      stop("n_fcst must be a vector with a single element.")
-    } else {
-      if (intercept_flag) {
-        prior_obj$d_fcst <- matrix(1, nrow = prior_obj$n_fcst, 1)
-      }
-    }
-  } else {
-    prior_obj$supplied_args <- c(prior_obj$supplied_args, "n_fcst")
-  }
-
-  if ("n_thin" %in% prior_obj$supplied_args) {
-    if (!is.atomic(prior_obj$n_thin) || length(prior_obj$n_thin) > 1) {
-      stop("n_thin must be a vector with a single element.")
-    }
-  }
-
-  if ("n_reps" %in% prior_obj$supplied_args) {
-    if (!is.atomic(prior_obj$n_reps) || length(prior_obj$n_reps) > 1) {
-      stop("n_reps must be a vector with a single element.")
-    }
-  } else {
-    stop("n_reps: Number of draws to use in main chain not specified.\n")
-  }
-
-  if (!is.atomic(prior_obj$n_burnin) || length(prior_obj$n_burnin) > 1) {
-    stop("n_burnin must be a vector with a single element.")
-  } else if (!("n_burnin" %in% prior_obj$supplied_args)) {
-    prior_obj$supplied_args <- c(prior_obj$supplied_args, "n_burnin")
-  }
-
   if (!is.logical(prior_obj$check_roots)) {
     stop("check_roots: must be logical.\n")
   }
 
-  if ("prior_phi" %in% prior_obj$supplied_args) {
-    if (!is.atomic(prior_obj$prior_phi) || length(prior_obj$prior_phi) != 2) {
-      stop("prior_phi must be a vector with two numeric elements.")
-    }
-  } else {
-    prior_obj$supplied_args <- c(prior_obj$supplied_args, "prior_phi")
-  }
 
-  if ("prior_sigma2" %in% prior_obj$supplied_args) {
-    if (!is.atomic(prior_obj$prior_sigma2) || length(prior_obj$prior_sigma2) != 2) {
-      stop("prior_sigma2 must be a vector with two numeric elements.")
-    }
-  } else {
-    prior_obj$supplied_args <- c(prior_obj$supplied_args, "prior_sigma2")
-  }
-
+  assert_numeric_vector(prior_obj, "prior_phi")
+  assert_numeric_vector(prior_obj, "prior_sigma2")
 
   if (!is.null(prior_obj$n_fac)) {
-    if (!is.numeric(prior_obj$n_fac) | !is.atomic(prior_obj$n_fac)) {
-      stop("The number of factors is not a numeric scalar value.")
-    }
-
-    if (!is.atomic(prior_obj$n_cores) || length(prior_obj$n_cores) > 1) {
-      stop("n_cores must be a vector with a single element.")
-    }
+    assert_scalar(prior_obj, "n_fac")
+    assert_scalar(prior_obj, "n_cores")
 
     if ("priormu" %in% prior_obj$supplied_args) {
-      if (!(is.numeric(prior_obj$priormu) && length(prior_obj$priormu) == 2)) {
-        stop(sprintf("priormu should be a numeric vector of length 2, but is %s of length %d", class(prior_obj$priormu), length(prior_obj$priormu)))
-      }
+      assert_numeric_vector(prior_obj, "priormu")
     } else {
       prior_obj$priormu <- c(0, 10)
     }
 
+
     if ("priorphiidi" %in% prior_obj$supplied_args) {
-      if (!(is.numeric(prior_obj$priorphiidi) && length(prior_obj$priorphiidi) == 2)) {
-        stop(sprintf("priorphiidi should be a numeric vector of length 2, but is %s of length %d", class(prior_obj$priorphiidi), length(prior_obj$priorphiidi)))
-      }
+      assert_numeric_vector(prior_obj, "priorphiidi")
     } else {
       prior_obj$priorphiidi <- c(10, 3)
     }
 
+
     if ("priorphifac" %in% prior_obj$supplied_args) {
-      if (!(is.numeric(prior_obj$priorphifac) && length(prior_obj$priorphifac) == 2)) {
-        stop(sprintf("priorphifac should be a numeric vector of length 2, but is %s of length %d", class(prior_obj$priorphifac), length(prior_obj$priorphifac)))
-      }
+      assert_numeric_vector(prior_obj, "priorphifac")
     } else {
       prior_obj$priorphifac <- c(10, 3)
     }
 
     if ("priorsigmaidi" %in% prior_obj$supplied_args) {
-      if (!(is.numeric(prior_obj$priorsigmaidi))) {
-        stop("priorsigmaidi should be numeric.")
-      }
-      if (length(prior_obj$priorsigmaidi) == 1) {
-      } else if (length(prior_obj$priorsigmaidi) == ncol(prior_obj$Y)) {
-      } else {
-        stop("priorsigmaidi should be a numeric vector of length 1 or n_vars.")
-      }
+      assert_numeric_vector(prior_obj, "priorsigmaidi", c(1, ncol(prior_obj$Y)))
     } else {
       prior_obj$priorsigmaidi <- rep(1, ncol(prior_obj$Y))
     }
 
     if ("priorsigmafac" %in% prior_obj$supplied_args) {
-      if (!(is.numeric(prior_obj$priorsigmafac))) {
-        stop("priorsigmafac should be numeric.")
-      }
-      if (length(prior_obj$priorsigmafac) == 1) {
-      } else if (length(prior_obj$priorsigmafac) == prior_obj$n_fac) {
-      } else {
-        stop("priorsigmafac should be a numeric vector of length 1 or n_fac")
-      }
+      assert_numeric_vector(prior_obj, "priorsigmafac", c(1, ncol(prior_obj$n_fac)))
     } else {
       prior_obj$priorsigmafac <- rep(1, prior_obj$n_fac)
     }
@@ -536,15 +434,12 @@ check_prior <- function(prior_obj) {
     stop("Please set the number of factors before attempting to pass additional arguments along to fsvsim.")
   }
 
-  if ("a" %in% prior_obj$supplied_args) {
-    if (!is.atomic(prior_obj$a) || length(prior_obj$a) > 1) {
-      stop("a must be a vector with a single element.")
-    }
-  } else {
-    prior_obj$supplied_args <- c(prior_obj$supplied_args, "a")
-  }
-
   return(prior_obj)
+}
+
+set_data <- function(Y, aggregation = "average", n_lags, n_reps, n_burnin = n_reps, n_thin = 1,
+                     freq = freq, ...) {
+  set_prior(Y = parent.frame()$Y, aggregation = parent.frame()$aggregation, ...)
 }
 
 #' Print method for mfbvar_prior
