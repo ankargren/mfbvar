@@ -71,47 +71,155 @@
 #' prior_obj <- set_prior(Y = Y, freq = c(rep("w", 3), "m"),
 #'                        n_lags = 4, n_reps = 10)
 #' @seealso \code{\link{estimate_mfbvar}}, \code{\link{interval_to_moments}}, \code{\link{print.mfbvar_prior}}, \code{\link{summary.mfbvar_prior}}, \code{\link[factorstochvol]{fsvsample}}
-set_prior <- function(prior_obj, Y, aggregation = "average", prior_Pi_AR1 = 0, lambda1 = 0.2,
-                      lambda2 = 0.5, lambda3 = 1, lambda4 = 10000, block_exo = NULL, n_lags,
-                      n_fcst = 0, n_thin = 1, n_reps, n_burnin = n_reps, freq = NULL, d = NULL, d_fcst = NULL,
-                      prior_psi_mean = NULL, prior_psi_Omega = NULL, check_roots = FALSE,
-                      s = -1000, prior_ng = c(0.01, 0.01),
-                      prior_phi = c(0.9, 0.1),
-                      prior_sigma2 = c(0.01, 4), n_fac = NULL,
-                      n_cores = 1, verbose = FALSE, ...) {
-  if (!missing(prior_obj) && inherits(prior_obj, "mfbvar_prior")) {
-    prior_call <- as.list(match.call())[-1]
+set_prior <- function(prior_obj, Y, aggregation, prior_Pi_AR1, lambda1,
+                      lambda2, lambda3, lambda4, block_exo, n_lags, n_fcst,
+                      n_thin, n_reps, n_burnin, freq, d, d_fcst, prior_psi_mean,
+                      prior_psi_Omega, check_roots, s, prior_ng, prior_phi,
+                      prior_sigma2, n_fac, n_cores, priormu, priorphiidi,
+                      priorphifac, priorsigmaidi, priorsigmafac, priorfacload,
+                      restrict, verbose, ...) {
+  if (!missing(prior_obj)) {
+    prior_call <- as.list(match.call())[-2]
+    prior_call[[1]] <- quote(list)
+    prior_call <- eval(as.call(prior_call))
     call_names <- names(prior_call)
-    for(iter in seq_along(call_names)) {
-      eval(parse(text = paste0("prior_obj[[", call_names[iter], "]] = prior_call[[iter]]")))
-    }
+    prior_obj <- prior_obj[which(!(names(prior_obj) %in% call_names))]
+    prior_obj <- c(prior_obj, prior_call)
     prior_obj$supplied_args <- union(prior_obj$supplied_args, call_names)
-    prior_obj <- check_prior(prior_obj)
+    ret <- check_prior(prior_obj)
   } else {
-    prior_call <- mget(names(formals())[names(formals()) != "..."], sys.frame(sys.nframe()))
-    prior_call$supplied_args <- names(as.list(match.call()))[-1]
-    ellipsis <- list(...)
-    fsv_names <- names(ellipsis)
-    fsv_arguments <- c("priormu", "priorphiidi", "priorphifac", "priorsigmaidi", "priorsigmafac", "priorfacload")
-    if (!all(fsv_names %in% fsv_arguments)) {
-      unused_names <- setdiff(fsv_names, fsv_arguments)
-      warning(sprintf("The following arguments passed along to fsvsample are unused: %s", ifelse(unused_names == "", "[unnamed component]", unused_names)))
-    }
-    prior_call <- append(prior_call, ellipsis[fsv_names %in% fsv_arguments])
+    prior_call <- as.list(match.call())
+    prior_call[[1]] <- quote(list)
+    prior_call <- eval(as.call(prior_call))
+    prior_call$supplied_args <- names(prior_call)[-1]
     ret <- check_prior(prior_call)
-    class(ret) <- "mfbvar_prior"
   }
+  class(ret) <- "mfbvar_prior"
+  ret$call <- match.call()
   return(ret)
+}
+
+call_wrapper <- function(prior_call, defaults, prev_args) {
+  supplied_args <- unique(c(prev_args, names(prior_call[-1])))
+  defaults <- defaults[!(names(defaults) %in% c(names(prior_call), supplied_args))]
+  prior_call <- append(prior_call,
+                       defaults)
+  prior_call[[1]] <- quote(set_prior)
+  prior_call <- as.call(prior_call)
+  prior_obj <- eval(as.call(prior_call))
+  prior_obj$wrapper_args <- supplied_args
+  return(prior_obj)
+}
+
+#' @rdname set_prior
+set_init <- function(prior_obj, Y, aggregation = "average", n_lags, n_fcst = 0,
+                     n_reps, n_burnin, n_thin = 1, freq = NULL,
+                     verbose = FALSE) {
+  prior_call <- as.list(match.call())
+  defaults <- formals()
+  prev_args <- ifelse(missing(prior_obj), "", prior_obj$wrapper_args)
+  if (missing(prior_obj)) {
+    prev_args <- NULL
+  } else {
+    prev_args <- prior_obj$wrapper_args
+  }
+  prior_obj <- call_wrapper(prior_call, defaults, prev_args)
+  return(prior_obj)
+}
+
+#' @rdname set_prior
+set_prior_minn <- function(prior_obj, prior_Pi_AR1 = 0, lambda1 = 0.2,
+                           lambda2 = 0.5, lambda3 = 1, lambda4 = 10000,
+                           block_exo = NULL, check_roots = FALSE) {
+  prior_call <- as.list(match.call())
+  defaults <- formals()
+  if (missing(prior_obj)) {
+    prev_args <- NULL
+  } else {
+    prev_args <- prior_obj$wrapper_args
+  }
+  prior_obj <- call_wrapper(prior_call, defaults, prev_args)
+  return(prior_obj)
+}
+
+#' @rdname set_prior
+set_prior_ss <- function(prior_obj, prior_psi_mean, prior_psi_Omega,
+                         d = "intercept", d_fcst = NULL) {
+  prior_call <- as.list(match.call())
+  defaults <- formals()
+  prev_args <- ifelse(missing(prior_obj), "", prior_obj$wrapper_args)
+  if (missing(prior_obj)) {
+    prev_args <- NULL
+  } else {
+    prev_args <- prior_obj$wrapper_args
+  }
+  prior_obj <- call_wrapper(prior_call, defaults, prev_args)
+  return(prior_obj)
+}
+
+#' @rdname set_prior
+set_prior_ssng <- function(prior_obj, s = -1000, prior_ng = c(0.01, 0.01)) {
+  prior_call <- as.list(match.call())
+  defaults <- formals()
+  prev_args <- ifelse(missing(prior_obj), "", prior_obj$wrapper_args)
+  if (missing(prior_obj)) {
+    prev_args <- NULL
+  } else {
+    prev_args <- prior_obj$wrapper_args
+  }
+  prior_obj <- call_wrapper(prior_call, defaults, prev_args)
+  return(prior_obj)
+}
+
+#' @rdname set_prior
+set_prior_fsv <- function(prior_obj, n_fac, n_cores = 1, priormu = c(0, 10),
+                          priorphiidi = c(10, 3), priorphifac = c(10, 3),
+                          priorsigmaidi = 1, priorsigmafac = 1,
+                          priorfacload = 1, restrict = "none") {
+  prior_call <- as.list(match.call())
+  defaults <- formals()
+  prev_args <- ifelse(missing(prior_obj), "", prior_obj$wrapper_args)
+  if (missing(prior_obj)) {
+    prev_args <- NULL
+  } else {
+    prev_args <- prior_obj$wrapper_args
+  }
+  prior_obj <- call_wrapper(prior_call, defaults, prev_args)
+  return(prior_obj)
+}
+
+#' @rdname set_prior
+set_prior_csv <- function(prior_obj, prior_phi = c(0.9, 0.1),
+                          prior_sigma2 = c(0.01, 4)) {
+  prior_call <- as.list(match.call())
+  defaults <- formals()
+  prev_args <- ifelse(missing(prior_obj), "", prior_obj$wrapper_args)
+  if (missing(prior_obj)) {
+    prev_args <- NULL
+  } else {
+    prev_args <- prior_obj$wrapper_args
+  }
+  prior_obj <- call_wrapper(prior_call, defaults, prev_args)
+  return(prior_obj)
 }
 
 
 check_prior <- function(prior_obj) {
-  is_scalar <- function(x) {
-    is.atomic(x) && length(x) == 1 && !is.character(x) && !is.logical(x)
+
+  is_numeric_vector <- function(x, n, null_ok = TRUE, matrix_ok = FALSE) {
+    null <- (null_ok && is.null(x))
+    num <- is.numeric(x)
+    vec <- is.vector(x)
+    mat <- (is.matrix(x) && min(dim(x)) == 1 && matrix_ok)
+    if (missing(n)) {
+      null || (num && (vec || mat))
+    } else {
+      null || (num && (vec || mat) && length(x) %in% n)
+    }
   }
 
-  is_numeric_vector <- function(x) {
-    is.numeric(x) && (is.vector(x) || (is.matrix(x) && min(dim(x)) == 1))
+  is_scalar <- function(x, null_ok = TRUE) {
+    is_numeric_vector(x, n = 1, null_ok = null_ok, matrix_ok = FALSE)
   }
 
   assert_class <- function(prior_obj, x, y) {
@@ -121,28 +229,27 @@ check_prior <- function(prior_obj) {
     }
   }
 
-  assert_scalar <- function(prior_obj, x) {
-    if (!is_scalar(prior_obj[[x]])) {
-      stop(sprintf("%s must be a scalar.", x))
+  assert_numeric_vector <- function(prior_obj, x, n = 2, null_ok = TRUE,
+                                    matrix_ok = FALSE) {
+    if (!is_numeric_vector(prior_obj[[x]], n, null_ok, matrix_ok)) {
+      stop(sprintf("%s must be a %d-dimensional numeric vector.", x, n))
     }
   }
 
-  assert_numeric_vector <- function(prior_obj, x, n = 2) {
-    if (x %in% prior_obj$supplied_args) {
-      if (!(is.numeric(prior_obj[[x]]) && is.vector(prior_obj[[x]])) || !(length(prior_obj[[x]]) %in% n)) {
-        stop(sprintf("%s must be a %d-dimensional numeric vector.", x, n))
-      }
-    }
+  assert_scalar <- function(prior_obj, x, null_ok = FALSE) {
+    assert_numeric_vector(prior_obj, x, n = 1, null_ok = null_ok,
+                          matrix_ok = FALSE)
   }
 
   scalar_values <- c("lambda1", "lambda2", "lambda3", "lambda4", "s", "n_lags",
-                     "n_thin", "n_reps", "n_burnin", "a")
+                     "n_thin", "n_reps", "n_burnin", "a", "n_fcst")
 
   required <- c("Y", "n_lags")
-  if (any(vapply(required, missing, logical(1)))) {
+  missing_required <- !(required %in% names(prior_obj))
+  if (any(missing_required)) {
     stop(sprintf("Missing required arguments: %s",
-                 paste(vapply(required, missing, logical(1))),
-                 collapse = ", "))
+                 paste(required[missing_required],
+                       collapse = ", ")))
   }
 
   assert_class(prior_obj, "Y", c("matrix", "data.frame", "list"))
@@ -151,7 +258,6 @@ check_prior <- function(prior_obj) {
       list_conv <- list_to_matrix(prior_obj$Y)
       prior_obj$Y <- list_conv[[1]]
       prior_obj$freq <- list_conv[[2]]
-      prior_obj$supplied_args <- c(prior_obj$supplied_args, "freq")
     } else if (is.data.frame(prior_obj$Y)) {
       col_class <- sapply(prior_obj$Y, class)
       if (all(col_class == "numeric")) {
@@ -164,12 +270,12 @@ check_prior <- function(prior_obj) {
           }
         }
       } else if (sum(!(col_class == "numeric")) == 1) {
-          date_tmp <- prior_obj$Y[[which(col_class != "numeric")]]
-          date_tmp <- as.character(as.Date(date_tmp))
-          prior_obj$Y <- as.matrix(prior_obj$Y[, which(col_class == "numeric")])
-          if (!any(is.na(date_tmp))) {
-            rownames(prior_obj$Y) <- date_tmp
-          }
+        date_tmp <- prior_obj$Y[[which(col_class != "numeric")]]
+        date_tmp <- as.character(as.Date(date_tmp))
+        prior_obj$Y <- as.matrix(prior_obj$Y[, which(col_class == "numeric")])
+        if (!any(is.na(date_tmp))) {
+          rownames(prior_obj$Y) <- date_tmp
+        }
       }
       else {
         stop(sprintf("The data frame contains %d non-numeric columns. Please include at most one non-numeric column that can be coerced to dates.", sum(!(col_class == "numeric"))))
@@ -231,7 +337,7 @@ check_prior <- function(prior_obj) {
   intercept_flag <- FALSE
 
   if ("d" %in% prior_obj$supplied_args) {
-    if (is_scalar(prior_obj$d)) {
+    if (is_scalar(prior_obj$d) || prior_obj$d == "intercept") {
       intercept_flag <- TRUE
       prior_obj$d <- matrix(1, nrow = nrow(prior_obj$Y), 1)
     } else if (all(prior_obj$d == 1)) {
@@ -292,27 +398,19 @@ check_prior <- function(prior_obj) {
     }
   }
 
+  assert_numeric_vector(prior_obj, "prior_Pi_AR1", c(1, ncol(prior_obj$Y)))
   if (is_scalar(prior_obj$prior_Pi_AR1)) {
     prior_obj$prior_Pi_AR1 <- rep(prior_obj$prior_Pi_AR1, ncol(prior_obj$Y))
-  } else if (is_numeric_vector(prior_obj$prior_Pi_AR1)) {
-    prior_obj$prior_Pi_AR1 <- c(prior_obj$prior_Pi_AR1)
-    if (length(prior_obj$prior_Pi_AR1) != ncol(prior_obj$Y)) {
-      stop("The number of elements in prior_Pi_AR1 differs
-           from number of variables.")
-    }
   }
 
   for (i in seq_along(scalar_values)) {
     if (scalar_values[i] %in% prior_obj$supplied_args) {
-      assert_scalar(prior_obj, scalar_values[i])
-    } else {
-      prior_obj$supplied_args <- c(prior_obj$supplied_args, scalar_values[i])
+      assert_scalar(prior_obj, scalar_values[i], null_ok = TRUE)
     }
   }
 
-
   if ("block_exo" %in% prior_obj$supplied_args) {
-    if (!is.vector(prior_obj$block_exo)) {
+    if (!is.null(prior_obj$block_exo) && !is.vector(prior_obj$block_exo)) {
       stop("block_exo must be a vector of indexes or names.")
     } else {
       if (is.character(prior_obj$block_exo)) {
@@ -321,23 +419,15 @@ check_prior <- function(prior_obj) {
         }
       }
     }
-  } else {
-    prior_obj$supplied_args <- c(prior_obj$supplied_args, "block_exo")
   }
 
-
-  if ("prior_psi_mean" %in% prior_obj$supplied_args) {
-    if (!is_numeric_vector(prior_obj$prior_psi_mean)) {
-      stop("prior_psi_mean must be a vector or matrix with one row or column.")
-    }
-    if (is.vector(prior_obj$prior_psi_mean)) {
-      if (length(prior_obj$prior_psi_mean) %% ncol(prior_obj$Y) != 0) {
-        stop("prior_psi_mean has ", length(prior_obj$prior_psi_mean), " elements,
-             but there are ", ncol(prior_obj$Y), " variables in Y.")
-      }
-    }
-    if (is.matrix(prior_obj$prior_psi_mean)) {
-      prior_obj$prior_psi_mean <- c(prior_obj$prior_psi_mean)
+  if (!is_numeric_vector(prior_obj$prior_psi_mean)) {
+    stop("prior_psi_mean must be a vector or matrix with one row or column.")
+  } else {
+    prior_obj$prior_psi_mean <- c(prior_obj$prior_psi_mean)
+    if (length(prior_obj$prior_psi_mean) %% ncol(prior_obj$Y) != 0) {
+      stop("prior_psi_mean has ", length(prior_obj$prior_psi_mean), " elements,
+           but there are ", ncol(prior_obj$Y), " variables in Y.")
     }
   }
 
@@ -351,96 +441,46 @@ check_prior <- function(prior_obj) {
     }
   }
 
-  if ("prior_ng" %in% prior_obj$supplied_args) {
-    if (!is_numeric_vector(prior_obj$prior_ng) || length(prio_obj$prior_ng) > 2) {
-      stop("prior_ng must be a numeric vector with one or two elements.")
-    } else {
-      if (is_scalar(prior_obj$prior_ng)) {
-        prior_obj$prior_ng <- c(prior_obj$prior_ng, prior_obj$prior_ng)
-      }
-    }
-  } else {
-    prior_obj$supplied_args <- c(prior_obj$supplied_args, "prior_ng")
+  if (intercept_flag && prior_obj$n_fcst > 0) {
+    d_fcst <- matrix(1, nrow = prior_obj$n_fcst, ncol = 1)
   }
 
-  if (!is.logical(prior_obj$check_roots)) {
-    stop("check_roots: must be logical.\n")
+  if (!is.null(prior_obj$check_roots) && !is.logical(prior_obj$check_roots)) {
+    stop("check_roots: must be logical.")
   }
 
-
-  assert_numeric_vector(prior_obj, "prior_phi")
-  assert_numeric_vector(prior_obj, "prior_sigma2")
-
-  if (!is.null(prior_obj$n_fac)) {
-    assert_scalar(prior_obj, "n_fac")
-    assert_scalar(prior_obj, "n_cores")
-
-    if ("priormu" %in% prior_obj$supplied_args) {
-      assert_numeric_vector(prior_obj, "priormu")
-    } else {
-      prior_obj$priormu <- c(0, 10)
+  assert_numeric_vector(prior_obj, "prior_ng", c(1, 2), null_ok = TRUE)
+  assert_numeric_vector(prior_obj, "prior_phi", null_ok = TRUE)
+  assert_numeric_vector(prior_obj, "prior_sigma2", null_ok = TRUE)
+  assert_scalar(prior_obj, "n_fac", null_ok = TRUE)
+  assert_scalar(prior_obj, "n_cores", null_ok = TRUE)
+  assert_numeric_vector(prior_obj, "priormu", n = 2, null_ok = TRUE)
+  assert_numeric_vector(prior_obj, "priorphiidi", n = 2, null_ok = TRUE)
+  assert_numeric_vector(prior_obj, "priorphifac", n = 2, null_ok = TRUE)
+  assert_numeric_vector(prior_obj, "priorsigmaidi", n = c(1, ncol(prior_obj$Y)),
+                        null_ok = TRUE)
+  assert_numeric_vector(prior_obj, "priorsigmafac", n = c(1, prior_obj$n_fac),
+                        null_ok = TRUE)
+  assert_numeric_vector(prior_obj, "priorsigmafac", n = c(1, prior_obj$n_fac),
+                        null_ok = TRUE)
+  if (!is.null(prior_obj$priorfacload)) {
+    if (!(is.numeric(prior_obj$priorfacload) && (length(prior_obj$priorfacload) == 1 || dim(prior_obj$supplied_args$priorfacload) == c(ncol(prior_obj$Y), prior_obj$factors)))) {
+      stop(sprintf("priorfacload should be a scalar value or an n_vars x n_fac matrix, but is %s with %d elements", class(prior_obj$priorfacload), length(prior_obj$priorfacload)))
     }
-
-
-    if ("priorphiidi" %in% prior_obj$supplied_args) {
-      assert_numeric_vector(prior_obj, "priorphiidi")
-    } else {
-      prior_obj$priorphiidi <- c(10, 3)
-    }
-
-
-    if ("priorphifac" %in% prior_obj$supplied_args) {
-      assert_numeric_vector(prior_obj, "priorphifac")
-    } else {
-      prior_obj$priorphifac <- c(10, 3)
-    }
-
-    if ("priorsigmaidi" %in% prior_obj$supplied_args) {
-      assert_numeric_vector(prior_obj, "priorsigmaidi", c(1, ncol(prior_obj$Y)))
-    } else {
-      prior_obj$priorsigmaidi <- rep(1, ncol(prior_obj$Y))
-    }
-
-    if ("priorsigmafac" %in% prior_obj$supplied_args) {
-      assert_numeric_vector(prior_obj, "priorsigmafac", c(1, ncol(prior_obj$n_fac)))
-    } else {
-      prior_obj$priorsigmafac <- rep(1, prior_obj$n_fac)
-    }
-
-    if ("priorfacload" %in% prior_obj$supplied_args) {
-      if (!(is.numeric(prior_obj$supplied_args$priorfacload) && (length(prior_obj$supplied_args$priorfacload) == 1 || dim(prior_obj$supplied_args$priorfacload) == c(ncol(prior_obj$Y), prior_obj$factors)))) {
-        stop(sprintf("priorfacload should be a scalar value or an n_vars x n_fac matrix, but is %s with %d elements", class(prior_obj$priorfacload), length(prior_obj$priorfacload)))
-      }
-    } else {
-      prior_obj$priorfacload <- 1
-    }
-
-    if ("restrict" %in% prior_obj$supplied_args) {
-      if (!(is.character(prior_obj$restrict) && length(prior_obj$priorng) == 1)) {
-        stop(sprintf("restrict should be a single string, but is %s of length %d", class(prior_obj$restrict), length(prior_obj$restrict)))
-      } else {
-        if (!(prior_obj$restrict %in% c("none", "upper"))) {
-          stop(sprintf("restrict should be 'none' or 'upper', but is %s", prior_obj$restrict))
-        }
-      }
-    } else {
-      prior_obj$restrict <- "none"
-    }
-
-
-
-  } else if (is.null(prior_obj$n_fac) && any(prior_obj$supplied_args %in% c("priormu", "priorphiidi", "priorphifac", "priorsigmaidi", "priorsigmafac",
-                   "priorfacload", "restrict"))) {
-    stop("Please set the number of factors before attempting to pass additional arguments along to fsvsim.")
   }
 
+  if (!is.null(prior_obj$restrict)) {
+    if (!(is.character(prior_obj$restrict) && length(prior_obj$restrict) == 1)) {
+      stop(sprintf("restrict should be a single string, but is %s of length %d", class(prior_obj$restrict), length(prior_obj$restrict)))
+    } else {
+      if (!(prior_obj$restrict %in% c("none", "upper"))) {
+        stop(sprintf("restrict should be 'none' or 'upper', but is %s", prior_obj$restrict))
+      }
+    }
+  }
   return(prior_obj)
 }
 
-set_data <- function(Y, aggregation = "average", n_lags, n_reps, n_burnin = n_reps, n_thin = 1,
-                     freq = freq, ...) {
-  set_prior(Y = parent.frame()$Y, aggregation = parent.frame()$aggregation, ...)
-}
 
 #' Print method for mfbvar_prior
 #'
@@ -680,7 +720,7 @@ estimate_mfbvar <- function(mfbvar_prior = NULL, prior, variance = "iw", ...) {
       stop("mfbvar_prior must be of class mfbvar_prior.")
     } else {
       if (length(args) > 0) {
-        mfbvar_prior <- update_prior(mfbvar_prior, ...)
+        mfbvar_prior <- set_prior(mfbvar_prior, ...)
       }
     }
   } else {
