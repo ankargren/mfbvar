@@ -301,7 +301,6 @@ check_prior <- function(prior_obj) {
     } else if (length(prior_obj$freq) != ncol(prior_obj$Y)) {
       stop("The length of freq is ", length(prior_obj$freq), ", but Y has ", ncol(prior_obj$Y), " columns.")
     } else {
-
       freq_pos <- c(
         ifelse(any(prior_obj$freq == "q"), which.max(prior_obj$freq == "q"), NA),
         ifelse(any(prior_obj$freq == "m"), which.max(prior_obj$freq == "m"), NA),
