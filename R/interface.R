@@ -79,19 +79,17 @@ set_prior <- function(prior_obj, Y, aggregation, prior_Pi_AR1, lambda1,
                       priorphifac, priorsigmaidi, priorsigmafac, priorfacload,
                       restrict, verbose, ...) {
   if (!missing(prior_obj)) {
-    prior_call <- as.list(match.call())[-2]
-    prior_call[[1]] <- quote(list)
-    prior_call <- eval(as.call(prior_call))
+    prior_call <- mget(ls())
+    prior_call <- prior_call[!(names(prior_call) != "prior_obj")]
     call_names <- names(prior_call)
     prior_obj <- prior_obj[which(!(names(prior_obj) %in% call_names))]
     prior_obj <- c(prior_obj, prior_call)
     prior_obj$supplied_args <- union(prior_obj$supplied_args, call_names)
     ret <- check_prior(prior_obj)
   } else {
-    prior_call <- as.list(match.call())
-    prior_call[[1]] <- quote(list)
-    prior_call <- eval(as.call(prior_call))
-    prior_call$supplied_args <- names(prior_call)[-1]
+    prior_call <- mget(ls())
+    prior_call <- prior_call[which(names(prior_call) %in% names(as.list(match.call()))[-1])]
+    prior_call$supplied_args <- names(prior_call)
     ret <- check_prior(prior_call)
   }
   class(ret) <- "mfbvar_prior"
@@ -100,13 +98,20 @@ set_prior <- function(prior_obj, Y, aggregation, prior_Pi_AR1, lambda1,
 }
 
 call_wrapper <- function(prior_call, defaults, prev_args) {
-  supplied_args <- unique(c(prev_args, names(prior_call[-1])))
-  defaults <- defaults[!(names(defaults) %in% c(names(prior_call), supplied_args))]
+  if ("prior_obj" %in% names(prior_call)) {
+    prior_obj <- prior_call[["prior_obj"]]
+    prev_args <- prior_obj$wrapper_args
+    prior_call <- prior_call[!(names(prior_call) == "prior_obj")]
+    prior_obj <- prior_obj[!(names(prior_obj) %in% names(prior_call))]
+    prior_call <- c(prior_obj, prior_call)
+  } else {
+    prev_args <- NULL
+  }
+  supplied_args <- names(prior_call)
+  defaults <- defaults[!(names(defaults) %in% supplied_args)]
   prior_call <- append(prior_call,
                        defaults)
-  prior_call[[1]] <- quote(set_prior)
-  prior_call <- as.call(prior_call)
-  prior_obj <- eval.parent(prior_call, 2)
+  prior_obj <- do.call("set_prior", prior_call)
   prior_obj$wrapper_args <- supplied_args
   return(prior_obj)
 }
@@ -115,7 +120,8 @@ call_wrapper <- function(prior_call, defaults, prev_args) {
 set_init <- function(prior_obj, Y, aggregation = "average", n_lags, n_fcst = 0,
                      n_reps, n_burnin, n_thin = 1, freq = NULL,
                      verbose = FALSE) {
-  prior_call <- as.list(match.call())
+  prior_call <- mget(ls())
+  prior_call <- prior_call[which(names(prior_call) %in% names(as.list(match.call()))[-1])]
   defaults <- formals()
   prev_args <- ifelse(missing(prior_obj), "", prior_obj$wrapper_args)
   if (missing(prior_obj)) {
@@ -131,24 +137,23 @@ set_init <- function(prior_obj, Y, aggregation = "average", n_lags, n_fcst = 0,
 set_prior_minn <- function(prior_obj, prior_Pi_AR1 = 0, lambda1 = 0.2,
                            lambda2 = 0.5, lambda3 = 1, lambda4 = 10000,
                            block_exo = NULL, check_roots = FALSE) {
-  prior_call <- as.list(match.call())
+  prior_call <- mget(ls())
   defaults <- formals()
-  if (missing(prior_obj)) {
-    prev_args <- NULL
-  } else {
-    prev_args <- prior_obj$wrapper_args
+  if (!missing(prior_obj)) {
+    prior_call <- prior_call[which(names(prior_call) %in% names(as.list(match.call()))[-1])]
   }
-  prior_obj <- call_wrapper(prior_call, defaults, prev_args)
+  prior_obj <- call_wrapper(prior_call, defaults)
   return(prior_obj)
 }
 
 #' @rdname set_prior
 set_prior_ss <- function(prior_obj, prior_psi_mean, prior_psi_Omega,
                          d = "intercept", d_fcst = NULL) {
-  prior_call <- as.list(match.call())
+  prior_call <- mget(ls())
   defaults <- formals()
   prev_args <- ifelse(missing(prior_obj), "", prior_obj$wrapper_args)
   if (missing(prior_obj)) {
+    prior_call <- prior_call[-1]
     prev_args <- NULL
   } else {
     prev_args <- prior_obj$wrapper_args
@@ -159,10 +164,11 @@ set_prior_ss <- function(prior_obj, prior_psi_mean, prior_psi_Omega,
 
 #' @rdname set_prior
 set_prior_ssng <- function(prior_obj, s = -1000, prior_ng = c(0.01, 0.01)) {
-  prior_call <- as.list(match.call())
+  prior_call <- mget(ls())
   defaults <- formals()
   prev_args <- ifelse(missing(prior_obj), "", prior_obj$wrapper_args)
   if (missing(prior_obj)) {
+    prior_call <- prior_call[-1]
     prev_args <- NULL
   } else {
     prev_args <- prior_obj$wrapper_args
@@ -176,10 +182,11 @@ set_prior_fsv <- function(prior_obj, n_fac, n_cores = 1, priormu = c(0, 10),
                           priorphiidi = c(10, 3), priorphifac = c(10, 3),
                           priorsigmaidi = 1, priorsigmafac = 1,
                           priorfacload = 1, restrict = "none") {
-  prior_call <- as.list(match.call())
+  prior_call <- mget(ls())
   defaults <- formals()
   prev_args <- ifelse(missing(prior_obj), "", prior_obj$wrapper_args)
   if (missing(prior_obj)) {
+    prior_call <- prior_call[-1]
     prev_args <- NULL
   } else {
     prev_args <- prior_obj$wrapper_args
@@ -191,10 +198,11 @@ set_prior_fsv <- function(prior_obj, n_fac, n_cores = 1, priormu = c(0, 10),
 #' @rdname set_prior
 set_prior_csv <- function(prior_obj, prior_phi = c(0.9, 0.1),
                           prior_sigma2 = c(0.01, 4)) {
-  prior_call <- as.list(match.call())
+  prior_call <- mget(ls())
   defaults <- formals()
   prev_args <- ifelse(missing(prior_obj), "", prior_obj$wrapper_args)
   if (missing(prior_obj)) {
+    prior_call <- prior_call[-1]
     prev_args <- NULL
   } else {
     prev_args <- prior_obj$wrapper_args
@@ -205,7 +213,6 @@ set_prior_csv <- function(prior_obj, prior_phi = c(0.9, 0.1),
 
 
 check_prior <- function(prior_obj) {
-
   is_numeric_vector <- function(x, n, null_ok = TRUE, matrix_ok = FALSE) {
     null <- (null_ok && is.null(x))
     num <- is.numeric(x)
@@ -322,14 +329,12 @@ check_prior <- function(prior_obj) {
   }
 
   if (length(unique(prior_obj$freq)) > 1) {
-    cat("First\n")
     if (min(unlist(
       apply(prior_obj$Y[, prior_obj$freq %in% freqs[-1], drop = FALSE], 2,
             function(x) Position(is.na, x, nomatch = 1e10)))) == 1) {
       stop("Y: high-frequency variables are NA at the beginning of the sample.")
     }
   } else {
-    cat("Second\n")
     print(str(prior_obj$Y))
     if (any(is.na(prior_obj$Y))) {
       stop("Y: single-frequency estimation requires the data to contain no NAs.")
