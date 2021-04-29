@@ -72,12 +72,15 @@ test_that("Prior checks correct", {
   # Using update
   prior_obj <- set_init(Y = Y, freq = c(rep("m", 4), "q"),
                          n_lags = 4, n_burnin = 100, n_reps = 300)
-  prior_obj2 <- update_prior(prior_obj, d = "intercept", Y = Y[1:100, ], n_fcst = 4)
+  prior_obj2 <- set_prior(prior_obj,
+                          d = "intercept",
+                          Y = Y[1:100, ],
+                          n_fcst = 4)
   expect_is(prior_obj2$d_fcst, "matrix")
   expect_is(prior_obj2$d, "matrix")
 
-  prior_obj2 <- update_prior(prior_obj, d = "intercept", Y = Y[1:90, ])
-  prior_obj2 <- update_prior(prior_obj2, n_fcst = 4)
+  prior_obj2 <- set_prior(prior_obj, d = "intercept", Y = Y[1:90, ])
+  prior_obj2 <- set_prior(prior_obj2, n_fcst = 4)
   expect_is(prior_obj2$d_fcst, "matrix")
   expect_true(all(dim(prior_obj2$d_fcst) == c(4, 1)))
 })
@@ -110,47 +113,43 @@ test_that("list_to_matrix", {
   expect_equal(list_to_matrix(tsz_list), list_to_matrix(ts_list))
   expect_equal(list_to_matrix(tsz_list), list_to_matrix(ts_list2))
   expect_equal(list_to_matrix(tsz_list), list_to_matrix(tsz_list2))
-
-
-
-
 })
-
 
 test_that("Prior checks correct", {
   set.seed(10237)
   Y <- mfbvar::mf_sweden
 
   # If Y is not matrix/df
-  expect_error(prior_obj <- set_prior(Y = "test", freq = c(rep("m", 4), "q"),
-                                      n_lags = 4, n_burnin = 100, n_reps = 1000))
+  expect_error(prior_obj <- set_init(Y = "test", freq = c(rep("m", 4), "q"),
+                                     n_lags = 4, n_burnin = 100, n_reps = 1000))
 
   # Including d
-  expect_error(prior_obj <- set_prior(Y = Y, d = matrix(1, nrow = nrow(Y)-1, 1), freq = c(rep("m", 4), "q"),
-                                      n_lags = 4, n_burnin = 100, n_reps = 1000))
+  expect_error(prior_obj <- set_init(Y = Y, d = matrix(1, nrow = nrow(Y)-1, 1),
+                                    freq = c(rep("m", 4), "q"),
+                                    n_lags = 4, n_burnin = 100, n_reps = 1000))
 
   # freq
-  expect_error(prior_obj <- set_prior(Y = Y, freq = c(rep("m", 4), "s"),
-                                      n_lags = 4, n_burnin = 100, n_reps = 1000))
-  expect_error(prior_obj <- set_prior(Y = Y, freq = list(c(rep("m", 4), "s")),
-                                      n_lags = 4, n_burnin = 100, n_reps = 1000))
+  expect_error(prior_obj <- set_init(Y = Y, freq = c(rep("m", 4), "s"),
+                                     n_lags = 4, n_burnin = 100, n_reps = 1000))
+  expect_error(prior_obj <- set_init(Y = Y, freq = list(c(rep("m", 4), "s")),
+                                     n_lags = 4, n_burnin = 100, n_reps = 1000))
 
 
-  expect_error(prior_obj <- set_prior(Y = Y, freq = c(rep("m", 4), "q"),
-                                      aggregation = "triangular",
-                                      n_lags = 4, n_burnin = 100, n_reps = 1000))
-  expect_error(prior_obj <- set_prior(Y = Y, freq = c(rep("m", 4), "q"),
-                                      aggregation = "average",
-                                      n_lags = 2, n_burnin = 100, n_reps = 1000))
-  # Using update
-  prior_obj <- set_prior(Y = Y, freq = c(rep("m", 4), "q"),
-                         n_lags = 4, n_burnin = 100, n_reps = 300)
-  prior_obj2 <- update_prior(prior_obj, d = "intercept", Y = Y[1:100, ], n_fcst = 4)
+  expect_error(prior_obj <- set_init(Y = Y, freq = c(rep("m", 4), "q"),
+                                     aggregation = "triangular",
+                                     n_lags = 4, n_burnin = 100, n_reps = 1000))
+  expect_error(prior_obj <- set_init(Y = Y, freq = c(rep("m", 4), "q"),
+                                     aggregation = "average",
+                                     n_lags = 2, n_burnin = 100, n_reps = 1000))
+  # Using updating mechanism
+  prior_obj <- set_init(Y = Y, freq = c(rep("m", 4), "q"),
+                        n_lags = 4, n_burnin = 100, n_reps = 300)
+  prior_obj2 <- set_prior(prior_obj, d = "intercept", Y = Y[1:100, ], n_fcst = 4)
   expect_is(prior_obj2$d_fcst, "matrix")
   expect_is(prior_obj2$d, "matrix")
 
-  prior_obj2 <- update_prior(prior_obj, d = "intercept", Y = Y[1:90, ])
-  prior_obj2 <- update_prior(prior_obj2, n_fcst = 4)
+  prior_obj2 <- set_prior(prior_obj, d = "intercept", Y = Y[1:90, ])
+  prior_obj2 <- set_prior(prior_obj2, n_fcst = 4)
   expect_is(prior_obj2$d_fcst, "matrix")
   expect_true(all(dim(prior_obj2$d_fcst) == c(4, 1)))
 })
@@ -158,11 +157,13 @@ test_that("Prior checks correct", {
 test_that("List as input, no names", {
   set.seed(10237)
   Y <- mfbvar::mf_sweden
-  Y_list <- c(lapply(Y[,1:4], function(x) ts(x, frequency = 12, start = c(1996, 8))),
-              list(gdp = ts(Y[seq(from = 2, to = nrow(Y), by = 3), 5], frequency = 4, start = c(1996, 3))))
-  names(Y_list) <- NULL
+  Y <- c(lapply(Y[,1:4],
+                     function(x) ts(x, frequency = 12, start = c(1996, 8))),
+              list(gdp = ts(Y[seq(from = 2, to = nrow(Y), by = 3), 5],
+                            frequency = 4, start = c(1996, 3))))
+  names(Y) <- NULL
   set.seed(10237)
-  prior_obj2 <- set_prior(Y = Y_list, n_lags = 4, n_burnin = 10, n_reps = 10)
+  prior_obj <- set_init(Y = Y, n_lags = 4, n_burnin = 10, n_reps = 10)
 
   prior_intervals <- matrix(c( 6,   7,
                                0.1, 0.2,
@@ -172,10 +173,12 @@ test_that("List as input, no names", {
   psi_moments <- interval_to_moments(prior_intervals)
   prior_psi_mean <- psi_moments$prior_psi_mean
   prior_psi_Omega <- psi_moments$prior_psi_Omega
-  prior_obj2 <- update_prior(prior_obj2, d = "intercept", prior_psi_mean = prior_psi_mean,
-                             prior_psi_Omega = prior_psi_Omega, n_fcst = 4)
+  prior_obj <- set_prior_minn(prior_obj)
+  prior_obj <- set_prior_ss(prior_obj, d = "intercept",
+                            prior_psi_mean = prior_psi_mean,
+                            prior_psi_Omega = prior_psi_Omega)
   set.seed(10)
-  mod_minn2 <- estimate_mfbvar(mfbvar_prior = prior_obj2, prior = "minn", n_fcst = 12)
+  mod_minn2 <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", n_fcst = 12)
   expect_error(predict(mod_minn2), NA)
 
 })
