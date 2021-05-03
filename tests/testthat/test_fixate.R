@@ -3,8 +3,11 @@ context("Fixated values")
 test_that("IW", {
   set.seed(10237)
   Y <- mfbvar::mf_sweden
-  prior_obj <- set_prior(Y = Y, freq = c(rep("m", 4), "q"),
+  prior_obj <- set_init(Y = Y, freq = c(rep("m", 4), "q"),
                          n_lags = 4, n_burnin = 10, n_reps = 10)
+  prior_obj <- set_prior_minn(prior_obj)
+  prior_obj <- set_prior_fsv(prior_obj, n_fac = 1)
+  prior_obj <- set_prior_csv(prior_obj)
 
   prior_intervals <- matrix(c( 6,   7,
                                0.1, 0.2,
@@ -14,8 +17,9 @@ test_that("IW", {
   psi_moments <- interval_to_moments(prior_intervals)
   prior_psi_mean <- psi_moments$prior_psi_mean
   prior_psi_Omega <- psi_moments$prior_psi_Omega
-  prior_obj <- update_prior(prior_obj, d = "intercept", prior_psi_mean = prior_psi_mean,
-                            prior_psi_Omega = prior_psi_Omega, n_fcst = 4)
+  prior_obj <- set_prior_ss(prior_obj, d = "intercept",
+                            prior_psi_mean = prior_psi_mean,
+                            prior_psi_Omega = prior_psi_Omega)
 
   test_wrapper <- function(prior_obj, prior, variance, params) {
     set.seed(10)
@@ -91,8 +95,6 @@ test_that("IW", {
   prior <- "ssng"
   variance <- "diffuse"
   test_wrapper(prior_obj, prior, variance, params)
-
-  prior_obj <- update_prior(prior_obj, n_fac = 1)
 
   test_wrapper_fsv <- function(prior_obj, prior, params) {
     set.seed(10)

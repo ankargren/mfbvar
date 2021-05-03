@@ -3,9 +3,11 @@ context("MCMC Running")
 test_that("Mixed", {
   set.seed(10237)
   Y <- mfbvar::mf_sweden
-  prior_obj <- set_prior(Y = Y, freq = c(rep("m", 4), "q"),
-                         n_lags = 4, n_burnin = 10, n_reps = 10)
-
+  prior_obj <- set_init(Y = Y, freq = c(rep("m", 4), "q"),
+                         n_lags = 4, n_burnin = 10, n_reps = 10, n_fcst = 4)
+  prior_obj <- set_prior_minn(prior_obj)
+  prior_obj <- set_prior_csv(prior_obj)
+  prior_obj <- set_prior_fsv(prior_obj, n_fac = 1)
   prior_intervals <- matrix(c( 6,   7,
                                0.1, 0.2,
                                0,   0.5,
@@ -14,8 +16,11 @@ test_that("Mixed", {
   psi_moments <- interval_to_moments(prior_intervals)
   prior_psi_mean <- psi_moments$prior_psi_mean
   prior_psi_Omega <- psi_moments$prior_psi_Omega
-  prior_obj <- update_prior(prior_obj, d = "intercept", prior_psi_mean = prior_psi_mean,
-                            prior_psi_Omega = prior_psi_Omega, n_fcst = 4, n_fac = 1)
+  prior_obj <- set_prior_ss(prior_obj, d = "intercept",
+                            prior_psi_mean = prior_psi_mean,
+                            prior_psi_Omega = prior_psi_Omega)
+  prior_obj <- set_prior_ssng(prior_obj)
+
 
   testthat::skip_on_cran()
   set.seed(10)
@@ -43,9 +48,11 @@ test_that("Mixed", {
 test_that("Quarterly", {
   set.seed(10237)
   Y <- mfbvar::mf_sweden
-  prior_obj <- set_prior(Y = Y[seq(2, nrow(Y)-1, by = 3), ], freq = rep("q", 5),
-                         n_lags = 4, n_burnin = 10, n_reps = 10)
-
+  prior_obj <- set_init(Y = Y[seq(2, nrow(Y)-1, by = 3), ], freq = rep("q", 5),
+                         n_lags = 4, n_burnin = 10, n_reps = 10, n_fcst = 4)
+  prior_obj <- set_prior_minn(prior_obj)
+  prior_obj <- set_prior_csv(prior_obj)
+  prior_obj <- set_prior_fsv(prior_obj, n_fac = 1)
   prior_intervals <- matrix(c( 6,   7,
                                0.1, 0.2,
                                0,   0.5,
@@ -54,8 +61,10 @@ test_that("Quarterly", {
   psi_moments <- interval_to_moments(prior_intervals)
   prior_psi_mean <- psi_moments$prior_psi_mean
   prior_psi_Omega <- psi_moments$prior_psi_Omega
-  prior_obj <- update_prior(prior_obj, d = "intercept", prior_psi_mean = prior_psi_mean,
-                            prior_psi_Omega = prior_psi_Omega, n_fcst = 4, n_fac = 1)
+  prior_obj <- set_prior_ss(prior_obj, d = "intercept",
+                            prior_psi_mean = prior_psi_mean,
+                            prior_psi_Omega = prior_psi_Omega)
+  prior_obj <- set_prior_ssng(prior_obj)
 
   testthat::skip_on_cran()
   set.seed(10)
@@ -83,8 +92,11 @@ test_that("Quarterly", {
 test_that("Monthly", {
   set.seed(10237)
   Y <- mfbvar::mf_sweden
-  prior_obj <- set_prior(Y = na.omit(Y[, -5]), freq = rep("m", 4),
-                         n_lags = 4, n_burnin = 10, n_reps = 10)
+  prior_obj <- set_init(Y = na.omit(Y[, -5]), freq = rep("m", 4),
+                         n_lags = 4, n_burnin = 10, n_reps = 10, n_fcst = 4)
+  prior_obj <- set_prior_minn(prior_obj)
+  prior_obj <- set_prior_csv(prior_obj)
+  prior_obj <- set_prior_fsv(prior_obj, n_fac = 1)
 
   prior_intervals <- matrix(c( 6,   7,
                                0.1, 0.2,
@@ -93,8 +105,10 @@ test_that("Monthly", {
   psi_moments <- interval_to_moments(prior_intervals)
   prior_psi_mean <- psi_moments$prior_psi_mean
   prior_psi_Omega <- psi_moments$prior_psi_Omega
-  prior_obj <- update_prior(prior_obj, d = "intercept", prior_psi_mean = prior_psi_mean,
-                            prior_psi_Omega = prior_psi_Omega, n_fcst = 4, n_fac = 1)
+  prior_obj <- set_prior_ss(prior_obj, d = "intercept",
+                            prior_psi_mean = prior_psi_mean,
+                            prior_psi_Omega = prior_psi_Omega)
+  prior_obj <- set_prior_ssng(prior_obj)
 
   testthat::skip_on_cran()
   set.seed(10)
@@ -122,9 +136,11 @@ test_that("Monthly", {
 test_that("Block exogenous 1", {
   set.seed(10237)
   Y <- mfbvar::mf_sweden
-  prior_obj <- set_prior(Y = Y, freq = c(rep("m", 4), "q"),
-                         n_lags = 4, n_burnin = 10, n_reps = 10,
-                         block_exo = 2:3)
+  prior_obj <- set_init(Y = Y, freq = c(rep("m", 4), "q"),
+                         n_lags = 4, n_burnin = 10, n_reps = 10, n_fcst = 4)
+  prior_obj <- set_prior_minn(prior_obj, block_exo = 2:3)
+  prior_obj <- set_prior_csv(prior_obj)
+  prior_obj <- set_prior_fsv(prior_obj, n_fac = 1)
 
   prior_intervals <- matrix(c( 6,   7,
                                0.1, 0.2,
@@ -134,8 +150,9 @@ test_that("Block exogenous 1", {
   psi_moments <- interval_to_moments(prior_intervals)
   prior_psi_mean <- psi_moments$prior_psi_mean
   prior_psi_Omega <- psi_moments$prior_psi_Omega
-  prior_obj <- update_prior(prior_obj, d = "intercept", prior_psi_mean = prior_psi_mean,
-                            prior_psi_Omega = prior_psi_Omega, n_fcst = 4, n_fac = 1)
+  prior_obj <- set_prior_ss(prior_obj, d = "intercept",
+                            prior_psi_mean = prior_psi_mean,
+                            prior_psi_Omega = prior_psi_Omega)
 
   testthat::skip_on_cran()
   set.seed(10)
@@ -164,9 +181,11 @@ test_that("Block exogenous 1", {
 test_that("Block exogenous 2", {
   set.seed(10237)
   Y <- mfbvar::mf_sweden
-  prior_obj <- set_prior(Y = Y, freq = c(rep("m", 4), "q"),
-                         n_lags = 4, n_burnin = 10, n_reps = 10,
-                         block_exo = c("infl", "ip"))
+  prior_obj <- set_init(Y = Y, freq = c(rep("m", 4), "q"),
+                         n_lags = 4, n_burnin = 10, n_reps = 10, n_fcst = 4)
+  prior_obj <- set_prior_minn(prior_obj, block_exo = c("infl", "ip"))
+  prior_obj <- set_prior_csv(prior_obj)
+  prior_obj <- set_prior_fsv(prior_obj, n_fac = 1)
 
   prior_intervals <- matrix(c( 6,   7,
                                0.1, 0.2,
@@ -176,9 +195,10 @@ test_that("Block exogenous 2", {
   psi_moments <- interval_to_moments(prior_intervals)
   prior_psi_mean <- psi_moments$prior_psi_mean
   prior_psi_Omega <- psi_moments$prior_psi_Omega
-  prior_obj <- update_prior(prior_obj, d = "intercept", prior_psi_mean = prior_psi_mean,
-                            prior_psi_Omega = prior_psi_Omega, n_fcst = 4, n_fac = 1)
-
+  prior_obj <- set_prior_ss(prior_obj, d = "intercept",
+                            prior_psi_mean = prior_psi_mean,
+                            prior_psi_Omega = prior_psi_Omega)
+  prior_obj <- set_prior_ssng(prior_obj)
   testthat::skip_on_cran()
   set.seed(10)
   expect_error(estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", variance = "iw"), NA)
@@ -207,8 +227,12 @@ test_that("Weekly-Monthly MCMC", {
   Y <- matrix(rnorm(400), 100, 4)
   Y[setdiff(1:100,seq(4, 100, by = 4)), 4] <- NA
 
-  prior_obj <- set_prior(Y = Y, freq = c(rep("w", 3), "m"),
-                         n_lags = 4, n_reps = 10)
+  prior_obj <- set_init(Y = Y, freq = c(rep("w", 3), "m"),
+                        n_lags = 4, n_reps = 10, n_burnin = 10,
+                        n_fcst = 4)
+  prior_obj <- set_prior_minn(prior_obj)
+  prior_obj <- set_prior_csv(prior_obj)
+  prior_obj <- set_prior_fsv(prior_obj, n_fac = 1)
 
   prior_intervals <- matrix(c(
     -0.5, 0.5,
@@ -218,9 +242,10 @@ test_that("Weekly-Monthly MCMC", {
   psi_moments <- interval_to_moments(prior_intervals)
   prior_psi_mean <- psi_moments$prior_psi_mean
   prior_psi_Omega <- psi_moments$prior_psi_Omega
-  prior_obj <- update_prior(prior_obj, d = "intercept", prior_psi_mean = prior_psi_mean,
-                            prior_psi_Omega = prior_psi_Omega, n_fcst = 4,
-                            n_fac = 1)
+  prior_obj <- set_prior_ss(prior_obj, d = "intercept",
+                            prior_psi_mean = prior_psi_mean,
+                            prior_psi_Omega = prior_psi_Omega)
+  prior_obj <- set_prior_ssng(prior_obj)
 
   testthat::skip_on_cran()
   set.seed(10)

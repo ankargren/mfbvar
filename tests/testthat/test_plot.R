@@ -105,6 +105,7 @@ test_that("varplot", {
                          n_lags = 4, n_burnin = 10, n_reps = 10)
   prior_obj <- set_prior_minn(prior_obj)
   prior_obj <- set_prior_fsv(prior_obj, n_fac = 1)
+  prior_obj <- set_prior_csv(prior_obj)
 
   prior_intervals <- matrix(c( 6,   7,
                                0.1, 0.2,
@@ -114,7 +115,7 @@ test_that("varplot", {
   psi_moments <- interval_to_moments(prior_intervals)
   prior_psi_mean <- psi_moments$prior_psi_mean
   prior_psi_Omega <- psi_moments$prior_psi_Omega
-  prior_obj <- set_prior(prior_obj, d = "intercept",
+  prior_obj <- set_prior_ss(prior_obj, d = "intercept",
                          prior_psi_mean = prior_psi_mean,
                          prior_psi_Omega = prior_psi_Omega)
 

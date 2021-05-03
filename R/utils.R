@@ -45,7 +45,7 @@ check_required_params <- function(x, ...) {
 #' @param ... variables existing in the list that are to be assigned to \code{envir}
 list_to_variables <- function(x, envir, ...) {
   variables <- unlist(list(...))
-  foo <- mapply(function(x1, x2, envir) assign(x1, x2, envir), names(x[variables]), x[variables], MoreArgs = list(envir = envir))
+  foo <- mapply(function(x1, x2, envir) assign(x1, x2, envir), variables, x[variables], MoreArgs = list(envir = envir))
   invisible(NULL)
 }
 
