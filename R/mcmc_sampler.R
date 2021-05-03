@@ -31,6 +31,7 @@ mfbvar_sampler <- function(x, minn = FALSE, ssng = FALSE, ss = FALSE, dl = FALSE
 
   # Assign variables from prior object
   mfbvar:::list_to_variables(x, envir, prior_params)
+  cat(prior_params[!(prior_params %in% ls())], "\n")
 
   # Retrieve some additional variables
   init_vars <- mfbvar:::variable_initialization(Y = Y, freq = freq, freqs = freqs,

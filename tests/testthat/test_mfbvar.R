@@ -109,10 +109,10 @@ test_that("list_to_matrix", {
   ts_list2 <- list(monthly = cbind(CPIAUCSL = ts_list[[1]], UNRATE = ts_list[[2]]), GDPC1 = ts_list[[3]])
   tsz_list2 <- list(monthly = cbind(CPIAUCSL = tsz_list[[1]], UNRATE = tsz_list[[2]]), GDPC1 = tsz_list[[3]])
 
-  expect_equal(list_to_matrix(tsz_list), list_to_matrix(ts_list))
-  expect_equal(list_to_matrix(tsz_list), list_to_matrix(ts_list))
-  expect_equal(list_to_matrix(tsz_list), list_to_matrix(ts_list2))
-  expect_equal(list_to_matrix(tsz_list), list_to_matrix(tsz_list2))
+  expect_equal(mfbvar:::list_to_matrix(tsz_list), mfbvar:::list_to_matrix(ts_list))
+  expect_equal(mfbvar:::list_to_matrix(tsz_list), mfbvar:::list_to_matrix(ts_list))
+  expect_equal(mfbvar:::list_to_matrix(tsz_list), mfbvar:::list_to_matrix(ts_list2))
+  expect_equal(mfbvar:::list_to_matrix(tsz_list), mfbvar:::list_to_matrix(tsz_list2))
 })
 
 test_that("Prior checks correct", {
@@ -180,5 +180,4 @@ test_that("List as input, no names", {
   set.seed(10)
   mod_minn2 <- estimate_mfbvar(mfbvar_prior = prior_obj, prior = "minn", n_fcst = 12)
   expect_error(predict(mod_minn2), NA)
-
 })

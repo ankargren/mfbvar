@@ -3,7 +3,8 @@ context("Predict")
 test_that("Forecasts (mf)", {
   set.seed(10237)
   Y <- mfbvar::mf_sweden
-  rownames(Y) <- as.character(lubridate::floor_date(lubridate::ymd(rownames(Y)), unit = "months"))
+  rownames(Y) <- as.character(lubridate::floor_date(lubridate::ymd(rownames(Y)),
+                                                    unit = "months"))
   prior_obj <- set_init(Y = Y, freq = c(rep("m", 4), "q"),
                          n_lags = 4, n_burnin = 10, n_reps = 10)
 
@@ -18,6 +19,7 @@ test_that("Forecasts (mf)", {
   prior_obj <- set_prior_ss(prior_obj, d = "intercept",
                             prior_psi_mean = prior_psi_mean,
                             prior_psi_Omega = prior_psi_Omega)
+  prior_obj <- set_prior_minn(prior_obj)
 
   testthat::skip_on_cran()
   set.seed(10)
@@ -46,6 +48,7 @@ test_that("Forecasts (mf)", {
 
   set.seed(10237)
   prior_obj2 <- set_init(Y = Y_list, n_lags = 4, n_burnin = 10, n_reps = 10)
+  prior_obj2 <- set_prior_minn(prior_obj2)
 
   prior_intervals <- matrix(c( 6,   7,
                                0.1, 0.2,
@@ -70,9 +73,9 @@ test_that("Forecasts (monthly)", {
   Y <- mfbvar::mf_sweden
   rownames(Y) <- as.character(lubridate::floor_date(lubridate::ymd(rownames(Y)),
                                                     unit = "months"))
-  prior_obj <- set_prior(Y = na.omit(Y[, -5]), freq = rep("m", 4),
+  prior_obj <- set_init(Y = na.omit(Y[, -5]), freq = rep("m", 4),
                          n_lags = 4, n_burnin = 10, n_reps = 10)
-
+  prior_obj <- set_prior_minn(prior_obj)
   prior_intervals <- matrix(c( 6,   7,
                                0.1, 0.2,
                                0,   0.5,
@@ -82,17 +85,16 @@ test_that("Forecasts (monthly)", {
   prior_psi_Omega <- psi_moments$prior_psi_Omega
   prior_obj <- set_prior_ss(prior_obj, d = "intercept",
                          prior_psi_mean = prior_psi_mean,
-                         prior_psi_Omega = prior_psi_Omega,
-                         n_fcst = 4)
+                         prior_psi_Omega = prior_psi_Omega)
 
   testthat::skip_on_cran()
   set.seed(10)
   mod_minn <- estimate_mfbvar(mfbvar_prior = prior_obj,
                               prior = "minn",
                               n_fcst = 12)
-  expect_equal(predict(mod_minn) %>%
-                 dplyr::filter(variable == "eti") %>%
-                 pull(median),
+  fcst <- predict(mod_minn)
+  fcst <- fcst[fcst$variable == "eti", ]$median
+  expect_equal(fcst,
                c(apply(mod_minn$Z_fcst[-(1:4),4,], 1, median), use.names = FALSE))
 
   Y_list <- lapply(na.omit(Y[,1:4]),
@@ -100,7 +102,7 @@ test_that("Forecasts (monthly)", {
 
   set.seed(10237)
   prior_obj2 <- set_init(Y = Y_list, n_lags = 4, n_burnin = 10, n_reps = 10)
-
+  prior_obj2 <- set_prior_minn(prior_obj2)
   prior_intervals <- matrix(c( 6,   7,
                                0.1, 0.2,
                                0,   0.5,
@@ -128,6 +130,7 @@ test_that("Forecasts (quarterly)", {
   prior_obj <- set_init(Y = na.omit(Y[seq(2, nrow(Y), by = 3), ]),
                         freq = rep("q", 5),
                          n_lags = 4, n_burnin = 10, n_reps = 10)
+  prior_obj <- set_prior_minn(prior_obj)
 
   prior_intervals <- matrix(c( 6,   7,
                                0.1, 0.2,
@@ -146,9 +149,9 @@ test_that("Forecasts (quarterly)", {
   set.seed(10)
   mod_minn <- estimate_mfbvar(mfbvar_prior = prior_obj,
                               prior = "minn", n_fcst = 12)
-  expect_equal(predict(mod_minn) %>%
-                 dplyr::filter(variable == "eti") %>%
-                 pull(median),
+  fcst <- predict(mod_minn)
+  fcst <- fcst[fcst$variable == "eti", ]$median
+  expect_equal(fcst,
                as.numeric(apply(mod_minn$Z_fcst[-(1:4),4,], 1, median)))
 
   Y <- na.omit(Y[seq(2, nrow(Y), by = 3), ])
@@ -156,7 +159,7 @@ test_that("Forecasts (quarterly)", {
 
   set.seed(10237)
   prior_obj2 <- set_init(Y = Y_list, n_lags = 4, n_burnin = 10, n_reps = 10)
-
+  prior_obj2 <- set_prior_minn(prior_obj2)
   prior_intervals <- matrix(c( 6,   7,
                                0.1, 0.2,
                                0,   0.5,
@@ -183,8 +186,8 @@ test_that("Forecasts (weekly-monthly)", {
   Y[setdiff(1:100,seq(4, 100, by = 4)), 4] <- NA
 
   prior_obj <- set_init(Y = Y, freq = c(rep("w", 3), "m"),
-                         n_lags = 4, n_reps = 10)
-
+                         n_lags = 4, n_reps = 10, n_burnin = 10)
+  prior_obj <- set_prior_minn(prior_obj)
   prior_intervals <- matrix(c(
     -0.5, 0.5,
     -0.5, 0.5,
@@ -203,9 +206,9 @@ test_that("Forecasts (weekly-monthly)", {
   mod_minn <- estimate_mfbvar(mfbvar_prior = prior_obj,
                               prior = "minn",
                               n_fcst = 12)
-  expect_equal(predict(mod_minn, aggregate_fcst = FALSE) %>%
-                 dplyr::filter(variable == 4) %>%
-                 .$median,
+  fcst <- predict(mod_minn, aggregate_fcst = FALSE)
+  fcst <- fcst[fcst$variable == 4, ]$median
+  expect_equal(fcst,
                c(apply(mod_minn$Z_fcst[-(1:4),4,], 1, median),
                  use.names = FALSE))
 

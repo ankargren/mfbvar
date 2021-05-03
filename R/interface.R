@@ -80,7 +80,8 @@ set_prior <- function(prior_obj, Y, aggregation, prior_Pi_AR1, lambda1,
                       restrict, verbose, ...) {
   if (!missing(prior_obj)) {
     prior_call <- mget(ls())
-    prior_call <- prior_call[!(names(prior_call) != "prior_obj")]
+    prior_call <- prior_call[which(names(prior_call) %in% names(as.list(match.call()))[-1])]
+    prior_call <- prior_call[names(prior_call) != "prior_obj"]
     call_names <- names(prior_call)
     prior_obj <- prior_obj[which(!(names(prior_obj) %in% call_names))]
     prior_obj <- c(prior_obj, prior_call)
@@ -100,12 +101,9 @@ set_prior <- function(prior_obj, Y, aggregation, prior_Pi_AR1, lambda1,
 call_wrapper <- function(prior_call, defaults, prev_args) {
   if ("prior_obj" %in% names(prior_call)) {
     prior_obj <- prior_call[["prior_obj"]]
-    prev_args <- prior_obj$wrapper_args
     prior_call <- prior_call[!(names(prior_call) == "prior_obj")]
     prior_obj <- prior_obj[!(names(prior_obj) %in% names(prior_call))]
     prior_call <- c(prior_obj, prior_call)
-  } else {
-    prev_args <- NULL
   }
   supplied_args <- names(prior_call)
   defaults <- defaults[!(names(defaults) %in% supplied_args)]
@@ -138,11 +136,15 @@ set_prior_minn <- function(prior_obj, prior_Pi_AR1 = 0, lambda1 = 0.2,
                            lambda2 = 0.5, lambda3 = 1, lambda4 = 10000,
                            block_exo = NULL, check_roots = FALSE) {
   prior_call <- mget(ls())
+  prior_call <- prior_call[which(names(prior_call) %in% names(as.list(match.call()))[-1])]
   defaults <- formals()
-  if (!missing(prior_obj)) {
-    prior_call <- prior_call[which(names(prior_call) %in% names(as.list(match.call()))[-1])]
+  prev_args <- ifelse(missing(prior_obj), "", prior_obj$wrapper_args)
+  if (missing(prior_obj)) {
+    prev_args <- NULL
+  } else {
+    prev_args <- prior_obj$wrapper_args
   }
-  prior_obj <- call_wrapper(prior_call, defaults)
+  prior_obj <- call_wrapper(prior_call, defaults, prev_args)
   return(prior_obj)
 }
 
@@ -335,7 +337,6 @@ check_prior <- function(prior_obj) {
       stop("Y: high-frequency variables are NA at the beginning of the sample.")
     }
   } else {
-    print(str(prior_obj$Y))
     if (any(is.na(prior_obj$Y))) {
       stop("Y: single-frequency estimation requires the data to contain no NAs.")
     }
@@ -450,6 +451,8 @@ check_prior <- function(prior_obj) {
 
   if (intercept_flag && prior_obj$n_fcst > 0) {
     prior_obj$d_fcst <- matrix(1, nrow = prior_obj$n_fcst, ncol = 1)
+  } else if (prior_obj$n_fcst == 0) {
+    prior_obj$d_fcst <- NULL
   }
 
   if (!is.null(prior_obj$check_roots) && !is.logical(prior_obj$check_roots)) {
