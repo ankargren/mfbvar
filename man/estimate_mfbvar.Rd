@@ -23,12 +23,12 @@ An object of class \code{mfbvar}, \code{mfbvar_<prior>} and \code{mfbvar_<prior>
 rows are taken from the data to offer a bridge between observations and forecasts and for computing nowcasts (i.e. with ragged edges).}
 \subsection{Steady-state priors}{
 If \code{prior = "ss"}, it also includes:
-\describe{\item{\code{psi}}{Matrix of steady-state parameter vectors; \code{psi[r,]} is the \code{r}th draw}
+\describe{\item{\code{psi}}{Matrix of steady-state parameter vectors; \code{psi[r, ]} is the \code{r}th draw}
 \item{\code{roots}}{The maximum eigenvalue of the lag polynomial (if \code{check_roots = TRUE})}}
 
 If \code{prior = "ssng"}, it also includes:
 \describe{
-\item{\code{psi}}{Matrix of steady-state parameter vectors; \code{psi[r,]} is the \code{r}th draw}
+\item{\code{psi}}{Matrix of steady-state parameter vectors; \code{psi[r, ]} is the \code{r}th draw}
 \item{\code{roots}}{The maximum eigenvalue of the lag polynomial (if \code{check_roots = TRUE})}
 \item{\code{lambda_psi}}{Vector of draws of the global hyperparameter in the normal-Gamma prior}
 \item{\code{phi_psi}}{Vector of draws of the auxiliary hyperparameter in the normal-Gamma prior}
@@ -54,7 +54,8 @@ If \code{variance = "fsv"}, it also includes:
 The main function for estimating a mixed-frequency BVAR.
 }
 \examples{
-prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 20)
+prior_obj <- set_init(Y = mf_usa, n_lags = 4, n_burnin = 20, n_reps = 20)
+prior_obj <- set_prior_minn(prior_obj)
 mod_minn <- estimate_mfbvar(prior_obj, prior = "minn")
 }
 \references{

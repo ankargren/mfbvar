@@ -6,8 +6,7 @@
 //'
 //' @description The function computes the maximum eigenvalue.
 //' @aliases max_eig max_eig_cpp
-//' @templateVar A TRUE
-//' @template man_template
+//' @param A Symmetrix matrix whose maximum eigenvalue is to be computed
 //' @keywords internal
 //' @noRd
 //' @return The maximum eigenvalue.

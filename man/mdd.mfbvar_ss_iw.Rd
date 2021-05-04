@@ -4,14 +4,12 @@
 \alias{mdd.mfbvar_ss_iw}
 \title{Marginal data density method for class \code{mfbvar_ss}}
 \usage{
-\method{mdd}{mfbvar_ss_iw}(x, method = 1, ...)
+\method{mdd}{mfbvar_ss_iw}(x, ...)
 }
 \arguments{
 \item{x}{object of class \code{mfbvar_ss}}
 
-\item{method}{option for which method to choose for computing the mdd (\code{1} or \code{2})}
-
-\item{...}{additional arguments (currently only \code{p_trunc} for the degree of truncation for method 2 is available)}
+\item{...}{additional arguments (currently unused)}
 }
 \value{
 The logarithm of the marginal data density.
@@ -20,8 +18,7 @@ The logarithm of the marginal data density.
 Estimate the marginal data density for the model with a steady-state prior.
 }
 \details{
-Two methods for estimating the marginal data density are implemented. Method 1 and 2 correspond to the two methods proposed by
-Fuentes-Albero and Melosi (2013) and Ankargren, Unosson and Yang (2018).
+The marginal data density estimator follows Fuentes-Albero and Melosi (2013) and Ankargren, Unosson and Yang (2018).
 }
 \references{
 Fuentes-Albero, C. and Melosi, L. (2013) Methods for Computing Marginal Data Densities from the Gibbs Output.

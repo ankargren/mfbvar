@@ -3,20 +3,29 @@ context("Initial values")
 test_that("Overriding initials", {
   set.seed(10237)
   Y <- mfbvar::mf_sweden
-  prior_obj <- set_prior(Y = Y, freq = c(rep("m", 4), "q"),
-                         n_lags = 4, n_burnin = 10, n_reps = 10)
+  prior_obj <- set_init(
+    Y = Y, freq = c(rep("m", 4), "q"), n_lags = 4, n_burnin = 10, n_reps = 10,
+    n_fcst = 4
+  )
 
-  prior_intervals <- matrix(c( 6,   7,
-                               0.1, 0.2,
-                               0,   0.5,
-                               -0.5, 0.5,
-                               0.4, 0.6), ncol = 2, byrow = TRUE)
+  prior_intervals <- matrix(c(
+    6, 7,
+    0.1, 0.2,
+    0, 0.5,
+    -0.5, 0.5,
+    0.4, 0.6
+  ), ncol = 2, byrow = TRUE)
   psi_moments <- interval_to_moments(prior_intervals)
   prior_psi_mean <- psi_moments$prior_psi_mean
   prior_psi_Omega <- psi_moments$prior_psi_Omega
-  prior_obj <- update_prior(prior_obj, d = "intercept", prior_psi_mean = prior_psi_mean,
-                            prior_psi_Omega = prior_psi_Omega, n_fcst = 4)
-
+  prior_obj <- set_prior_minn(prior_obj)
+  prior_obj <- set_prior_ss(prior_obj,
+    d = "intercept", prior_psi_mean = prior_psi_mean,
+    prior_psi_Omega = prior_psi_Omega
+  )
+  prior_obj <- set_prior_ssng(prior_obj)
+  prior_obj <- set_prior_csv(prior_obj)
+  prior_obj <- set_prior_fsv(prior_obj, n_fac = 1)
   testthat::skip_on_cran()
   # MINN
   set.seed(10)
@@ -24,17 +33,17 @@ test_that("Overriding initials", {
 
   # Initial Pi
   set.seed(10)
-  mod2 <- estimate_mfbvar(prior_obj, "minn", "iw", init = list(Pi = mod$Pi[,,10]))
+  mod2 <- estimate_mfbvar(prior_obj, "minn", "iw", init = list(Pi = mod$Pi[, , 10]))
   expect_false(isTRUE(all.equal(mod$Pi, mod2$Pi)))
 
   # Initial Sigma
   set.seed(10)
-  mod2 <- estimate_mfbvar(prior_obj, "minn", "iw", init = list(Sigma = mod$Sigma[,,10]))
+  mod2 <- estimate_mfbvar(prior_obj, "minn", "iw", init = list(Sigma = mod$Sigma[, , 10]))
   expect_false(isTRUE(all.equal(mod$Pi, mod2$Pi)))
 
   # Initial Z -- sampled first so shouldn't matter
   set.seed(10)
-  mod2 <- estimate_mfbvar(prior_obj, "minn", "iw", init = list(Z = mod$Z[,,10]))
+  mod2 <- estimate_mfbvar(prior_obj, "minn", "iw", init = list(Z = mod$Z[, , 10]))
   expect_equal(mod$Pi, mod2$Pi)
 
   # SS
@@ -43,7 +52,7 @@ test_that("Overriding initials", {
 
   # Initial steady state
   set.seed(10)
-  mod2 <- estimate_mfbvar(prior_obj, "ss", "iw", init = list(psi = mod$psi[,,10]))
+  mod2 <- estimate_mfbvar(prior_obj, "ss", "iw", init = list(psi = mod$psi[, , 10]))
   expect_false(isTRUE(all.equal(mod$Pi, mod2$Pi)))
 
   # SSNG
@@ -52,17 +61,17 @@ test_that("Overriding initials", {
 
   # Initial omega - sampled first (in its block) so doesn't matter
   set.seed(10)
-  mod2 <- estimate_mfbvar(prior_obj, "ssng", "iw", init = list(omega = mod$omega[,,10]))
+  mod2 <- estimate_mfbvar(prior_obj, "ssng", "iw", init = list(omega = mod$omega[, , 10]))
   expect_equal(mod$Pi, mod2$Pi)
 
   # Initial phi_mu
   set.seed(10)
-  mod2 <- estimate_mfbvar(prior_obj, "ssng", "iw", init = list(phi_mu = mod$phi_mu[,,10]))
+  mod2 <- estimate_mfbvar(prior_obj, "ssng", "iw", init = list(phi_mu = mod$phi_mu[, , 10]))
   expect_false(isTRUE(all.equal(mod$Pi, mod2$Pi)))
 
   # Initial phi_mu
   set.seed(10)
-  mod2 <- estimate_mfbvar(prior_obj, "ssng", "iw", init = list(lambda_mu = mod$lambda_mu[,,10]))
+  mod2 <- estimate_mfbvar(prior_obj, "ssng", "iw", init = list(lambda_mu = mod$lambda_mu[, , 10]))
   expect_false(isTRUE(all.equal(mod$Pi, mod2$Pi)))
 
   # CSV
@@ -71,47 +80,49 @@ test_that("Overriding initials", {
 
   # Initial phi - sampled first (in its block) so doesn't matter
   set.seed(10)
-  mod2 <- estimate_mfbvar(prior_obj, "minn", "csv", init = list(phi = mod$phi[,,10]))
+  mod2 <- estimate_mfbvar(prior_obj, "minn", "csv", init = list(phi = mod$phi[, , 10]))
   expect_equal(mod$Pi, mod2$Pi)
 
   # Initial sigma - only makes a difference if latent is not initialized to 0
   set.seed(10)
   mod2 <- estimate_mfbvar(prior_obj, "minn", "csv",
-                          init = list(latent = mod$latent[,,10]))
+    init = list(latent = mod$latent[, , 10])
+  )
   set.seed(10)
   mod3 <- estimate_mfbvar(prior_obj, "minn", "csv",
-                          init = list(sigma = mod$sigma[,,10],
-                                      latent = mod$latent[,,10]))
+    init = list(
+      sigma = mod$sigma[, , 10],
+      latent = mod$latent[, , 10]
+    )
+  )
   expect_false(isTRUE(all.equal(mod2$Pi, mod3$Pi)))
 
   # Initial latent
   set.seed(10)
-  mod2 <- estimate_mfbvar(prior_obj, "minn", "csv", init = list(latent = mod$latent[,,10]))
+  mod2 <- estimate_mfbvar(prior_obj, "minn", "csv", init = list(latent = mod$latent[, , 10]))
   expect_false(isTRUE(all.equal(mod$Pi, mod2$Pi)))
 
   # FSV
   set.seed(10)
-  prior_obj <- update_prior(prior_obj, n_fac = 1)
   mod <- estimate_mfbvar(prior_obj, "minn", "fsv")
 
   # Initial mu
   set.seed(10)
-  mod2 <- estimate_mfbvar(prior_obj, "minn", "fsv", init = list(mu = mod$mu[,,10]))
+  mod2 <- estimate_mfbvar(prior_obj, "minn", "fsv", init = list(mu = mod$mu[, , 10]))
   expect_false(isTRUE(all.equal(mod$Pi, mod2$Pi)))
 
   # Initial sigma
   set.seed(10)
-  mod2 <- estimate_mfbvar(prior_obj, "minn", "fsv", init = list(sigma = mod$sigma[,,10]))
+  mod2 <- estimate_mfbvar(prior_obj, "minn", "fsv", init = list(sigma = mod$sigma[, , 10]))
   expect_false(isTRUE(all.equal(mod$Pi, mod2$Pi)))
 
   # Initial phi
   set.seed(10)
-  mod2 <- estimate_mfbvar(prior_obj, "minn", "fsv", init = list(phi = mod$phi[,,10]))
+  mod2 <- estimate_mfbvar(prior_obj, "minn", "fsv", init = list(phi = mod$phi[, , 10]))
   expect_false(isTRUE(all.equal(mod$Pi, mod2$Pi)))
 
   # Initial f
   set.seed(10)
-  mod2 <- estimate_mfbvar(prior_obj, "minn", "fsv", init = list(f = mod$f[,,10]))
+  mod2 <- estimate_mfbvar(prior_obj, "minn", "fsv", init = list(f = mod$f[, , 10]))
   expect_false(isTRUE(all.equal(mod$Pi, mod2$Pi)))
 })
-

@@ -84,10 +84,10 @@ estimate_mdd_ss <- function(mfbvar_obj) {
   prior_S <- mfbvar_obj$prior_S
   post_nu <- mfbvar_obj$prior_nu + mfbvar_obj$n_T_
 
-  Y     <- mfbvar_obj$Y
-  Z     <- mfbvar_obj$Z
-  d     <- mfbvar_obj$d
-  Pi    <- mfbvar_obj$Pi
+  Y <- mfbvar_obj$Y
+  Z <- mfbvar_obj$Z
+  d <- mfbvar_obj$d
+  Pi <- mfbvar_obj$Pi
   Sigma <- mfbvar_obj$Sigma
 
   Lambda <- mfbvar_obj$Lambda
@@ -110,13 +110,13 @@ estimate_mdd_ss <- function(mfbvar_obj) {
 
   ################################################################
   ### Initialize
-  Pi_red    <- array(NA, dim = c(n_vars, n_vars * n_lags, n_reps))
+  Pi_red <- array(NA, dim = c(n_vars, n_vars * n_lags, n_reps))
   Sigma_red <- array(NA, dim = c(n_vars, n_vars, n_reps))
   Z_red <- array(NA, dim = c(n_T, n_vars, n_reps))
 
-  Pi_red[,, 1]    <- post_Pi_mean
-  Sigma_red[,, 1] <- post_Sigma
-  Z_red[,, 1] <- apply(mfbvar_obj$Z, c(1, 2), mean)
+  Pi_red[, , 1] <- post_Pi_mean
+  Sigma_red[, , 1] <- post_Sigma
+  Z_red[, , 1] <- apply(mfbvar_obj$Z, c(1, 2), mean)
 
   roots <- vector("numeric", n_reps)
   num_tries <- roots
@@ -131,7 +131,7 @@ estimate_mdd_ss <- function(mfbvar_obj) {
   inv_prior_Pi_Omega <- solve(prior_Pi_Omega)
   Omega_Pi <- inv_prior_Pi_Omega %*% prior_Pi_mean
 
-  Z_1 <- Z_red[1:n_lags,, 1]
+  Z_1 <- Z_red[1:n_lags, , 1]
 
   mZ <- Y - d %*% t(post_psi)
   mZ <- as.matrix(mZ)
@@ -151,44 +151,54 @@ estimate_mdd_ss <- function(mfbvar_obj) {
   ### For the likelihood calculation
   mZ <- Y - d %*% t(post_psi)
   mZ <- mZ[-(1:n_lags), ]
-  demeaned_z0 <- Z[1:n_lags,, 1] - d[1:n_lags, ] %*% t(post_psi)
+  demeaned_z0 <- Z[1:n_lags, , 1] - d[1:n_lags, ] %*% t(post_psi)
   h0 <- matrix(t(demeaned_z0), ncol = 1)
-  h0 <- h0[(n_vars*n_lags):1,, drop = FALSE] # have to reverse the order
+  h0 <- h0[(n_vars * n_lags):1, , drop = FALSE] # have to reverse the order
   Pi_comp <- mfbvar:::build_companion(post_Pi_mean, n_vars = n_vars, n_lags = n_lags)
-  Q_comp  <- matrix(0, ncol = n_vars*n_lags, nrow = n_vars*n_lags)
+  Q_comp <- matrix(0, ncol = n_vars * n_lags, nrow = n_vars * n_lags)
   Q_comp[1:n_vars, 1:n_vars] <- t(chol(post_Sigma))
-  P0 <- matrix(0, n_lags*n_vars, n_lags*n_vars)
+  P0 <- matrix(0, n_lags * n_vars, n_lags * n_vars)
 
   ################################################################
   ### Final calculations
-  lklhd          <- sum(c(mfbvar:::loglike(Y = as.matrix(mZ), Lambda = Lambda,
-                                  Pi_comp = Pi_comp, Q_comp = Q_comp, n_T = n_T_,
-                                  n_vars = n_vars, n_comp = n_lags * n_vars,
-                                  z0 = h0, P0 = P0)[-1]))
-  eval_prior_Pi_Sigma <- mfbvar:::dnorminvwish(X = t(post_Pi_mean), Sigma = post_Sigma,
-                                      M = prior_Pi_mean, P = prior_Pi_Omega,
-                                      S = prior_S, v = n_vars+2)
-  eval_prior_psi      <- mfbvar:::dmultn(x = post_psi, m = prior_psi_mean,
-                                Sigma = prior_psi_Omega)
-  eval_log_RB <- mfbvar:::eval_Pi_Sigma_RaoBlack(Z_array = Z_red, d = d,
-                                        post_psi_center = t(post_psi),
-                                        post_Pi_center = post_Pi_mean,
-                                        post_Sigma_center = post_Sigma,
-                                        post_nu = post_nu,
-                                        prior_Pi_mean = prior_Pi_mean,
-                                        prior_Pi_Omega = prior_Pi_Omega,
-                                        prior_S = prior_S, n_vars = n_vars,
-                                        n_lags = n_lags, n_reps = n_reps)
+  lklhd <- sum(c(mfbvar:::loglike(
+    Y = as.matrix(mZ), Lambda = Lambda,
+    Pi_comp = Pi_comp, Q_comp = Q_comp, n_T = n_T_,
+    n_vars = n_vars, n_comp = n_lags * n_vars,
+    z0 = h0, P0 = P0
+  )[-1]))
+  eval_prior_Pi_Sigma <- mfbvar:::dnorminvwish(
+    X = t(post_Pi_mean), Sigma = post_Sigma,
+    M = prior_Pi_mean, P = prior_Pi_Omega,
+    S = prior_S, v = n_vars + 2
+  )
+  eval_prior_psi <- mfbvar:::dmultn(
+    x = post_psi, m = prior_psi_mean,
+    Sigma = prior_psi_Omega
+  )
+  eval_log_RB <- mfbvar:::eval_Pi_Sigma_RaoBlack(
+    Z_array = Z_red, d = d,
+    post_psi_center = t(post_psi),
+    post_Pi_center = post_Pi_mean,
+    post_Sigma_center = post_Sigma,
+    post_nu = post_nu,
+    prior_Pi_mean = prior_Pi_mean,
+    prior_Pi_Omega = prior_Pi_Omega,
+    prior_S = prior_S, n_vars = n_vars,
+    n_lags = n_lags, n_reps = n_reps
+  )
   const <- median(eval_log_RB)
-  eval_RB_Pi_Sigma    <- log(mean(exp(eval_log_RB-const))) + const
-  eval_marg_psi   <- log(mean(mfbvar:::eval_psi_MargPost(Pi_array = Pi, Sigma_array = Sigma,
-                                                Z_array = Z,
-                                                post_psi_center = post_psi,
-                                                prior_psi_mean = prior_psi_mean,
-                                                prior_psi_Omega = prior_psi_Omega,
-                                                D_mat = D, n_determ = n_determ,
-                                                n_vars = n_vars, n_lags = n_lags,
-                                                n_reps = n_reps)))
+  eval_RB_Pi_Sigma <- log(mean(exp(eval_log_RB - const))) + const
+  eval_marg_psi <- log(mean(mfbvar:::eval_psi_MargPost(
+    Pi_array = Pi, Sigma_array = Sigma,
+    Z_array = Z,
+    post_psi_center = post_psi,
+    prior_psi_mean = prior_psi_mean,
+    prior_psi_Omega = prior_psi_Omega,
+    D_mat = D, n_determ = n_determ,
+    n_vars = n_vars, n_lags = n_lags,
+    n_reps = n_reps
+  )))
 
   mdd_estimate <- c(lklhd + eval_prior_Pi_Sigma + eval_prior_psi - (eval_RB_Pi_Sigma + eval_marg_psi))
 
@@ -199,10 +209,10 @@ estimate_mdd_ss <- function(mfbvar_obj) {
 #'
 #' This function provides the possibility to estimate the log marginal density (up to a constant) using the Minnesota MF-BVAR.
 #' @rdname mdd.minn
-#' @templateVar mfbvar_obj TRUE
-#' @template man_template
+#' @param mfbvar_obj An object of class \code{mfbvar} containing the results
 #' @param quarterly_cols numeric vector with positions of quarterly variables
-#' @templateVar p_trunc TRUE
+#' @param p_trunc \code{1-p_trunc} is the degree of truncation (i.e.,
+#' \code{p_trunc = 1} is no truncation) in the truncated normal distribution
 #' @keywords internal
 #' @noRd
 #' @return The log marginal data density estimate (bar a constant)
@@ -221,27 +231,29 @@ estimate_mdd_minn <- function(mfbvar_obj, p_trunc, ...) {
   prior_S <- mfbvar_obj$prior_S
   prior_nu <- mfbvar_obj$prior_nu
 
-  postsim <- vapply(1:n_reps, function(x) {
-    Z_comp <- mfbvar:::build_Z(z = Z[,, x], n_lags = n_lags)
-    XX <- Z_comp[-nrow(Z_comp), ]
-    XX <- cbind(XX, 1)
-    YY <- Z_comp[-1, 1:n_vars]
+  postsim <- vapply(
+    1:n_reps, function(x) {
+      Z_comp <- mfbvar:::build_Z(z = Z[, , x], n_lags = n_lags)
+      XX <- Z_comp[-nrow(Z_comp), ]
+      XX <- cbind(XX, 1)
+      YY <- Z_comp[-1, 1:n_vars]
 
-    XXt.XX <- crossprod(XX)
-    XXt.XX.inv <- chol2inv(chol(XXt.XX))
-    Pi_sample <- XXt.XX.inv %*% crossprod(XX, YY)
+      XXt.XX <- crossprod(XX)
+      XXt.XX.inv <- chol2inv(chol(XXt.XX))
+      Pi_sample <- XXt.XX.inv %*% crossprod(XX, YY)
 
-    # Posterior moments of Pi
-    post_Pi_Omega <- chol2inv(chol(inv_prior_Pi_Omega + XXt.XX))
-    post_Pi       <- post_Pi_Omega %*% (Omega_Pi + crossprod(XX, YY))
-    S <- crossprod(YY - XX %*% Pi_sample)
-    Pi_diff <- prior_Pi_mean - Pi_sample
-    post_S <- prior_S + S + t(Pi_diff) %*% chol2inv(chol(prior_Pi_Omega + XXt.XX.inv)) %*% Pi_diff
-    return(mfbvar:::dmatt(YY, XX %*% prior_Pi_mean, chol2inv(chol(diag(nrow(YY)) + XX %*% prior_Pi_Omega %*% t(XX))), prior_S, prior_nu))
-  },
-  numeric(1))
+      # Posterior moments of Pi
+      post_Pi_Omega <- chol2inv(chol(inv_prior_Pi_Omega + XXt.XX))
+      post_Pi <- post_Pi_Omega %*% (Omega_Pi + crossprod(XX, YY))
+      S <- crossprod(YY - XX %*% Pi_sample)
+      Pi_diff <- prior_Pi_mean - Pi_sample
+      post_S <- prior_S + S + t(Pi_diff) %*% chol2inv(chol(prior_Pi_Omega + XXt.XX.inv)) %*% Pi_diff
+      return(mfbvar:::dmatt(YY, XX %*% prior_Pi_mean, chol2inv(chol(diag(nrow(YY)) + XX %*% prior_Pi_Omega %*% t(XX))), prior_S, prior_nu))
+    },
+    numeric(1)
+  )
 
-  temp <- apply(Z[-(1:n_lags), , ], 3, function(x) x[is.na(c(mfbvar_obj$Y[-(1:n_lags),]))])
+  temp <- apply(Z[-(1:n_lags), , ], 3, function(x) x[is.na(c(mfbvar_obj$Y[-(1:n_lags), ]))])
 
   if (length(temp) == 0) {
     return(log_mdd = mean(postsim))
@@ -266,12 +278,11 @@ estimate_mdd_minn <- function(mfbvar_obj, p_trunc, ...) {
           0.5 * drawsiglndet - 0.5 * quadpara[j] - log(p_trunc[i])
         indpara[j, i] <- quadpara[j] < pcrit[i]
         invlike[j, i] <- exp(lnfpara[j, i] - postsim[j] +
-                               densfac) * indpara[j, i]
+          densfac) * indpara[j, i]
       }
       meaninvlike <- colMeans(invlike)
       mdd <- densfac - log(meaninvlike)
     }
-    return(log_mdd = mean(mdd) + sum(!is.na(Y[-(1:n_lags), mfbvar_obj$freq == "q"]))*log(3))
+    return(log_mdd = mean(mdd) + sum(!is.na(Y[-(1:n_lags), mfbvar_obj$freq == "q"])) * log(3))
   }
 }
-

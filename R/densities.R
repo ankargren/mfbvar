@@ -1,16 +1,15 @@
 #' Normal inverse Wishart density function
 #'
 #' Density function for the (matrix) normal inverse Wishart distribution
-#' @templateVar X TRUE
-#' @templateVar Sigma TRUE
-#' @templateVar M TRUE
-#' @templateVar Q TRUE
-#' @templateVar P TRUE
-#' @templateVar S TRUE
-#' @templateVar v TRUE
+#' @param X Matrix of size \code{p x q}
+#' @param Sigma The covariance matrix
+#' @param M The mean matrix of size \code{p x q}
+#' @param Q \code{q x q} covariance matrix
+#' @param P \code{p x p} covariance matrix
+#' @param S \code{q x q} scale matrix
+#' @param v The degrees of freedom
 #' @keywords internal
 #' @noRd
-#' @template man_template
 #' @return
 #' For \code{dnorminvwish}: the evaluated density.\\n
 #' For \code{rmatn} or \code{rinvwish}: the random numbers.
@@ -19,18 +18,17 @@ dnorminvwish <- function(X, Sigma, M, P, S, v) {
   p <- dim(P)[1]
   det_Sigma <- det(Sigma)
   inv_Sigma <- chol2inv(chol(Sigma))
-  dmultnorm <- (-p*q/2) * log(2 * pi) + (-p/2) * log(det_Sigma) + (-q/2)*log(det(P)) + (-1/2 * sum(diag(inv_Sigma %*% t(X - M) %*% chol2inv(chol(P)) %*% (X - M))))
-  cc <- (v * q/2)*log(2) + (q*(q-1)/4)*log(pi) + sum(lgamma((v+1-1:q)/2))
-  dinvwish <- -cc + (v/2) * log(det(S)) -(v+q+1)/2*log(det_Sigma) -1/2 * sum(diag(inv_Sigma %*% S))
+  dmultnorm <- (-p * q / 2) * log(2 * pi) + (-p / 2) * log(det_Sigma) + (-q / 2) * log(det(P)) + (-1 / 2 * sum(diag(inv_Sigma %*% t(X - M) %*% chol2inv(chol(P)) %*% (X - M))))
+  cc <- (v * q / 2) * log(2) + (q * (q - 1) / 4) * log(pi) + sum(lgamma((v + 1 - 1:q) / 2))
+  dinvwish <- -cc + (v / 2) * log(det(S)) - (v + q + 1) / 2 * log(det_Sigma) - 1 / 2 * sum(diag(inv_Sigma %*% S))
   return(dmultnorm + dinvwish)
 }
 
 #' Multivariate normal density function
 #'
 #' Density function for the multivariate normal distribution
-#' @templateVar x TRUE
-#' @templateVar m TRUE
-#' @template man_template
+#' @param x A vector of size \code{p}
+#' @param m The mean vector of size \\code{p}
 #' @inherit dnorminvwish
 #' @keywords internal
 #' @noRd
@@ -38,7 +36,7 @@ dnorminvwish <- function(X, Sigma, M, P, S, v) {
 #' For \code{dmultn}: the evaluated density.\\n
 #' For \code{rmultn}: \eqn{p} random numbers.
 dmultn <- function(x, m, Sigma) {
-  log_d <- (-1/2)* log(det(2*pi*Sigma)) -1/2 * t(x-m) %*% chol2inv(chol(Sigma)) %*% (x-m)
+  log_d <- (-1 / 2) * log(det(2 * pi * Sigma)) - 1 / 2 * t(x - m) %*% chol2inv(chol(Sigma)) %*% (x - m)
   return(log_d)
 }
 
@@ -46,10 +44,10 @@ dmultn <- function(x, m, Sigma) {
 #' Matrix t distribution
 #'
 #' Density function for the truncated multivariate normal distribution
-#' @param X \code{p * q} matrix at which the density is to be evaluated
-#' @param M \code{p * q} matrix of means
-#' @param P \code{p * p} scale matrix
-#' @param Q \code{q * q} scale matrix
+#' @param X \code{p x q} matrix at which the density is to be evaluated
+#' @param M \code{p x q} matrix of means
+#' @param P \code{p x p} scale matrix
+#' @param Q \code{q x q} scale matrix
 #' @param v degrees of freedom
 #' @keywords internal
 #' @inherit dmultn
@@ -60,6 +58,6 @@ dmultn <- function(x, m, Sigma) {
 dmatt <- function(X, M, P, Q, v) {
   q <- ncol(X)
   p <- nrow(X)
-  k <- p*q/2*log(pi)-q/2*log(det(P))-v/2*log(det(Q))+sum(lgamma((v+1-(1:q))/2)-lgamma((v+p+1-(1:q))/2))
-  return(-k -(v+p)/2*log(det(Q+t(X-M) %*% P %*% (X-M))))
+  k <- p * q / 2 * log(pi) - q / 2 * log(det(P)) - v / 2 * log(det(Q)) + sum(lgamma((v + 1 - (1:q)) / 2) - lgamma((v + p + 1 - (1:q)) / 2))
+  return(-k - (v + p) / 2 * log(det(Q + t(X - M) %*% P %*% (X - M))))
 }

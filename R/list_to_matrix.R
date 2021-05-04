@@ -1,6 +1,5 @@
 
 list_to_matrix <- function(Y_in) {
-
   if (all(sapply(Y_in, function(x) inherits(x, "ts"))) || all(sapply(Y_in, function(x) inherits(x, "zoo")))) {
     if (all(sapply(Y_in, function(x) inherits(x, "ts")))) {
       zoofun <- function(x) {
@@ -15,13 +14,11 @@ list_to_matrix <- function(Y_in) {
             zoo::zoo(as.numeric(x), as.Date(zoo::as.Date.ts(x)))
           } else {
             zoo::zoo(as.matrix(x), as.Date(zoo::as.Date.ts(x)))
-
           }
         } else {
           stop("Time series objects can only include monthly and/or quarterly time series.")
         }
       }
-
     } else if (all(sapply(Y_in, function(x) inherits(x, "zooreg")))) {
       zoofun <- function(x) {
         if (frequency(x) == 4) {
@@ -67,8 +64,7 @@ list_to_matrix <- function(Y_in) {
     } else if (all(!dim_null)) {
       zoolistfreq <- sapply(Y_in, frequency)
       zoolistn <- sapply(Y_in, NCOL)
-      zoolistfreq <- Reduce(c, mapply(function(x, y) rep(x, each = y), zoolistfreq, zoolistn, SIMPLIFY =  FALSE))
-
+      zoolistfreq <- Reduce(c, mapply(function(x, y) rep(x, each = y), zoolistfreq, zoolistn, SIMPLIFY = FALSE))
     } else {
       zoolistfreq <- c()
       for (iter in 1:length(dim_null)) {

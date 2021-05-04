@@ -2,78 +2,140 @@
 % Please edit documentation in R/interface.R
 \name{set_prior}
 \alias{set_prior}
-\alias{update_prior}
+\alias{set_init}
+\alias{set_prior_minn}
+\alias{set_prior_ss}
+\alias{set_prior_ssng}
+\alias{set_prior_fsv}
+\alias{set_prior_csv}
 \title{Set priors for mfbvar}
 \usage{
 set_prior(
+  prior_obj,
   Y,
+  aggregation,
+  prior_Pi_AR1,
+  lambda1,
+  lambda2,
+  lambda3,
+  lambda4,
+  block_exo,
+  n_lags,
+  n_fcst,
+  n_thin,
+  n_reps,
+  n_burnin,
+  freq,
+  d,
+  d_fcst,
+  prior_psi_mean,
+  prior_psi_Omega,
+  check_roots,
+  s,
+  prior_ng,
+  prior_phi,
+  prior_sigma2,
+  n_fac,
+  n_cores,
+  priormu,
+  priorphiidi,
+  priorphifac,
+  priorsigmaidi,
+  priorsigmafac,
+  priorfacload,
+  restrict,
+  verbose,
+  ...
+)
+
+set_init(
+  prior_obj,
+  Y,
+  n_lags,
+  n_reps,
+  n_burnin,
   aggregation = "average",
+  n_fcst = 0,
+  n_thin = 1,
+  freq = NULL,
+  verbose = FALSE
+)
+
+set_prior_minn(
+  prior_obj,
   prior_Pi_AR1 = 0,
   lambda1 = 0.2,
   lambda2 = 0.5,
   lambda3 = 1,
   lambda4 = 10000,
   block_exo = NULL,
-  n_lags,
-  n_fcst = 0,
-  n_thin = 1,
-  n_reps,
-  n_burnin = n_reps,
-  freq = NULL,
-  d = NULL,
-  d_fcst = NULL,
-  prior_psi_mean = NULL,
-  prior_psi_Omega = NULL,
-  check_roots = FALSE,
-  s = -1000,
-  prior_ng = c(0.01, 0.01),
-  prior_phi = c(0.9, 0.1),
-  prior_sigma2 = c(0.01, 4),
-  n_fac = NULL,
-  n_cores = 1,
-  verbose = FALSE,
-  ...
+  check_roots = FALSE
 )
 
-update_prior(prior_obj, ...)
+set_prior_ss(
+  prior_obj,
+  prior_psi_mean,
+  prior_psi_Omega,
+  d = "intercept",
+  d_fcst = NULL
+)
+
+set_prior_ssng(prior_obj, s = -1000, prior_ng = c(0.01, 0.01))
+
+set_prior_fsv(
+  prior_obj,
+  n_fac,
+  n_cores = 1,
+  priormu = c(0, 10),
+  priorphiidi = c(10, 3),
+  priorphifac = c(10, 3),
+  priorsigmaidi = 1,
+  priorsigmafac = 1,
+  priorfacload = 1,
+  restrict = "none"
+)
+
+set_prior_csv(prior_obj, prior_phi = c(0.9, 0.1), prior_sigma2 = c(0.01, 4))
 }
 \arguments{
+\item{prior_obj}{(Optional) A previous \code{mfbvar_prior} object that is to be updated}
+
 \item{Y}{data input. For monthly-quarterly data, should be a list with components containing regularly spaced time series (that inherit from \code{ts} or \code{zooreg}). If a component contains a single time series, the component itself must be named. If a component contains multiple time series, each time series must be named. Monthly variables can only contain missing values at the end of the sample, and should precede quarterly variables in the list. Matrices in which quarterly variables are padded with \code{NA} and observations stored at the end of each quarter are also accepted, but then the frequency of each variable must be given in the argument \code{freq}. Weekly-monthly mixes can be provided using the matrix way, see examples.}
 
 \item{aggregation}{the aggregation scheme used for relating latent high-frequency series to their low-frequency observations. The default is \code{"average"} for averaging within each low-frequency period (e.g., quarterly observations are averages of the constituent monthly observations). The alternative \code{"triangular"} can be used for monthly-quarterly mixes, and uses the Mariano-Murasawa triangular set of weights. See details for more information.}
 
-\item{prior_Pi_AR1}{The prior means for the AR(1) coefficients.}
+\item{prior_Pi_AR1}{The prior means for the AR(1) coefficients, either an \code{n_vars} long vector or a single number}
 
-\item{lambda1}{The overall tightness.}
+\item{lambda1}{The overall tightness}
 
 \item{lambda2}{(Only if \code{variance} is one of \code{c("diffuse", "fsv")} The cross-variable tightness}
 
-\item{lambda3}{The tightness of the intercept prior variance.}
+\item{lambda3}{The tightness of the intercept prior variance}
 
 \item{lambda4}{(Minnesota only) Prior variance of the intercept.}
 
 \item{block_exo}{(Only if \code{variance} is one of \code{c("diffuse", "fsv")}) Vector of indexes/names of variables to be treated as block exogenous}
 
-\item{n_lags}{The number of lags.}
+\item{n_lags}{Number of lags}
 
-\item{n_fcst}{The number of periods to forecast.}
+\item{n_fcst}{Number of forecast periods}
 
 \item{n_thin}{Store every \code{n_thin}th draw}
 
-\item{n_reps}{The number of replications.}
+\item{n_reps}{Number of draws}
 
-\item{n_burnin}{The number of burn-in replications.}
+\item{n_burnin}{Number of burn-in draws}
 
-\item{freq}{(Only used if \code{Y} is a matrix) Character vector with elements 'm' (monthly) or 'q' (quarterly) for sampling frequency. Monthly variables must precede all quarterly variables.}
+\item{freq}{(Only used if \code{Y} is a matrix) Character vector with elements 'm' (monthly) or 'q' (quarterly) for sampling frequency. Monthly variables must precede all quarterly variables}
 
 \item{d}{(Steady state only) Either a matrix with same number of rows as \code{Y} and \code{n_determ} number of columns containing the deterministic terms or a string \code{"intercept"} for requesting an intercept as the only deterministic
 term.}
 
 \item{d_fcst}{(Steady state only) The deterministic terms for the forecasting period (not used if \code{d = "intercept"}).}
 
-\item{prior_psi_mean}{(Steady state only) Vector of length \code{n_determ*n_vars} with the prior means of the steady-state parameters.}
+\item{prior_psi_mean}{(Steady state only) Vector of length \code{n_determ * n_vars} with the prior means of the steady-state parameters.}
 
-\item{prior_psi_Omega}{(Steady state only) Matrix of size \code{(n_determ*n_vars) * (n_determ*n_vars)} with the prior covariance of the steady-state parameters.#'}
+\item{prior_psi_Omega}{(Steady state only) Matrix of size \code{(n_determ * n_vars) x (n_determ * n_vars)} with the prior covariance of the steady-state parameters.}
 
 \item{check_roots}{Logical, if roots of the companion matrix are to be checked to ensure stationarity.}
 
@@ -89,17 +151,13 @@ term.}
 
 \item{n_cores}{(Only used with factor stochastic volatility) Number of cores to use for drawing regression parameters in parallel}
 
-\item{verbose}{Logical, if progress should be printed to the console.}
-
 \item{...}{(Only used with factor stochastic volatility) Arguments to pass along to \code{\link[factorstochvol]{fsvsample}}. See details.}
-
-\item{prior_obj}{an object of class \code{mfbvar_prior}}
 }
 \value{
 An object of class \code{mfbvar_prior} that is used as input to \code{estimate_mfbvar}.
 }
 \description{
-The function creates an object storing all information needed for estimating a mixed-frequency BVAR. The object includes data as well as details for the model and its priors.
+These functions create an object that stores all information needed for estimating a mixed-frequency BVAR. The object includes data as well as details for the model and its priors. The workhorse function \code{set_prior()} has no defaults, but the wrappers \code{set_prior_*()} do and are recommended for most use cases.
 }
 \details{
 Some support is provided for single-frequency data sets, where \code{Y} contains variables sampled with the same frequency.
@@ -128,20 +186,20 @@ For modeling stochastic volatility by the factor stochastic volatility model, th
   \item{\code{priorfacload}}{\code{ = 1}}
   \item{\code{restrict}}{\code{ = "none"}}
 }
-
-The function \code{update_prior} can be used to update an existing prior object. See the examples.
 }
 \examples{
 # Standard list-based way
-prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 100)
-prior_obj <- update_prior(prior_obj, n_fcst = 4)
+prior_obj <- set_init(Y = mf_usa, n_lags = 4, n_reps = 100)
+prior_obj <- set_prior(prior_obj, n_fcst = 4)
 
 # Weekly-monthly mix of data, four weeks per month
 Y <- matrix(rnorm(400), 100, 4)
-Y[setdiff(1:100,seq(4, 100, by = 4)), 4] <- NA
-prior_obj <- set_prior(Y = Y, freq = c(rep("w", 3), "m"),
-                       n_lags = 4, n_reps = 10)
+Y[setdiff(1:100, seq(4, 100, by = 4)), 4] <- NA
+prior_obj <- set_prior(
+  Y = Y, freq = c(rep("w", 3), "m"),
+  n_lags = 4, n_reps = 10
+)
 }
 \seealso{
-\code{\link{estimate_mfbvar}}, \code{\link{update_prior}}, \code{\link{interval_to_moments}}, \code{\link{print.mfbvar_prior}}, \code{\link{summary.mfbvar_prior}}, \code{\link[factorstochvol]{fsvsample}}
+\code{\link{estimate_mfbvar}}, \code{\link{interval_to_moments}}, \code{\link{print.mfbvar_prior}}, \code{\link{summary.mfbvar_prior}}, \code{\link[factorstochvol]{fsvsample}}
 }

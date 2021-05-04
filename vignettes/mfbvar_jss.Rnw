@@ -616,7 +616,7 @@ With the data in place, the workflow of the package next requires the user to fi
 To create an initial, minimal prior we call \code{set_prior()} with the following arguments:
 <<>>=
 library("mfbvar")
-prior <- set_prior(Y = mf_list, n_lags = 4, n_reps = 1000)
+prior <- set_init(Y = mf_list, n_lags = 4, n_reps = 1000)
 @
 
 The \code{print} method for the prior displays what model specifications can be used with the provided information.
@@ -642,10 +642,10 @@ prior_intervals <- matrix(c(1, 3,
                             4, 8,
                             1, 3), ncol = 2, byrow = TRUE)
 moments <- interval_to_moments(prior_intervals)
-prior <- update_prior(prior,
-                      d = "intercept",
-                      prior_psi_mean = moments$prior_psi_mean,
-                      prior_psi_Omega = moments$prior_psi_Omega)
+prior <- set_prior_minn(prior) %>%
+  set_prior_ss(d = "intercept",
+               prior_psi_mean = moments$prior_psi_mean,
+               prior_psi_Omega = moments$prior_psi_Omega)
 @
 The argument \code{d} should generally be a matrix, but because intercept-only applications are common passing only the string \code{"intercept"} is allowed. The prior steady-state intervals can be visualized by calling \code{plot} on the prior object. The intervals used here are displayed in Figure \ref{fig:ss_plot}.
 
@@ -655,7 +655,7 @@ plot(prior)
 
 We will next make forecasts 24 months ahead and must therefore update the prior to accomodate this request. The argument \code{n_fcst} takes the number of forecasts desired in terms of months, i.e., \code{n_fcst = 24} corresponds to two years.
 <<>>=
-prior <- update_prior(prior, n_fcst = 24)
+prior <- set_prior(prior, n_fcst = 24)
 @
 
 The prior is now fully specified also for the steady-state prior. A summary of the specification can be obtained from the \code{summary} method implemented for the prior object:

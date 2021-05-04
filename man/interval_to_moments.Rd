@@ -20,7 +20,9 @@ A list with two components:
 Convert a matrix of \code{100*(1-alpha)} \% prior probability intervals for the steady states to prior moments.
 }
 \examples{
-prior_intervals <- matrix(c(0.1, 0.2,
-                            0.4, 0.6), ncol = 2, byrow = TRUE)
+prior_intervals <- matrix(c(
+  0.1, 0.2,
+  0.4, 0.6
+), ncol = 2, byrow = TRUE)
 psi_moments <- interval_to_moments(prior_intervals)
 }

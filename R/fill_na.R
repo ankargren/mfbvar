@@ -1,8 +1,11 @@
 #' Fills NAs with the next non-NA value
 #'
-#' The function fills elements with \code{NA} with the next non-\code{NA} value (so that quarterly averages observed at the end of the quarter are assumed as observations for the remaining months of the quarter).
-#' @templateVar Y TRUE
-#' @template man_template
+#' The function fills elements with \code{NA} with the next non-\code{NA} value
+#' (so that quarterly averages observed at the end of the quarter are assumed
+#' as observations for the remaining months of the quarter).
+#' @param Y The data matrix of size \code{(n_T + n_lags) x n_vars} with
+#' \code{NA} representing missingness. All high-frequency variables must be
+#' placed before low-frequency variables.
 #' @keywords internal
 #' @noRd
 #' @return A matrix with no \code{NA}s.
@@ -29,6 +32,6 @@ fill_na <- function(Y) {
         }
       }
     }
-    x})
+    x
+  })
 }
-

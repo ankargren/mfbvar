@@ -11,12 +11,18 @@ ols_pi <- function(X, Y) {
   error_count <- 0
   fail <- TRUE
   while (fail) {
-    pi_sample <- tryCatch({solve(crossprod(X)+diag(ridge, ncol(X))) %*% crossprod(X, Y)},
-                          error = function(cond) {cond})
+    pi_sample <- tryCatch(
+      {
+        solve(crossprod(X) + diag(ridge, ncol(X))) %*% crossprod(X, Y)
+      },
+      error = function(cond) {
+        cond
+      }
+    )
     if (!inherits(pi_sample, "error")) {
       fail <- FALSE
     } else {
-      ridge <- ridge*10
+      ridge <- ridge * 10
     }
   }
   return(pi_sample)
@@ -36,15 +42,14 @@ ols_s <- function(X, Y, Pi) {
 #' Initialize Gibbs sampler using OLS
 #'
 #' Initializes the Gibbs sampler using OLS.
-#' @templateVar z TRUE
-#' @templateVar d TRUE
-#' @templateVar n_lags TRUE
-#' @templateVar n_T TRUE
-#' @templateVar n_vars TRUE
-#' @templateVar n_determ TRUE
-#' @template man_template
+#' @param z A matrix of size \code{(n_T + n_lags) x n_vars} of data
+#' @param d The matrix of size \code{(n_T + n_lags) x n_determ} of deterministic terms
+#' @param n_lags Number of lags
+#' @param n_T Number of time periods
+#' @param Number of variables
+#' @param Number of deterministic components
 #' @return A list with components:
-#' \item{Gam}{A matrix of size \code{n_vars * (n_vars*n_lags +n_determ)} of estimated parameters.}
+#' \item{Gam}{A matrix of size \code{n_vars x (n_vars * n_lags + n_determ)} of estimated parameters.}
 #' \item{S}{Estimated error covariance matrix.}
 #' \item{psi}{The estimated steady-state parameters.}
 #' @keywords internal
@@ -55,18 +60,20 @@ ols_initialization <- function(z, d, n_lags, n_T, n_vars, n_determ) {
   # Create regressor matrix (this is z in Karlsson, 2013)
   XX <- c()
   for (i in 1:n_lags) {
-    XX <- cbind(XX, z[(n_lags+1-i):(n_T - i), ])
+    XX <- cbind(XX, z[(n_lags + 1 - i):(n_T - i), ])
   }
-  XX <- cbind(XX, d[(n_lags+1):n_T, ])
-  YY <- z[(n_lags+1):n_T, ]
+  XX <- cbind(XX, d[(n_lags + 1):n_T, ])
+  YY <- z[(n_lags + 1):n_T, ]
 
   # Gamma in Karlsson (2013, p. 797)
   Gam <- t(ols_pi(XX, YY))
-  Pi  <- Gam[, 1:(n_vars * n_lags)]
+  Pi <- Gam[, 1:(n_vars * n_lags)]
   const <- Gam[, (n_vars * n_lags + 1):(n_vars * n_lags + n_determ)]
   psi <- c(solve(diag(n_vars) - Pi %*%
-                   kronecker(matrix(1, n_lags, 1), diag(n_vars))) %*% const)
+    kronecker(matrix(1, n_lags, 1), diag(n_vars))) %*% const)
 
-  return(list(Pi = Pi, S = crossprod(YY - XX %*% t(Gam)) / n_T,
-              psi = psi, const = const))
+  return(list(
+    Pi = Pi, S = crossprod(YY - XX %*% t(Gam)) / n_T,
+    psi = psi, const = const
+  ))
 }

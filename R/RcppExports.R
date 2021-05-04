@@ -2,11 +2,10 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 #' @describeIn build_U Build the U matrix (C++ implementation)
-#' @templateVar n_vars TRUE
-#' @templateVar n_lags TRUE
+#' @param n_vars Number of variables
+#' @param n_lags Number of lags
 #' @keywords internal
 #' @noRd
-#' @template man_template
 build_U_cpp <- function(Pi, n_determ, n_vars, n_lags) {
     .Call(`_mfbvar_build_U_cpp`, Pi, n_determ, n_vars, n_lags)
 }
@@ -83,8 +82,7 @@ kf_sim_smooth <- function(y_, Phi_, Sigma_, Lambda_, Z1_, n_q_, T_b_) {
 #'
 #' @description The function computes the maximum eigenvalue.
 #' @aliases max_eig max_eig_cpp
-#' @templateVar A TRUE
-#' @template man_template
+#' @param A Symmetrix matrix whose maximum eigenvalue is to be computed
 #' @keywords internal
 #' @noRd
 #' @return The maximum eigenvalue.
@@ -227,16 +225,17 @@ rsimsm_adaptive_univariate <- function(y_, Phi, Sigma, Lambda, Z1, n_q_, T_b, f)
 #' @details Implemented in C++.
 #' @aliases smoother simulation_smoother generate_mhh loglike
 #' @describeIn smoother Compute smoothed states
-#' @templateVar Y TRUE
-#' @templateVar Lambda TRUE
-#' @templateVar Pi_comp TRUE
-#' @templateVar Q_comp TRUE
-#' @templateVar n_T TRUE
-#' @templateVar n_vars TRUE
-#' @templateVar n_comp TRUE
-#' @templateVar z0 TRUE
-#' @templateVar P0 TRUE
-#' @template man_template
+#' @param Y The data matrix of size \code{n_T x n_vars} with
+#' \code{NA} representing missingness. All high-frequency variables must be
+#' placed before low-frequency variables.
+#' @param Lambda The aggregation matrix (\code{n_vars x (n_vars * n_lags)})
+#' @param Pi_comp Matrix with the dynamic coefficients in companion form
+#' @param Q_comp The lower-triangular Cholesky decomposition of the covariance matrix (in companion form)
+#' @param n_T Number of time periods
+#' @param n_vars Number of variables
+#' @param n_comp The length of the companion form vector of data (\code{n_vars * n_lags})
+#' @param z0 A matrix of size \code{(n_lags * n_vars) x n_vars} of initial values of the latent variable
+#' @param P0 The covariance matrix of the initial state (\code{(n_vars * n_lags) x (n_vars * n_lags)})
 #' @keywords internal
 #' @noRd
 #' @return For \code{loglike}:
