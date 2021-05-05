@@ -18,5 +18,12 @@ void update_csv(
     bool fixate_phi,
     bool fixate_sigma);
 
-#endif
+void scale_csv(arma::vec & exp_sqrt_f, arma::mat & y_scaled,
+               arma::mat & X_scaled, const arma::mat & y_in,
+               const arma::mat & X_in, const arma::vec & f_in);
 
+void fcst_csv(arma::mat & Z_fcst, const arma::mat & Z, const arma::mat & Pi,
+              const arma::mat & Sigma_chol, double phi, double sigma, double vol_pred,
+              arma::uword n_fcst, arma::uword n_lags, arma::uword n_vars);
+
+#endif

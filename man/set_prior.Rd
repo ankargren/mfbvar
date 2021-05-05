@@ -157,7 +157,7 @@ term.}
 An object of class \code{mfbvar_prior} that is used as input to \code{estimate_mfbvar}.
 }
 \description{
-These functions create an object that stores all information needed for estimating a mixed-frequency BVAR. The object includes data as well as details for the model and its priors. The workhorse function \code{set_prior()} has no defaults, but the wrappers \code{set_prior_*()} do and are recommended for most use cases.
+These functions create an object that stores all information needed for estimating a mixed-frequency BVAR. The object includes data as well as details for the model and its priors. The workhorse function \code{set_prior()} has no defaults, but the wrappers \code{set_init()/set_prior_*()} do. The wrappers are recommended for most use cases.
 }
 \details{
 Some support is provided for single-frequency data sets, where \code{Y} contains variables sampled with the same frequency.

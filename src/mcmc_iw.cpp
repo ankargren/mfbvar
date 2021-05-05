@@ -6,7 +6,7 @@
 // [[Rcpp::export]]
 void mcmc_minn_iw(const arma::mat & y_in_p,
                   arma::cube& Pi, arma::cube& Sigma, arma::cube& Z, arma::cube& Z_fcst,
-                  const arma::mat& Lambda_comp, const arma::mat& prior_Pi_Omega,
+                  const arma::mat& Lambda, const arma::mat& prior_Pi_Omega,
                   const arma::mat& inv_prior_Pi_Omega,
                   const arma::mat& Omega_Pi, const arma::mat& prior_Pi_mean,
                   const arma::mat & prior_S, bool check_roots, const arma::mat& Z_1,
@@ -40,7 +40,7 @@ void mcmc_minn_iw(const arma::mat & y_in_p,
   }
   if (single_freq || fixate_Z) {
     Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
-    X = create_X(Z_i, n_lags);
+    X = create_X(Z_i, n_lags, true);
     update_iw(post_Pi_Omega, post_Pi, post_S, X, y_i, prior_Pi_mean,
               prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_S);
   }
@@ -49,9 +49,9 @@ void mcmc_minn_iw(const arma::mat & y_in_p,
 
   for (arma::uword i = 0; i < n_reps + n_burnin; ++i) {
     if (!single_freq && !fixate_Z) {
-      y_i = simsm_adaptive_cv(y_in_p, Pi_i, Sigma_chol, Lambda_comp, Z_1, n_q, T_b);
+      y_i = simsm_adaptive_cv(y_in_p, Pi_i, Sigma_chol, Lambda, Z_1, n_q, T_b);
       Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
-      X = create_X(Z_i, n_lags);
+      X = create_X(Z_i, n_lags, true);
       update_iw(post_Pi_Omega, post_Pi, post_S, X, y_i, prior_Pi_mean,
                 prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_S);
     }
@@ -68,7 +68,7 @@ void mcmc_minn_iw(const arma::mat & y_in_p,
         Z_fcst_i.head_cols(n_lags) = Z_i.tail_rows(n_lags).t();
         for (arma::uword h = 0; h < n_fcst; ++h) {
           errors.imbue(norm_rand);
-          x = create_X_t(Z_fcst_i.cols(0+h, n_lags-1+h).t());
+          x = create_X_t(Z_fcst_i.cols(0+h, n_lags-1+h).t(), true);
           Z_fcst_i.col(n_lags + h) = Pi_i * x + Sigma_chol * errors;
         }
         Z_fcst.slice((i-n_burnin)/n_thin) = Z_fcst_i.t();
@@ -89,7 +89,7 @@ void mcmc_minn_iw(const arma::mat & y_in_p,
 void mcmc_ssng_iw(const arma::mat & y_in_p,
                   arma::cube& Pi, arma::cube& Sigma, arma::cube& psi, arma::cube& phi_mu,
                   arma::cube& lambda_mu, arma::cube& omega, arma::cube& Z,
-                  arma::cube& Z_fcst, const arma::mat& Lambda_comp, const arma::mat& prior_Pi_Omega,
+                  arma::cube& Z_fcst, const arma::mat& Lambda, const arma::mat& prior_Pi_Omega,
                   const arma::mat& inv_prior_Pi_Omega,
                   const arma::mat& Omega_Pi, const arma::mat& prior_Pi_mean,
                   const arma::mat & prior_S,
@@ -133,11 +133,11 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
 
   arma::mat Psi_i = arma::mat(psi_i.begin(), n_vars, n_determ, false, true);
   mu_mat = dt * Psi_i.t();
-  arma::uword n_Lambda = Lambda_comp.n_cols/Lambda_comp.n_rows;
+  arma::uword n_Lambda = Lambda.n_cols/Lambda.n_rows;
   arma::mat mu_long = arma::mat(n_Lambda+n_T, n_vars, arma::fill::zeros);
   arma::rowvec Lambda_single = arma::rowvec(n_Lambda, arma::fill::zeros);
   for (arma::uword i = 0; i < n_Lambda; ++i) {
-    Lambda_single(i) = Lambda_comp.at(0, i*n_q);
+    Lambda_single(i) = Lambda.at(0, i*n_q);
   }
 
   arma::uword nm = n_vars*n_determ;
@@ -146,7 +146,7 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
 
   double M;
   arma::running_stat<double> stats;
-  double accept = 0.0;
+  arma::uword accept = 0;
   bool adaptive_mh = false;
   if (s < 0) {
     M = std::abs(s);
@@ -172,7 +172,7 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
 
     if (!single_freq) {
       if (!fixate_Z) {
-        mZ = simsm_adaptive_cv(my, Pi_i0, Sigma_chol, Lambda_comp, mZ1, n_q, T_b);
+        mZ = simsm_adaptive_cv(my, Pi_i0, Sigma_chol, Lambda, mZ1, n_q, T_b);
         Z_i.rows(n_lags, n_T + n_lags - 1) = mZ + mu_mat;
       } else {
         mZ = Z_i.rows(n_lags, n_T + n_lags - 1) - mu_mat;
@@ -182,7 +182,7 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
     Z_i_demean.rows(0, n_lags - 1) = mZ1;
     Z_i_demean.rows(n_lags, n_T + n_lags - 1) = mZ;
 
-    mX = create_X_noint(Z_i_demean, n_lags);
+    mX = create_X(Z_i_demean, n_lags, false);
     update_iw(post_Pi_Omega, post_Pi, post_S, mX, mZ, prior_Pi_mean,
               prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_S);
     if (!fixate_Sigma) {
@@ -204,7 +204,7 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
       inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
     }
 
-    X = create_X_noint(Z_i, n_lags);
+    X = create_X(Z_i, n_lags, false);
     if (!fixate_psi) {
       posterior_psi_iw(psi_i, mu_mat, Pi_i, D_mat, Sigma_i, inv_prior_psi_Omega,
                        mZ + mu_mat, X, inv_prior_psi_Omega_mean, dt, n_determ,
@@ -217,7 +217,7 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
         Z_fcst_i.head_cols(n_lags) = Z_i.tail_rows(n_lags).t() - mu_mat.tail_rows(n_lags).t();
         for (arma::uword h = 0; h < n_fcst; ++h) {
           errors.imbue(norm_rand);
-          x = create_X_t_noint(Z_fcst_i.cols(0+h, n_lags-1+h).t());
+          x = create_X_t(Z_fcst_i.cols(0+h, n_lags-1+h).t(), false);
           Z_fcst_i.col(n_lags + h) = Pi_i * x + Sigma_chol * errors;
         }
         Z_fcst.slice((i-n_burnin)/n_thin) = Z_fcst_i.t() + d_fcst_lags * Psi_i.t();

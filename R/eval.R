@@ -111,3 +111,33 @@ eval_psi_MargPost <- function(Pi_array, Sigma_array, Z_array, post_psi_center, p
 
   return(evals)
 }
+
+#' Compute posterior moments of the steady-state parameters
+#'
+#' Computes the mean and variance of the conditional posterior distribution of the steady-state parameters.
+#' @templateVar U TRUE
+#' @templateVar D_mat TRUE
+#' @templateVar Sigma TRUE
+#' @templateVar prior_psi_Omega TRUE
+#' @templateVar post_psi_Omega TRUE
+#' @templateVar Y_tilde TRUE
+#' @templateVar prior_psi_mean TRUE
+#' @template man_template
+#' @keywords internal
+#' @noRd
+#' @return The return is:
+#' \item{psi}{The posterior mean (from \code{\link{posterior_psi_mean}})}
+posterior_psi_mean <- function(U, D_mat, Sigma, prior_psi_Omega, post_psi_Omega, Y_tilde, prior_psi_mean) {
+  SigmaYD <- matrix(c(chol2inv(chol(Sigma)) %*% t(Y_tilde) %*% D_mat), ncol = 1)
+  psi <- post_psi_Omega %*% (t(U) %*% SigmaYD + chol2inv(chol(prior_psi_Omega)) %*% prior_psi_mean)
+  return(psi)
+}
+
+#' @rdname posterior_psi_mean
+#' @keywords internal
+#' @noRd
+#' @return \item{psi_Omega}{The posterior variance (from \code{\link{posterior_psi_Omega}})}
+posterior_psi_Omega <- function(U, D_mat, Sigma, prior_psi_Omega) {
+  psi_Omega <- chol2inv(chol(t(U) %*% (kronecker(crossprod(D_mat), chol2inv(chol(Sigma)))) %*% U + chol2inv(chol(prior_psi_Omega))))
+  return(psi_Omega)
+}

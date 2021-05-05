@@ -24,13 +24,13 @@ get_params_info(
 
 \item{dl}{logical for \code{dl} prior}
 
-\item{iw}{logical for \code{iw} prior}
+\item{iw}{logical for \code{iw} variance prior}
 
-\item{diffuse}{logical for \code{diffuse} prior}
+\item{diffuse}{logical for \code{diffuse} variance prior}
 
-\item{csv}{logical for \code{csv} prior}
+\item{csv}{logical for \code{csv} variance structure}
 
-\item{fsv}{logical for \code{fsv} prior}
+\item{fsv}{logical for \code{fsv} variance structure}
 }
 \value{
 A list with components:

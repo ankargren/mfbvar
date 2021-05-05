@@ -13,16 +13,13 @@ stochastic volatility model through the \code{\link[factorstochvol]{factorstochv
 }
 \section{Specifying the prior}{
 
-The prior of the VAR model is specified using the function \code{\link{set_prior}}. The function
-creates a prior object, which can be further updated using \code{\link{update_prior}}. The model can be
-estimated using the steady-state prior, which requires the prior moments of the steady-state parameters.
-The function \code{\link{interval_to_moments}} is a helper function for obtaining these from prior intervals.
+The prior of the VAR model is specified using the function \code{\link{set_prior}} or a selected choice of its wrapper functions. The function creates a prior object, which can be further updated using the wrappers or itself in an object-oriented manner. The model can be estimated using the steady-state prior, which requires the prior moments of the steady-state parameters. The function \code{\link{interval_to_moments}} is a helper function for obtaining these from prior intervals.
 }
 
 \section{Estimating the model}{
 
 The model is estimated using the function \code{\link{estimate_mfbvar}}. The error covariance matrix
-is given an inverse Wishart prior or modeled using factor stochastic volatility. If the former is used,
+is given an inverse Wishart or diffuse prior or modeled using factor or common stochastic volatility. If the inverse Wishart prior is used,
 \code{\link{mdd}} can be used to estimate to the marginal data density (marginal likelihood).
 }
 

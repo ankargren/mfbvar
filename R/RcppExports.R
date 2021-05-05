@@ -10,20 +10,12 @@ build_U_cpp <- function(Pi, n_determ, n_vars, n_lags) {
     .Call(`_mfbvar_build_U_cpp`, Pi, n_determ, n_vars, n_lags)
 }
 
-create_X <- function(y, k) {
-    .Call(`_mfbvar_create_X`, y, k)
+create_X <- function(y, k, intercept) {
+    .Call(`_mfbvar_create_X`, y, k, intercept)
 }
 
-create_X_noint <- function(y, k) {
-    .Call(`_mfbvar_create_X_noint`, y, k)
-}
-
-create_X_t <- function(y) {
-    .Call(`_mfbvar_create_X_t`, y)
-}
-
-create_X_t_noint <- function(y) {
-    .Call(`_mfbvar_create_X_t_noint`, y)
+create_X_t <- function(y, intercept) {
+    .Call(`_mfbvar_create_X_t`, y, intercept)
 }
 
 dl_reg <- function(y, x, beta, aux, global, local, prior_Pi_Omega, n_reps, a, gig) {
@@ -90,36 +82,36 @@ max_eig_cpp <- function(A) {
     .Call(`_mfbvar_max_eig_cpp`, A)
 }
 
-mcmc_minn_csv <- function(y_in_p, Pi, Sigma, Z, Z_fcst, phi, sigma, f, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, check_roots, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, fixate_Pi, fixate_Sigma, fixate_Z, fixate_latent, fixate_latent0, fixate_phi, fixate_sigma) {
-    invisible(.Call(`_mfbvar_mcmc_minn_csv`, y_in_p, Pi, Sigma, Z, Z_fcst, phi, sigma, f, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, check_roots, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, fixate_Pi, fixate_Sigma, fixate_Z, fixate_latent, fixate_latent0, fixate_phi, fixate_sigma))
+mcmc_minn_csv <- function(y_in_p, Pi, Sigma, Z, Z_fcst, phi, sigma, f, Lambda, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, check_roots, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, fixate_Pi, fixate_Sigma, fixate_Z, fixate_latent, fixate_latent0, fixate_phi, fixate_sigma) {
+    invisible(.Call(`_mfbvar_mcmc_minn_csv`, y_in_p, Pi, Sigma, Z, Z_fcst, phi, sigma, f, Lambda, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, check_roots, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, fixate_Pi, fixate_Sigma, fixate_Z, fixate_latent, fixate_latent0, fixate_phi, fixate_sigma))
 }
 
-mcmc_ssng_csv <- function(y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, phi, sigma, f, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng, fixate_Pi, fixate_Sigma, fixate_Z, fixate_psi, fixate_phi_mu, fixate_lambda_mu, fixate_omega, fixate_latent, fixate_latent0, fixate_phi, fixate_sigma) {
-    invisible(.Call(`_mfbvar_mcmc_ssng_csv`, y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, phi, sigma, f, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng, fixate_Pi, fixate_Sigma, fixate_Z, fixate_psi, fixate_phi_mu, fixate_lambda_mu, fixate_omega, fixate_latent, fixate_latent0, fixate_phi, fixate_sigma))
+mcmc_ssng_csv <- function(y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, phi, sigma, f, Lambda, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng, fixate_Pi, fixate_Sigma, fixate_Z, fixate_psi, fixate_phi_mu, fixate_lambda_mu, fixate_omega, fixate_latent, fixate_latent0, fixate_phi, fixate_sigma) {
+    invisible(.Call(`_mfbvar_mcmc_ssng_csv`, y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, phi, sigma, f, Lambda, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, priorlatent0, phi_invvar, phi_meaninvvar, prior_sigma2, prior_df, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng, fixate_Pi, fixate_Sigma, fixate_Z, fixate_psi, fixate_phi_mu, fixate_lambda_mu, fixate_omega, fixate_latent, fixate_latent0, fixate_phi, fixate_sigma))
 }
 
-mcmc_minn_diffuse <- function(y_in_p, Pi, Sigma, Z, Z_fcst, aux, global, local, slice, Lambda_comp, prior_Pi_Omega, prior_Pi_mean_vec, check_roots, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, a, gig, fixate_Pi, fixate_Sigma, fixate_Z, fixate_aux, fixate_global, fixate_local) {
-    invisible(.Call(`_mfbvar_mcmc_minn_diffuse`, y_in_p, Pi, Sigma, Z, Z_fcst, aux, global, local, slice, Lambda_comp, prior_Pi_Omega, prior_Pi_mean_vec, check_roots, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, a, gig, fixate_Pi, fixate_Sigma, fixate_Z, fixate_aux, fixate_global, fixate_local))
+mcmc_minn_diffuse <- function(y_in_p, Pi, Sigma, Z, Z_fcst, aux, global, local, slice, Lambda, prior_Pi_Omega, prior_Pi_mean_vec, check_roots, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, a, gig, fixate_Pi, fixate_Sigma, fixate_Z, fixate_aux, fixate_global, fixate_local) {
+    invisible(.Call(`_mfbvar_mcmc_minn_diffuse`, y_in_p, Pi, Sigma, Z, Z_fcst, aux, global, local, slice, Lambda, prior_Pi_Omega, prior_Pi_mean_vec, check_roots, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, a, gig, fixate_Pi, fixate_Sigma, fixate_Z, fixate_aux, fixate_global, fixate_local))
 }
 
-mcmc_ssng_diffuse <- function(y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, prior_Pi_mean_vec, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng, fixate_Pi, fixate_Sigma, fixate_Z, fixate_psi, fixate_phi_mu, fixate_lambda_mu, fixate_omega) {
-    invisible(.Call(`_mfbvar_mcmc_ssng_diffuse`, y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, prior_Pi_mean_vec, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng, fixate_Pi, fixate_Sigma, fixate_Z, fixate_psi, fixate_phi_mu, fixate_lambda_mu, fixate_omega))
+mcmc_ssng_diffuse <- function(y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, Lambda, prior_Pi_Omega, prior_Pi_mean_vec, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng, fixate_Pi, fixate_Sigma, fixate_Z, fixate_psi, fixate_phi_mu, fixate_lambda_mu, fixate_omega) {
+    invisible(.Call(`_mfbvar_mcmc_ssng_diffuse`, y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, Lambda, prior_Pi_Omega, prior_Pi_mean_vec, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng, fixate_Pi, fixate_Sigma, fixate_Z, fixate_psi, fixate_phi_mu, fixate_lambda_mu, fixate_omega))
 }
 
-mcmc_minn_fsv <- function(y_in_p, Pi, Z, Z_fcst, mu, phi, sigma, f, facload, h, aux, global, local, slice, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, a, gig, fixate_Z, fixate_Pi, fixate_mu, fixate_phi, fixate_sigma, fixate_f, fixate_facload, fixate_latent, fixate_aux, fixate_global, fixate_local) {
-    invisible(.Call(`_mfbvar_mcmc_minn_fsv`, y_in_p, Pi, Z, Z_fcst, mu, phi, sigma, f, facload, h, aux, global, local, slice, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, a, gig, fixate_Z, fixate_Pi, fixate_mu, fixate_phi, fixate_sigma, fixate_f, fixate_facload, fixate_latent, fixate_aux, fixate_global, fixate_local))
+mcmc_minn_fsv <- function(y_in_p, Pi, Z, Z_fcst, mu, phi, sigma, f, facload, h, aux, global, local, slice, Lambda, prior_Pi_Omega, prior_Pi_AR1, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, a, gig, fixate_Z, fixate_Pi, fixate_mu, fixate_phi, fixate_sigma, fixate_f, fixate_facload, fixate_latent, fixate_aux, fixate_global, fixate_local) {
+    invisible(.Call(`_mfbvar_mcmc_minn_fsv`, y_in_p, Pi, Z, Z_fcst, mu, phi, sigma, f, facload, h, aux, global, local, slice, Lambda, prior_Pi_Omega, prior_Pi_AR1, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, a, gig, fixate_Z, fixate_Pi, fixate_mu, fixate_phi, fixate_sigma, fixate_f, fixate_facload, fixate_latent, fixate_aux, fixate_global, fixate_local))
 }
 
-mcmc_ssng_fsv <- function(y_in_p, Pi, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, mu, phi, sigma, f, facload, h, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng, fixate_Z, fixate_Pi, fixate_psi, fixate_phi_mu, fixate_lambda_mu, fixate_omega, fixate_mu, fixate_phi, fixate_sigma, fixate_f, fixate_facload, fixate_latent) {
-    invisible(.Call(`_mfbvar_mcmc_ssng_fsv`, y_in_p, Pi, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, mu, phi, sigma, f, facload, h, Lambda_comp, prior_Pi_Omega, prior_Pi_AR1, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng, fixate_Z, fixate_Pi, fixate_psi, fixate_phi_mu, fixate_lambda_mu, fixate_omega, fixate_mu, fixate_phi, fixate_sigma, fixate_f, fixate_facload, fixate_latent))
+mcmc_ssng_fsv <- function(y_in_p, Pi, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, mu, phi, sigma, f, facload, h, Lambda, prior_Pi_Omega, prior_Pi_AR1, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng, fixate_Z, fixate_Pi, fixate_psi, fixate_phi_mu, fixate_lambda_mu, fixate_omega, fixate_mu, fixate_phi, fixate_sigma, fixate_f, fixate_facload, fixate_latent) {
+    invisible(.Call(`_mfbvar_mcmc_ssng_fsv`, y_in_p, Pi, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, mu, phi, sigma, f, facload, h, Lambda, prior_Pi_Omega, prior_Pi_AR1, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, bmu, Bmu, a0idi, b0idi, a0fac, b0fac, Bsigma, B011inv, B022inv, priorh0, armarestr, armatau2, n_fac, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, ssng, fixate_Z, fixate_Pi, fixate_psi, fixate_phi_mu, fixate_lambda_mu, fixate_omega, fixate_mu, fixate_phi, fixate_sigma, fixate_f, fixate_facload, fixate_latent))
 }
 
-mcmc_minn_iw <- function(y_in_p, Pi, Sigma, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, check_roots, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, prior_nu, fixate_Pi, fixate_Sigma, fixate_Z) {
-    invisible(.Call(`_mfbvar_mcmc_minn_iw`, y_in_p, Pi, Sigma, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, check_roots, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, prior_nu, fixate_Pi, fixate_Sigma, fixate_Z))
+mcmc_minn_iw <- function(y_in_p, Pi, Sigma, Z, Z_fcst, Lambda, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, check_roots, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, prior_nu, fixate_Pi, fixate_Sigma, fixate_Z) {
+    invisible(.Call(`_mfbvar_mcmc_minn_iw`, y_in_p, Pi, Sigma, Z, Z_fcst, Lambda, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, check_roots, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_thin, verbose, prior_nu, fixate_Pi, fixate_Sigma, fixate_Z))
 }
 
-mcmc_ssng_iw <- function(y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, prior_nu, ssng, fixate_Pi, fixate_Sigma, fixate_Z, fixate_psi, fixate_phi_mu, fixate_lambda_mu, fixate_omega) {
-    invisible(.Call(`_mfbvar_mcmc_ssng_iw`, y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, Lambda_comp, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, prior_nu, ssng, fixate_Pi, fixate_Sigma, fixate_Z, fixate_psi, fixate_phi_mu, fixate_lambda_mu, fixate_omega))
+mcmc_ssng_iw <- function(y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, Lambda, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, prior_nu, ssng, fixate_Pi, fixate_Sigma, fixate_Z, fixate_psi, fixate_phi_mu, fixate_lambda_mu, fixate_omega) {
+    invisible(.Call(`_mfbvar_mcmc_ssng_iw`, y_in_p, Pi, Sigma, psi, phi_mu, lambda_mu, omega, Z, Z_fcst, Lambda, prior_Pi_Omega, inv_prior_Pi_Omega, Omega_Pi, prior_Pi_mean, prior_S, D_mat, dt, d1, d_fcst_lags, prior_psi_mean, c0, c1, s, check_roots, Z_1, n_reps, n_burnin, n_q, T_b, n_lags, n_vars, n_T, n_fcst, n_determ, n_thin, verbose, prior_nu, ssng, fixate_Pi, fixate_Sigma, fixate_Z, fixate_psi, fixate_phi_mu, fixate_lambda_mu, fixate_omega))
 }
 
 variances_fsv <- function(variances, latent, facload, variables_num, n_fac, n_reps, n_T, n_vars, n_plotvars) {

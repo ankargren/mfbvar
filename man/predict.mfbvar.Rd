@@ -35,7 +35,9 @@ Method for predicting \code{mfbvar} objects.
 Note that this requires that forecasts were made in the original \code{mfbvar} call.
 }
 \examples{
-prior_obj <- set_prior(Y = mf_usa, n_lags = 4, n_reps = 20, n_fcst = 4)
+prior_obj <- set_init(Y = mf_usa, n_lags = 4, n_burnin = 20, n_reps = 20,
+n_fcst = 4)
+prior_obj <- set_prior_minn(prior_obj)
 mod_minn <- estimate_mfbvar(prior_obj, prior = "minn")
 predict(mod_minn)
 }

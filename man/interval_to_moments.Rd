@@ -7,7 +7,7 @@
 interval_to_moments(prior_psi_int, alpha = 0.05)
 }
 \arguments{
-\item{prior_psi_int}{Matrix of size \code{(n_determ*n_vars) * 2} with the prior 95 \% prior probability intervals.}
+\item{prior_psi_int}{Matrix of size \code{(n_determ * n_vars) x 2} with the prior intervals}
 
 \item{alpha}{\code{100*(1-alpha)} is the prior probability of the interval}
 }
