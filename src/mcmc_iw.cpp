@@ -146,7 +146,7 @@ void mcmc_ssng_iw(const arma::mat & y_in_p,
 
   double M;
   arma::running_stat<double> stats;
-  arma::uword accept = 0;
+  double accept = 0;
   bool adaptive_mh = false;
   if (s < 0) {
     M = std::abs(s);

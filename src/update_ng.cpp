@@ -13,7 +13,7 @@ double posterior_phi_mu(const double lambda, const double phi_mu, const arma::ve
 void update_ng(double & phi_mu, double & lambda_mu, arma::vec & omega,
                arma::uword nm, const double c0, const double c1, double s,
                const arma::vec & psi_i, const arma::vec & prior_psi_mean,
-               arma::uword & accept, bool fixate_phi_mu, bool fixate_lambda_mu,
+               double & accept, bool fixate_phi_mu, bool fixate_lambda_mu,
                bool fixate_omega) {
   // phi_mu: the shrinkage parameter phi_mu
   // lambda_mu: the shrinkage parameter lambda_mu
@@ -52,16 +52,16 @@ void update_ng(double & phi_mu, double & lambda_mu, arma::vec & omega,
     double u = R::runif(0.0, 1.0);
     if (u < prob) {
       phi_mu = phi_mu_proposal;
-      accept = 1;
+      accept = 1.0;
     } else {
-      accept = 0;
+      accept = 0.0;
     }
   }
 }
 
 void update_s(double & s,
-                arma::running_stat<arma::uword> & stats,
-                arma::uword accept,
+                arma::running_stat<double> & stats,
+                double accept,
                 arma::uword i,
                 double M) {
   double s_prop;

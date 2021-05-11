@@ -284,7 +284,7 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
   // ssng
   arma::uword nm = n_vars*n_determ;
   double lambda_mu_i, phi_mu_i, M;
-  arma::uword accept = 0;
+  double accept = 0;
   bool adaptive_mh = false;
   if (ssng) {
     lambda_mu_i = arma::as_scalar(lambda_mu.slice(0));

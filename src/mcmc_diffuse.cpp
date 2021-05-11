@@ -210,7 +210,7 @@ void mcmc_ssng_diffuse(const arma::mat & y_in_p,
   arma::vec inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
   double M;
   arma::running_stat<double> stats;
-  arma::uword accept = 0;
+  double accept = 0;
   bool adaptive_mh = false;
   if (s < 0) {
     M = std::abs(s);
