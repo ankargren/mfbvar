@@ -84,7 +84,7 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
   }
   if (single_freq || fixate_Z) {
     Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
-    X = create_X(Z_i, n_lags);
+    X = create_X(Z_i, n_lags, true);
   }
 
   // DL
@@ -107,7 +107,7 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
       if (!fixate_Z) {
         y_i = simsm_adaptive_univariate(y_in_p, Pi_i, Sig_i, Lambda_comp, Z_1, n_q, T_b, cc_i);
         Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
-        X = create_X(Z_i, n_lags);
+        X = create_X(Z_i, n_lags, true);
       }
     }
 
@@ -135,7 +135,7 @@ void mcmc_minn_fsv(const arma::mat & y_in_p,
           errors_var.imbue(norm_rand);
           vol_pred = mu_i + phi_i % (vol_pred - mu_i) + sigma_i % errors_sv; // Twice because we first need it for the volatility, then for the VAR
           error_pred = arma::exp(0.5 * vol_pred) % errors_var;
-          x = create_X_t(Z_fcst_i.cols(0+h, n_lags-1+h).t());
+          x = create_X_t(Z_fcst_i.cols(0+h, n_lags-1+h).t(), true);
           Z_fcst_i.col(n_lags + h) = Pi_i * x + armafacload_old * error_pred.tail_rows(n_fac) + error_pred.head_rows(n_vars);
         }
         Z_fcst.slice((i-n_burnin)/n_thin) = Z_fcst_i.t();
@@ -329,7 +329,7 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
     Z_i_demean.rows(0, n_lags - 1) = mZ1;
     Z_i_demean.rows(n_lags, n_T + n_lags - 1) = mZ;
 
-    mX = create_X_noint(Z_i_demean, n_lags);
+    mX = create_X(Z_i_demean, n_lags, false);
 
     y_hat = mZ - mX * Pi_i.t();
 
@@ -355,7 +355,7 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
           errors_var.imbue(norm_rand);
           vol_pred = mu_i + phi_i % (vol_pred - mu_i) + sigma_i % errors_sv; // Twice because we first need it for the volatility, then for the VAR
           error_pred = arma::exp(0.5 * vol_pred) % errors_var;
-          x = create_X_t_noint(Z_fcst_i.cols(0+h, n_lags-1+h).t());
+          x = create_X_t(Z_fcst_i.cols(0+h, n_lags-1+h).t(), false);
           Z_fcst_i.col(n_lags + h) = Pi_i * x + armafacload_old * error_pred.tail_rows(n_fac) + error_pred.head_rows(n_vars);
         }
         Z_fcst.slice((i-n_burnin)/n_thin) = Z_fcst_i.t() + d_fcst_lags * Psi_i.t();
@@ -430,7 +430,7 @@ void mcmc_ssng_fsv(const arma::mat & y_in_p,
       inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
     }
 
-    X = create_X_noint(Z_i, n_lags);
+    X = create_X(Z_i, n_lags, false);
     if (!fixate_psi) {
       posterior_psi_fsv(psi_i, mu_mat, Pi_i, D_mat, arma::exp(idivar),
                         inv_prior_psi_Omega, Z_i.rows(n_lags, n_T + n_lags - 1), X,

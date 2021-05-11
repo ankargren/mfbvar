@@ -59,7 +59,7 @@ void mcmc_minn_csv(const arma::mat & y_in_p,
 
   if (single_freq) {
     Z_i.rows(n_lags, n_T + n_lags - 1) = y_in_p;
-    X = create_X(Z_i, n_lags);
+    X = create_X(Z_i, n_lags, true);
   }
 
   for (arma::uword i = 0; i < n_reps + n_burnin; ++i) {
@@ -72,7 +72,7 @@ void mcmc_minn_csv(const arma::mat & y_in_p,
         y_i = simsm_adaptive_sv(y_in_p, Pi_i, Sigma_chol_cube, Lambda_comp, Z_1, n_q, T_b);
         Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
       }
-      X = create_X(Z_i, n_lags);
+      X = create_X(Z_i, n_lags, true);
     }
 
     exp_sqrt_f = arma::exp(0.5 * f_i);
@@ -107,7 +107,7 @@ void mcmc_minn_csv(const arma::mat & y_in_p,
           vol_pred = phi_i * vol_pred + R::rnorm(0.0, sigma_i);
           errors.imbue(norm_rand);
           errors = errors * std::exp(0.5 * vol_pred);
-          x = create_X_t(Z_fcst_i.cols(0+h, n_lags-1+h).t());
+          x = create_X_t(Z_fcst_i.cols(0+h, n_lags-1+h).t(), true);
           Z_fcst_i.col(n_lags + h) = Pi_i * x + Sigma_chol * errors;
         }
         Z_fcst.slice((i-n_burnin)/n_thin) = Z_fcst_i.t();
@@ -250,7 +250,7 @@ void mcmc_ssng_csv(const arma::mat & y_in_p,
     Z_i_demean.rows(0, n_lags - 1) = mZ1;
     Z_i_demean.rows(n_lags, n_T + n_lags - 1) = mZ;
 
-    mX = create_X_noint(Z_i_demean, n_lags);
+    mX = create_X(Z_i_demean, n_lags, false);
     exp_sqrt_f = arma::exp(0.5 * f_i);
     y_scaled = mZ;
     y_scaled.each_col() /= exp_sqrt_f;
@@ -280,7 +280,7 @@ void mcmc_ssng_csv(const arma::mat & y_in_p,
       inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
     }
 
-    X = create_X_noint(Z_i, n_lags);
+    X = create_X(Z_i, n_lags, false);
     if (!fixate_psi) {
       posterior_psi_csv(psi_i, mu_mat, Pi_i, D_mat, Sigma_chol_inv, exp_sqrt_f, inv_prior_psi_Omega, mZ + mu_mat, X,
                         inv_prior_psi_Omega_mean, dt, n_determ, n_vars, n_lags);
@@ -289,7 +289,7 @@ void mcmc_ssng_csv(const arma::mat & y_in_p,
     mZ1 = Z_1 - d1 * Psi_i.t();
     Z_i_demean.rows(0, n_lags - 1) = mZ1;
     Z_i_demean.rows(n_lags, n_T + n_lags - 1) = Z_i.rows(n_lags, n_T + n_lags - 1) - mu_mat; // Not the same as mu_mat b/c different mu_mat
-    X = create_X_noint(Z_i_demean, n_lags);
+    X = create_X(Z_i_demean, n_lags, false);
     eps = Z_i_demean.rows(n_lags, n_T + n_lags - 1) - X * Pi_i.t();
     u = eps * Sigma_chol_inv.t();
     u_tilde = arma::log(arma::pow(u, 2.0));
@@ -309,7 +309,7 @@ void mcmc_ssng_csv(const arma::mat & y_in_p,
           vol_pred = phi_i * vol_pred + R::rnorm(0.0, sigma_i);
           errors.imbue(norm_rand);
           errors = errors * std::exp(0.5 * vol_pred);
-          x = create_X_t_noint(Z_fcst_i.cols(0+h, n_lags-1+h).t());
+          x = create_X_t(Z_fcst_i.cols(0+h, n_lags-1+h).t(), false);
           Z_fcst_i.col(n_lags + h) = Pi_i * x + Sigma_chol * errors;
         }
         Z_fcst.slice((i-n_burnin)/n_thin) = Z_fcst_i.t() + d_fcst_lags * Psi_i.t();

@@ -45,7 +45,7 @@ void mcmc_minn_diffuse(const arma::mat & y_in_p,
 
   if (single_freq || fixate_Z) {
     Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
-    X = create_X(Z_i, n_lags);
+    X = create_X(Z_i, n_lags, true);
   }
 
   // DL
@@ -75,7 +75,7 @@ void mcmc_minn_diffuse(const arma::mat & y_in_p,
       y_i = simsm_adaptive_cv(y_in_p, Pi_i, Sigma_chol,
                               Lambda_comp, Z_1, n_q, T_b);
       Z_i.rows(n_lags, n_T + n_lags - 1) = y_i;
-      X = create_X(Z_i, n_lags);
+      X = create_X(Z_i, n_lags, true);
     }
 
     // Pi
@@ -107,7 +107,7 @@ void mcmc_minn_diffuse(const arma::mat & y_in_p,
         Z_fcst_i.head_cols(n_lags) = Z_i.tail_rows(n_lags).t();
         for (arma::uword h = 0; h < n_fcst; ++h) {
           errors.imbue(norm_rand);
-          x = create_X_t(Z_fcst_i.cols(0+h, n_lags-1+h).t());
+          x = create_X_t(Z_fcst_i.cols(0+h, n_lags-1+h).t(), true);
           Z_fcst_i.col(n_lags + h) = Pi_i * x + Sigma_chol * errors;
         }
         Z_fcst.slice((i-n_burnin)/n_thin) = Z_fcst_i.t();
@@ -241,7 +241,7 @@ void mcmc_ssng_diffuse(const arma::mat & y_in_p,
     Z_i_demean.rows(0, n_lags - 1) = mZ1;
     Z_i_demean.rows(n_lags, n_T + n_lags - 1) = mZ;
 
-    mX = create_X_noint(Z_i_demean, n_lags);
+    mX = create_X(Z_i_demean, n_lags, false);
     if (!fixate_Pi) {
       Pi_i = sample_Pi_vec(Sigma_inv, mX, mZ, prior_Pi_Omega_vec_inv, Omega_Pi,
                            check_roots, n_vars, n_lags);
@@ -267,7 +267,7 @@ void mcmc_ssng_diffuse(const arma::mat & y_in_p,
       inv_prior_psi_Omega_mean = prior_psi_mean / omega_i;
     }
 
-    X = create_X_noint(Z_i, n_lags);
+    X = create_X(Z_i, n_lags, false);
     if (!fixate_psi) {
       posterior_psi_iw(psi_i, mu_mat, Pi_i, D_mat, Sigma_i, inv_prior_psi_Omega,
                        mZ + mu_mat, X, inv_prior_psi_Omega_mean, dt, n_determ,
@@ -280,7 +280,7 @@ void mcmc_ssng_diffuse(const arma::mat & y_in_p,
         Z_fcst_i.head_cols(n_lags) = Z_i.tail_rows(n_lags).t() - mu_mat.tail_rows(n_lags).t();
         for (arma::uword h = 0; h < n_fcst; ++h) {
           errors.imbue(norm_rand);
-          x = create_X_t_noint(Z_fcst_i.cols(0+h, n_lags-1+h).t());
+          x = create_X_t(Z_fcst_i.cols(0+h, n_lags-1+h).t(), false);
           Z_fcst_i.col(n_lags + h) = Pi_i * x + Sigma_chol * errors;
         }
         Z_fcst.slice((i-n_burnin)/n_thin) = Z_fcst_i.t() + d_fcst_lags * Psi_i.t();

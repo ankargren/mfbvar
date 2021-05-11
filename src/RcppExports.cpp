@@ -22,37 +22,27 @@ BEGIN_RCPP
 END_RCPP
 }
 // create_X
-arma::mat create_X(const arma::mat& y, arma::uword k);
-RcppExport SEXP _mfbvar_create_X(SEXP ySEXP, SEXP kSEXP) {
+arma::mat create_X(const arma::mat& y, arma::uword k, bool intercept);
+RcppExport SEXP _mfbvar_create_X(SEXP ySEXP, SEXP kSEXP, SEXP interceptSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type y(ySEXP);
     Rcpp::traits::input_parameter< arma::uword >::type k(kSEXP);
-    rcpp_result_gen = Rcpp::wrap(create_X(y, k));
-    return rcpp_result_gen;
-END_RCPP
-}
-// create_X_noint
-arma::mat create_X_noint(const arma::mat& y, arma::uword k);
-RcppExport SEXP _mfbvar_create_X_noint(SEXP ySEXP, SEXP kSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type y(ySEXP);
-    Rcpp::traits::input_parameter< arma::uword >::type k(kSEXP);
-    rcpp_result_gen = Rcpp::wrap(create_X_noint(y, k));
+    Rcpp::traits::input_parameter< bool >::type intercept(interceptSEXP);
+    rcpp_result_gen = Rcpp::wrap(create_X(y, k, intercept));
     return rcpp_result_gen;
 END_RCPP
 }
 // create_X_t
-arma::mat create_X_t(const arma::mat& y);
-RcppExport SEXP _mfbvar_create_X_t(SEXP ySEXP) {
+arma::mat create_X_t(const arma::mat& y, bool intercept);
+RcppExport SEXP _mfbvar_create_X_t(SEXP ySEXP, SEXP interceptSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type y(ySEXP);
-    rcpp_result_gen = Rcpp::wrap(create_X_t(y));
+    Rcpp::traits::input_parameter< bool >::type intercept(interceptSEXP);
+    rcpp_result_gen = Rcpp::wrap(create_X_t(y, intercept));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -984,9 +974,8 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_mfbvar_build_U_cpp", (DL_FUNC) &_mfbvar_build_U_cpp, 4},
-    {"_mfbvar_create_X", (DL_FUNC) &_mfbvar_create_X, 2},
-    {"_mfbvar_create_X_noint", (DL_FUNC) &_mfbvar_create_X_noint, 2},
-    {"_mfbvar_create_X_t", (DL_FUNC) &_mfbvar_create_X_t, 1},
+    {"_mfbvar_create_X", (DL_FUNC) &_mfbvar_create_X, 3},
+    {"_mfbvar_create_X_t", (DL_FUNC) &_mfbvar_create_X_t, 2},
     {"_mfbvar_create_X_t_noint", (DL_FUNC) &_mfbvar_create_X_t_noint, 1},
     {"_mfbvar_dl_reg", (DL_FUNC) &_mfbvar_dl_reg, 10},
     {"_mfbvar_kf_loglike", (DL_FUNC) &_mfbvar_kf_loglike, 6},
